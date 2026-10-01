@@ -108,6 +108,19 @@ Phase 1 adds the initial PostgreSQL schema and explicit Data API security:
 - an idempotent, ownership-checked `record_task_completion` database function
 - pgTAP tests for patient isolation and resource visibility
 
+Phase 2 is in progress. The first Super Admin workflow milestone now provides:
+
+- a searchable patient list and patient detail screen
+- server-only patient Auth provisioning with generated or explicit patient IDs
+- temporary credentials flagged for mandatory first-login replacement
+- transactional patient profile/role/record/audit finalization
+- original prescription capture with immutable version 1
+- idempotent request IDs for patient and prescription creation
+- Super Admin-only database operations and pgTAP authorization coverage
+
+The next Phase 2 milestone is the manual care-plan builder, action editing and
+ordering, patient preview, and safe plan publishing/version history.
+
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 
 ### Run the app
@@ -138,6 +151,15 @@ Database tests require Docker Desktop or Podman:
 npx supabase start
 npx supabase test db
 npx supabase db lint --local
+```
+
+Edge Function validation and type checks can run without Docker:
+
+```bash
+npx deno test --allow-import supabase/functions/admin-create-patient/validation_test.ts
+npx deno check --allow-import \
+  --config supabase/functions/admin-create-patient/deno.json \
+  supabase/functions/admin-create-patient/index.ts
 ```
 
 Public Auth signup is disabled in local Supabase configuration. Patient and admin accounts must be provisioned by a trusted server/admin workflow; apply the same setting to the hosted Supabase project.

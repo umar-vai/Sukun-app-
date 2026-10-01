@@ -48,13 +48,13 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 
 ## Phase 2 — Admin core flow
 
-- [ ] Admin dashboard
-- [ ] Patient list/search
-- [ ] Create patient
-- [ ] Generate patient reference code
-- [ ] Temporary credential/invite flow
-- [ ] Patient details
-- [ ] Create prescription record
+- [x] Admin dashboard
+- [x] Patient list/search
+- [x] Create patient
+- [x] Generate patient reference code
+- [x] Temporary credential/invite flow
+- [x] Patient details
+- [x] Create prescription record
 - [ ] Manual plan builder
 - [ ] Add/edit/reorder action
 - [ ] Link an existing `content_item` to a plan action without duplicating the resource

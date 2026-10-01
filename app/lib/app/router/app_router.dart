@@ -6,6 +6,10 @@ import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/patients/presentation/create_patient_screen.dart';
+import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
+import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
+import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -58,6 +62,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/dashboard',
         builder: (context, state) =>
             AdminHomeScreen(displayName: _adminSession(session)?.displayName),
+      ),
+      GoRoute(
+        path: '/admin/patients',
+        builder: (context, state) => const PatientsListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const CreatePatientScreen(),
+          ),
+          GoRoute(
+            path: ':patientId',
+            builder: (context, state) => PatientDetailScreen(
+              patientId: state.pathParameters['patientId']!,
+            ),
+            routes: [
+              GoRoute(
+                path: 'prescriptions/new',
+                builder: (context, state) => CreatePrescriptionScreen(
+                  patientId: state.pathParameters['patientId']!,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
+import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 
 class GuestHomeScreen extends StatelessWidget {
   const GuestHomeScreen({super.key});
@@ -103,8 +104,9 @@ class AdminHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin Dashboard')),
+    return AdminScaffold(
+      title: 'Admin Dashboard',
+      selectedIndex: 0,
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -122,38 +124,11 @@ class AdminHomeScreen extends StatelessWidget {
               ),
               title: const Text('Patients and care plans'),
               subtitle: const Text(
-                'The secure patient management flow is built in the next milestone.',
+                'Create patient accounts, capture prescriptions, and prepare care plans.',
               ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/admin/patients'),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            label: 'Patients',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            label: 'Plans',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.library_books_outlined),
-            label: 'Content',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assessment_outlined),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            label: 'Settings',
           ),
         ],
       ),
