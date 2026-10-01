@@ -5,6 +5,10 @@ import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/patients/presentation/create_patient_screen.dart';
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
@@ -82,6 +86,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => CreatePrescriptionScreen(
                   patientId: state.pathParameters['patientId']!,
                 ),
+              ),
+              GoRoute(
+                path: 'plans/new',
+                builder: (context, state) => CreateCarePlanScreen(
+                  patientId: state.pathParameters['patientId']!,
+                  initialPrescriptionId:
+                      state.uri.queryParameters['prescriptionId'],
+                  copyFromPlanId: state.uri.queryParameters['copyFromPlanId'],
+                ),
+              ),
+              GoRoute(
+                path: 'plans/:planId',
+                builder: (context, state) => CarePlanBuilderScreen(
+                  patientId: state.pathParameters['patientId']!,
+                  planId: state.pathParameters['planId']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'preview',
+                    builder: (context, state) => CarePlanPreviewScreen(
+                      patientId: state.pathParameters['patientId']!,
+                      planId: state.pathParameters['planId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'actions/new',
+                    builder: (context, state) => PlanActionEditorScreen(
+                      planId: state.pathParameters['planId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'actions/:actionId',
+                    builder: (context, state) => PlanActionEditorScreen(
+                      planId: state.pathParameters['planId']!,
+                      actionId: state.pathParameters['actionId']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

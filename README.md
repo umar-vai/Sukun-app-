@@ -108,7 +108,7 @@ Phase 1 adds the initial PostgreSQL schema and explicit Data API security:
 - an idempotent, ownership-checked `record_task_completion` database function
 - pgTAP tests for patient isolation and resource visibility
 
-Phase 2 is in progress. The first Super Admin workflow milestone now provides:
+Phase 2 completes the Super Admin core patient and care-plan workflow:
 
 - a searchable patient list and patient detail screen
 - server-only patient Auth provisioning with generated or explicit patient IDs
@@ -117,9 +117,21 @@ Phase 2 is in progress. The first Super Admin workflow milestone now provides:
 - original prescription capture with immutable version 1
 - idempotent request IDs for patient and prescription creation
 - Super Admin-only database operations and pgTAP authorization coverage
+- one editable draft per patient and immutable published action history
+- structured daily/selected-day actions with optional count, duration, explicit
+  timing, reminder intent, and review status
+- canonical `content_item` resource links without per-patient content copies
+- action add/edit/reorder/reject controls and a patient-sanitized preview
+- guarded publishing that requires at least one approved action and refuses any
+  unresolved action or inaccessible resource
+- full plan version history, safe version copying with mandatory re-review,
+  automatic deactivation of the previous active plan, and archival
+- audited, idempotent workflow functions that retain RLS and verify the
+  database-backed Super Admin role
 
-The next Phase 2 milestone is the manual care-plan builder, action editing and
-ordering, patient preview, and safe plan publishing/version history.
+Phase 3 is next: patient login and forced first-login credential change,
+patient home, generated daily task instances, Done/Snooze/Skip completion,
+progress, and an offline-safe completion queue.
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 

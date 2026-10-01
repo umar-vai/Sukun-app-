@@ -55,13 +55,13 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [x] Temporary credential/invite flow
 - [x] Patient details
 - [x] Create prescription record
-- [ ] Manual plan builder
-- [ ] Add/edit/reorder action
-- [ ] Link an existing `content_item` to a plan action without duplicating the resource
-- [ ] Plan preview as patient
-- [ ] Publish plan
-- [ ] Plan version history
-- [ ] Archive/deactivate old plan
+- [x] Manual plan builder
+- [x] Add/edit/reorder action
+- [x] Link an existing `content_item` to a plan action without duplicating the resource
+- [x] Plan preview as patient
+- [x] Publish plan
+- [x] Plan version history
+- [x] Archive/deactivate old plan
 
 ## Phase 3 — Patient core flow
 
@@ -245,10 +245,10 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 The MVP is accepted only if this works end to end:
 
-- [ ] Admin creates patient
-- [ ] Admin creates prescription
-- [ ] Admin creates/reviews actions
-- [ ] Admin publishes plan
+- [x] Admin creates patient
+- [x] Admin creates prescription
+- [x] Admin creates/reviews actions
+- [x] Admin publishes plan
 - [ ] Patient logs in
 - [ ] Patient sees only own plan
 - [ ] Reminder appears
@@ -258,7 +258,7 @@ The MVP is accepted only if this works end to end:
 - [ ] Admin can publish/edit a resource without app-store release
 - [ ] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
 - [ ] Qur'an, Hadith, Dua & Azkar, Ruqyah, Books/PDF, Articles/Guides, Audio and Video are represented in the resource architecture
-- [ ] A single canonical resource can be linked to a patient's plan without duplicating it
+- [x] A single canonical resource can be linked to a patient's plan without duplicating it
 - [ ] Guest cannot access restricted/assigned/staff-only resources
 - [ ] Qur'an/Hadith canonical content cannot be published as unsourced generic AI output
 - [ ] External audio/video/PDF opens correctly

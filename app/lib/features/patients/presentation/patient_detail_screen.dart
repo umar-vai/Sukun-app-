@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
@@ -18,7 +20,7 @@ class PatientDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
-  late Future<(Patient?, List<Prescription>)> _details;
+  late Future<(Patient?, List<Prescription>, List<CarePlan>)> _details;
 
   @override
   void initState() {
@@ -26,13 +28,18 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     _details = _load();
   }
 
-  Future<(Patient?, List<Prescription>)> _load() async {
+  Future<(Patient?, List<Prescription>, List<CarePlan>)> _load() async {
     final repository = ref.read(patientsRepositoryProvider);
     final results = await Future.wait<Object?>([
       repository.getPatient(widget.patientId),
       repository.getPrescriptions(widget.patientId),
+      ref.read(carePlansRepositoryProvider).getPatientPlans(widget.patientId),
     ]);
-    return (results[0] as Patient?, results[1] as List<Prescription>);
+    return (
+      results[0] as Patient?,
+      results[1] as List<Prescription>,
+      results[2] as List<CarePlan>,
+    );
   }
 
   void _reload() => setState(() => _details = _load());
@@ -48,16 +55,31 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     );
   }
 
+  Future<void> _createPlan({String? prescriptionId}) async {
+    final query = prescriptionId == null
+        ? ''
+        : '?prescriptionId=${Uri.encodeQueryComponent(prescriptionId)}';
+    final plan = await context.push<CarePlan>(
+      '/admin/patients/${widget.patientId}/plans/new$query',
+    );
+    if (!mounted || plan == null) return;
+    _reload();
+    await context.push<void>(
+      '/admin/patients/${widget.patientId}/plans/${plan.id}',
+    );
+    if (mounted) _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Patient details')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addPrescription,
-        icon: const Icon(Icons.note_add_outlined),
-        label: const Text('Add prescription'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateMenu(context),
+        tooltip: 'Add patient care record',
+        child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<(Patient?, List<Prescription>)>(
+      body: FutureBuilder<(Patient?, List<Prescription>, List<CarePlan>)>(
         future: _details,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -77,12 +99,61 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             );
           }
           final prescriptions = snapshot.data!.$2;
+          final plans = snapshot.data!.$3;
           return RefreshIndicator(
             onRefresh: () async => _reload(),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
               children: [
                 _PatientSummaryCard(patient: patient),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Care plans',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    Text(
+                      '${plans.length} version${plans.length == 1 ? '' : 's'}',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (plans.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'No care plan has been created yet. Record a prescription first, or build a plan manually.',
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _createPlan,
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('Create care plan'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  for (final plan in plans) ...[
+                    _CarePlanCard(
+                      plan: plan,
+                      onTap: () async {
+                        await context.push<void>(
+                          '/admin/patients/${widget.patientId}/plans/${plan.id}',
+                        );
+                        if (mounted) _reload();
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -107,7 +178,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   )
                 else
                   for (final prescription in prescriptions) ...[
-                    _PrescriptionCard(prescription: prescription),
+                    _PrescriptionCard(
+                      prescription: prescription,
+                      onBuildPlan: () =>
+                          _createPlan(prescriptionId: prescription.id),
+                    ),
                     const SizedBox(height: 10),
                   ],
               ],
@@ -116,6 +191,33 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _showCreateMenu(BuildContext context) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.note_add_outlined),
+              title: const Text('Add prescription'),
+              onTap: () => context.pop('prescription'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_task),
+              title: const Text('Create care plan'),
+              onTap: () => context.pop('plan'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'prescription') await _addPrescription();
+    if (choice == 'plan') await _createPlan();
   }
 }
 
@@ -192,9 +294,13 @@ class _DetailLine extends StatelessWidget {
 }
 
 class _PrescriptionCard extends StatelessWidget {
-  const _PrescriptionCard({required this.prescription});
+  const _PrescriptionCard({
+    required this.prescription,
+    required this.onBuildPlan,
+  });
 
   final Prescription prescription;
+  final VoidCallback onBuildPlan;
 
   @override
   Widget build(BuildContext context) {
@@ -221,8 +327,44 @@ class _PrescriptionCard extends StatelessWidget {
               'Recorded ${_formatDate(prescription.createdAt)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onBuildPlan,
+              icon: const Icon(Icons.add_task),
+              label: const Text('Build care plan'),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CarePlanCard extends StatelessWidget {
+  const _CarePlanCard({required this.plan, required this.onTap});
+
+  final CarePlan plan;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: plan.status == CarePlanStatus.active
+              ? SukunColors.sukunBlue
+              : SukunColors.mist,
+          foregroundColor: plan.status == CarePlanStatus.active
+              ? Colors.white
+              : SukunColors.deepTide,
+          child: Text('${plan.version}'),
+        ),
+        title: Text(plan.name),
+        subtitle: Text(
+          'Version ${plan.version} · ${plan.status.label} · starts ${_formatDate(plan.startDate)}',
+        ),
+        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
