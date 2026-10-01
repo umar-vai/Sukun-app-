@@ -10,7 +10,8 @@ For Codex/developers, read these files in order:
 
 1. [`AGENTS.md`](./AGENTS.md) — non-negotiable development and brand rules.
 2. [`CODEX_START_HERE.md`](./CODEX_START_HERE.md) — complete product specification, architecture, data model, UI, AI workflow, security, roadmap, and implementation order.
-3. [`IMPLEMENTATION_CHECKLIST.md`](./IMPLEMENTATION_CHECKLIST.md) — practical execution checklist.
+3. [`docs/AI_FAILOVER_ARCHITECTURE.md`](./docs/AI_FAILOVER_ARCHITECTURE.md) — mandatory silent four-key Gemini failover architecture for Prescription → Action generation.
+4. [`IMPLEMENTATION_CHECKLIST.md`](./IMPLEMENTATION_CHECKLIST.md) — practical execution checklist.
 
 ## Product in one sentence
 
@@ -23,7 +24,25 @@ For Codex/developers, read these files in order:
 - Firebase Cloud Messaging — push notifications
 - Local notifications — scheduled reminders on device
 - External URLs/CDN/YouTube — audio, video, PDF media sources
-- OpenAI or Gemini API — prescription text → suggested structured actions, always requiring human review before publish
+- Gemini API — prescription text → suggested structured actions, always requiring human review before publish
+- Server-side AI Router — four Gemini API key slots with silent failover and manual fallback if all are unavailable
+
+## AI availability rule
+
+The Super Admin must not see Gemini quota/credit/rate-limit/key errors during normal use.
+
+Prescription → Action generation goes through a server-side `AiRouter` / `GeminiKeyPool` using these secret slots:
+
+```text
+GEMINI_API_KEY_1
+GEMINI_API_KEY_2
+GEMINI_API_KEY_3
+GEMINI_API_KEY_4
+```
+
+If an earlier slot is quota-exhausted or unavailable, the backend automatically tries the next healthy slot. If all four are unavailable, the original prescription remains safe and the workflow falls back to the manual Action Builder without exposing raw provider/quota details.
+
+Do not assume four keys automatically mean four independent quota pools; production configuration must verify quota scope and comply with provider terms. Full implementation requirements are in `docs/AI_FAILOVER_ARCHITECTURE.md`.
 
 ## Brand source of truth
 
