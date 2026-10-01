@@ -8,7 +8,8 @@ Before writing code, read these files completely in this order:
 
 1. `CODEX_START_HERE.md` — master product and engineering specification.
 2. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
-3. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
+3. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
+4. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
 
 ## 2. Non-negotiable product rules
 
@@ -27,6 +28,9 @@ Before writing code, read these files completely in this order:
 10. Never infer medicine/supplement dosage, exact times, religious rulings, or missing instructions. Mark ambiguous fields as `needs_review`.
 11. AI availability must not depend on a single Gemini credential. Implement the four-key server-side Gemini failover router described in `docs/AI_FAILOVER_ARCHITECTURE.md`.
 12. Gemini quota/credit/rate-limit/provider errors must never be exposed to the Super Admin in normal UI. The backend must fail over automatically and silently.
+13. The app must have a **dedicated top-level Islamic Resources area**, separate from patient-care screens. Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
+14. Qur'an/Hadith canonical text and references must come from verified approved sources. Never treat canonical religious text as generic AI-generated copy.
+15. Reuse a single canonical resource across public browsing and patient plans through resource IDs/relations; do not duplicate the same content per patient.
 
 ## 3. Brand rules — mandatory
 
@@ -114,6 +118,13 @@ Keep these concepts separate:
 
 Never overwrite clinical history. Use versioning/archive/inactive status.
 
+Resource principles:
+
+- One canonical `content_item` should be reusable in public Resources and in patient plans.
+- Link plan actions to resources by relation/ID instead of copying content.
+- Resource visibility must support `public`, `patient_only`, `assigned_only`, and `staff_only`.
+- Qur'an/Hadith source/reference/verification metadata must be preserved.
+
 ## 6. Media rules
 
 A `content_item` may reference:
@@ -138,6 +149,7 @@ Do not scrape/copy third-party media into our storage unless Sukun Life has perm
 - Temporary credentials must force a secure reset/change flow.
 - Sensitive practitioner/internal notes must support `staff_only` visibility.
 - Do not send raw prescription text to third-party analytics/error trackers.
+- Public resource queries must never leak `assigned_only` or `staff_only` content.
 
 ## 8. Implementation discipline
 
@@ -145,7 +157,8 @@ Do not scrape/copy third-party media into our storage unless Sukun Life has perm
 - Do not start by cloning Ruqyah Pro.
 - The unique Sukun flow is: Patient → Prescription → Approved Actions → Reminder → Completion → Progress.
 - Keep code modular and testable.
-- Add tests for RLS, parsing validation, AI failover, task generation, and notification scheduling.
+- Add tests for RLS, parsing validation, AI failover, task generation, notification scheduling, and resource visibility.
+- Build the dedicated Islamic Resources hub during the Content CMS/resource phase, following `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - Update documentation when architecture changes.
 
 ## 9. Do not silently change scope
