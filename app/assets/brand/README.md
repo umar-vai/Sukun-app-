@@ -1,7 +1,7 @@
 # Sukun Life brand assets
 
-Place the official, client-supplied logo at:
+The official, client-supplied logo is stored at:
 
 `assets/brand/sukunlife_logo.png`
 
-Do not add a recreated, recolored, stretched, cropped, or AI-generated logo. The app intentionally uses a text-only fallback until the approved artwork is supplied.
+The checked-in PNG is the client-supplied source file and must remain unmodified. Do not add a recreated, recolored, stretched, cropped, or AI-generated logo.

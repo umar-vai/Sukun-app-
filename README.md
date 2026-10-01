@@ -108,7 +108,7 @@ Phase 1 adds the initial PostgreSQL schema and explicit Data API security:
 - an idempotent, ownership-checked `record_task_completion` database function
 - pgTAP tests for patient isolation and resource visibility
 
-The official logo has not been supplied. Add the unmodified approved file at `app/assets/brand/sukunlife_logo.png`; the app uses a text-only fallback until then.
+The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 
 ### Run the app
 

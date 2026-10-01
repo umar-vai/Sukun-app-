@@ -7,7 +7,7 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [x] Create Flutter app in `app/`
 - [x] Set Android/iOS application identifiers
 - [x] Add brand asset directories
-- [ ] Add official Sukun Life logo supplied by client
+- [x] Add official Sukun Life logo supplied by client
 - [x] Configure Poppins, Anek Bangla, Hind Siliguri, Tiro Bangla
 - [x] Add brand design tokens from `AGENTS.md`
 - [x] Set up routing
