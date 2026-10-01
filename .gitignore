@@ -1,0 +1,55 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+*.jks
+*.keystore
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Runner.xcworkspace/xcuserdata/
+**/ios/Runner.xcodeproj/xcuserdata/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Firebase local sensitive/generated files where applicable
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Coverage/logs
+coverage/
+*.log
