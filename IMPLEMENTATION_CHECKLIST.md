@@ -20,31 +20,31 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 
 ## Phase 1 — Database + security
 
-- [ ] `profiles`
-- [ ] `user_roles`
-- [ ] `patients`
-- [ ] `prescriptions`
-- [ ] `care_plans`
-- [ ] `plan_actions`
-- [ ] `task_instances`
-- [ ] `task_completions`
-- [ ] `content_categories`
-- [ ] `content_items`
-- [ ] `content_tags`
-- [ ] `content_item_tags`
-- [ ] `plan_action_resources`
-- [ ] `notification_devices`
-- [ ] `admin_audit_logs`
-- [ ] Add resource visibility states: `public`, `patient_only`, `assigned_only`, `staff_only`
-- [ ] Add source/reference/verification fields required for Qur'an/Hadith-sensitive content
-- [ ] Enable RLS on sensitive tables
-- [ ] Patient can only read own data
-- [ ] Patient cannot mutate plan rules/content
-- [ ] Public/guest resource queries cannot read assigned/staff-only content
-- [ ] Patient can read only resources allowed by public/patient/assignment rules
-- [ ] Super Admin access is server-verified
-- [ ] Add SQL RLS isolation tests
-- [ ] Add resource-visibility authorization tests
+- [x] `profiles`
+- [x] `user_roles`
+- [x] `patients`
+- [x] `prescriptions`
+- [x] `care_plans`
+- [x] `plan_actions`
+- [x] `task_instances`
+- [x] `task_completions`
+- [x] `content_categories`
+- [x] `content_items`
+- [x] `content_tags`
+- [x] `content_item_tags`
+- [x] `plan_action_resources`
+- [x] `notification_devices`
+- [x] `admin_audit_logs`
+- [x] Add resource visibility states: `public`, `patient_only`, `assigned_only`, `staff_only`
+- [x] Add source/reference/verification fields required for Qur'an/Hadith-sensitive content
+- [x] Enable RLS on sensitive tables
+- [x] Patient can only read own data
+- [x] Patient cannot mutate plan rules/content
+- [x] Public/guest resource queries cannot read assigned/staff-only content
+- [x] Patient can read only resources allowed by public/patient/assignment rules
+- [x] Super Admin access is server-verified
+- [x] Add SQL RLS isolation tests
+- [x] Add resource-visibility authorization tests
 
 ## Phase 2 — Admin core flow
 

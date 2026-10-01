@@ -97,6 +97,17 @@ Phase 0 provides an Android/iOS Flutter scaffold in `app/` with:
 - compile-time Supabase configuration
 - a Supabase local-development/migration structure
 
+Phase 1 adds the initial PostgreSQL schema and explicit Data API security:
+
+- versioned prescriptions and care plans
+- recurring plan actions, generated task instances, and append-only completion events
+- reusable content resources with public/patient/assigned/staff visibility
+- source-verification requirements for published Qur'an/Hadith records
+- RLS on every public application table
+- database-verified super-admin authorization and patient isolation
+- an idempotent, ownership-checked `record_task_completion` database function
+- pgTAP tests for patient isolation and resource visibility
+
 The official logo has not been supplied. Add the unmodified approved file at `app/assets/brand/sukunlife_logo.png`; the app uses a text-only fallback until then.
 
 ### Run the app
@@ -120,3 +131,13 @@ dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 ```
+
+Database tests require Docker Desktop or Podman:
+
+```bash
+npx supabase start
+npx supabase test db
+npx supabase db lint --local
+```
+
+Public Auth signup is disabled in local Supabase configuration. Patient and admin accounts must be provisioned by a trusted server/admin workflow; apply the same setting to the hosted Supabase project.
