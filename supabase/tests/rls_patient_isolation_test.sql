@@ -116,19 +116,24 @@ insert into public.plan_actions (
   );
 
 insert into public.task_instances (
-  id, plan_action_id, patient_id, scheduled_at
+  id, plan_action_id, patient_id, occurrence_date, scheduled_at,
+  timezone_offset_minutes
 ) values
   (
     '50000000-0000-4000-8000-000000000001',
     '40000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000001',
-    now()
+    current_date,
+    now(),
+    0
   ),
   (
     '50000000-0000-4000-8000-000000000002',
     '40000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000002',
-    now()
+    current_date,
+    now(),
+    0
   );
 
 select ok(

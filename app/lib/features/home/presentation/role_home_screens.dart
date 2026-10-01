@@ -39,64 +39,6 @@ class GuestHomeScreen extends StatelessWidget {
   }
 }
 
-class PatientHomeScreen extends StatelessWidget {
-  const PatientHomeScreen({super.key, this.displayName});
-
-  final String? displayName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Today')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(
-            'Assalamu Alaikum${displayName == null ? '' : ', $displayName'}',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('TODAY', style: Theme.of(context).textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  const Text('Your approved plan actions will appear here.'),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            label: 'My Plan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            label: 'Resources',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            label: 'Progress',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key, this.displayName});
 

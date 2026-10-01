@@ -129,9 +129,24 @@ Phase 2 completes the Super Admin core patient and care-plan workflow:
 - audited, idempotent workflow functions that retain RLS and verify the
   database-backed Super Admin role
 
-Phase 3 is next: patient login and forced first-login credential change,
-patient home, generated daily task instances, Done/Snooze/Skip completion,
-progress, and an offline-safe completion queue.
+Phase 3 is in progress. The first patient-care milestone now provides:
+
+- patient sign-in using Sukun Patient ID, international phone number, or an
+  administrator email
+- generic credential errors that do not expose patient-code-to-phone lookups
+- mandatory first-login replacement of temporary credentials
+- a Today screen generated only from the patient's active approved plan
+- local-date task occurrences without inventing an exact time when none was
+  prescribed
+- next-action and daily completion progress cards
+- idempotent Done, Snooze, and Skip events through the protected completion RPC
+- My Plan and patient-visible prescription views
+- RLS-backed isolation so one patient cannot read or update another patient's
+  care activity
+
+The remaining Phase 3 work is linked-resource opening, multi-day
+progress/adherence, the Super Admin progress view, and an offline-safe local
+completion queue.
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 

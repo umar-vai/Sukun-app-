@@ -65,17 +65,17 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 
 ## Phase 3 — Patient core flow
 
-- [ ] Patient login
-- [ ] First-login credential change
-- [ ] Patient home
-- [ ] Next action card
-- [ ] Today's tasks
-- [ ] My Plan
-- [ ] Prescription view
+- [x] Patient login
+- [x] First-login credential change
+- [x] Patient home
+- [x] Next action card
+- [x] Today's tasks
+- [x] My Plan
+- [x] Prescription view
 - [ ] Open linked resource from a plan task
-- [ ] Done
-- [ ] Snooze
-- [ ] Skip
+- [x] Done
+- [x] Snooze
+- [x] Skip
 - [ ] Progress screen
 - [ ] Offline-safe completion queue
 
@@ -249,11 +249,11 @@ The MVP is accepted only if this works end to end:
 - [x] Admin creates prescription
 - [x] Admin creates/reviews actions
 - [x] Admin publishes plan
-- [ ] Patient logs in
-- [ ] Patient sees only own plan
+- [x] Patient logs in
+- [x] Patient sees only own plan
 - [ ] Reminder appears
-- [ ] Patient marks a task complete
-- [ ] Backend records completion
+- [x] Patient marks a task complete
+- [x] Backend records completion
 - [ ] Admin sees updated progress
 - [ ] Admin can publish/edit a resource without app-store release
 - [ ] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
@@ -262,6 +262,6 @@ The MVP is accepted only if this works end to end:
 - [ ] Guest cannot access restricted/assigned/staff-only resources
 - [ ] Qur'an/Hadith canonical content cannot be published as unsourced generic AI output
 - [ ] External audio/video/PDF opens correctly
-- [ ] Another patient cannot access the first patient's data
+- [x] Another patient cannot access the first patient's data
 - [ ] AI still generates draft actions when earlier Gemini key slots are quota-exhausted and a later slot is healthy
 - [ ] Raw Gemini quota/credit/key errors never appear to the Super Admin

@@ -850,13 +850,22 @@ updated_at timestamptz
 id uuid pk
 plan_action_id uuid
 patient_id uuid
-scheduled_at timestamptz
+occurrence_date date
+scheduled_at timestamptz nullable
+timezone_offset_minutes integer
 status text
 completed_at timestamptz nullable
 snoozed_until timestamptz nullable
 skip_reason text nullable
 created_at timestamptz
 ```
+
+`occurrence_date` is the patient-local calendar day represented by the task.
+`scheduled_at` must remain null when the approved action does not contain an
+explicit exact time; a technical task generator must never invent a clinical
+schedule time. `timezone_offset_minutes` records the offset used when converting
+an explicitly supplied local time into an instant. Notification timezone and
+delivery configuration remain separate concerns.
 
 ## `content_items`
 

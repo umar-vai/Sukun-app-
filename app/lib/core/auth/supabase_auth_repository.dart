@@ -18,7 +18,7 @@ final class SupabaseAuthRepository implements AuthRepository {
 
       final profile = await _client
           .from('profiles')
-          .select('display_name')
+          .select('display_name,requires_credential_change')
           .eq('id', user.id)
           .maybeSingle();
       final roleRows = await _client
@@ -39,8 +39,83 @@ final class SupabaseAuthRepository implements AuthRepository {
         role: role,
         userId: user.id,
         displayName: profile?['display_name'] as String?,
+        requiresCredentialChange:
+            profile?['requires_credential_change'] as bool? ?? false,
       );
     });
+  }
+
+  @override
+  Future<void> signIn({
+    required String identifier,
+    required String password,
+  }) async {
+    final normalized = identifier.trim();
+    try {
+      if (normalized.startsWith('+')) {
+        await _client.auth.signInWithPassword(
+          phone: normalized.replaceAll(RegExp(r'[\s()-]'), ''),
+          password: password,
+        );
+        return;
+      }
+      if (normalized.contains('@')) {
+        await _client.auth.signInWithPassword(
+          email: normalized,
+          password: password,
+        );
+        return;
+      }
+
+      final response = await _client.functions.invoke(
+        'patient-sign-in',
+        body: {'patient_code': normalized, 'password': password},
+      );
+      final body = response.data;
+      if (body is! Map || body['refresh_token'] is! String) {
+        throw const AuthenticationException(
+          'Patient ID or password is incorrect.',
+        );
+      }
+      await _client.auth.setSession(body['refresh_token'] as String);
+    } on FunctionException catch (error) {
+      final details = error.details;
+      if (details is Map && details['message'] is String) {
+        throw AuthenticationException(details['message'] as String);
+      }
+      throw const AuthenticationException(
+        'Sign in is temporarily unavailable. Please try again.',
+      );
+    } on AuthException {
+      throw const AuthenticationException(
+        'Patient ID, phone/email, or password is incorrect.',
+      );
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _client.functions.invoke(
+        'patient-change-password',
+        body: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        },
+      );
+      await _client.auth.refreshSession();
+    } on FunctionException catch (error) {
+      final details = error.details;
+      if (details is Map && details['message'] is String) {
+        throw AuthenticationException(details['message'] as String);
+      }
+      throw const AuthenticationException(
+        'Password change is temporarily unavailable. Please try again.',
+      );
+    }
   }
 
   @override

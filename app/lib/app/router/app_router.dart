@@ -5,11 +5,16 @@ import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
+import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_profile_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_progress_screen.dart';
 import 'package:sukun_life/features/patients/presentation/create_patient_screen.dart';
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
@@ -29,6 +34,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
+      final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated && (isPatientRoute || isAdminRoute)) {
         return '/login';
@@ -38,6 +44,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (isPatientRoute && !session.isPatient) {
         return session.isSuperAdmin ? '/admin/dashboard' : '/';
+      }
+      if (session.isPatient && session.requiresCredentialChange) {
+        return isCredentialRoute ? null : '/patient/change-password';
+      }
+      if (isCredentialRoute && !session.requiresCredentialChange) {
+        return '/patient/home';
       }
       if (isLoginRoute && session.isPatient) return '/patient/home';
       if (isLoginRoute && session.isSuperAdmin) return '/admin/dashboard';
@@ -59,6 +71,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patient/home',
         builder: (context, state) => PatientHomeScreen(
+          displayName: _patientSession(session)?.displayName,
+        ),
+      ),
+      GoRoute(
+        path: '/patient/change-password',
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/patient/plan',
+        builder: (context, state) => const MyPlanScreen(),
+      ),
+      GoRoute(
+        path: '/patient/progress',
+        builder: (context, state) => const PatientProgressScreen(),
+      ),
+      GoRoute(
+        path: '/patient/profile',
+        builder: (context, state) => PatientProfileScreen(
           displayName: _patientSession(session)?.displayName,
         ),
       ),
