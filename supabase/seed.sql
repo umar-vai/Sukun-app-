@@ -1,0 +1,2 @@
+-- Development seed data is intentionally empty.
+-- Never add production credentials or sensitive prescription data here.

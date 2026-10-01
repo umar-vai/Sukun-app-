@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/widgets/brand_logo.dart';
+
+class GuestHomeScreen extends StatelessWidget {
+  const GuestHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const SukunLifeLogo(height: 34)),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Calm support for faith and care',
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Browse approved Islamic resources, or sign in to view your personal care plan.',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 28),
+          FilledButton(
+            onPressed: () => context.go('/login'),
+            child: const Text('Patient or Admin sign in'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => context.go('/resources'),
+            child: const Text('Explore Islamic Resources'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PatientHomeScreen extends StatelessWidget {
+  const PatientHomeScreen({super.key, this.displayName});
+
+  final String? displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Today')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Assalamu Alaikum${displayName == null ? '' : ', $displayName'}',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('TODAY', style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  const Text('Your approved plan actions will appear here.'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+          NavigationDestination(
+            icon: Icon(Icons.checklist_outlined),
+            label: 'My Plan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            label: 'Resources',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            label: 'Progress',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminHomeScreen extends StatelessWidget {
+  const AdminHomeScreen({super.key, this.displayName});
+
+  final String? displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Admin Dashboard')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Welcome${displayName == null ? '' : ', $displayName'}',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(20),
+              leading: const CircleAvatar(
+                backgroundColor: SukunColors.mist,
+                child: Icon(Icons.people_outline),
+              ),
+              title: const Text('Patients and care plans'),
+              subtitle: const Text(
+                'The secure patient management flow is built in the next milestone.',
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            label: 'Patients',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.assignment_outlined),
+            label: 'Plans',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.library_books_outlined),
+            label: 'Content',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.assessment_outlined),
+            label: 'Reports',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+}

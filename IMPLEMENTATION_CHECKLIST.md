@@ -4,19 +4,19 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 
 ## Phase 0 — Project foundation
 
-- [ ] Create Flutter app in `app/`
-- [ ] Set Android/iOS application identifiers
-- [ ] Add brand asset directories
+- [x] Create Flutter app in `app/`
+- [x] Set Android/iOS application identifiers
+- [x] Add brand asset directories
 - [ ] Add official Sukun Life logo supplied by client
-- [ ] Configure Poppins, Anek Bangla, Hind Siliguri, Tiro Bangla
-- [ ] Add brand design tokens from `AGENTS.md`
-- [ ] Set up routing
-- [ ] Set up chosen state management
-- [ ] Connect Supabase using environment configuration
-- [ ] Create Supabase migration structure
-- [ ] Create guest/patient/super_admin role model
-- [ ] Implement role-aware app shell
-- [ ] Add basic error/loading/empty states
+- [x] Configure Poppins, Anek Bangla, Hind Siliguri, Tiro Bangla
+- [x] Add brand design tokens from `AGENTS.md`
+- [x] Set up routing
+- [x] Set up chosen state management
+- [x] Connect Supabase using environment configuration
+- [x] Create Supabase migration structure
+- [x] Create guest/patient/super_admin role model
+- [x] Implement role-aware app shell
+- [x] Add basic error/loading/empty states
 
 ## Phase 1 — Database + security
 

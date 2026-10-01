@@ -84,3 +84,39 @@ Do not assume four keys automatically mean four independent quota pools; product
 The app must visually follow the official Sukun Life identity and website: https://www.sukunlife.com/
 
 Never redraw or modify the Sukun Life logo. Use only the official supplied logo asset. Full rules are in `CODEX_START_HERE.md` and `AGENTS.md`.
+
+## Current implementation
+
+Phase 0 provides an Android/iOS Flutter scaffold in `app/` with:
+
+- application identifier `com.sukunlife.app`
+- Riverpod state management and GoRouter navigation
+- guest, patient, and super-admin session roles
+- server-verified-role-aware route shells
+- Sukun Life color and typography tokens
+- compile-time Supabase configuration
+- a Supabase local-development/migration structure
+
+The official logo has not been supplied. Add the unmodified approved file at `app/assets/brand/sukunlife_logo.png`; the app uses a text-only fallback until then.
+
+### Run the app
+
+```bash
+cd app
+flutter pub get
+flutter run \
+  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=YOUR_CLIENT_SAFE_PUBLISHABLE_KEY \
+  --dart-define=FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+```
+
+Omit the `dart-define` values for a public-only local preview. Gemini credentials, the Supabase service-role key, and Firebase server credentials must never be passed to Flutter.
+
+### Verify
+
+```bash
+cd app
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+```
