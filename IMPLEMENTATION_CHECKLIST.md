@@ -1,6 +1,6 @@
 # Sukun Life App — Implementation Checklist
 
-Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, and `docs/AI_FAILOVER_ARCHITECTURE.md`.
+Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, `docs/AI_FAILOVER_ARCHITECTURE.md`, and `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 0 — Project foundation
 
@@ -30,13 +30,21 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] `task_completions`
 - [ ] `content_categories`
 - [ ] `content_items`
+- [ ] `content_tags`
+- [ ] `content_item_tags`
+- [ ] `plan_action_resources`
 - [ ] `notification_devices`
 - [ ] `admin_audit_logs`
+- [ ] Add resource visibility states: `public`, `patient_only`, `assigned_only`, `staff_only`
+- [ ] Add source/reference/verification fields required for Qur'an/Hadith-sensitive content
 - [ ] Enable RLS on sensitive tables
 - [ ] Patient can only read own data
 - [ ] Patient cannot mutate plan rules/content
+- [ ] Public/guest resource queries cannot read assigned/staff-only content
+- [ ] Patient can read only resources allowed by public/patient/assignment rules
 - [ ] Super Admin access is server-verified
 - [ ] Add SQL RLS isolation tests
+- [ ] Add resource-visibility authorization tests
 
 ## Phase 2 — Admin core flow
 
@@ -49,6 +57,7 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] Create prescription record
 - [ ] Manual plan builder
 - [ ] Add/edit/reorder action
+- [ ] Link an existing `content_item` to a plan action without duplicating the resource
 - [ ] Plan preview as patient
 - [ ] Publish plan
 - [ ] Plan version history
@@ -63,6 +72,7 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] Today's tasks
 - [ ] My Plan
 - [ ] Prescription view
+- [ ] Open linked resource from a plan task
 - [ ] Done
 - [ ] Snooze
 - [ ] Skip
@@ -100,30 +110,95 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] Test all four unavailable → no quota error reaches Flutter, manual fallback remains usable
 - [ ] Test key secrets never appear in logs/API responses
 
-## Phase 5 — Content CMS
+## Phase 5 — Content CMS + Dedicated Islamic Resources
 
-- [ ] Public/assigned content visibility
-- [ ] Audio
-- [ ] Video/YouTube
-- [ ] PDF
-- [ ] Dua/Amal
-- [ ] Article/Guide
+Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
+
+### Resources information architecture
+
+- [ ] Build a dedicated top-level `Resources / ইসলামিক রিসোর্স` hub separate from patient-care screens
+- [ ] Qur'an section
+- [ ] Hadith section
+- [ ] Dua & Azkar section
+- [ ] Ruqyah section
+- [ ] Books & PDFs section
+- [ ] Articles & Guides section
+- [ ] Audio filter/category
+- [ ] Video filter/category
+- [ ] Search/filter/category navigation
+
+### Qur'an
+
+- [ ] Surah/category structure
+- [ ] Surah details / Ayah list architecture
+- [ ] Selected/Ruqyah Ayat collections
+- [ ] Arabic text field from verified source only
+- [ ] Approved Bangla translation + source metadata
+- [ ] Surah/Ayah reference metadata
+- [ ] Verification status / reviewer metadata
+- [ ] Never generate or rewrite canonical Qur'an text with AI
+
+### Hadith
+
+- [ ] Topic-wise Hadith browsing
+- [ ] Hadith detail screen
+- [ ] Collection/book/reference metadata
+- [ ] Hadith number where available
+- [ ] Translation/source metadata
+- [ ] Grade/status field when provided by approved source
+- [ ] Verification status / reviewer metadata
+- [ ] Never fabricate Hadith wording, narrator, source, grade, or numbering with AI
+
+### Dua & Azkar
+
+- [ ] Morning Azkar
+- [ ] Evening Azkar
+- [ ] Masnun Dua categories
+- [ ] Protection/Sleep/Travel/etc. categories as approved
+- [ ] Arabic / approved transliteration / Bangla translation fields where used
+- [ ] Source/reference metadata
+- [ ] Do not invent repeat counts or religious instructions
+
+### Ruqyah resources
+
+- [ ] Ruqyah Ayat
+- [ ] Ruqyah Audio
+- [ ] Self-Ruqyah Guide
+- [ ] Approved topic/category structure (Evil Eye/Jinn/Sihr/etc.)
+- [ ] Keep general Ruqyah resources separate from personalized patient prescriptions/plans
+
+### Books / PDF / Articles
+
 - [ ] Book + chapters
-- [ ] Draft/published/archived lifecycle
-- [ ] Admin add/edit/archive content
+- [ ] PDF resources
+- [ ] Article/Guide
+- [ ] Author/publisher/source/rights metadata where applicable
+- [ ] External PDF URLs by default
+
+### CMS lifecycle and reuse
+
+- [ ] `draft` / `review` / `verified` / `published` / `archived` workflow where applicable
+- [ ] Public/patient/assigned/staff-only visibility
+- [ ] Super Admin create/edit/preview/verify/publish/unpublish/archive
+- [ ] Link a canonical resource into one or many patient plans using `content_id`
+- [ ] Do not create duplicate resource copies per patient
 - [ ] Patient/guest resource browsing
 - [ ] Search/filter/category
 - [ ] Favorites/bookmarks if included in MVP
+- [ ] RLS prevents unpublished/restricted resources from leaking through search/API
 
 ## Phase 6 — External media
 
 - [ ] Direct audio URL playback
 - [ ] Background audio
 - [ ] Lock-screen audio controls
+- [ ] Resume position
+- [ ] Playback speed where appropriate
 - [ ] YouTube playback via supported approach
 - [ ] External PDF viewer
 - [ ] Invalid/dead URL handling
 - [ ] Respect content rights/licensing
+- [ ] Never extract YouTube audio into raw MP3
 
 ## Phase 7 — Notifications
 
@@ -143,7 +218,7 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] Calculation method settings
 - [ ] Qibla direction
 - [ ] Compass calibration states
-- [ ] Verified Quran/Hadith resources only when approved
+- [ ] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
 
 ## Phase 9 — Quality + release
 
@@ -151,10 +226,13 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [ ] Flutter tests pass
 - [ ] RLS tests pass
 - [ ] Patient isolation manually verified
+- [ ] Resource visibility/security tests pass
+- [ ] Qur'an/Hadith publication cannot bypass required verification rules
 - [ ] AI failover integration tests pass
 - [ ] No Gemini quota/provider/key details are exposed in normal admin UX
 - [ ] Accessibility/contrast review
 - [ ] Bangla typography review
+- [ ] Qur'an/Hadith typography/readability review
 - [ ] Offline/reconnect tests
 - [ ] Crash reporting
 - [ ] Analytics without sensitive prescription text
@@ -178,6 +256,11 @@ The MVP is accepted only if this works end to end:
 - [ ] Backend records completion
 - [ ] Admin sees updated progress
 - [ ] Admin can publish/edit a resource without app-store release
+- [ ] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
+- [ ] Qur'an, Hadith, Dua & Azkar, Ruqyah, Books/PDF, Articles/Guides, Audio and Video are represented in the resource architecture
+- [ ] A single canonical resource can be linked to a patient's plan without duplicating it
+- [ ] Guest cannot access restricted/assigned/staff-only resources
+- [ ] Qur'an/Hadith canonical content cannot be published as unsourced generic AI output
 - [ ] External audio/video/PDF opens correctly
 - [ ] Another patient cannot access the first patient's data
 - [ ] AI still generates draft actions when earlier Gemini key slots are quota-exhausted and a later slot is healthy
