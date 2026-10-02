@@ -40,9 +40,9 @@ insert into public.care_plans (
   1,
   'Resource assignment plan',
   current_date,
-  'active',
-  now(),
-  '00000000-0000-4000-8000-000000000101',
+  'draft',
+  null,
+  null,
   '00000000-0000-4000-8000-000000000101'
 );
 insert into public.plan_actions (
@@ -199,6 +199,12 @@ insert into public.plan_action_resources (
   '71000000-0000-4000-8000-000000000103',
   '00000000-0000-4000-8000-000000000101'
 );
+
+update public.care_plans
+set status = 'active',
+    published_at = now(),
+    published_by = '00000000-0000-4000-8000-000000000101'
+where id = '30000000-0000-4000-8000-000000000101';
 
 insert into public.content_tags (id, name, slug, created_by) values
   (
