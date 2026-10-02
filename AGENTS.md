@@ -7,10 +7,11 @@ This file contains mandatory instructions for Codex and all coding agents workin
 Before writing code, read these files completely in this order:
 
 1. `CODEX_START_HERE.md` — master product and engineering specification.
-2. `docs/FINAL_UI_REFERENCE.md` — mandatory final visual target and UI acceptance contract.
-3. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
-4. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
-5. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
+2. `docs/PRODUCTION_ENVIRONMENT.md` — mandatory production Supabase state, deployment context, and change-control rules.
+3. `docs/FINAL_UI_REFERENCE.md` — mandatory final visual target and UI acceptance contract.
+4. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
+5. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
+6. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
 
 ## 2. Non-negotiable product rules
 
