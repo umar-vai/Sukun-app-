@@ -41,6 +41,8 @@ Thumbs.db
 **/.env
 **/.env.*
 !**/.env.example
+app/config/*.json
+!app/config/*.example.json
 
 # Firebase local sensitive/generated files where applicable
 **/google-services.json

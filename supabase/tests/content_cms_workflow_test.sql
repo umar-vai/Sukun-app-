@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-000000000201', 'cms-admin@sukun.test'),
@@ -245,6 +245,36 @@ select throws_ok(
   '22023',
   'Verified Hadith requires collection, book, and Hadith number.',
   'Hadith cannot verify without collection, book, and number'
+);
+
+select throws_ok(
+  $$insert into public.content_items (
+    type, title, slug, media_source_type, media_url, visibility, status,
+    created_by, updated_by, published_at
+  ) values (
+    'audio', 'Unlicensed fixture', 'unlicensed-media-fixture',
+    'direct_audio_url', 'https://cdn.example.test/audio.mp3', 'public',
+    'published',
+    '00000000-0000-4000-8000-000000000201',
+    '00000000-0000-4000-8000-000000000201', now()
+  )$$,
+  '23514',
+  'new row for relation "content_items" violates check constraint "content_items_published_media_rights"',
+  'published external media requires a rights or licensing note'
+);
+
+select lives_ok(
+  $$insert into public.content_items (
+    type, title, slug, media_source_type, media_url, rights_note,
+    visibility, status, created_by, updated_by, published_at
+  ) values (
+    'audio', 'Licensed fixture', 'licensed-media-fixture',
+    'direct_audio_url', 'https://cdn.example.test/audio.mp3',
+    'Licensed test fixture; not production content.', 'public', 'published',
+    '00000000-0000-4000-8000-000000000201',
+    '00000000-0000-4000-8000-000000000201', now()
+  )$$,
+  'published external media accepts documented rights metadata'
 );
 
 reset role;

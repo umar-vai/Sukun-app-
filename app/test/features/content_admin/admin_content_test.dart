@@ -59,6 +59,26 @@ void main() {
     );
   });
 
+  test('external media validation requires rights metadata', () {
+    expect(
+      _input(
+        type: 'audio',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://cdn.example.test/audio.mp3',
+      ).validate(),
+      contains('rights or licensing note'),
+    );
+    expect(
+      _input(
+        type: 'audio',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://cdn.example.test/audio.mp3',
+        rightsNote: 'Licensed by the publisher.',
+      ).validate(),
+      isNull,
+    );
+  });
+
   testWidgets('admin CMS lists canonical state, visibility, and status', (
     tester,
   ) async {
@@ -92,6 +112,8 @@ SaveContentInput _input({
   int? surahNumber,
   int? ayahNumber,
   String? mediaSourceType,
+  String? mediaUrl,
+  String? rightsNote,
 }) => SaveContentInput(
   type: type,
   title: 'Fixture',
@@ -103,6 +125,8 @@ SaveContentInput _input({
   surahNumber: surahNumber,
   ayahNumber: ayahNumber,
   mediaSourceType: mediaSourceType,
+  mediaUrl: mediaUrl,
+  rightsNote: rightsNote,
 );
 
 final class _FakeContentAdminRepository implements ContentAdminRepository {

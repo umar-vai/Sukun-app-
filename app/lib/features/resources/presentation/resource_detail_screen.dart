@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/external_resource_launcher.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
 class ResourceDetailScreen extends ConsumerStatefulWidget {
   const ResourceDetailScreen({super.key, required this.resourceId});
@@ -29,14 +32,41 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 
   void _reload() => setState(() => _resource = _load());
 
-  Future<void> _openExternal(ContentResource resource) async {
+  Future<void> _openMedia(ContentResource resource) async {
+    final target = resolveResourceMedia(resource.linkedResource);
+    if (target == null) {
+      _showError('This resource does not have a valid secure media link.');
+      return;
+    }
+    if (target.kind == ResourceMediaKind.audio) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) =>
+              AudioPlayerScreen(resource: resource.linkedResource),
+        ),
+      );
+      return;
+    }
+    if (target.kind == ResourceMediaKind.youtube) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) =>
+              SukunYoutubePlayerScreen(resource: resource.linkedResource),
+        ),
+      );
+      return;
+    }
     try {
       await ref.read(resourceLauncherProvider).open(resource.linkedResource);
     } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      _showError(error.toString());
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -102,11 +132,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 label: 'Reference',
                 value: resource.referenceText ?? resource.sourceReference,
               ),
+              _Section(label: 'Rights & licensing', value: resource.rightsNote),
               if (resource.linkedResource.canOpen) ...[
                 const SizedBox(height: 24),
                 FilledButton.icon(
-                  onPressed: () => _openExternal(resource),
-                  icon: const Icon(Icons.open_in_new),
+                  onPressed: () => _openMedia(resource),
+                  icon: Icon(_openIcon(resource.mediaSourceType)),
                   label: Text(_openLabel(resource.mediaSourceType)),
                 ),
               ],
@@ -151,8 +182,16 @@ String _typeLabel(String type) => type
     .join(' ');
 
 String _openLabel(String? mediaType) => switch (mediaType) {
-  'direct_audio_url' => 'Open audio',
-  'direct_video_url' || 'youtube' => 'Open video',
-  'external_pdf' => 'Open PDF',
+  'direct_audio_url' => 'Play audio',
+  'youtube' => 'Play video',
+  'direct_video_url' => 'Open video in device player',
+  'external_pdf' => 'Open PDF in device viewer',
   _ => 'Open external resource',
+};
+
+IconData _openIcon(String? mediaType) => switch (mediaType) {
+  'direct_audio_url' => Icons.play_arrow_rounded,
+  'youtube' || 'direct_video_url' => Icons.ondemand_video_outlined,
+  'external_pdf' => Icons.picture_as_pdf_outlined,
+  _ => Icons.open_in_new,
 };

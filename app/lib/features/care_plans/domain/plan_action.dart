@@ -83,6 +83,8 @@ class LinkedResource {
     this.mediaSourceType,
     this.mediaUrl,
     this.youtubeVideoId,
+    this.thumbnailUrl,
+    this.rightsNote,
   });
 
   final String id;
@@ -93,6 +95,8 @@ class LinkedResource {
   final String? mediaSourceType;
   final String? mediaUrl;
   final String? youtubeVideoId;
+  final String? thumbnailUrl;
+  final String? rightsNote;
 
   bool get canOpen {
     if (mediaSourceType == 'youtube') {
@@ -138,6 +142,8 @@ class PlanAction {
           mediaSourceType: item['media_source_type'] as String?,
           mediaUrl: item['media_url'] as String?,
           youtubeVideoId: item['youtube_video_id'] as String?,
+          thumbnailUrl: item['thumbnail_url'] as String?,
+          rightsNote: item['rights_note'] as String?,
         );
       }
     }

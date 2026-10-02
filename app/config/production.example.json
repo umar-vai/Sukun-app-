@@ -1,0 +1,6 @@
+{
+  "APP_ENVIRONMENT": "production",
+  "SUPABASE_URL": "https://vydfafumxptanpkmtrpr.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "REPLACE_WITH_CLIENT_SAFE_PUBLISHABLE_KEY",
+  "FIREBASE_PROJECT_ID": ""
+}

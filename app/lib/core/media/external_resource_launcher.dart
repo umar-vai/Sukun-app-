@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final resourceLauncherProvider = Provider<ResourceLauncher>(
@@ -31,20 +32,13 @@ final class ExternalResourceLauncher implements ResourceLauncher {
 }
 
 Uri? externalResourceUri(LinkedResource resource) {
-  if (resource.mediaSourceType == 'youtube') {
-    final videoId = resource.youtubeVideoId?.trim();
-    if (videoId == null ||
-        !RegExp(r'^[A-Za-z0-9_-]{6,20}$').hasMatch(videoId)) {
-      return null;
-    }
-    return Uri.https('www.youtube.com', '/watch', {'v': videoId});
+  final target = resolveResourceMedia(resource);
+  if (target?.kind == ResourceMediaKind.youtube) {
+    return Uri.https('www.youtube.com', '/watch', {
+      'v': target!.youtubeVideoId!,
+    });
   }
-
-  final value = resource.mediaUrl?.trim();
-  if (value == null || value.isEmpty) return null;
-  final uri = Uri.tryParse(value);
-  if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
-  return uri;
+  return target?.uri;
 }
 
 class ResourceOpenException implements Exception {

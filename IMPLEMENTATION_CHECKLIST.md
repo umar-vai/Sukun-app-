@@ -189,16 +189,16 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 6 — External media
 
-- [ ] Direct audio URL playback
-- [ ] Background audio
-- [ ] Lock-screen audio controls
-- [ ] Resume position
-- [ ] Playback speed where appropriate
-- [ ] YouTube playback via supported approach
-- [ ] External PDF viewer
-- [ ] Invalid/dead URL handling
-- [ ] Respect content rights/licensing
-- [ ] Never extract YouTube audio into raw MP3
+- [x] Direct audio URL playback
+- [x] Background audio
+- [x] Lock-screen audio controls
+- [x] Resume position
+- [x] Playback speed where appropriate
+- [x] YouTube playback via supported approach
+- [x] External PDF viewer
+- [x] Invalid/dead URL handling
+- [x] Respect content rights/licensing
+- [x] Never extract YouTube audio into raw MP3
 
 ## Phase 7 — Notifications
 

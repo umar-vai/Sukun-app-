@@ -411,6 +411,9 @@ class SaveContentInput {
         (mediaUrl == null || !mediaUrl!.trim().startsWith('https://'))) {
       return 'External media requires an HTTPS URL.';
     }
+    if (mediaSourceType != null && rightsNote?.trim().isNotEmpty != true) {
+      return 'External media requires a rights or licensing note.';
+    }
     return null;
   }
 }

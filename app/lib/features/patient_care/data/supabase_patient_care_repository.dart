@@ -33,7 +33,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
       final response = await _client
           .from('task_instances')
           .select(
-            '*,plan_actions!inner(*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id)))',
+            '*,plan_actions!inner(*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)))',
           )
           .eq('occurrence_date', _dateOnly(localDate))
           .eq('plan_actions.care_plan_id', plan.id)
@@ -74,7 +74,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
     final response = await _client
         .from('plan_actions')
         .select(
-          '*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id))',
+          '*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note))',
         )
         .eq('care_plan_id', planId)
         .eq('review_status', 'approved')

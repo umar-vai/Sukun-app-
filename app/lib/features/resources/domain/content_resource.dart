@@ -36,6 +36,8 @@ class ContentResource {
     this.hadithNumber,
     this.narrator,
     this.grade,
+    this.sourceUrl,
+    this.rightsNote,
   });
 
   factory ContentResource.fromJson(Map<String, dynamic> json) {
@@ -73,6 +75,8 @@ class ContentResource {
       hadithNumber: json['hadith_number'] as String?,
       narrator: json['narrator'] as String?,
       grade: json['grade'] as String?,
+      sourceUrl: json['source_url'] as String?,
+      rightsNote: json['rights_note'] as String?,
       visibility: json['visibility'] as String,
       status: json['status'] as String,
     );
@@ -110,6 +114,8 @@ class ContentResource {
   final String? hadithNumber;
   final String? narrator;
   final String? grade;
+  final String? sourceUrl;
+  final String? rightsNote;
   final String visibility;
   final String status;
 
@@ -121,5 +127,7 @@ class ContentResource {
     mediaSourceType: mediaSourceType,
     mediaUrl: mediaUrl,
     youtubeVideoId: youtubeVideoId,
+    thumbnailUrl: thumbnailUrl,
+    rightsNote: rightsNote,
   );
 }

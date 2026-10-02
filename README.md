@@ -94,7 +94,8 @@ Phase 0 provides an Android/iOS Flutter scaffold in `app/` with:
 - guest, patient, and super-admin session roles
 - server-verified-role-aware route shells
 - Sukun Life color and typography tokens
-- compile-time Supabase configuration
+- fail-closed compile-time Supabase configuration with an approved production
+  project guard
 - a Supabase local-development/migration structure
 
 Phase 1 adds the initial PostgreSQL schema and explicit Data API security:
@@ -152,9 +153,7 @@ Phase 3 completes the patient-care milestone with:
   care activity
 
 Progress currently reports materialized task activity. Reminder-driven future
-task materialization and native media playback remain in their documented later
-phases. Linked resource text/reference content opens in-app; external media uses
-the operating system's safe handler until native players are implemented.
+task materialization remains in its documented later phase.
 
 The offline queue stores task identifiers and patient interactions in Android
 Keystore/iOS Keychain-backed secure storage; it never stores prescription text
@@ -211,23 +210,41 @@ Database RLS remains the source of truth: guest searches receive only published
 public rows, patients also receive permitted patient/assigned rows, and
 staff-only or unpublished content is not returned. Canonical resources continue
 to be linked into any number of care plans by ID instead of being copied per
-patient. Remaining Phase 5 work is specialized topic/Surah browsing and the
-approved category/collection taxonomy for Dua, Ruqyah, and selected Ayat.
+patient. The resource hub supports Surah-to-Ayah browsing, selected/Ruqyah Ayat
+collections, topic-wise Hadith browsing, and dedicated Dua/Azkar and Ruqyah
+taxonomies.
+
+Phase 6 adds external media support while retaining the canonical resource and
+visibility model:
+
+- direct HTTPS audio playback with seek, playback speed, saved resume position,
+  background playback, and Android/iOS lock-screen controls
+- supported YouTube IFrame playback without extracting or redistributing audio
+- safe operating-system viewers for direct video, external PDF, and webpage URLs
+- HTTPS/media identifier validation and neutral unavailable-link errors
+- visible rights/source notes, CMS validation, and a database publication guard
+  requiring rights metadata for published media
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 
 ### Run the app
 
+For a production build, copy `app/config/production.example.json` to the ignored
+`app/config/production.json`, replace only the client-safe Supabase publishable
+key, and run:
+
 ```bash
 cd app
 flutter pub get
-flutter run \
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=YOUR_CLIENT_SAFE_PUBLISHABLE_KEY \
-  --dart-define=FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+flutter run --dart-define-from-file=config/production.json
 ```
 
-Omit the `dart-define` values for a public-only local preview. Gemini credentials, the Supabase service-role key, and Firebase server credentials must never be passed to Flutter.
+The production runtime refuses a missing backend or any Supabase URL other than
+the approved project in `docs/PRODUCTION_ENVIRONMENT.md`. For a public-only local
+preview, run without defines. `SUPABASE_ANON_KEY` remains a temporary compatibility
+alias, but new configuration should use `SUPABASE_PUBLISHABLE_KEY`. Never put the
+Gemini credentials, Supabase service-role key, or Firebase server credentials in
+the Flutter configuration.
 
 ### Verify
 
