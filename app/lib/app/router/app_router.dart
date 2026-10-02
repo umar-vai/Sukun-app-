@@ -12,6 +12,7 @@ import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_sc
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_collections_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
@@ -24,6 +25,7 @@ import 'package:sukun_life/features/patients/presentation/create_prescription_sc
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
+import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -75,6 +77,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           initialSectionSlug: state.uri.queryParameters['section'],
         ),
         routes: [
+          GoRoute(
+            path: 'quran',
+            builder: (context, state) => const QuranBrowserScreen(),
+            routes: [
+              GoRoute(
+                path: 'collections',
+                builder: (context, state) => const QuranCollectionsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':collectionId',
+                    builder: (context, state) => QuranCollectionDetailScreen(
+                      collectionId: state.pathParameters['collectionId']!,
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: ':surahNumber',
+                builder: (context, state) => QuranSurahScreen(
+                  surahNumber: int.parse(state.pathParameters['surahNumber']!),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'hadith',
+            builder: (context, state) => const HadithBrowserScreen(),
+          ),
+          GoRoute(
+            path: 'dua-azkar',
+            builder: (context, state) =>
+                const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+          ),
+          GoRoute(
+            path: 'ruqyah',
+            builder: (context, state) =>
+                const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
+          ),
           GoRoute(
             path: ':resourceId',
             builder: (context, state) => ResourceDetailScreen(
@@ -193,6 +233,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/content',
         builder: (context, state) => const AdminContentListScreen(),
         routes: [
+          GoRoute(
+            path: 'collections',
+            builder: (context, state) => const AdminContentCollectionsScreen(),
+          ),
           GoRoute(
             path: 'new',
             builder: (context, state) => const AdminContentEditorScreen(),

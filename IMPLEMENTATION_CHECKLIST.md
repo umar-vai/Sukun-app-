@@ -130,8 +130,8 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 ### Qur'an
 
 - [x] Surah/category structure
-- [ ] Surah details / Ayah list architecture
-- [ ] Selected/Ruqyah Ayat collections
+- [x] Surah details / Ayah list architecture
+- [x] Selected/Ruqyah Ayat collections
 - [x] Arabic text field from verified source only
 - [x] Approved Bangla translation + source metadata
 - [x] Surah/Ayah reference metadata
@@ -140,7 +140,7 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### Hadith
 
-- [ ] Topic-wise Hadith browsing
+- [x] Topic-wise Hadith browsing
 - [x] Hadith detail screen
 - [x] Collection/book/reference metadata
 - [x] Hadith number where available
@@ -151,21 +151,21 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### Dua & Azkar
 
-- [ ] Morning Azkar
-- [ ] Evening Azkar
-- [ ] Masnun Dua categories
-- [ ] Protection/Sleep/Travel/etc. categories as approved
+- [x] Morning Azkar
+- [x] Evening Azkar
+- [x] Masnun Dua categories
+- [x] Protection/Sleep/Travel/etc. categories as approved
 - [x] Arabic / approved transliteration / Bangla translation fields where used
 - [x] Source/reference metadata
 - [x] Do not invent repeat counts or religious instructions
 
 ### Ruqyah resources
 
-- [ ] Ruqyah Ayat
-- [ ] Ruqyah Audio
-- [ ] Self-Ruqyah Guide
-- [ ] Approved topic/category structure (Evil Eye/Jinn/Sihr/etc.)
-- [ ] Keep general Ruqyah resources separate from personalized patient prescriptions/plans
+- [x] Ruqyah Ayat
+- [x] Ruqyah Audio
+- [x] Self-Ruqyah Guide
+- [x] Approved topic/category structure (Evil Eye/Jinn/Sihr/etc.)
+- [x] Keep general Ruqyah resources separate from personalized patient prescriptions/plans
 
 ### Books / PDF / Articles
 

@@ -9,6 +9,22 @@ abstract interface class ContentAdminRepository {
 
   Future<List<ContentReview>> listReviews(String contentItemId);
 
+  Future<List<AdminContentCollection>> listCollections();
+
+  Future<List<ContentCategory>> installStandardResourceTaxonomy({
+    required String requestId,
+  });
+
+  Future<AdminContentCollection> saveCollection(
+    SaveContentCollectionInput input,
+  );
+
+  Future<AdminContentCollection> transitionCollection({
+    required String collectionId,
+    required String transition,
+    required String requestId,
+  });
+
   Future<AdminContentItem> saveContent(SaveContentInput input);
 
   Future<AdminContentItem> transitionContent({

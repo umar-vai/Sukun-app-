@@ -52,6 +52,17 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   }
 
   void _selectSection(ResourceSection? section) {
+    final dedicatedPath = switch (section?.slug) {
+      'quran' => '/resources/quran',
+      'hadith' => '/resources/hadith',
+      'dua-azkar' => '/resources/dua-azkar',
+      'ruqyah' => '/resources/ruqyah',
+      _ => null,
+    };
+    if (dedicatedPath != null) {
+      context.push(dedicatedPath);
+      return;
+    }
     setState(() {
       _selectedSection = section;
       _resources = _load();

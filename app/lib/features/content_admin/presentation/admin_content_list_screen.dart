@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
+import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
+import 'package:uuid/uuid.dart';
 
 class AdminContentListScreen extends ConsumerStatefulWidget {
   const AdminContentListScreen({super.key});
@@ -44,6 +46,28 @@ class _AdminContentListScreenState
     if (created != null && mounted) _reload();
   }
 
+  Future<void> _installTaxonomy() async {
+    try {
+      final categories = await ref
+          .read(contentAdminRepositoryProvider)
+          .installStandardResourceTaxonomy(requestId: const Uuid().v4());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Dua/Azkar and Ruqyah taxonomy is ready (${categories.length} categories).',
+            ),
+          ),
+        );
+      }
+    } on ContentAdminException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
@@ -70,6 +94,25 @@ class _AdminContentListScreenState
                 ),
               ],
               onSubmitted: (_) => _reload(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _installTaxonomy,
+                  icon: const Icon(Icons.account_tree_outlined),
+                  label: const Text('Install approved taxonomy'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/admin/content/collections'),
+                  icon: const Icon(Icons.collections_bookmark_outlined),
+                  label: const Text('Ayat collections'),
+                ),
+              ],
             ),
           ),
           SizedBox(

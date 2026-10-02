@@ -198,6 +198,89 @@ class ContentReview {
   final DateTime createdAt;
 }
 
+class AdminContentCollection {
+  const AdminContentCollection({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.slug,
+    required this.visibility,
+    required this.status,
+    this.titleBn,
+    this.summary,
+    this.contentItemIds = const [],
+  });
+
+  factory AdminContentCollection.fromJson(Map<String, dynamic> json) =>
+      AdminContentCollection(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        title: json['title'] as String,
+        titleBn: json['title_bn'] as String?,
+        slug: json['slug'] as String,
+        summary: json['summary'] as String?,
+        visibility: json['visibility'] as String,
+        status: json['status'] as String,
+        contentItemIds:
+            (json['content_collection_items'] as List<dynamic>? ?? const [])
+                .map((row) => (row as Map<String, dynamic>)['content_item_id'])
+                .whereType<String>()
+                .toList(growable: false),
+      );
+
+  final String id;
+  final String type;
+  final String title;
+  final String? titleBn;
+  final String slug;
+  final String? summary;
+  final String visibility;
+  final String status;
+  final List<String> contentItemIds;
+}
+
+class SaveContentCollectionInput {
+  const SaveContentCollectionInput({
+    required this.type,
+    required this.title,
+    required this.slug,
+    required this.visibility,
+    required this.contentItemIds,
+    required this.requestId,
+    this.collectionId,
+    this.titleBn,
+    this.summary,
+  });
+
+  final String? collectionId;
+  final String type;
+  final String title;
+  final String? titleBn;
+  final String slug;
+  final String? summary;
+  final String visibility;
+  final List<String> contentItemIds;
+  final String requestId;
+
+  String? validate() {
+    if (type != 'selected_ayat' && type != 'ruqyah_ayat') {
+      return 'Choose a supported Ayat collection type.';
+    }
+    if (title.trim().isEmpty) return 'Collection title is required.';
+    if (!RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(slug)) {
+      return 'Slug must use lowercase words separated by hyphens.';
+    }
+    if (visibility != 'public' && visibility != 'patient_only') {
+      return 'Collections can be public or patient-only.';
+    }
+    if (contentItemIds.isEmpty) return 'Select at least one verified Ayah.';
+    if (contentItemIds.toSet().length != contentItemIds.length) {
+      return 'The same Ayah cannot be selected twice.';
+    }
+    return null;
+  }
+}
+
 class SaveContentInput {
   const SaveContentInput({
     required this.type,

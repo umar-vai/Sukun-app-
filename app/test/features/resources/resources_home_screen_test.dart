@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
 void main() {
@@ -89,4 +90,25 @@ final class _FakeResourcesRepository implements ResourcesRepository {
 
   @override
   Future<ContentResource?> getResource(String resourceId) async => null;
+
+  @override
+  Future<List<QuranSurahSummary>> browseSurahs() async => const [];
+
+  @override
+  Future<List<ContentResource>> browseSurah(int surahNumber) async => const [];
+
+  @override
+  Future<List<ResourceTopic>> browseTopics({
+    required Set<String> types,
+    Set<String> categoryPrefixes = const {},
+  }) async => const [];
+
+  @override
+  Future<List<ContentCollection>> browseCollections({
+    Set<String> types = const {},
+  }) async => const [];
+
+  @override
+  Future<ContentCollectionDetails?> getCollection(String collectionId) async =>
+      null;
 }

@@ -36,6 +36,27 @@ final class UnavailableContentAdminRepository
       _unavailable();
 
   @override
+  Future<List<AdminContentCollection>> listCollections() async =>
+      _unavailable();
+
+  @override
+  Future<List<ContentCategory>> installStandardResourceTaxonomy({
+    required String requestId,
+  }) async => _unavailable();
+
+  @override
+  Future<AdminContentCollection> saveCollection(
+    SaveContentCollectionInput input,
+  ) async => _unavailable();
+
+  @override
+  Future<AdminContentCollection> transitionCollection({
+    required String collectionId,
+    required String transition,
+    required String requestId,
+  }) async => _unavailable();
+
+  @override
   Future<AdminContentItem> saveContent(SaveContentInput input) async =>
       _unavailable();
 

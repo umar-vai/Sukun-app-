@@ -7,6 +7,31 @@ import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 
 void main() {
+  test('Ayat collection validation rejects unsafe or ambiguous input', () {
+    expect(
+      const SaveContentCollectionInput(
+        type: 'selected_ayat',
+        title: 'Selected Ayat',
+        slug: 'selected-ayat',
+        visibility: 'public',
+        contentItemIds: [],
+        requestId: 'request',
+      ).validate(),
+      'Select at least one verified Ayah.',
+    );
+    expect(
+      const SaveContentCollectionInput(
+        type: 'ruqyah_ayat',
+        title: 'Ruqyah Ayat',
+        slug: 'ruqyah-ayat',
+        visibility: 'assigned_only',
+        contentItemIds: ['ayah-1'],
+        requestId: 'request',
+      ).validate(),
+      'Collections can be public or patient-only.',
+    );
+  });
+
   test(
     'canonical validation rejects AI source and invalid Quran reference',
     () {
@@ -108,6 +133,26 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
   @override
   Future<List<ContentReview>> listReviews(String contentItemId) async =>
       const [];
+
+  @override
+  Future<List<AdminContentCollection>> listCollections() async => const [];
+
+  @override
+  Future<List<ContentCategory>> installStandardResourceTaxonomy({
+    required String requestId,
+  }) async => const [];
+
+  @override
+  Future<AdminContentCollection> saveCollection(
+    SaveContentCollectionInput input,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<AdminContentCollection> transitionCollection({
+    required String collectionId,
+    required String transition,
+    required String requestId,
+  }) => throw UnimplementedError();
 
   @override
   Future<AdminContentItem> saveContent(SaveContentInput input) async => item;

@@ -75,6 +75,89 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
   }
 
   @override
+  Future<List<AdminContentCollection>> listCollections() async {
+    try {
+      final response = await _client
+          .from('content_collections')
+          .select(
+            'id,type,title,title_bn,slug,summary,visibility,status,content_collection_items(content_item_id,sort_order)',
+          )
+          .order('updated_at', ascending: false);
+      return response
+          .map(AdminContentCollection.fromJson)
+          .toList(growable: false);
+    } on PostgrestException catch (error) {
+      throw ContentAdminException(error.message);
+    }
+  }
+
+  @override
+  Future<List<ContentCategory>> installStandardResourceTaxonomy({
+    required String requestId,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'install_standard_resource_taxonomy',
+        params: {'p_request_id': requestId},
+      );
+      return (response as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map(ContentCategory.fromJson)
+          .toList(growable: false);
+    } on PostgrestException catch (error) {
+      throw ContentAdminException(error.message);
+    }
+  }
+
+  @override
+  Future<AdminContentCollection> saveCollection(
+    SaveContentCollectionInput input,
+  ) async {
+    final validationError = input.validate();
+    if (validationError != null) throw ContentAdminException(validationError);
+    try {
+      final response = await _client.rpc(
+        'save_content_collection',
+        params: {
+          'p_type': input.type,
+          'p_title': input.title.trim(),
+          'p_slug': input.slug.trim(),
+          'p_content_item_ids': input.contentItemIds,
+          'p_collection_id': input.collectionId,
+          'p_title_bn': _value(input.titleBn),
+          'p_summary': _value(input.summary),
+          'p_visibility': input.visibility,
+          'p_request_id': input.requestId,
+        },
+      );
+      return AdminContentCollection.fromJson(response as Map<String, dynamic>);
+    } on PostgrestException catch (error) {
+      throw ContentAdminException(error.message);
+    }
+  }
+
+  @override
+  Future<AdminContentCollection> transitionCollection({
+    required String collectionId,
+    required String transition,
+    required String requestId,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'transition_content_collection',
+        params: {
+          'p_collection_id': collectionId,
+          'p_transition': transition,
+          'p_request_id': requestId,
+        },
+      );
+      return AdminContentCollection.fromJson(response as Map<String, dynamic>);
+    } on PostgrestException catch (error) {
+      throw ContentAdminException(error.message);
+    }
+  }
+
+  @override
   Future<AdminContentItem> saveContent(SaveContentInput input) async {
     final validationError = input.validate();
     if (validationError != null) throw ContentAdminException(validationError);

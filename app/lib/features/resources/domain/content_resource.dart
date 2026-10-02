@@ -22,7 +22,20 @@ class ContentResource {
     this.thumbnailUrl,
     this.verificationStatus,
     this.createdAt,
+    this.categoryId,
     this.categorySlug,
+    this.categoryName,
+    this.categoryNameBn,
+    this.surahNumber,
+    this.surahName,
+    this.surahNameBn,
+    this.ayahNumber,
+    this.ayahEndNumber,
+    this.collectionName,
+    this.bookName,
+    this.hadithNumber,
+    this.narrator,
+    this.grade,
   });
 
   factory ContentResource.fromJson(Map<String, dynamic> json) {
@@ -46,7 +59,20 @@ class ContentResource {
       thumbnailUrl: json['thumbnail_url'] as String?,
       verificationStatus: json['verification_status'] as String?,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+      categoryId: json['category_id'] as String?,
       categorySlug: category?['slug'] as String?,
+      categoryName: category?['name'] as String?,
+      categoryNameBn: category?['name_bn'] as String?,
+      surahNumber: json['surah_number'] as int?,
+      surahName: json['surah_name'] as String?,
+      surahNameBn: json['surah_name_bn'] as String?,
+      ayahNumber: json['ayah_number'] as int?,
+      ayahEndNumber: json['ayah_end_number'] as int?,
+      collectionName: json['collection_name'] as String?,
+      bookName: json['book_name'] as String?,
+      hadithNumber: json['hadith_number'] as String?,
+      narrator: json['narrator'] as String?,
+      grade: json['grade'] as String?,
       visibility: json['visibility'] as String,
       status: json['status'] as String,
     );
@@ -70,7 +96,20 @@ class ContentResource {
   final String? thumbnailUrl;
   final String? verificationStatus;
   final DateTime? createdAt;
+  final String? categoryId;
   final String? categorySlug;
+  final String? categoryName;
+  final String? categoryNameBn;
+  final int? surahNumber;
+  final String? surahName;
+  final String? surahNameBn;
+  final int? ayahNumber;
+  final int? ayahEndNumber;
+  final String? collectionName;
+  final String? bookName;
+  final String? hadithNumber;
+  final String? narrator;
+  final String? grade;
   final String visibility;
   final String status;
 

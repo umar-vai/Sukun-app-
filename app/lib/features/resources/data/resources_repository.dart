@@ -1,4 +1,5 @@
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 
 abstract interface class ResourcesRepository {
   Future<List<ContentResource>> browseResources({
@@ -8,6 +9,21 @@ abstract interface class ResourcesRepository {
   });
 
   Future<ContentResource?> getResource(String resourceId);
+
+  Future<List<QuranSurahSummary>> browseSurahs();
+
+  Future<List<ContentResource>> browseSurah(int surahNumber);
+
+  Future<List<ResourceTopic>> browseTopics({
+    required Set<String> types,
+    Set<String> categoryPrefixes = const {},
+  });
+
+  Future<List<ContentCollection>> browseCollections({
+    Set<String> types = const {},
+  });
+
+  Future<ContentCollectionDetails?> getCollection(String collectionId);
 }
 
 class ResourceException implements Exception {
