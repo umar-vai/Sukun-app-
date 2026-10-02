@@ -81,34 +81,34 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 
 ## Phase 4 — Prescription-to-action AI
 
-- [ ] Create server-side Edge Function
-- [ ] Implement provider/key routing behind a server-side abstraction
-- [ ] Add four server-only Gemini secret slots: `GEMINI_API_KEY_1..4`
-- [ ] Implement `GeminiKeyPool` / `AiRouter`
-- [ ] Use deterministic healthy-key fallback order 1 → 2 → 3 → 4 for MVP
-- [ ] Detect quota/resource exhaustion/rate-limit failures and silently fail over
-- [ ] Detect invalid/revoked key configuration and skip/fail over internally
-- [ ] Add timeout/retry/backoff policy
-- [ ] Add per-key cooldown/health state so exhausted keys are not retried on every request
-- [ ] Use provider retry metadata such as `Retry-After` when available
+- [x] Create server-side Edge Function
+- [x] Implement provider/key routing behind a server-side abstraction
+- [x] Add four server-only Gemini secret slots: `GEMINI_API_KEY_1..4`
+- [x] Implement `GeminiKeyPool` / `AiRouter`
+- [x] Use deterministic healthy-key fallback order 1 → 2 → 3 → 4 for MVP
+- [x] Detect quota/resource exhaustion/rate-limit failures and silently fail over
+- [x] Detect invalid/revoked key configuration and skip/fail over internally
+- [x] Add timeout/retry/backoff policy
+- [x] Add per-key cooldown/health state so exhausted keys are not retried on every request
+- [x] Use provider retry metadata such as `Retry-After` when available
 - [ ] Verify whether configured keys have independent quota scopes before production
-- [ ] Never expose quota/credit/key/provider errors to the Super Admin UI
+- [x] Never expose quota/credit/key/provider errors to the Super Admin UI
 - [ ] If all four slots fail, preserve prescription and continue via manual Action Builder without raw provider errors
-- [ ] Ensure Flutter never selects or receives Gemini credentials
-- [ ] Define strict canonical JSON schema shared across all key slots
+- [x] Ensure Flutter never selects or receives Gemini credentials
+- [x] Define strict canonical JSON schema shared across all key slots
 - [ ] Parse Bangla/mixed-language prescription text
-- [ ] Mark ambiguous output as `needs_review`
+- [x] Mark ambiguous output as `needs_review`
 - [ ] Resource matching suggestions
 - [ ] Admin action review screen
-- [ ] No automatic publishing
-- [ ] Add idempotent request IDs to prevent duplicate actions during failover
-- [ ] Add internal metrics/logging without raw keys or full sensitive prescription text
-- [ ] Add parser fixtures/tests
-- [ ] Test slot 1 exhausted → slot 2 succeeds
-- [ ] Test slots 1-2 exhausted → slot 3 succeeds
-- [ ] Test slots 1-3 exhausted → slot 4 succeeds
-- [ ] Test all four unavailable → no quota error reaches Flutter, manual fallback remains usable
-- [ ] Test key secrets never appear in logs/API responses
+- [x] No automatic publishing
+- [x] Add idempotent request IDs to prevent duplicate actions during failover
+- [x] Add internal metrics/logging without raw keys or full sensitive prescription text
+- [x] Add parser fixtures/tests
+- [x] Test slot 1 exhausted → slot 2 succeeds
+- [x] Test slots 1-2 exhausted → slot 3 succeeds
+- [x] Test slots 1-3 exhausted → slot 4 succeeds
+- [x] Test all four unavailable → no quota error reaches Flutter, manual fallback remains usable
+- [x] Test key secrets never appear in logs/API responses
 
 ## Phase 5 — Content CMS + Dedicated Islamic Resources
 

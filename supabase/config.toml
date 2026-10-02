@@ -436,3 +436,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/patient-change-password/deno.json"
 entrypoint = "./functions/patient-change-password/index.ts"
+
+[functions.prescription-to-actions]
+enabled = true
+# The function validates the bearer token and database-backed super_admin role
+# before loading prescription text or accessing server-only Gemini credentials.
+verify_jwt = false
+import_map = "./functions/prescription-to-actions/deno.json"
+entrypoint = "./functions/prescription-to-actions/index.ts"

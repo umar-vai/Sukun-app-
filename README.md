@@ -160,6 +160,23 @@ The offline queue stores task identifiers and patient interactions in Android
 Keystore/iOS Keychain-backed secure storage; it never stores prescription text
 or credentials. Android support therefore starts at API 23.
 
+Phase 4 backend work is in progress. The `prescription-to-actions` Edge
+Function now provides:
+
+- database-verified Super Admin access and server-side prescription loading
+- strict normalized action-schema validation with mandatory ambiguity review
+- deterministic Gemini slot 1 → 2 → 3 → 4 failover
+- timeout retry, invalid-key disabling, and database-backed cooldown state
+- conservative shared-quota handling through `GEMINI_QUOTA_SCOPE_1..4`
+- idempotent request/result storage without automatic plan publication
+- neutral manual fallback responses that contain no quota/key/provider details
+- structured operational logs containing slot IDs but no credentials or raw
+  prescription text
+
+The remaining Phase 4 work is the Flutter generation/review/import experience,
+live Bangla/mixed-language provider verification, resource matching against the
+canonical content library, and production quota-scope confirmation.
+
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 
 ### Run the app
