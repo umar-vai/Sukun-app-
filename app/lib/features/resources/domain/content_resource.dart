@@ -19,9 +19,14 @@ class ContentResource {
     this.mediaSourceType,
     this.mediaUrl,
     this.youtubeVideoId,
+    this.thumbnailUrl,
+    this.verificationStatus,
+    this.createdAt,
+    this.categorySlug,
   });
 
   factory ContentResource.fromJson(Map<String, dynamic> json) {
+    final category = json['content_categories'] as Map<String, dynamic>?;
     return ContentResource(
       id: json['id'] as String,
       type: json['type'] as String,
@@ -38,6 +43,10 @@ class ContentResource {
       mediaSourceType: json['media_source_type'] as String?,
       mediaUrl: json['media_url'] as String?,
       youtubeVideoId: json['youtube_video_id'] as String?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+      verificationStatus: json['verification_status'] as String?,
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+      categorySlug: category?['slug'] as String?,
       visibility: json['visibility'] as String,
       status: json['status'] as String,
     );
@@ -58,6 +67,10 @@ class ContentResource {
   final String? mediaSourceType;
   final String? mediaUrl;
   final String? youtubeVideoId;
+  final String? thumbnailUrl;
+  final String? verificationStatus;
+  final DateTime? createdAt;
+  final String? categorySlug;
   final String visibility;
   final String status;
 

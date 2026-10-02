@@ -191,6 +191,15 @@ with real configured Gemini quota scopes. Repository tests already cover
 Bangla/mixed-language response parsing, schema rejection, resource matching,
 neutral fallback UI, and simulated four-slot routing behavior.
 
+Phase 5 resource-library work has started with a dedicated, patient-care-
+independent Islamic Resources hub. Guests, patients, and admins can browse the
+eight required sections, search permitted published metadata, filter by
+section/type, and open canonical resource details. Database RLS remains the
+source of truth: guest searches receive only published public rows, patients
+also receive permitted patient/assigned rows, and staff-only or unpublished
+content is not returned. Admin CMS creation and publication screens are the
+next Phase 5 milestone.
+
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 
 ### Run the app

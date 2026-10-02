@@ -72,6 +72,21 @@ class AdminHomeScreen extends StatelessWidget {
               onTap: () => context.go('/admin/patients'),
             ),
           ),
+          Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(20),
+              leading: const CircleAvatar(
+                backgroundColor: SukunColors.mist,
+                child: Icon(Icons.menu_book_outlined),
+              ),
+              title: const Text('Islamic Resources library'),
+              subtitle: const Text(
+                'Browse the same canonical published resources available in the public and patient experiences.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/resources'),
+            ),
+          ),
         ],
       ),
     );

@@ -68,7 +68,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/resources',
-        builder: (context, state) => const ResourcesHomeScreen(),
+        builder: (context, state) => ResourcesHomeScreen(
+          initialSectionSlug: state.uri.queryParameters['section'],
+        ),
+        routes: [
+          GoRoute(
+            path: ':resourceId',
+            builder: (context, state) => ResourceDetailScreen(
+              resourceId: state.pathParameters['resourceId']!,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/patient/home',

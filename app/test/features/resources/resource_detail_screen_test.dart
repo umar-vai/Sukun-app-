@@ -35,6 +35,13 @@ final class _FakeResourcesRepository implements ResourcesRepository {
   const _FakeResourcesRepository();
 
   @override
+  Future<List<ContentResource>> browseResources({
+    String query = '',
+    Set<String> types = const {},
+    Set<String> categoryPrefixes = const {},
+  }) async => const [];
+
+  @override
   Future<ContentResource?> getResource(String resourceId) async =>
       const ContentResource(
         id: 'resource-1',

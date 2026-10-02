@@ -42,7 +42,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Plan resource')),
+      appBar: AppBar(title: const Text('Islamic Resource')),
       body: FutureBuilder<ContentResource?>(
         future: _resource,
         builder: (context, snapshot) {

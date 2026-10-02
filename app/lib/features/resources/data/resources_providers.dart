@@ -16,6 +16,14 @@ final class UnavailableResourcesRepository implements ResourcesRepository {
   const UnavailableResourcesRepository();
 
   @override
+  Future<List<ContentResource>> browseResources({
+    String query = '',
+    Set<String> types = const {},
+    Set<String> categoryPrefixes = const {},
+  }) async =>
+      throw const ResourceException('Connect Supabase to browse resources.');
+
+  @override
   Future<ContentResource?> getResource(String resourceId) async =>
       throw const ResourceException('Connect Supabase to open this resource.');
 }

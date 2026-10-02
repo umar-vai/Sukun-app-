@@ -116,16 +116,16 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### Resources information architecture
 
-- [ ] Build a dedicated top-level `Resources / ইসলামিক রিসোর্স` hub separate from patient-care screens
-- [ ] Qur'an section
-- [ ] Hadith section
-- [ ] Dua & Azkar section
-- [ ] Ruqyah section
-- [ ] Books & PDFs section
-- [ ] Articles & Guides section
-- [ ] Audio filter/category
-- [ ] Video filter/category
-- [ ] Search/filter/category navigation
+- [x] Build a dedicated top-level `Resources / ইসলামিক রিসোর্স` hub separate from patient-care screens
+- [x] Qur'an section
+- [x] Hadith section
+- [x] Dua & Azkar section
+- [x] Ruqyah section
+- [x] Books & PDFs section
+- [x] Articles & Guides section
+- [x] Audio filter/category
+- [x] Video filter/category
+- [x] Search/filter/category navigation
 
 ### Qur'an
 
@@ -182,10 +182,10 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [ ] Super Admin create/edit/preview/verify/publish/unpublish/archive
 - [ ] Link a canonical resource into one or many patient plans using `content_id`
 - [ ] Do not create duplicate resource copies per patient
-- [ ] Patient/guest resource browsing
-- [ ] Search/filter/category
+- [x] Patient/guest resource browsing
+- [x] Search/filter/category
 - [ ] Favorites/bookmarks if included in MVP
-- [ ] RLS prevents unpublished/restricted resources from leaking through search/API
+- [x] RLS prevents unpublished/restricted resources from leaking through search/API
 
 ## Phase 6 — External media
 
@@ -256,11 +256,11 @@ The MVP is accepted only if this works end to end:
 - [x] Backend records completion
 - [x] Admin sees updated progress
 - [ ] Admin can publish/edit a resource without app-store release
-- [ ] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
-- [ ] Qur'an, Hadith, Dua & Azkar, Ruqyah, Books/PDF, Articles/Guides, Audio and Video are represented in the resource architecture
+- [x] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
+- [x] Qur'an, Hadith, Dua & Azkar, Ruqyah, Books/PDF, Articles/Guides, Audio and Video are represented in the resource architecture
 - [x] A single canonical resource can be linked to a patient's plan without duplicating it
-- [ ] Guest cannot access restricted/assigned/staff-only resources
-- [ ] Qur'an/Hadith canonical content cannot be published as unsourced generic AI output
+- [x] Guest cannot access restricted/assigned/staff-only resources
+- [x] Qur'an/Hadith canonical content cannot be published as unsourced generic AI output
 - [ ] External audio/video/PDF opens correctly
 - [x] Another patient cannot access the first patient's data
 - [ ] AI still generates draft actions when earlier Gemini key slots are quota-exhausted and a later slot is healthy
