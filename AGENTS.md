@@ -7,9 +7,10 @@ This file contains mandatory instructions for Codex and all coding agents workin
 Before writing code, read these files completely in this order:
 
 1. `CODEX_START_HERE.md` — master product and engineering specification.
-2. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
-3. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
-4. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
+2. `docs/FINAL_UI_REFERENCE.md` — mandatory final visual target and UI acceptance contract.
+3. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
+4. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
+5. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
 
 ## 2. Non-negotiable product rules
 
@@ -31,6 +32,7 @@ Before writing code, read these files completely in this order:
 13. The app must have a **dedicated top-level Islamic Resources area**, separate from patient-care screens. Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 14. Qur'an/Hadith canonical text and references must come from verified approved sources. Never treat canonical religious text as generic AI-generated copy.
 15. Reuse a single canonical resource across public browsing and patient plans through resource IDs/relations; do not duplicate the same content per patient.
+16. Functional completion is not visual completion. The finished app must receive the dedicated final visual pass in `docs/FINAL_UI_REFERENCE.md` and must not be declared complete while major screens still look like default Flutter/Material UI.
 
 ## 3. Brand rules — mandatory
 
@@ -73,6 +75,7 @@ Visual direction:
 - Do not use random green/gold themes just because the product is Islamic.
 - Photography/illustration, if used, should feel soft, cool, modest and consistent with the official Sukun Life brand.
 - Avoid visual clutter, excessive ornaments, fake glassmorphism, heavy gradients, neon colors, or generic AI-Islamic styling.
+- Use `docs/FINAL_UI_REFERENCE.md` as the mandatory screen-level visual target. Default Material widgets may be used as implementation primitives, but visible surfaces must be refined into the Sukun Life design system.
 
 ## 4. Architecture rules
 
@@ -160,6 +163,10 @@ Do not scrape/copy third-party media into our storage unless Sukun Life has perm
 - Add tests for RLS, parsing validation, AI failover, task generation, notification scheduling, and resource visibility.
 - Build the dedicated Islamic Resources hub during the Content CMS/resource phase, following `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - Update documentation when architecture changes.
+- Preserve green CI. Never disable meaningful tests/lints/security checks to make a change pass.
+- After the functional phases, execute the mandatory `Final UI Match & Polish` phase from `docs/FINAL_UI_REFERENCE.md` across all major patient, resource, utility and admin screens.
+- Do not finish with generic/default Material styling. Create/refine reusable branded components so spacing, cards, typography, buttons, states and navigation feel consistent across the app.
+- Manually review compact and large phone layouts, long Bangla strings, Arabic wrapping, loading/empty/error states and safe areas before declaring visual completion.
 
 ## 9. Do not silently change scope
 
