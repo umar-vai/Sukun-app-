@@ -191,14 +191,28 @@ with real configured Gemini quota scopes. Repository tests already cover
 Bangla/mixed-language response parsing, schema rejection, resource matching,
 neutral fallback UI, and simulated four-slot routing behavior.
 
-Phase 5 resource-library work has started with a dedicated, patient-care-
-independent Islamic Resources hub. Guests, patients, and admins can browse the
+Phase 5 now includes a dedicated, patient-care-independent Islamic Resources
+hub and a server-authorized Super Admin CMS. Guests and patients can browse the
 eight required sections, search permitted published metadata, filter by
-section/type, and open canonical resource details. Database RLS remains the
-source of truth: guest searches receive only published public rows, patients
-also receive permitted patient/assigned rows, and staff-only or unpublished
-content is not returned. Admin CMS creation and publication screens are the
-next Phase 5 milestone.
+section/type, and open canonical resource details. Admins can create categories
+and resources; save drafts; preview; submit for review; verify or reject
+canonical sources; publish; unpublish; and archive without deleting history.
+
+The content schema records Surah/Ayah ranges, approved Arabic and Bangla source
+metadata, Hadith collection/book/number/grade, book/chapter relationships,
+author/publisher/rights information, visibility, and external-media metadata.
+Qur'an and Hadith cannot be verified or published without approved source
+metadata, and `generative_ai` is rejected as a canonical source even for a
+draft. Reviewer notes live in a separate Super-Admin-only history table and are
+not patient-readable. Published content must be explicitly unpublished before
+editing; editing canonical content resets its verification state.
+
+Database RLS remains the source of truth: guest searches receive only published
+public rows, patients also receive permitted patient/assigned rows, and
+staff-only or unpublished content is not returned. Canonical resources continue
+to be linked into any number of care plans by ID instead of being copied per
+patient. Remaining Phase 5 work is specialized topic/Surah browsing and the
+approved category/collection taxonomy for Dua, Ruqyah, and selected Ayat.
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 

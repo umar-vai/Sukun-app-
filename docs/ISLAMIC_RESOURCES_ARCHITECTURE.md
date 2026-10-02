@@ -286,6 +286,25 @@ For ordinary editorial content, `verified` may be combined with review where app
 
 For Qur'an/Hadith/religious-source-sensitive material, publication must require explicit source verification.
 
+Implemented workflow constraints:
+
+- Flutter requests audited `save_content_item` and `transition_content_item`
+  database functions; RLS and a server-verified Super Admin role remain
+  authoritative.
+- Content is saved only as `draft` or `review`. Qur'an/Hadith progresses through
+  explicit verification before publication; ordinary editorial content may
+  publish after review.
+- Published content is immutable until it is explicitly unpublished. Editing
+  canonical content clears its previous reviewer identity and resets
+  verification to `pending`.
+- `content_reviews` stores the admin-only lifecycle/reviewer history separately
+  from patient-readable content. Review notes are not exposed to guests or
+  patients.
+- Canonical Qur'an/Hadith rejects `generative_ai` as a source even in draft form.
+  Verification also requires approved source reference and edition metadata;
+  Qur'an requires sourced Arabic text, Bangla text requires its translation
+  source, and Hadith requires collection, book, and number.
+
 Recommended fields:
 
 ```text

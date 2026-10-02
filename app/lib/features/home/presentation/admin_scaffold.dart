@@ -27,7 +27,11 @@ class AdminScaffold extends StatelessWidget {
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
           if (index == selectedIndex) return;
-          context.go(index == 0 ? '/admin/dashboard' : '/admin/patients');
+          context.go(switch (index) {
+            0 => '/admin/dashboard',
+            1 => '/admin/patients',
+            _ => '/admin/content',
+          });
         },
         destinations: const [
           NavigationDestination(
@@ -39,6 +43,11 @@ class AdminScaffold extends StatelessWidget {
             icon: Icon(Icons.people_outline),
             selectedIcon: Icon(Icons.people),
             label: 'Patients',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.library_books_outlined),
+            selectedIcon: Icon(Icons.library_books),
+            label: 'Content',
           ),
         ],
       ),

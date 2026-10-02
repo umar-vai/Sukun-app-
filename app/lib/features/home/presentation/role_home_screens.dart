@@ -81,11 +81,16 @@ class AdminHomeScreen extends StatelessWidget {
               ),
               title: const Text('Islamic Resources library'),
               subtitle: const Text(
-                'Browse the same canonical published resources available in the public and patient experiences.',
+                'Create, review, verify, publish, and archive canonical resources.',
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/resources'),
+              onTap: () => context.go('/admin/content'),
             ),
+          ),
+          TextButton.icon(
+            onPressed: () => context.go('/resources'),
+            icon: const Icon(Icons.visibility_outlined),
+            label: const Text('Preview published public library'),
           ),
         ],
       ),

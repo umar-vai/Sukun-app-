@@ -129,25 +129,25 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### Qur'an
 
-- [ ] Surah/category structure
+- [x] Surah/category structure
 - [ ] Surah details / Ayah list architecture
 - [ ] Selected/Ruqyah Ayat collections
-- [ ] Arabic text field from verified source only
-- [ ] Approved Bangla translation + source metadata
-- [ ] Surah/Ayah reference metadata
-- [ ] Verification status / reviewer metadata
-- [ ] Never generate or rewrite canonical Qur'an text with AI
+- [x] Arabic text field from verified source only
+- [x] Approved Bangla translation + source metadata
+- [x] Surah/Ayah reference metadata
+- [x] Verification status / reviewer metadata
+- [x] Never generate or rewrite canonical Qur'an text with AI
 
 ### Hadith
 
 - [ ] Topic-wise Hadith browsing
-- [ ] Hadith detail screen
-- [ ] Collection/book/reference metadata
-- [ ] Hadith number where available
-- [ ] Translation/source metadata
-- [ ] Grade/status field when provided by approved source
-- [ ] Verification status / reviewer metadata
-- [ ] Never fabricate Hadith wording, narrator, source, grade, or numbering with AI
+- [x] Hadith detail screen
+- [x] Collection/book/reference metadata
+- [x] Hadith number where available
+- [x] Translation/source metadata
+- [x] Grade/status field when provided by approved source
+- [x] Verification status / reviewer metadata
+- [x] Never fabricate Hadith wording, narrator, source, grade, or numbering with AI
 
 ### Dua & Azkar
 
@@ -155,9 +155,9 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [ ] Evening Azkar
 - [ ] Masnun Dua categories
 - [ ] Protection/Sleep/Travel/etc. categories as approved
-- [ ] Arabic / approved transliteration / Bangla translation fields where used
-- [ ] Source/reference metadata
-- [ ] Do not invent repeat counts or religious instructions
+- [x] Arabic / approved transliteration / Bangla translation fields where used
+- [x] Source/reference metadata
+- [x] Do not invent repeat counts or religious instructions
 
 ### Ruqyah resources
 
@@ -169,19 +169,19 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### Books / PDF / Articles
 
-- [ ] Book + chapters
-- [ ] PDF resources
-- [ ] Article/Guide
-- [ ] Author/publisher/source/rights metadata where applicable
-- [ ] External PDF URLs by default
+- [x] Book + chapters
+- [x] PDF resources
+- [x] Article/Guide
+- [x] Author/publisher/source/rights metadata where applicable
+- [x] External PDF URLs by default
 
 ### CMS lifecycle and reuse
 
-- [ ] `draft` / `review` / `verified` / `published` / `archived` workflow where applicable
-- [ ] Public/patient/assigned/staff-only visibility
-- [ ] Super Admin create/edit/preview/verify/publish/unpublish/archive
-- [ ] Link a canonical resource into one or many patient plans using `content_id`
-- [ ] Do not create duplicate resource copies per patient
+- [x] `draft` / `review` / `verified` / `published` / `archived` workflow where applicable
+- [x] Public/patient/assigned/staff-only visibility
+- [x] Super Admin create/edit/preview/verify/publish/unpublish/archive
+- [x] Link a canonical resource into one or many patient plans using `content_id`
+- [x] Do not create duplicate resource copies per patient
 - [x] Patient/guest resource browsing
 - [x] Search/filter/category
 - [ ] Favorites/bookmarks if included in MVP

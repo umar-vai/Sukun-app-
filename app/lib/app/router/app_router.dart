@@ -11,6 +11,9 @@ import 'package:sukun_life/features/care_plans/presentation/ai_action_review_scr
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
@@ -183,6 +186,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/admin/content',
+        builder: (context, state) => const AdminContentListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const AdminContentEditorScreen(),
+          ),
+          GoRoute(
+            path: ':contentItemId/preview',
+            builder: (context, state) => AdminContentPreviewScreen(
+              contentItemId: state.pathParameters['contentItemId']!,
+            ),
+          ),
+          GoRoute(
+            path: ':contentItemId/edit',
+            builder: (context, state) => AdminContentEditorScreen(
+              contentItemId: state.pathParameters['contentItemId']!,
+            ),
           ),
         ],
       ),
