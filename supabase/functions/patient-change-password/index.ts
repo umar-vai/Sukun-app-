@@ -3,7 +3,8 @@ import { parseChangePasswordInput } from "./validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -21,8 +22,12 @@ function requiredEnvironment(name: string): string {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (request.method !== "POST") return response({ code: "method_not_allowed" }, 405);
+  if (request.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  if (request.method !== "POST") {
+    return response({ code: "method_not_allowed" }, 405);
+  }
 
   const authorization = request.headers.get("Authorization");
   const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -46,8 +51,11 @@ Deno.serve(async (request) => {
       global: { headers: { Authorization: authorization! } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: userData, error: userError } = await callerClient.auth.getUser(accessToken);
-    if (userError || !userData.user) return response({ code: "authentication_required" }, 401);
+    const { data: userData, error: userError } = await callerClient.auth
+      .getUser(accessToken);
+    if (userError || !userData.user) {
+      return response({ code: "authentication_required" }, 401);
+    }
 
     const { data: patient } = await callerClient
       .from("patients")
@@ -72,7 +80,8 @@ Deno.serve(async (request) => {
     if (!authResponse.ok) {
       return response({
         code: "invalid_credentials",
-        message: "The temporary password is incorrect or the new password was not accepted.",
+        message:
+          "The temporary password is incorrect or the new password was not accepted.",
       }, 400);
     }
 
@@ -86,7 +95,8 @@ Deno.serve(async (request) => {
     if (profileError) {
       return response({
         code: "credential_update_incomplete",
-        message: "Password changed, but setup could not finish. Sign in with the new password and try again.",
+        message:
+          "Password changed, but setup could not finish. Sign in with the new password and try again.",
       }, 503);
     }
     return response({ changed: true });

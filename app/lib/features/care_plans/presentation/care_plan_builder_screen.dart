@@ -57,6 +57,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     if (mounted && changed == true) _reload();
   }
 
+  Future<void> _generateActions(CarePlan plan) async {
+    final prescriptionId = plan.prescriptionId;
+    if (prescriptionId == null) return;
+    final changed = await context.push<bool>(
+      '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/suggest'
+      '?prescriptionId=${Uri.encodeQueryComponent(prescriptionId)}',
+    );
+    if (mounted && changed == true) _reload();
+  }
+
   Future<void> _reorder(_BuilderData data, int oldIndex, int newIndex) async {
     if (!data.plan.isEditable || _working) return;
     final reordered = [...data.actions];
@@ -247,6 +257,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         onPreview: () => context.push(
                           '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
                         ),
+                        onGenerate: () => _generateActions(data.plan),
                         onAdd: () => _openAction(),
                         onPublish: () => _publish(data),
                         onArchive: () => _archive(data.plan),
@@ -380,6 +391,7 @@ class _PlanActions extends StatelessWidget {
     required this.plan,
     required this.working,
     required this.onPreview,
+    required this.onGenerate,
     required this.onAdd,
     required this.onPublish,
     required this.onArchive,
@@ -389,6 +401,7 @@ class _PlanActions extends StatelessWidget {
   final CarePlan plan;
   final bool working;
   final VoidCallback onPreview;
+  final VoidCallback onGenerate;
   final VoidCallback onAdd;
   final VoidCallback onPublish;
   final VoidCallback onArchive;
@@ -406,6 +419,12 @@ class _PlanActions extends StatelessWidget {
           label: const Text('Patient preview'),
         ),
         if (plan.isEditable) ...[
+          if (plan.prescriptionId != null)
+            FilledButton.tonalIcon(
+              onPressed: working ? null : onGenerate,
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: const Text('Generate action suggestions'),
+            ),
           OutlinedButton.icon(
             onPressed: working ? null : onAdd,
             icon: const Icon(Icons.add),

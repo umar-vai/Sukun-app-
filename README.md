@@ -160,8 +160,8 @@ The offline queue stores task identifiers and patient interactions in Android
 Keystore/iOS Keychain-backed secure storage; it never stores prescription text
 or credentials. Android support therefore starts at API 23.
 
-Phase 4 backend work is in progress. The `prescription-to-actions` Edge
-Function now provides:
+Phase 4 implementation is present across the backend and Flutter review
+workflow. The `prescription-to-actions` Edge Function provides:
 
 - database-verified Super Admin access and server-side prescription loading
 - strict normalized action-schema validation with mandatory ambiguity review
@@ -173,9 +173,23 @@ Function now provides:
 - structured operational logs containing slot IDs but no credentials or raw
   prescription text
 
-The remaining Phase 4 work is the Flutter generation/review/import experience,
-live Bangla/mixed-language provider verification, resource matching against the
-canonical content library, and production quota-scope confirmation.
+The Flutter Super Admin workflow now provides:
+
+- a Generate Action Suggestions control only on editable plans linked to a
+  stored prescription
+- a review screen that keeps the original prescription visible beside editable
+  Bangla/English suggestions and ambiguity warnings
+- deterministic matching against published canonical resource titles, with no
+  resource linked until the administrator explicitly selects it
+- idempotent draft imports that retain `needs_review` for ambiguous output and
+  never approve or publish AI output automatically
+- a neutral Manual Action Builder route when every configured AI slot is
+  unavailable, without provider, quota, status-code, or key details
+
+The remaining production verification is a hosted failover integration run
+with real configured Gemini quota scopes. Repository tests already cover
+Bangla/mixed-language response parsing, schema rejection, resource matching,
+neutral fallback UI, and simulated four-slot routing behavior.
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 

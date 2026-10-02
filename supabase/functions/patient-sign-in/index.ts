@@ -3,7 +3,8 @@ import { parsePatientSignInInput } from "./validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -21,8 +22,12 @@ function requiredEnvironment(name: string): string {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (request.method !== "POST") return response({ code: "method_not_allowed" }, 405);
+  if (request.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  if (request.method !== "POST") {
+    return response({ code: "method_not_allowed" }, 405);
+  }
 
   let input;
   try {
@@ -48,7 +53,10 @@ Deno.serve(async (request) => {
       .eq("status", "active")
       .maybeSingle();
     if (!patient?.phone) {
-      return response({ code: "invalid_credentials", message: "Patient ID or password is incorrect." }, 401);
+      return response({
+        code: "invalid_credentials",
+        message: "Patient ID or password is incorrect.",
+      }, 401);
     }
 
     const authClient = createClient(supabaseUrl, anonKey, {
@@ -59,7 +67,10 @@ Deno.serve(async (request) => {
       password: input.password,
     });
     if (error || !data.session || data.user.id !== patient.user_id) {
-      return response({ code: "invalid_credentials", message: "Patient ID or password is incorrect." }, 401);
+      return response({
+        code: "invalid_credentials",
+        message: "Patient ID or password is incorrect.",
+      }, 401);
     }
 
     return response({

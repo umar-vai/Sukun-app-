@@ -11,7 +11,9 @@ export function parseChangePasswordInput(value: unknown): ChangePasswordInput {
   const currentPassword = typeof body.current_password === "string"
     ? body.current_password
     : "";
-  const newPassword = typeof body.new_password === "string" ? body.new_password : "";
+  const newPassword = typeof body.new_password === "string"
+    ? body.new_password
+    : "";
   if (currentPassword.length < 8 || currentPassword.length > 72) {
     throw new Error("Enter the current temporary password.");
   }
@@ -19,7 +21,9 @@ export function parseChangePasswordInput(value: unknown): ChangePasswordInput {
     throw new Error("The new password must be between 8 and 72 characters.");
   }
   if (newPassword === currentPassword) {
-    throw new Error("Choose a new password that is different from the temporary password.");
+    throw new Error(
+      "Choose a new password that is different from the temporary password.",
+    );
   }
   return { currentPassword, newPassword };
 }

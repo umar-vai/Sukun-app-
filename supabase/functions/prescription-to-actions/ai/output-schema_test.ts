@@ -45,3 +45,26 @@ Deno.test("rejects malformed dosage-like numeric output", () => {
     "positive integer",
   );
 });
+
+Deno.test("preserves Bangla and mixed-language action text", () => {
+  const output = parseSuggestedActions({
+    actions: [{
+      type: "recitation",
+      title: "আয়াতুল কুরসি recitation",
+      instruction: "সকাল ৩ বার পড়বেন",
+      count_target: 3,
+      duration_minutes: null,
+      frequency: { type: "daily", interval: 1 },
+      time_window: "morning",
+      exact_time: null,
+      resource_match_query: "Ayatul Kursi আয়াতুল কুরসি",
+      confidence: 0.92,
+      needs_review: false,
+      ambiguities: [],
+    }],
+  });
+
+  assertEquals(output.actions[0].title, "আয়াতুল কুরসি recitation");
+  assertEquals(output.actions[0].instruction, "সকাল ৩ বার পড়বেন");
+  assertEquals(output.actions[0].count_target, 3);
+});

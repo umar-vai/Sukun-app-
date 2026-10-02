@@ -93,13 +93,13 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [x] Use provider retry metadata such as `Retry-After` when available
 - [ ] Verify whether configured keys have independent quota scopes before production
 - [x] Never expose quota/credit/key/provider errors to the Super Admin UI
-- [ ] If all four slots fail, preserve prescription and continue via manual Action Builder without raw provider errors
+- [x] If all four slots fail, preserve prescription and continue via manual Action Builder without raw provider errors
 - [x] Ensure Flutter never selects or receives Gemini credentials
 - [x] Define strict canonical JSON schema shared across all key slots
-- [ ] Parse Bangla/mixed-language prescription text
+- [x] Parse Bangla/mixed-language prescription text
 - [x] Mark ambiguous output as `needs_review`
-- [ ] Resource matching suggestions
-- [ ] Admin action review screen
+- [x] Resource matching suggestions
+- [x] Admin action review screen
 - [x] No automatic publishing
 - [x] Add idempotent request IDs to prevent duplicate actions during failover
 - [x] Add internal metrics/logging without raw keys or full sensitive prescription text

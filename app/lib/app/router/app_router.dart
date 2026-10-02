@@ -7,6 +7,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/ai_action_review_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
@@ -145,6 +146,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => CarePlanPreviewScreen(
                       patientId: state.pathParameters['patientId']!,
                       planId: state.pathParameters['planId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'actions/suggest',
+                    builder: (context, state) => AiActionReviewScreen(
+                      patientId: state.pathParameters['patientId']!,
+                      planId: state.pathParameters['planId']!,
+                      prescriptionId:
+                          state.uri.queryParameters['prescriptionId'] ?? '',
                     ),
                   ),
                   GoRoute(
