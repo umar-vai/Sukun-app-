@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter-quality:
+    name: Flutter / Format Analyze Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+  android-debug-build:
+    name: Flutter / Android Debug Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: flutter-quality
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+  edge-functions:
+    name: Backend / Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check Edge Function formatting
+        run: deno fmt --check supabase/functions
+
+      - name: Type-check Edge Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in supabase/functions/*; do
+            [ -d "$dir" ] || continue
+            [ -f "$dir/index.ts" ] || continue
+            if [ -f "$dir/deno.json" ]; then
+              deno check --allow-import --config "$dir/deno.json" "$dir/index.ts"
+            else
+              deno check --allow-import "$dir/index.ts"
+            fi
+          done
+
+      - name: Run Edge Function tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for dir in supabase/functions/*; do
+            [ -d "$dir" ] || continue
+            while IFS= read -r -d '' test_file; do
+              found=1
+              if [ -f "$dir/deno.json" ]; then
+                deno test --allow-import --config "$dir/deno.json" "$test_file"
+              else
+                deno test --allow-import "$test_file"
+              fi
+            done < <(find "$dir" -type f -name '*_test.ts' -print0)
+          done
+          if [ "$found" -eq 0 ]; then
+            echo 'No Edge Function tests found.' >&2
+            exit 1
+          fi
+
+  database-security:
+    name: Database / Supabase RLS Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Rebuild database from migrations
+        run: supabase db reset
+
+      - name: Run pgTAP and RLS tests
+        run: supabase test db
+
+      - name: Lint local database
+        run: supabase db lint --local
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: supabase stop --no-backup
