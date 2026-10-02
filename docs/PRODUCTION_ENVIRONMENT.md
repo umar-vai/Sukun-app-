@@ -20,6 +20,8 @@ As of 2026-10-02:
 - RLS is enabled across all 24 public tables.
 - Current app security/RLS policies are deployed.
 - Phase 5 CMS/resource taxonomy/collection database changes are deployed.
+- The Phase 6 published-media rights/licensing constraint is deployed and
+  validated; published external media cannot omit `rights_note`.
 - The following Edge Functions are deployed and ACTIVE:
   - `admin-create-patient`
   - `patient-sign-in`
