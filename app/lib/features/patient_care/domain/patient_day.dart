@@ -19,4 +19,9 @@ class PatientDay {
     }
     return null;
   }
+
+  PatientDay replaceTask(PatientTask updated) => PatientDay(
+    activePlan: activePlan,
+    tasks: [for (final task in tasks) task.id == updated.id ? updated : task],
+  );
 }

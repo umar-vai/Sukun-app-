@@ -39,6 +39,7 @@ class PatientTask {
     this.completedAt,
     this.snoozedUntil,
     this.skipReason,
+    this.isPendingSync = false,
   });
 
   factory PatientTask.fromJson(Map<String, dynamic> json) {
@@ -66,6 +67,33 @@ class PatientTask {
   final DateTime? snoozedUntil;
   final String? skipReason;
   final PlanAction action;
+  final bool isPendingSync;
+
+  PatientTask copyWith({
+    PatientTaskStatus? status,
+    DateTime? completedAt,
+    DateTime? snoozedUntil,
+    String? skipReason,
+    bool? isPendingSync,
+    bool clearCompletedAt = false,
+    bool clearSnoozedUntil = false,
+    bool clearSkipReason = false,
+  }) {
+    return PatientTask(
+      id: id,
+      patientId: patientId,
+      occurrenceDate: occurrenceDate,
+      scheduledAt: scheduledAt,
+      status: status ?? this.status,
+      completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
+      snoozedUntil: clearSnoozedUntil
+          ? null
+          : snoozedUntil ?? this.snoozedUntil,
+      skipReason: clearSkipReason ? null : skipReason ?? this.skipReason,
+      action: action,
+      isPendingSync: isPendingSync ?? this.isPendingSync,
+    );
+  }
 }
 
 DateTime? _date(dynamic value) =>

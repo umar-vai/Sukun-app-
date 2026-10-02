@@ -80,6 +80,9 @@ class LinkedResource {
     required this.type,
     this.usageNote,
     this.titleBn,
+    this.mediaSourceType,
+    this.mediaUrl,
+    this.youtubeVideoId,
   });
 
   final String id;
@@ -87,6 +90,16 @@ class LinkedResource {
   final String? titleBn;
   final String type;
   final String? usageNote;
+  final String? mediaSourceType;
+  final String? mediaUrl;
+  final String? youtubeVideoId;
+
+  bool get canOpen {
+    if (mediaSourceType == 'youtube') {
+      return youtubeVideoId?.trim().isNotEmpty == true;
+    }
+    return mediaUrl?.trim().isNotEmpty == true;
+  }
 }
 
 class PlanAction {
@@ -122,6 +135,9 @@ class PlanAction {
           titleBn: item['title_bn'] as String?,
           type: item['type'] as String,
           usageNote: relation['usage_note'] as String?,
+          mediaSourceType: item['media_source_type'] as String?,
+          mediaUrl: item['media_url'] as String?,
+          youtubeVideoId: item['youtube_video_id'] as String?,
         );
       }
     }

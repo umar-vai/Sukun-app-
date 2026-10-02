@@ -1,17 +1,32 @@
-# sukun_life
+# Sukun Life Flutter App
 
-A new Flutter project.
+The Android/iOS client for the standalone Sukun Life patient-care platform.
+The app supports guest, patient, and server-verified Super Admin experiences.
 
-## Getting Started
+See the repository-level `AGENTS.md`, `CODEX_START_HERE.md`, and
+`IMPLEMENTATION_CHECKLIST.md` before making changes.
 
-This project is a starting point for a Flutter application.
+## Local run
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter run \
+  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=YOUR_CLIENT_SAFE_PUBLISHABLE_KEY \
+  --dart-define=FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Only client-safe values belong in `dart-define`. Gemini credentials, Supabase
+service-role keys, and Firebase server credentials are server-only.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Verification
+
+```bash
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+flutter build apk --debug
+```
+
+Offline completion events use Android Keystore/iOS Keychain-backed secure
+storage. Android's minimum supported version is Android 6.0 (API 23).

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
@@ -41,16 +42,27 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     if (_updatingTaskId != null) return;
     setState(() => _updatingTaskId = task.id);
     try {
-      await ref
+      final updated = await ref
           .read(patientCareRepositoryProvider)
           .recordTask(
-            taskId: task.id,
+            task: task,
             status: status,
             clientEventId: const Uuid().v4(),
             snoozedUntil: snoozedUntil,
             skipReason: skipReason,
           );
-      if (mounted) _reload();
+      final currentDay = await _day;
+      if (!mounted) return;
+      setState(() => _day = Future.value(currentDay.replaceTask(updated)));
+      if (updated.isPendingSync) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Saved securely on this device. It will sync automatically.',
+            ),
+          ),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -58,6 +70,14 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     } finally {
       if (mounted) setState(() => _updatingTaskId = null);
     }
+  }
+
+  Future<void> _openResource(PatientTask task) async {
+    final resource = task.action.resource;
+    if (resource == null) return;
+    await context.push<void>(
+      '/patient/resources/${Uri.encodeComponent(resource.id)}',
+    );
   }
 
   Future<void> _snooze(PatientTask task) async {
@@ -176,6 +196,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           _record(day.nextTask!, PatientTaskStatus.completed),
                       onSnooze: () => _snooze(day.nextTask!),
                       onSkip: () => _skip(day.nextTask!),
+                      onOpenResource: () => _openResource(day.nextTask!),
                     ),
                     const SizedBox(height: 22),
                   ],
@@ -202,6 +223,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                             _record(task, PatientTaskStatus.completed),
                         onSnooze: () => _snooze(task),
                         onSkip: () => _skip(task),
+                        onOpenResource: () => _openResource(task),
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -251,6 +273,7 @@ class _TaskCard extends StatelessWidget {
     required this.onDone,
     required this.onSnooze,
     required this.onSkip,
+    required this.onOpenResource,
     this.featured = false,
   });
 
@@ -260,6 +283,7 @@ class _TaskCard extends StatelessWidget {
   final VoidCallback onDone;
   final VoidCallback onSnooze;
   final VoidCallback onSkip;
+  final VoidCallback onOpenResource;
 
   @override
   Widget build(BuildContext context) {
@@ -318,11 +342,19 @@ class _TaskCard extends StatelessWidget {
             ],
             if (task.action.resource != null) ...[
               const SizedBox(height: 10),
-              Row(
+              OutlinedButton.icon(
+                onPressed: onOpenResource,
+                icon: const Icon(Icons.menu_book_outlined, size: 18),
+                label: Text('Open ${task.action.resource!.title}'),
+              ),
+            ],
+            if (task.isPendingSync) ...[
+              const SizedBox(height: 8),
+              const Row(
                 children: [
-                  const Icon(Icons.library_books_outlined, size: 18),
-                  const SizedBox(width: 7),
-                  Expanded(child: Text(task.action.resource!.title)),
+                  Icon(Icons.cloud_upload_outlined, size: 18),
+                  SizedBox(width: 7),
+                  Expanded(child: Text('Waiting to sync securely')),
                 ],
               ),
             ],

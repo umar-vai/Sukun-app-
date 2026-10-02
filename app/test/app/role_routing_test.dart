@@ -126,7 +126,7 @@ final class _EmptyPatientCareRepository implements PatientCareRepository {
 
   @override
   Future<PatientTask> recordTask({
-    required String taskId,
+    required PatientTask task,
     required PatientTaskStatus status,
     required String clientEventId,
     DateTime? snoozedUntil,

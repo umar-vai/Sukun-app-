@@ -129,7 +129,7 @@ Phase 2 completes the Super Admin core patient and care-plan workflow:
 - audited, idempotent workflow functions that retain RLS and verify the
   database-backed Super Admin role
 
-Phase 3 is in progress. The first patient-care milestone now provides:
+Phase 3 completes the patient-care milestone with:
 
 - patient sign-in using Sukun Patient ID, international phone number, or an
   administrator email
@@ -141,12 +141,24 @@ Phase 3 is in progress. The first patient-care milestone now provides:
 - next-action and daily completion progress cards
 - idempotent Done, Snooze, and Skip events through the protected completion RPC
 - My Plan and patient-visible prescription views
+- an RLS-protected linked-resource detail view from Today and My Plan, with
+  safe HTTPS/YouTube handoff when external media is present
+- patient 7-day and 30-day tracked-completion views
+- a Super Admin 7-day progress summary on each patient record
+- encrypted, account-partitioned write-ahead storage for offline completion events
+- automatic retry of queued events with the original idempotency key on the
+  next Today refresh/app session
 - RLS-backed isolation so one patient cannot read or update another patient's
   care activity
 
-The remaining Phase 3 work is linked-resource opening, multi-day
-progress/adherence, the Super Admin progress view, and an offline-safe local
-completion queue.
+Progress currently reports materialized task activity. Reminder-driven future
+task materialization and native media playback remain in their documented later
+phases. Linked resource text/reference content opens in-app; external media uses
+the operating system's safe handler until native players are implemented.
+
+The offline queue stores task identifiers and patient interactions in Android
+Keystore/iOS Keychain-backed secure storage; it never stores prescription text
+or credentials. Android support therefore starts at API 23.
 
 The client-supplied official logo is stored unchanged at `app/assets/brand/sukunlife_logo.png`. Do not modify, recolor, crop, distort, or replace it with generated artwork.
 

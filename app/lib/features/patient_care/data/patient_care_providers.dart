@@ -3,7 +3,9 @@ import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_repository.dart';
+import 'package:sukun_life/features/patient_care/data/completion_queue_store.dart';
 import 'package:sukun_life/features/patient_care/data/supabase_patient_care_repository.dart';
+import 'package:sukun_life/features/patient_care/data/task_completion_coordinator.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
@@ -13,7 +15,14 @@ final patientCareRepositoryProvider = Provider<PatientCareRepository>((ref) {
   if (!AppEnvironment.isSupabaseConfigured) {
     return const UnavailablePatientCareRepository();
   }
-  return SupabasePatientCareRepository(Supabase.instance.client);
+  final client = Supabase.instance.client;
+  return SupabasePatientCareRepository(
+    client,
+    TaskCompletionCoordinator(
+      store: SecureCompletionQueueStore(),
+      remote: SupabaseTaskCompletionRemote(client),
+    ),
+  );
 });
 
 final class UnavailablePatientCareRepository implements PatientCareRepository {
@@ -38,7 +47,7 @@ final class UnavailablePatientCareRepository implements PatientCareRepository {
 
   @override
   Future<PatientTask> recordTask({
-    required String taskId,
+    required PatientTask task,
     required PatientTaskStatus status,
     required String clientEventId,
     DateTime? snoozedUntil,

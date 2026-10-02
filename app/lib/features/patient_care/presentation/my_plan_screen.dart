@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -43,6 +44,12 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
 
   void _reload() => setState(() => _data = _load());
 
+  Future<void> _openResource(LinkedResource resource) async {
+    await context.push<void>(
+      '/patient/resources/${Uri.encodeComponent(resource.id)}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PatientScaffold(
@@ -80,7 +87,12 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                 ),
                 const SizedBox(height: 10),
                 for (final action in data.actions) ...[
-                  _PlanActionCard(action: action),
+                  _PlanActionCard(
+                    action: action,
+                    onOpenResource: action.resource == null
+                        ? null
+                        : () => _openResource(action.resource!),
+                  ),
                   const SizedBox(height: 10),
                 ],
                 const SizedBox(height: 14),
@@ -169,9 +181,10 @@ class _PlanHeader extends StatelessWidget {
 }
 
 class _PlanActionCard extends StatelessWidget {
-  const _PlanActionCard({required this.action});
+  const _PlanActionCard({required this.action, this.onOpenResource});
 
   final PlanAction action;
+  final VoidCallback? onOpenResource;
 
   @override
   Widget build(BuildContext context) {
@@ -190,12 +203,10 @@ class _PlanActionCard extends StatelessWidget {
             ],
             if (action.resource != null) ...[
               const Divider(height: 26),
-              Row(
-                children: [
-                  const Icon(Icons.library_books_outlined, size: 19),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(action.resource!.title)),
-                ],
+              OutlinedButton.icon(
+                onPressed: onOpenResource,
+                icon: const Icon(Icons.menu_book_outlined, size: 18),
+                label: Text('Open ${action.resource!.title}'),
               ),
             ],
           ],

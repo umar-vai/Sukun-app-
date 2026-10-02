@@ -1,0 +1,73 @@
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+
+class ContentResource {
+  const ContentResource({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.visibility,
+    required this.status,
+    this.titleBn,
+    this.summary,
+    this.body,
+    this.arabicText,
+    this.banglaText,
+    this.transliteration,
+    this.translation,
+    this.referenceText,
+    this.sourceReference,
+    this.mediaSourceType,
+    this.mediaUrl,
+    this.youtubeVideoId,
+  });
+
+  factory ContentResource.fromJson(Map<String, dynamic> json) {
+    return ContentResource(
+      id: json['id'] as String,
+      type: json['type'] as String,
+      title: json['title'] as String,
+      titleBn: json['title_bn'] as String?,
+      summary: json['summary'] as String?,
+      body: json['body'] as String?,
+      arabicText: json['arabic_text'] as String?,
+      banglaText: json['bangla_text'] as String?,
+      transliteration: json['transliteration'] as String?,
+      translation: json['translation'] as String?,
+      referenceText: json['reference_text'] as String?,
+      sourceReference: json['source_reference'] as String?,
+      mediaSourceType: json['media_source_type'] as String?,
+      mediaUrl: json['media_url'] as String?,
+      youtubeVideoId: json['youtube_video_id'] as String?,
+      visibility: json['visibility'] as String,
+      status: json['status'] as String,
+    );
+  }
+
+  final String id;
+  final String type;
+  final String title;
+  final String? titleBn;
+  final String? summary;
+  final String? body;
+  final String? arabicText;
+  final String? banglaText;
+  final String? transliteration;
+  final String? translation;
+  final String? referenceText;
+  final String? sourceReference;
+  final String? mediaSourceType;
+  final String? mediaUrl;
+  final String? youtubeVideoId;
+  final String visibility;
+  final String status;
+
+  LinkedResource get linkedResource => LinkedResource(
+    id: id,
+    title: title,
+    titleBn: titleBn,
+    type: type,
+    mediaSourceType: mediaSourceType,
+    mediaUrl: mediaUrl,
+    youtubeVideoId: youtubeVideoId,
+  );
+}

@@ -19,6 +19,7 @@ import 'package:sukun_life/features/patients/presentation/create_patient_screen.
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
+import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -85,6 +86,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patient/progress',
         builder: (context, state) => const PatientProgressScreen(),
+      ),
+      GoRoute(
+        path: '/patient/resources/:resourceId',
+        builder: (context, state) => ResourceDetailScreen(
+          resourceId: state.pathParameters['resourceId']!,
+        ),
       ),
       GoRoute(
         path: '/patient/profile',

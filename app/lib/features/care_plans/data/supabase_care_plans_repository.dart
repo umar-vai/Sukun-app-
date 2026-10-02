@@ -35,7 +35,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
     final response = await _client
         .from('plan_actions')
         .select(
-          '*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status))',
+          '*,plan_action_resources(usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id))',
         )
         .eq('care_plan_id', planId)
         .neq('review_status', 'rejected')

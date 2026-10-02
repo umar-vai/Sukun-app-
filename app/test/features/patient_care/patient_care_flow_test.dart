@@ -92,7 +92,7 @@ final class _FakePatientCareRepository implements PatientCareRepository {
 
   @override
   Future<PatientTask> recordTask({
-    required String taskId,
+    required PatientTask task,
     required PatientTaskStatus status,
     required String clientEventId,
     DateTime? snoozedUntil,
@@ -100,9 +100,9 @@ final class _FakePatientCareRepository implements PatientCareRepository {
   }) async {
     recordedStatus = status;
     pendingTask = PatientTask(
-      id: pendingTask.id,
-      patientId: pendingTask.patientId,
-      occurrenceDate: pendingTask.occurrenceDate,
+      id: task.id,
+      patientId: task.patientId,
+      occurrenceDate: task.occurrenceDate,
       status: status,
       action: action,
       snoozedUntil: snoozedUntil,

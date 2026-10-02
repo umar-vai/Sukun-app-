@@ -8,6 +8,8 @@ import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
+import 'package:sukun_life/features/progress/data/progress_providers.dart';
+import 'package:sukun_life/features/progress/domain/adherence_summary.dart';
 
 class PatientDetailScreen extends ConsumerStatefulWidget {
   const PatientDetailScreen({super.key, required this.patientId});
@@ -106,6 +108,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
               children: [
                 _PatientSummaryCard(patient: patient),
+                const SizedBox(height: 14),
+                _PatientProgressCard(
+                  key: ValueKey(_details),
+                  patientId: patient.id,
+                ),
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -218,6 +225,90 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     if (!mounted) return;
     if (choice == 'prescription') await _addPrescription();
     if (choice == 'plan') await _createPlan();
+  }
+}
+
+class _PatientProgressCard extends ConsumerStatefulWidget {
+  const _PatientProgressCard({super.key, required this.patientId});
+
+  final String patientId;
+
+  @override
+  ConsumerState<_PatientProgressCard> createState() =>
+      _PatientProgressCardState();
+}
+
+class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
+  late Future<AdherenceSummary> _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = _load();
+  }
+
+  Future<AdherenceSummary> _load() => ref
+      .read(progressRepositoryProvider)
+      .getPatientProgress(widget.patientId, days: 7);
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AdherenceSummary>(
+      future: _progress,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: LinearProgressIndicator(),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.error_outline),
+              title: const Text('Progress could not be loaded'),
+              trailing: IconButton(
+                tooltip: 'Retry progress',
+                onPressed: () => setState(() => _progress = _load()),
+                icon: const Icon(Icons.refresh),
+              ),
+            ),
+          );
+        }
+        final progress = snapshot.data!;
+        final percentage = (progress.completionRate * 100).round();
+        return Card(
+          color: SukunColors.mist,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Last 7 days',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Text('$percentage% completed'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(value: progress.completionRate),
+                const SizedBox(height: 10),
+                Text(
+                  '${progress.completed} done · ${progress.skipped} skipped · ${progress.remaining} remaining',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

@@ -14,7 +14,7 @@ abstract interface class PatientCareRepository {
   Future<List<Prescription>> getVisiblePrescriptions();
 
   Future<PatientTask> recordTask({
-    required String taskId,
+    required PatientTask task,
     required PatientTaskStatus status,
     required String clientEventId,
     DateTime? snoozedUntil,

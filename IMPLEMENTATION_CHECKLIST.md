@@ -72,12 +72,12 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [x] Today's tasks
 - [x] My Plan
 - [x] Prescription view
-- [ ] Open linked resource from a plan task
+- [x] Open linked resource from a plan task
 - [x] Done
 - [x] Snooze
 - [x] Skip
-- [ ] Progress screen
-- [ ] Offline-safe completion queue
+- [x] Progress screen
+- [x] Offline-safe completion queue
 
 ## Phase 4 — Prescription-to-action AI
 
@@ -254,7 +254,7 @@ The MVP is accepted only if this works end to end:
 - [ ] Reminder appears
 - [x] Patient marks a task complete
 - [x] Backend records completion
-- [ ] Admin sees updated progress
+- [x] Admin sees updated progress
 - [ ] Admin can publish/edit a resource without app-store release
 - [ ] Dedicated Islamic Resources hub is accessible and clearly separate from `My Plan`
 - [ ] Qur'an, Hadith, Dua & Azkar, Ruqyah, Books/PDF, Articles/Guides, Audio and Video are represented in the resource architecture
