@@ -46,6 +46,11 @@ dependencies:
   audio_service: 0.18.19
   shared_preferences: 2.5.5
   youtube_player_flutter: 10.0.1
+  flutter_local_notifications: 22.3.1
+  timezone: 0.11.1
+  flutter_timezone: 5.1.0
+  firebase_core: 4.15.0
+  firebase_messaging: 16.7.0
 
 dev_dependencies:
   flutter_test:

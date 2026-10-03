@@ -66,4 +66,34 @@ void main() {
       );
     });
   });
+
+  group('Firebase client runtime configuration', () {
+    test('allows notifications to remain unconfigured in local previews', () {
+      expect(
+        () => validateFirebaseRuntimeConfiguration(
+          projectId: '',
+          messagingSenderId: '',
+          androidApiKey: '',
+          androidAppId: '',
+          iosApiKey: '',
+          iosAppId: '',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('requires Android and iOS client values together', () {
+      expect(
+        () => validateFirebaseRuntimeConfiguration(
+          projectId: 'firebase-project',
+          messagingSenderId: '123456',
+          androidApiKey: 'android-public-key',
+          androidAppId: 'android-app-id',
+          iosApiKey: '',
+          iosAppId: '',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+  });
 }

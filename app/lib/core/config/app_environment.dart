@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract final class AppEnvironment {
@@ -17,11 +19,57 @@ abstract final class AppEnvironment {
   static const firebaseProjectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
   );
+  static const firebaseMessagingSenderId = String.fromEnvironment(
+    'FIREBASE_MESSAGING_SENDER_ID',
+  );
+  static const firebaseAndroidApiKey = String.fromEnvironment(
+    'FIREBASE_ANDROID_API_KEY',
+  );
+  static const firebaseAndroidAppId = String.fromEnvironment(
+    'FIREBASE_ANDROID_APP_ID',
+  );
+  static const firebaseIosApiKey = String.fromEnvironment(
+    'FIREBASE_IOS_API_KEY',
+  );
+  static const firebaseIosAppId = String.fromEnvironment('FIREBASE_IOS_APP_ID');
+  static const firebaseIosBundleId = String.fromEnvironment(
+    'FIREBASE_IOS_BUNDLE_ID',
+    defaultValue: 'com.sukunlife.app',
+  );
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
 
   static bool get isProduction => name == 'production';
+
+  static bool get isFirebaseConfigured {
+    final platformValues = switch (defaultTargetPlatform) {
+      TargetPlatform.android => [firebaseAndroidApiKey, firebaseAndroidAppId],
+      TargetPlatform.iOS => [firebaseIosApiKey, firebaseIosAppId],
+      _ => const <String>[],
+    };
+    return firebaseProjectId.isNotEmpty &&
+        firebaseMessagingSenderId.isNotEmpty &&
+        platformValues.isNotEmpty &&
+        platformValues.every((value) => value.isNotEmpty);
+  }
+
+  static FirebaseOptions get firebaseOptions => switch (defaultTargetPlatform) {
+    TargetPlatform.android => FirebaseOptions(
+      apiKey: firebaseAndroidApiKey,
+      appId: firebaseAndroidAppId,
+      messagingSenderId: firebaseMessagingSenderId,
+      projectId: firebaseProjectId,
+    ),
+    TargetPlatform.iOS => FirebaseOptions(
+      apiKey: firebaseIosApiKey,
+      appId: firebaseIosAppId,
+      messagingSenderId: firebaseMessagingSenderId,
+      projectId: firebaseProjectId,
+      iosBundleId: firebaseIosBundleId,
+    ),
+    _ => throw UnsupportedError('Firebase messaging supports Android and iOS.'),
+  };
 
   static Future<void> initialize() async {
     validateSupabaseRuntimeConfiguration(
@@ -36,6 +84,41 @@ abstract final class AppEnvironment {
         publishableKey: supabasePublishableKey,
       );
     }
+    validateFirebaseRuntimeConfiguration(
+      projectId: firebaseProjectId,
+      messagingSenderId: firebaseMessagingSenderId,
+      androidApiKey: firebaseAndroidApiKey,
+      androidAppId: firebaseAndroidAppId,
+      iosApiKey: firebaseIosApiKey,
+      iosAppId: firebaseIosAppId,
+    );
+    if (isFirebaseConfigured && Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: firebaseOptions);
+    }
+  }
+}
+
+void validateFirebaseRuntimeConfiguration({
+  required String projectId,
+  required String messagingSenderId,
+  required String androidApiKey,
+  required String androidAppId,
+  required String iosApiKey,
+  required String iosAppId,
+}) {
+  final values = [
+    projectId,
+    messagingSenderId,
+    androidApiKey,
+    androidAppId,
+    iosApiKey,
+    iosAppId,
+  ];
+  final configured = values.where((value) => value.trim().isNotEmpty).length;
+  if (configured != 0 && configured != values.length) {
+    throw StateError(
+      'Firebase Android and iOS client configuration must be supplied together.',
+    );
   }
 }
 

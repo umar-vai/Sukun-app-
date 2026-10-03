@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
@@ -28,8 +31,11 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     _day = _load();
   }
 
-  Future<PatientDay> _load() =>
-      ref.read(patientCareRepositoryProvider).getToday();
+  Future<PatientDay> _load() async {
+    final day = await ref.read(patientCareRepositoryProvider).getToday();
+    unawaited(ref.read(notificationCoordinatorProvider).syncIfEnabled());
+    return day;
+  }
 
   void _reload() => setState(() => _day = _load());
 
@@ -51,6 +57,12 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             snoozedUntil: snoozedUntil,
             skipReason: skipReason,
           );
+      final notifications = ref.read(notificationCoordinatorProvider);
+      if (status == PatientTaskStatus.snoozed && snoozedUntil != null) {
+        unawaited(notifications.scheduleSnooze(updated, snoozedUntil));
+      } else {
+        unawaited(notifications.cancelTask(updated));
+      }
       final currentDay = await _day;
       if (!mounted) return;
       setState(() => _day = Future.value(currentDay.replaceTask(updated)));

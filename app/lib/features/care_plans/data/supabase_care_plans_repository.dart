@@ -140,11 +140,24 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
   }
 
   @override
-  Future<CarePlan> publishPlan(String planId, String requestId) {
-    return _rpcPlan('publish_care_plan', {
+  Future<CarePlan> publishPlan(String planId, String requestId) async {
+    final plan = await _rpcPlan('publish_care_plan', {
       'p_care_plan_id': planId,
       'p_request_id': requestId,
     });
+    try {
+      await _client.functions.invoke(
+        'send-notification',
+        body: {
+          'type': 'plan_updated',
+          'care_plan_id': planId,
+          'request_id': requestId,
+        },
+      );
+    } on Object {
+      // Publishing is authoritative; push delivery must never roll it back.
+    }
+    return plan;
   }
 
   @override

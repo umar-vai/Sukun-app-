@@ -202,14 +202,14 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 7 — Notifications
 
-- [ ] Local scheduled notifications
-- [ ] Generate reminders from approved actions
-- [ ] Cancel old reminders on plan change
-- [ ] Snooze behavior
-- [ ] Firebase Cloud Messaging
-- [ ] Plan-updated push
-- [ ] Optional admin broadcast
-- [ ] Device token management
+- [x] Local scheduled notifications
+- [x] Generate reminders from approved actions with explicit exact times only
+- [x] Cancel and reschedule old reminders on plan change
+- [x] Snooze behavior
+- [x] Firebase Cloud Messaging client/server architecture
+- [x] Plan-updated push
+- [x] Optional admin broadcast assessed and excluded from the MVP
+- [x] Device token registration, refresh, removal, and invalid-token cleanup
 
 ## Phase 8 — Islamic utilities
 

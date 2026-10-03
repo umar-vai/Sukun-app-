@@ -444,3 +444,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/prescription-to-actions/deno.json"
 entrypoint = "./functions/prescription-to-actions/index.ts"
+
+[functions.send-notification]
+enabled = true
+# The function validates the caller and super_admin role before using
+# server-only Firebase credentials. Flutter never receives sender credentials.
+verify_jwt = false
+import_map = "./functions/send-notification/deno.json"
+entrypoint = "./functions/send-notification/index.ts"
