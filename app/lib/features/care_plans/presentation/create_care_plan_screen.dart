@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -122,62 +124,105 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      SukunPageIntro(
+                        eyebrow: 'Plan workspace',
+                        title: isNewVersion
+                            ? 'Create a safe new version'
+                            : 'Create a care plan',
+                        subtitle: 'Set the plan context first. Structured actions are reviewed separately before publishing.',
+                        trailing: const SukunIconBadge(
+                          icon: Icons.assignment_add,
+                          size: 54,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       if (isNewVersion) ...[
-                        const Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(18),
-                            child: Text(
-                              'Actions and resource links will be copied into a new draft. Every copied action is marked “Needs review” and must be approved again before publishing.',
-                            ),
+                        const SukunSurface(
+                          tone: SukunSurfaceTone.warning,
+                          showBorder: false,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.copy_all_outlined,
+                                color: SukunColors.deepTide,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Actions and resource links will be copied into a new draft. Every copied action is marked “Needs review” and must be approved again before publishing.',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 18),
                       ],
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Plan name',
-                        ),
-                        validator: validatePlanName,
-                      ),
-                      const SizedBox(height: 14),
-                      DropdownButtonFormField<String>(
-                        initialValue: _prescriptionId,
-                        decoration: const InputDecoration(
-                          labelText: 'Source prescription',
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: '',
-                            child: Text('No prescription selected'),
-                          ),
-                          for (final prescription in prescriptions)
-                            DropdownMenuItem(
-                              value: prescription.id,
-                              child: Text(
-                                prescription.rawText,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                      SukunSurface(
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Plan name',
+                                prefixIcon: Icon(Icons.assignment_outlined),
                               ),
+                              validator: validatePlanName,
                             ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _prescriptionId = value ?? ''),
+                            const SizedBox(height: 14),
+                            SukunChoiceField<String>(
+                              value: _prescriptionId,
+                              label: 'Source prescription',
+                              placeholder: 'Choose an original instruction',
+                              options: [
+                                const SukunChoiceOption(
+                                  value: '',
+                                  title: 'No prescription selected',
+                                  description: 'Build this draft manually without an attached source.',
+                                  icon: Icons.edit_note_rounded,
+                                ),
+                                for (final prescription in prescriptions)
+                                  SukunChoiceOption(
+                                    value: prescription.id,
+                                    title:
+                                        'Recorded ${_formatDate(prescription.createdAt)}',
+                                    description: prescription.rawText,
+                                    icon: Icons.description_outlined,
+                                  ),
+                              ],
+                              onChanged: (value) =>
+                                  setState(() => _prescriptionId = value),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      _DateTile(
-                        label: 'Start date',
-                        value: _startDate,
-                        onTap: _pickStartDate,
+                      const SizedBox(height: 16),
+                      const SukunSectionHeader(
+                        title: 'Plan window',
+                        subtitle: 'Dates control when this version may generate patient tasks.',
                       ),
                       const SizedBox(height: 10),
-                      _DateTile(
-                        label: 'End date',
-                        value: _endDate,
-                        onTap: _pickEndDate,
-                        onClear: _endDate == null
-                            ? null
-                            : () => setState(() => _endDate = null),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _DateTile(
+                              label: 'Start date',
+                              value: _startDate,
+                              onTap: _pickStartDate,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _DateTile(
+                              label: 'End date',
+                              value: _endDate,
+                              onTap: _pickEndDate,
+                              onClear: _endDate == null
+                                  ? null
+                                  : () => setState(() => _endDate = null),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                       FilledButton.icon(
@@ -221,19 +266,37 @@ class _DateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.event_outlined),
-        title: Text(label),
-        subtitle: Text(value == null ? 'No end date' : _formatDate(value!)),
-        trailing: onClear == null
-            ? const Icon(Icons.chevron_right)
-            : IconButton(
-                onPressed: onClear,
-                tooltip: 'Clear date',
-                icon: const Icon(Icons.close),
-              ),
-        onTap: onTap,
+    return SukunSurface(
+      radius: 20,
+      padding: const EdgeInsets.all(15),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SukunIconBadge(icon: Icons.event_outlined, size: 40),
+              const Spacer(),
+              if (onClear != null)
+                IconButton(
+                  onPressed: onClear,
+                  tooltip: 'Clear date',
+                  icon: const Icon(Icons.close_rounded),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: SukunColors.muted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value == null ? 'No end date' : _formatDate(value!),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ],
       ),
     );
   }

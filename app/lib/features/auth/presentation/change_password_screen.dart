@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 
 class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -74,57 +76,91 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Create your private password',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  const SukunIconBadge(
+                    icon: Icons.lock_reset_rounded,
+                    size: 62,
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'The temporary password must be replaced before any patient information can be opened.',
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _currentController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Current temporary password',
-                    ),
-                    validator: validateAccountPassword,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _newController,
-                    obscureText: true,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: const InputDecoration(
-                      labelText: 'New password',
-                    ),
-                    validator: validateAccountPassword,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _confirmController,
-                    obscureText: true,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm new password',
-                    ),
-                    validator: (value) => validateConfirmedPassword(
-                      _newController.text,
-                      value ?? '',
-                    ),
+                  const SizedBox(height: 18),
+                  const SukunPageIntro(
+                    eyebrow: 'First sign in',
+                    title: 'Create your private password',
+                    subtitle: 'Replace the temporary password before opening patient information. This protects your private care account.',
                   ),
                   const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _submitting ? null : _submit,
-                    icon: _submitting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.password_outlined),
-                    label: Text(
-                      _submitting ? 'Updating…' : 'Save new password',
+                  SukunSurface(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _currentController,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Temporary password',
+                            prefixIcon: Icon(Icons.key_outlined),
+                          ),
+                          validator: validateAccountPassword,
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _newController,
+                          obscureText: true,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: const InputDecoration(
+                            labelText: 'New password',
+                            prefixIcon: Icon(Icons.lock_outline_rounded),
+                          ),
+                          validator: validateAccountPassword,
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _confirmController,
+                          obscureText: true,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: const InputDecoration(
+                            labelText: 'Confirm new password',
+                            prefixIcon: Icon(Icons.verified_user_outlined),
+                          ),
+                          validator: (value) => validateConfirmedPassword(
+                            _newController.text,
+                            value ?? '',
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          onPressed: _submitting ? null : _submit,
+                          icon: _submitting
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.shield_outlined),
+                          label: Text(
+                            _submitting ? 'Updating…' : 'Secure my account',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    radius: 18,
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: SukunColors.deepTide),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Use at least 8 characters and do not reuse your temporary password.',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

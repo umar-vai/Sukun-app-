@@ -26,8 +26,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('Arabic'), findsOneWidget);
-    expect(find.text('Reference'), findsOneWidget);
+    expect(find.text('ARABIC'), findsOneWidget);
+    expect(find.text('REFERENCE'), findsOneWidget);
     expect(find.text('Surah Al-Baqarah 2:255'), findsOneWidget);
   });
 }

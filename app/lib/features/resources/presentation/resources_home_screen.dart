@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
@@ -81,48 +83,36 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               sliver: SliverList.list(
                 children: [
-                  Text(
-                    'ইসলামিক রিসোর্স',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  SukunPageIntro(
+                    eyebrow: 'Verified library',
+                    title: 'Islamic Resources',
+                    subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
+                    trailing: const SukunIconBadge(
+                      icon: Icons.auto_stories_outlined,
+                      size: 54,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Browse verified and published Qur’an, Hadith, Dua, Ruqyah, books, guides, audio and video.',
-                  ),
-                  const SizedBox(height: 18),
-                  SearchBar(
+                  const SizedBox(height: 20),
+                  SukunSearchField(
                     controller: _searchController,
                     hintText: 'Search title, topic or reference',
-                    leading: const Icon(Icons.search),
-                    trailing: [
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            _refresh();
-                          },
-                          icon: const Icon(Icons.close),
-                          tooltip: 'Clear search',
-                        ),
-                    ],
                     onChanged: (_) => setState(() {}),
                     onSubmitted: (_) => _refresh(),
+                    onClear: () {
+                      _searchController.clear();
+                      _refresh();
+                    },
                   ),
                   const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Browse sections',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      if (_selectedSection != null)
-                        TextButton(
-                          onPressed: () => _selectSection(null),
-                          child: const Text('Show all'),
-                        ),
-                    ],
+                  SukunSectionHeader(
+                    title: 'Browse the library',
+                    subtitle: 'Eight curated collections',
+                    action: _selectedSection == null
+                        ? null
+                        : TextButton(
+                            onPressed: () => _selectSection(null),
+                            child: const Text('Show all'),
+                          ),
                   ),
                   const SizedBox(height: 10),
                   LayoutBuilder(
@@ -135,7 +125,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                           crossAxisCount: columns,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: columns == 4 ? 1.2 : 1.05,
+                          childAspectRatio: columns == 4 ? 1.08 : 0.86,
                         ),
                         itemCount: resourceSections.length,
                         itemBuilder: (context, index) {
@@ -150,9 +140,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    _selectedSection?.title ?? 'Recently published',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  SukunSectionHeader(
+                    title: _selectedSection?.title ?? 'Recently published',
+                    subtitle: _selectedSection == null
+                        ? 'Latest verified additions'
+                        : 'Published items in this section',
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -162,9 +154,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
               future: _resources,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppLoadingState(label: 'Loading resources'),
+                  return const SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 160,
+                      child: AppLoadingState(label: 'Loading resources'),
+                    ),
                   );
                 }
                 if (snapshot.hasError) {
@@ -223,28 +217,29 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: selected ? SukunColors.mist : null,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(section.icon, size: 30, color: SukunColors.deepTide),
-              const SizedBox(height: 8),
-              Text(
-                section.title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 2),
-              Text(section.titleBn, textAlign: TextAlign.center),
-            ],
+    return SukunSurface(
+      tone: selected ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+      padding: const EdgeInsets.all(14),
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SukunIconBadge(icon: section.icon, size: 46),
+          const SizedBox(height: 10),
+          Text(
+            section.title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall,
           ),
-        ),
+          const SizedBox(height: 2),
+          Text(
+            section.titleBn,
+            textAlign: TextAlign.center,
+            style: SukunTypography.banglaBody(
+              textStyle: Theme.of(context).textTheme.bodySmall,
+            ).copyWith(color: SukunColors.muted),
+          ),
+        ],
       ),
     );
   }
@@ -258,36 +253,55 @@ class _ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: SukunColors.mist,
-          foregroundColor: SukunColors.deepTide,
-          child: Icon(_resourceIcon(resource.type)),
-        ),
-        title: Text(
-          resource.titleBn?.isNotEmpty == true
-              ? resource.titleBn!
-              : resource.title,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (resource.titleBn?.isNotEmpty == true) Text(resource.title),
-            if (resource.summary?.isNotEmpty == true)
-              Text(
-                resource.summary!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(height: 6),
-            Text(_typeLabel(resource.type)),
-          ],
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+    return SukunSurface(
+      padding: const EdgeInsets.all(16),
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SukunIconBadge(icon: _resourceIcon(resource.type)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resource.titleBn?.isNotEmpty == true
+                      ? resource.titleBn!
+                      : resource.title,
+                  style: resource.titleBn?.isNotEmpty == true
+                      ? SukunTypography.banglaDisplay(
+                          textStyle: Theme.of(context).textTheme.titleMedium,
+                        )
+                      : Theme.of(context).textTheme.titleMedium,
+                ),
+                if (resource.titleBn?.isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    resource.title,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: SukunColors.muted),
+                  ),
+                ],
+                if (resource.summary?.isNotEmpty == true) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    resource.summary!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 9),
+                SukunStatusPill(
+                  label: _typeLabel(resource.type),
+                  tone: SukunStatusTone.brand,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+        ],
       ),
     );
   }

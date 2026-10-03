@@ -26,7 +26,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Calm support for faith and care'), findsOneWidget);
+    expect(find.text('A calmer place for faith and care.'), findsOneWidget);
     expect(find.text('Admin Dashboard'), findsNothing);
     expect(find.text('Today'), findsNothing);
   });
@@ -78,7 +78,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Admin Dashboard'), findsOneWidget);
+    expect(find.text('Dashboard'), findsWidgets);
     expect(find.text('Welcome, Admin'), findsOneWidget);
   });
 

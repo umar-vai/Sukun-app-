@@ -5,6 +5,7 @@ import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
 import 'package:sukun_life/features/patients/domain/patient_inputs.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 class CreatePatientScreen extends ConsumerStatefulWidget {
   const CreatePatientScreen({super.key});
@@ -61,24 +62,18 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
   }
 
   Future<void> _showSuccess(Patient patient) {
-    return showDialog<void>(
+    return showSukunDecisionDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Patient created'),
-        content: Text(
+      showCancel: false,
+      title: 'Patient created',
+      message:
           'Patient ID: ${patient.patientCode}\n\n'
           'Share the temporary sign-in details securely. The patient will be '
           'required to change the temporary credential.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
+      confirmLabel: 'Done',
+      icon: Icons.person_add_alt_1_rounded,
+    ).then((_) {});
   }
 
   @override
@@ -95,79 +90,114 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Patient account',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'This creates a private patient login. Keep temporary credentials out of notes and messages that are not secure.',
+                  const SukunPageIntro(
+                    eyebrow: 'Secure onboarding',
+                    title: 'Create a patient account',
+                    subtitle: 'Create a private login and share the temporary credential through a secure channel.',
                   ),
                   const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _nameController,
-                    textCapitalization: TextCapitalization.words,
-                    autofillHints: const [AutofillHints.name],
-                    decoration: const InputDecoration(labelText: 'Full name'),
-                    validator: validatePatientName,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
-                      helperText:
-                          'International format, such as +8801712345678',
-                    ),
-                    validator: validateInternationalPhone,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _patientCodeController,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(
-                      labelText: 'Patient ID (optional)',
-                      helperText: 'Leave blank to generate a unique Sukun ID.',
-                    ),
-                    validator: validatePatientCode,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: InputDecoration(
-                      labelText: 'Temporary password',
-                      helperText: 'Use at least 8 characters.',
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
+                  SukunSurface(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          textCapitalization: TextCapitalization.words,
+                          autofillHints: const [AutofillHints.name],
+                          decoration: const InputDecoration(
+                            labelText: 'Full name',
+                            prefixIcon: Icon(Icons.person_outline_rounded),
+                          ),
+                          validator: validatePatientName,
                         ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          autofillHints: const [AutofillHints.telephoneNumber],
+                          decoration: const InputDecoration(
+                            labelText: 'Phone number',
+                            prefixIcon: Icon(Icons.phone_outlined),
+                            helperText:
+                                'International format, such as +8801712345678',
+                          ),
+                          validator: validateInternationalPhone,
                         ),
-                      ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _patientCodeController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(
+                            labelText: 'Patient ID (optional)',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                            helperText:
+                                'Leave blank to generate a unique Sukun ID.',
+                          ),
+                          validator: validatePatientCode,
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: InputDecoration(
+                            labelText: 'Temporary password',
+                            prefixIcon: const Icon(Icons.key_outlined),
+                            helperText: 'Use at least 8 characters.',
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                            ),
+                          ),
+                          validator: validateTemporaryPassword,
+                        ),
+                        const SizedBox(height: 22),
+                        FilledButton.icon(
+                          onPressed: _submitting ? null : _submit,
+                          icon: _submitting
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.person_add_alt_1),
+                          label: Text(
+                            _submitting
+                                ? 'Creating securely…'
+                                : 'Create patient',
+                          ),
+                        ),
+                      ],
                     ),
-                    validator: validateTemporaryPassword,
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _submitting ? null : _submit,
-                    icon: _submitting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.person_add_alt_1),
-                    label: Text(
-                      _submitting ? 'Creating securely…' : 'Create patient',
+                  const SizedBox(height: 14),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    radius: 18,
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.shield_outlined),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'The patient must replace the temporary password before private care information opens.',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

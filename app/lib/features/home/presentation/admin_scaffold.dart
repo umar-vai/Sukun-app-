@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 class AdminScaffold extends StatelessWidget {
   const AdminScaffold({
@@ -23,9 +24,9 @@ class AdminScaffold extends StatelessWidget {
       appBar: AppBar(title: Text(title), actions: actions),
       body: body,
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: selectedIndex,
-        onDestinationSelected: (index) {
+        onSelected: (index) {
           if (index == selectedIndex) return;
           context.go(switch (index) {
             0 => '/admin/dashboard',
@@ -34,19 +35,19 @@ class AdminScaffold extends StatelessWidget {
           });
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
+          SukunNavDestination(
+            icon: Icons.dashboard_outlined,
+            selectedIcon: Icons.dashboard,
             label: 'Dashboard',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
+          SukunNavDestination(
+            icon: Icons.people_outline,
+            selectedIcon: Icons.people,
             label: 'Patients',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.library_books_outlined),
-            selectedIcon: Icon(Icons.library_books),
+          SukunNavDestination(
+            icon: Icons.library_books_outlined,
+            selectedIcon: Icons.library_books,
             label: 'Content',
           ),
         ],

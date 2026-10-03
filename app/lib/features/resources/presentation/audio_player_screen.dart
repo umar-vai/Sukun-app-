@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 class AudioPlayerScreen extends ConsumerStatefulWidget {
@@ -70,16 +70,33 @@ class _PlayerBody extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
         children: [
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              color: SukunColors.mist,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Icon(
-              Icons.graphic_eq_rounded,
-              size: 86,
-              color: SukunColors.deepTide,
+          SukunSurface(
+            tone: SukunSurfaceTone.navy,
+            showBorder: false,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: Column(
+              children: [
+                Container(
+                  width: 112,
+                  height: 112,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(36),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Icon(
+                    Icons.graphic_eq_rounded,
+                    size: 62,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const SukunStatusPill(
+                  label: 'BACKGROUND AUDIO',
+                  tone: SukunStatusTone.brand,
+                  icon: Icons.headphones_rounded,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 28),
@@ -99,139 +116,151 @@ class _PlayerBody extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 28),
-          StreamBuilder<Duration?>(
-            stream: player.durationStream,
-            builder: (context, durationSnapshot) {
-              final duration = durationSnapshot.data ?? Duration.zero;
-              return StreamBuilder<Duration>(
-                stream: player.positionStream,
-                builder: (context, positionSnapshot) {
-                  final position = _boundedPosition(
-                    positionSnapshot.data ?? Duration.zero,
-                    duration,
-                  );
-                  return Column(
-                    children: [
-                      Slider(
-                        value: position.inMilliseconds.toDouble(),
-                        max: duration.inMilliseconds > 0
-                            ? duration.inMilliseconds.toDouble()
-                            : 1,
-                        onChanged: duration == Duration.zero
-                            ? null
-                            : (value) => _runPlaybackAction(
-                                context,
-                                () => controller.seek(
-                                  Duration(milliseconds: value.round()),
-                                ),
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          SukunSurface(
+            child: Column(
+              children: [
+                StreamBuilder<Duration?>(
+                  stream: player.durationStream,
+                  builder: (context, durationSnapshot) {
+                    final duration = durationSnapshot.data ?? Duration.zero;
+                    return StreamBuilder<Duration>(
+                      stream: player.positionStream,
+                      builder: (context, positionSnapshot) {
+                        final position = _boundedPosition(
+                          positionSnapshot.data ?? Duration.zero,
+                          duration,
+                        );
+                        return Column(
                           children: [
-                            Text(_durationLabel(position)),
-                            Text(_durationLabel(duration)),
+                            Slider(
+                              value: position.inMilliseconds.toDouble(),
+                              max: duration.inMilliseconds > 0
+                                  ? duration.inMilliseconds.toDouble()
+                                  : 1,
+                              onChanged: duration == Duration.zero
+                                  ? null
+                                  : (value) => _runPlaybackAction(
+                                      context,
+                                      () => controller.seek(
+                                        Duration(milliseconds: value.round()),
+                                      ),
+                                    ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(_durationLabel(position)),
+                                Text(_durationLabel(duration)),
+                              ],
+                            ),
                           ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton.filledTonal(
+                      tooltip: 'Back 10 seconds',
+                      onPressed: () => _runPlaybackAction(
+                        context,
+                        () => controller.seek(
+                          player.position - const Duration(seconds: 10),
                         ),
                       ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton.filledTonal(
-                tooltip: 'Back 10 seconds',
-                onPressed: () => _runPlaybackAction(
-                  context,
-                  () => controller.seek(
-                    player.position - const Duration(seconds: 10),
-                  ),
-                ),
-                icon: const Icon(Icons.replay_10_rounded),
-              ),
-              const SizedBox(width: 18),
-              StreamBuilder<PlayerState>(
-                stream: player.playerStateStream,
-                builder: (context, snapshot) {
-                  final state = snapshot.data;
-                  final loading =
-                      state?.processingState == ProcessingState.loading ||
-                      state?.processingState == ProcessingState.buffering;
-                  if (loading) {
-                    return const SizedBox.square(
-                      dimension: 64,
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  final playing = state?.playing == true;
-                  return IconButton.filled(
-                    iconSize: 38,
-                    tooltip: playing ? 'Pause' : 'Play',
-                    onPressed: () => _runPlaybackAction(
-                      context,
-                      playing ? controller.pause : controller.play,
+                      icon: const Icon(Icons.replay_10_rounded),
                     ),
-                    icon: Icon(
-                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    const SizedBox(width: 18),
+                    StreamBuilder<PlayerState>(
+                      stream: player.playerStateStream,
+                      builder: (context, snapshot) {
+                        final state = snapshot.data;
+                        final loading =
+                            state?.processingState == ProcessingState.loading ||
+                            state?.processingState == ProcessingState.buffering;
+                        if (loading) {
+                          return const SizedBox.square(
+                            dimension: 64,
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        final playing = state?.playing == true;
+                        return IconButton.filled(
+                          iconSize: 38,
+                          tooltip: playing ? 'Pause' : 'Play',
+                          onPressed: () => _runPlaybackAction(
+                            context,
+                            playing ? controller.pause : controller.play,
+                          ),
+                          icon: Icon(
+                            playing
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-              const SizedBox(width: 18),
-              IconButton.filledTonal(
-                tooltip: 'Forward 10 seconds',
-                onPressed: () => _runPlaybackAction(
-                  context,
-                  () => controller.seek(
-                    player.position + const Duration(seconds: 10),
-                  ),
+                    const SizedBox(width: 18),
+                    IconButton.filledTonal(
+                      tooltip: 'Forward 10 seconds',
+                      onPressed: () => _runPlaybackAction(
+                        context,
+                        () => controller.seek(
+                          player.position + const Duration(seconds: 10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.forward_10_rounded),
+                    ),
+                  ],
                 ),
-                icon: const Icon(Icons.forward_10_rounded),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           StreamBuilder<double>(
             stream: player.speedStream,
             initialData: player.speed,
-            builder: (context, snapshot) => Center(
-              child: MenuAnchor(
-                menuChildren: [
-                  for (final speed in const [0.75, 1.0, 1.25, 1.5, 2.0])
-                    MenuItemButton(
-                      onPressed: () => _runPlaybackAction(
-                        context,
-                        () => controller.setSpeed(speed),
-                      ),
-                      child: Text('${speed}x'),
-                    ),
-                ],
-                builder: (context, menuController, child) =>
-                    OutlinedButton.icon(
-                      onPressed: () => menuController.isOpen
-                          ? menuController.close()
-                          : menuController.open(),
-                      icon: const Icon(Icons.speed_rounded),
-                      label: Text('${snapshot.data ?? 1.0}x speed'),
-                    ),
-              ),
+            builder: (context, snapshot) => SukunChoiceField<double>(
+              label: 'Playback speed',
+              placeholder: 'Choose speed',
+              value: snapshot.data ?? 1.0,
+              options: [
+                for (final speed in const [0.75, 1.0, 1.25, 1.5, 2.0])
+                  SukunChoiceOption(
+                    value: speed,
+                    title: '${speed}x',
+                    description: speed == 1.0
+                        ? 'Original recording speed'
+                        : speed < 1
+                        ? 'Slower, more deliberate playback'
+                        : 'Faster playback',
+                    icon: Icons.speed_rounded,
+                  ),
+              ],
+              onChanged: (speed) =>
+                  _runPlaybackAction(context, () => controller.setSpeed(speed)),
             ),
           ),
           if (resource.rightsNote?.trim().isNotEmpty == true) ...[
             const SizedBox(height: 28),
-            Text(
-              'Rights & source',
-              style: Theme.of(context).textTheme.titleSmall,
+            SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rights & source',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(resource.rightsNote!),
+                ],
+              ),
             ),
-            const SizedBox(height: 6),
-            Text(resource.rightsNote!),
           ],
           const SizedBox(height: 18),
           Text(

@@ -24,7 +24,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('50% completed'), findsOneWidget);
-      expect(find.text('Done 1'), findsOneWidget);
+      expect(find.text('1  Done'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.textContaining('not a clinical assessment'),
         300,

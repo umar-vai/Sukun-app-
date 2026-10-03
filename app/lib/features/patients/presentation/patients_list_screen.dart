@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
@@ -64,19 +65,25 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: SearchBar(
-              controller: _searchController,
-              hintText: 'Search name, phone, or patient ID',
-              leading: const Icon(Icons.search),
-              trailing: [
-                IconButton(
-                  tooltip: 'Search',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.arrow_forward),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+            child: Column(
+              children: [
+                const SukunPageIntro(
+                  eyebrow: 'Patient care',
+                  title: 'Patients',
+                  subtitle: 'Find a patient, review their history, or start a new care workflow.',
+                ),
+                const SizedBox(height: 18),
+                SukunSearchField(
+                  controller: _searchController,
+                  hintText: 'Search name, phone, or patient ID',
+                  onSubmitted: (_) => _reload(),
+                  onClear: () {
+                    _searchController.clear();
+                    _reload();
+                  },
                 ),
               ],
-              onSubmitted: (_) => _reload(),
             ),
           ),
           Expanded(
@@ -108,25 +115,55 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final patient = patients[index];
-                      return Card(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 8,
-                          ),
-                          leading: const CircleAvatar(
-                            backgroundColor: SukunColors.mist,
-                            foregroundColor: SukunColors.deepTide,
-                            child: Icon(Icons.person_outline),
-                          ),
-                          title: Text(patient.fullName),
-                          subtitle: Text(
-                            '${patient.patientCode}\n${patient.phone ?? 'No phone'}',
-                          ),
-                          isThreeLine: true,
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () =>
-                              context.push('/admin/patients/${patient.id}'),
+                      return SukunSurface(
+                        padding: const EdgeInsets.all(16),
+                        onTap: () =>
+                            context.push('/admin/patients/${patient.id}'),
+                        child: Row(
+                          children: [
+                            const SukunIconBadge(
+                              icon: Icons.person_outline_rounded,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    patient.fullName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    patient.patientCode,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: SukunColors.deepTide),
+                                  ),
+                                  if (patient.phone != null) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      patient.phone!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: SukunColors.muted),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SukunStatusPill(
+                              label: 'ACTIVE',
+                              tone: SukunStatusTone.success,
+                            ),
+                            const SizedBox(width: 5),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: SukunColors.deepTide,
+                            ),
+                          ],
                         ),
                       );
                     },

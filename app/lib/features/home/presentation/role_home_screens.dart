@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 
 class GuestHomeScreen extends StatelessWidget {
@@ -10,53 +11,108 @@ class GuestHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const SukunLifeLogo(height: 34)),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text(
-            'Calm support for faith and care',
-            style: Theme.of(context).textTheme.headlineLarge,
+      appBar: AppBar(
+        title: const SukunLifeLogo(height: 38),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () => context.go('/login'),
+              icon: const Icon(Icons.lock_outline_rounded, size: 18),
+              label: const Text('Sign in'),
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Browse approved Islamic resources, or sign in to view your personal care plan.',
-            style: Theme.of(context).textTheme.bodyLarge,
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 40),
+        children: [
+          SukunSurface(
+            tone: SukunSurfaceTone.navy,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SukunStatusPill(
+                  label: 'FAITH · CARE · WELLBEING',
+                  tone: SukunStatusTone.brand,
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  'A calmer place for faith and care.',
+                  style: Theme.of(context).textTheme.headlineLarge
+                      ?.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Explore verified Islamic resources, daily utilities, and private Sukun Life patient support.',
+                  style: TextStyle(color: Colors.white70, height: 1.55),
+                ),
+                const SizedBox(height: 22),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: SukunColors.nightNavy,
+                  ),
+                  onPressed: () => context.go('/resources'),
+                  icon: const Icon(Icons.auto_stories_outlined),
+                  label: const Text('Explore Islamic Resources'),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 28),
-          FilledButton(
-            onPressed: () => context.go('/login'),
-            child: const Text('Patient or Admin sign in'),
+          const SukunSectionHeader(
+            title: 'Daily essentials',
+            subtitle: 'Quiet tools for your everyday practice',
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.go('/resources'),
-            child: const Text('Explore Islamic Resources'),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Daily utilities',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: _UtilityCard(
-                  icon: Icons.schedule_outlined,
+                  icon: Icons.schedule_rounded,
                   label: 'Prayer times',
+                  caption: 'Your local timetable',
                   onTap: () => context.push('/prayer-times'),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: _UtilityCard(
-                  icon: Icons.explore_outlined,
+                  icon: Icons.explore_rounded,
                   label: 'Qibla',
+                  caption: 'Find the direction',
                   onTap: () => context.push('/qibla'),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 28),
+          SukunSurface(
+            tone: SukunSurfaceTone.soft,
+            showBorder: false,
+            onTap: () => context.go('/login'),
+            child: const Row(
+              children: [
+                SukunIconBadge(icon: Icons.health_and_safety_outlined),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Already a Sukun Life patient?',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 4),
+                      Text('Sign in to see today’s private care plan.'),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_rounded, color: SukunColors.deepTide),
+              ],
+            ),
           ),
         ],
       ),
@@ -68,32 +124,34 @@ class _UtilityCard extends StatelessWidget {
   const _UtilityCard({
     required this.icon,
     required this.label,
+    required this.caption,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
+  final String caption;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            children: [
-              Icon(icon, color: SukunColors.deepTide, size: 30),
-              const SizedBox(height: 9),
-              Text(label, style: Theme.of(context).textTheme.titleSmall),
-            ],
-          ),
+  Widget build(BuildContext context) => SukunSurface(
+    padding: const EdgeInsets.all(17),
+    onTap: onTap,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SukunIconBadge(icon: icon),
+        const SizedBox(height: 16),
+        Text(label, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 3),
+        Text(
+          caption,
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: SukunColors.muted),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
 class AdminHomeScreen extends StatelessWidget {
@@ -104,78 +162,171 @@ class AdminHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Admin Dashboard',
+      title: 'Dashboard',
       selectedIndex: 0,
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          Text(
-            'Welcome${displayName == null ? '' : ', $displayName'}',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(20),
-              leading: const CircleAvatar(
-                backgroundColor: SukunColors.mist,
-                child: Icon(Icons.people_outline),
-              ),
-              title: const Text('Patients and care plans'),
-              subtitle: const Text(
-                'Create patient accounts, capture prescriptions, and prepare care plans.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/admin/patients'),
+          SukunPageIntro(
+            eyebrow: 'Super Admin workspace',
+            title: 'Welcome${displayName == null ? '' : ', $displayName'}',
+            subtitle: 'Manage the patient-care workflow and verified content from one secure workspace.',
+            trailing: const SukunIconBadge(
+              icon: Icons.admin_panel_settings_outlined,
+              size: 54,
             ),
           ),
-          Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(20),
-              leading: const CircleAvatar(
-                backgroundColor: SukunColors.mist,
-                child: Icon(Icons.menu_book_outlined),
-              ),
-              title: const Text('Islamic Resources library'),
-              subtitle: const Text(
-                'Create, review, verify, publish, and archive canonical resources.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/admin/content'),
+          const SizedBox(height: 24),
+          SukunSurface(
+            tone: SukunSurfaceTone.navy,
+            padding: const EdgeInsets.all(22),
+            onTap: () => context.go('/admin/patients'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    SukunStatusPill(
+                      label: 'PRIMARY WORKFLOW',
+                      tone: SukunStatusTone.brand,
+                    ),
+                    Spacer(),
+                    Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Patient care',
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 7),
+                const Text(
+                  'Create patients, preserve prescriptions, review actions, publish plans, and follow progress.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 18),
+                const Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _WorkflowStep(number: '01', label: 'Patient'),
+                    _WorkflowStep(number: '02', label: 'Prescription'),
+                    _WorkflowStep(number: '03', label: 'Plan'),
+                    _WorkflowStep(number: '04', label: 'Progress'),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Daily utilities',
-            style: Theme.of(context).textTheme.titleLarge,
+          const SizedBox(height: 14),
+          _DashboardAction(
+            icon: Icons.library_books_outlined,
+            title: 'Content & Islamic Resources',
+            description: 'Create, verify, preview, publish, and archive reusable canonical resources.',
+            actionLabel: 'Open content workspace',
+            onTap: () => context.go('/admin/content'),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 28),
+          SukunSectionHeader(
+            title: 'Review & utilities',
+            subtitle: 'Preview public content or open daily tools',
+            action: TextButton(
+              onPressed: () => context.go('/resources'),
+              child: const Text('Public preview'),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _UtilityCard(
-                  icon: Icons.schedule_outlined,
+                  icon: Icons.schedule_rounded,
                   label: 'Prayer times',
+                  caption: 'Daily timetable',
                   onTap: () => context.push('/prayer-times'),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: _UtilityCard(
-                  icon: Icons.explore_outlined,
+                  icon: Icons.explore_rounded,
                   label: 'Qibla',
+                  caption: 'Direction utility',
                   onTap: () => context.push('/qibla'),
                 ),
               ),
             ],
           ),
-          TextButton.icon(
-            onPressed: () => context.go('/resources'),
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Preview published public library'),
-          ),
         ],
       ),
     );
   }
+}
+
+class _WorkflowStep extends StatelessWidget {
+  const _WorkflowStep({required this.number, required this.label});
+
+  final String number;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white24),
+    ),
+    child: Text('$number  $label', style: const TextStyle(color: Colors.white)),
+  );
+}
+
+class _DashboardAction extends StatelessWidget {
+  const _DashboardAction({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.actionLabel,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final String actionLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SukunSurface(
+    onTap: onTap,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SukunIconBadge(icon: icon, size: 54),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 5),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: SukunColors.muted),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                actionLabel,
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: SukunColors.deepTide),
+              ),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+      ],
+    ),
+  );
 }

@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.recordedStatus, PatientTaskStatus.completed);
-    expect(find.text('1 of 1 completed'), findsOneWidget);
+    expect(find.text('1 of 1 completed'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

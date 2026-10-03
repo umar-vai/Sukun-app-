@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
@@ -86,18 +87,24 @@ class _AdminContentListScreenState
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: SearchBar(
-              controller: _searchController,
-              hintText: 'Search title, slug, or type',
-              leading: const Icon(Icons.search),
-              trailing: [
-                IconButton(
-                  tooltip: 'Search',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.arrow_forward),
+            child: Column(
+              children: [
+                const SukunPageIntro(
+                  eyebrow: 'Editorial workspace',
+                  title: 'Content library',
+                  subtitle: 'Draft, verify, publish, and archive reusable resources with clear source control.',
+                ),
+                const SizedBox(height: 18),
+                SukunSearchField(
+                  controller: _searchController,
+                  hintText: 'Search title, slug, or type',
+                  onSubmitted: (_) => _reload(),
+                  onClear: () {
+                    _searchController.clear();
+                    _reload();
+                  },
                 ),
               ],
-              onSubmitted: (_) => _reload(),
             ),
           ),
           Padding(
@@ -135,10 +142,10 @@ class _AdminContentListScreenState
                 ])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
+                    child: SukunFilterPill(
                       selected: _status == status,
-                      label: Text(_display(status)),
-                      onSelected: (_) => setState(() => _status = status),
+                      label: _display(status),
+                      onTap: () => setState(() => _status = status),
                     ),
                   ),
               ],
@@ -193,53 +200,54 @@ class _ContentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 10,
-        ),
-        leading: CircleAvatar(
-          backgroundColor: SukunColors.mist,
-          foregroundColor: SukunColors.deepTide,
-          child: Icon(_typeIcon(item.type)),
-        ),
-        title: Text(item.title),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _Badge(label: _display(item.type)),
-              _Badge(label: _display(item.status)),
-              _Badge(label: _display(item.visibility)),
-              if (item.isCanonical)
-                _Badge(label: _display(item.verificationStatus)),
-            ],
+    return SukunSurface(
+      padding: const EdgeInsets.all(16),
+      onTap: () => context.push('/admin/content/${item.id}/preview'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SukunIconBadge(icon: _typeIcon(item.type)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    SukunStatusPill(label: _display(item.type)),
+                    SukunStatusPill(
+                      label: _display(item.status),
+                      tone: item.status == 'published'
+                          ? SukunStatusTone.success
+                          : item.status == 'review'
+                          ? SukunStatusTone.warning
+                          : SukunStatusTone.neutral,
+                    ),
+                    SukunStatusPill(label: _display(item.visibility)),
+                    if (item.isCanonical)
+                      SukunStatusPill(
+                        label: _display(item.verificationStatus),
+                        tone: item.verificationStatus == 'verified'
+                            ? SukunStatusTone.success
+                            : SukunStatusTone.warning,
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push('/admin/content/${item.id}/preview'),
+          const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+        ],
       ),
     );
   }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: SukunColors.mist,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Text(label, style: Theme.of(context).textTheme.labelSmall),
-  );
 }
 
 String _display(String value) => value

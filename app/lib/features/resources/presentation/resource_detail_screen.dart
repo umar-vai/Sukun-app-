@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/external_resource_launcher.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
@@ -102,30 +105,47 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               Wrap(
                 spacing: 8,
                 children: [
-                  Chip(label: Text(_typeLabel(resource.type))),
+                  SukunStatusPill(
+                    label: _typeLabel(resource.type),
+                    tone: SukunStatusTone.brand,
+                  ),
                   if (resource.referenceText?.isNotEmpty == true ||
                       resource.sourceReference?.isNotEmpty == true)
-                    const Chip(label: Text('Source referenced')),
+                    const SukunStatusPill(
+                      label: 'SOURCE REFERENCED',
+                      tone: SukunStatusTone.success,
+                      icon: Icons.verified_outlined,
+                    ),
                 ],
               ),
               const SizedBox(height: 14),
-              Text(
-                resource.titleBn?.isNotEmpty == true
+              SukunPageIntro(
+                title: resource.titleBn?.isNotEmpty == true
                     ? resource.titleBn!
                     : resource.title,
-                style: Theme.of(context).textTheme.headlineMedium,
+                subtitle: resource.titleBn?.isNotEmpty == true
+                    ? resource.title
+                    : resource.summary,
               ),
-              if (resource.titleBn?.isNotEmpty == true) ...[
-                const SizedBox(height: 5),
-                Text(resource.title),
-              ],
-              _Section(label: 'Summary', value: resource.summary),
+              if (resource.titleBn?.isNotEmpty == true)
+                const SizedBox(height: 4),
+              _Section(
+                label: 'Summary',
+                value: resource.titleBn?.isNotEmpty == true
+                    ? resource.summary
+                    : null,
+              ),
               _Section(
                 label: 'Arabic',
                 value: resource.arabicText,
                 textAlign: TextAlign.right,
+                canonical: true,
               ),
-              _Section(label: 'Bangla', value: resource.banglaText),
+              _Section(
+                label: 'Bangla',
+                value: resource.banglaText,
+                bangla: true,
+              ),
               _Section(
                 label: 'Transliteration',
                 value: resource.transliteration,
@@ -139,10 +159,27 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               _Section(label: 'Rights & licensing', value: resource.rightsNote),
               if (resource.linkedResource.canOpen) ...[
                 const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: () => _openMedia(resource),
-                  icon: Icon(_openIcon(resource.mediaSourceType)),
-                  label: Text(_openLabel(resource.mediaSourceType)),
+                SukunSurface(
+                  tone: SukunSurfaceTone.navy,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Continue with this resource',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: SukunColors.nightNavy,
+                        ),
+                        onPressed: () => _openMedia(resource),
+                        icon: Icon(_openIcon(resource.mediaSourceType)),
+                        label: Text(_openLabel(resource.mediaSourceType)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -154,24 +191,55 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.label, this.value, this.textAlign});
+  const _Section({
+    required this.label,
+    this.value,
+    this.textAlign,
+    this.canonical = false,
+    this.bangla = false,
+  });
 
   final String label;
   final String? value;
   final TextAlign? textAlign;
+  final bool canonical;
+  final bool bangla;
 
   @override
   Widget build(BuildContext context) {
     if (value?.trim().isNotEmpty != true) return const SizedBox.shrink();
+    final base = canonical
+        ? SukunTypography.canonicalReligiousText(
+            textStyle: Theme.of(context).textTheme.headlineSmall,
+          ).copyWith(height: 2)
+        : bangla
+        ? SukunTypography.banglaBody(
+            textStyle: Theme.of(context).textTheme.bodyLarge,
+          ).copyWith(height: 1.75)
+        : Theme.of(context).textTheme.bodyLarge;
     return Padding(
-      padding: const EdgeInsets.only(top: 22),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 7),
-          SelectableText(value!, textAlign: textAlign),
-        ],
+      padding: const EdgeInsets.only(top: 18),
+      child: SukunSurface(
+        tone: canonical ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+        showBorder: !canonical,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: SukunColors.deepTide,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Directionality(
+              textDirection: canonical ? TextDirection.rtl : TextDirection.ltr,
+              child: SelectableText(value!, textAlign: textAlign, style: base),
+            ),
+          ],
+        ),
       ),
     );
   }

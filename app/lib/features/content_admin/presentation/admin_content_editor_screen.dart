@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
@@ -194,57 +197,88 @@ class _AdminContentEditorScreenState
     final nameBn = TextEditingController();
     final created = await showDialog<ContentCategory>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add category'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Name *'),
+      builder: (dialogContext) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SukunIconBadge(icon: Icons.create_new_folder_outlined),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Add category',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Create a reusable taxonomy label for the Resources library.',
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: SukunColors.muted),
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: name,
+                    decoration: const InputDecoration(labelText: 'Name *'),
+                  ),
+                  TextField(
+                    controller: nameBn,
+                    decoration: const InputDecoration(labelText: 'Bangla name'),
+                  ),
+                  TextField(
+                    controller: slug,
+                    decoration: const InputDecoration(
+                      labelText: 'Slug *',
+                      hintText: 'dua-morning',
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            try {
+                              final result = await ref
+                                  .read(contentAdminRepositoryProvider)
+                                  .saveCategory(
+                                    name: name.text,
+                                    nameBn: nameBn.text,
+                                    slug: slug.text,
+                                    requestId: const Uuid().v4(),
+                                  );
+                              if (dialogContext.mounted) {
+                                Navigator.pop(dialogContext, result);
+                              }
+                            } catch (error) {
+                              if (dialogContext.mounted) {
+                                ScaffoldMessenger.of(dialogContext)
+                                    .showSnackBar(
+                                      SnackBar(content: Text(error.toString())),
+                                    );
+                              }
+                            }
+                          },
+                          child: const Text('Add'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              TextField(
-                controller: nameBn,
-                decoration: const InputDecoration(labelText: 'Bangla name'),
-              ),
-              TextField(
-                controller: slug,
-                decoration: const InputDecoration(
-                  labelText: 'Slug *',
-                  hintText: 'dua-morning',
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              try {
-                final result = await ref
-                    .read(contentAdminRepositoryProvider)
-                    .saveCategory(
-                      name: name.text,
-                      nameBn: nameBn.text,
-                      slug: slug.text,
-                      requestId: const Uuid().v4(),
-                    );
-                if (dialogContext.mounted) Navigator.pop(dialogContext, result);
-              } catch (error) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext)
-                      .showSnackBar(SnackBar(content: Text(error.toString())));
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
     name.dispose();
@@ -269,36 +303,78 @@ class _AdminContentEditorScreenState
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoadingState(label: 'Preparing content editor');
           }
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return AppErrorState(
+              message: snapshot.error.toString(),
+              onRetry: () => setState(() => _data = _load()),
+            );
           }
           final data = snapshot.data!;
           _populate(data.item);
           if (widget.contentItemId != null && data.item == null) {
-            return const Center(child: Text('Content item not found.'));
+            return const AppEmptyState(
+              title: 'Resource not found',
+              message: 'This content item may have been archived or removed.',
+              icon: Icons.search_off_rounded,
+            );
           }
           return Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
               children: [
+                SukunPageIntro(
+                  eyebrow: 'Content workspace',
+                  title: widget.contentItemId == null
+                      ? 'Create a resource'
+                      : 'Refine this resource',
+                  subtitle: 'Build one canonical, source-aware item that can be reused across browsing and care plans.',
+                  trailing: const SukunIconBadge(
+                    icon: Icons.auto_stories_outlined,
+                    size: 54,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const SukunSurface(
+                  tone: SukunSurfaceTone.warning,
+                  showBorder: false,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.verified_user_outlined,
+                        color: SukunColors.deepTide,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Canonical Qur’an and Hadith text must be entered from an approved source, independently reviewed, and verified before publishing.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const _SectionTitle(
                   title: 'Resource identity',
                   subtitle: 'One canonical resource can be reused publicly and in care plans.',
                 ),
-                DropdownButtonFormField<String>(
+                SukunChoiceField<String>(
                   key: ValueKey(_type),
-                  initialValue: _type,
-                  decoration: const InputDecoration(
-                    labelText: 'Content type *',
-                  ),
-                  items: [
+                  label: 'Content type *',
+                  placeholder: 'Choose content type',
+                  value: _type,
+                  options: [
                     for (final type in contentTypes)
-                      DropdownMenuItem(value: type, child: Text(_label(type))),
+                      SukunChoiceOption(
+                        value: type,
+                        title: _label(type),
+                        description: _contentTypeDescription(type),
+                        icon: _contentTypeIcon(type),
+                      ),
                   ],
-                  onChanged: (value) => setState(() => _type = value!),
+                  onChanged: (value) => setState(() => _type = value),
                 ),
                 _field('title', 'English / primary title *', required: true),
                 _field('titleBn', 'Bangla title'),
@@ -312,26 +388,29 @@ class _AdminContentEditorScreenState
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String?>(
-                        initialValue: _categoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('No category'),
+                      child: SukunChoiceField<String>(
+                        value: _categoryId ?? '',
+                        label: 'Category',
+                        placeholder: 'Choose category',
+                        options: [
+                          const SukunChoiceOption(
+                            value: '',
+                            title: 'No category',
+                            description:
+                                'Keep this resource outside a taxonomy group.',
                           ),
                           for (final category in data.categories.where(
                             (c) => c.isActive,
                           ))
-                            DropdownMenuItem(
+                            SukunChoiceOption(
                               value: category.id,
-                              child: Text(category.name),
+                              title: category.name,
+                              description: category.nameBn,
                             ),
                         ],
-                        onChanged: (value) =>
-                            setState(() => _categoryId = value),
+                        onChanged: (value) => setState(
+                          () => _categoryId = value.isEmpty ? null : value,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -342,31 +421,36 @@ class _AdminContentEditorScreenState
                     ),
                   ],
                 ),
-                DropdownButtonFormField<String>(
-                  initialValue: _visibility,
-                  decoration: const InputDecoration(labelText: 'Visibility *'),
-                  items: [
+                const SizedBox(height: 12),
+                SukunChoiceField<String>(
+                  value: _visibility,
+                  label: 'Visibility *',
+                  placeholder: 'Choose who may see this',
+                  options: [
                     for (final visibility in resourceVisibilities)
-                      DropdownMenuItem(
+                      SukunChoiceOption(
                         value: visibility,
-                        child: Text(_label(visibility)),
+                        title: _label(visibility),
+                        description: _visibilityDescription(visibility),
+                        icon: _visibilityIcon(visibility),
                       ),
                   ],
-                  onChanged: (value) => setState(() => _visibility = value!),
+                  onChanged: (value) => setState(() => _visibility = value),
                 ),
                 if (_type == 'book_chapter') ...[
-                  DropdownButtonFormField<String?>(
-                    initialValue: _parentContentId,
-                    decoration: const InputDecoration(
-                      labelText: 'Parent book *',
-                    ),
-                    items: [
+                  const SizedBox(height: 12),
+                  SukunChoiceField<String>(
+                    value: _parentContentId,
+                    label: 'Parent book *',
+                    placeholder: 'Choose a parent book',
+                    options: [
                       for (final book in data.allContent.where(
                         (item) => item.type == 'book',
                       ))
-                        DropdownMenuItem(
+                        SukunChoiceOption(
                           value: book.id,
-                          child: Text(book.title),
+                          title: book.title,
+                          description: book.titleBn,
                         ),
                     ],
                     onChanged: (value) =>
@@ -457,19 +541,28 @@ class _AdminContentEditorScreenState
                 ],
                 _field('rightsNote', 'Rights / licensing note', lines: 3),
                 const _SectionTitle(title: 'External media'),
-                DropdownButtonFormField<String?>(
-                  initialValue: _mediaSourceType,
-                  decoration: const InputDecoration(labelText: 'Media type'),
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('No external media'),
+                SukunChoiceField<String>(
+                  value: _mediaSourceType ?? '',
+                  label: 'Media type',
+                  placeholder: 'Choose external media',
+                  options: [
+                    const SukunChoiceOption(
+                      value: '',
+                      title: 'No external media',
+                      description: 'This resource is text-only.',
+                      icon: Icons.article_outlined,
                     ),
                     for (final type in mediaSourceTypes)
-                      DropdownMenuItem(value: type, child: Text(_label(type))),
+                      SukunChoiceOption(
+                        value: type,
+                        title: _label(type),
+                        description: _mediaDescription(type),
+                        icon: _mediaIcon(type),
+                      ),
                   ],
-                  onChanged: (value) =>
-                      setState(() => _mediaSourceType = value),
+                  onChanged: (value) => setState(
+                    () => _mediaSourceType = value.isEmpty ? null : value,
+                  ),
                 ),
                 if (_mediaSourceType == 'youtube')
                   _field('youtubeVideoId', 'YouTube video ID *')
@@ -578,3 +671,60 @@ String _label(String value) => value
           word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}',
     )
     .join(' ');
+
+String _contentTypeDescription(String value) => switch (value) {
+  'quran' => 'Verified Surah and Ayah text with source metadata.',
+  'hadith' => 'Collection, book, number, grade, and approved source.',
+  'dua' => 'Dua or daily supplication with translation and reference.',
+  'azkar' => 'Categorised remembrance for a specific moment or routine.',
+  'ruqyah' => 'Approved Ruqyah guidance, recitation, or linked media.',
+  'book' => 'A reusable book record with chapters or external PDF.',
+  'book_chapter' => 'A structured chapter connected to a canonical book.',
+  'article' => 'An authored educational article or guide.',
+  'audio' => 'A direct, licensed external audio resource.',
+  'video' => 'An external video or YouTube resource.',
+  'pdf' => 'An external document with ownership metadata.',
+  _ => 'A reusable Sukun Life resource.',
+};
+
+IconData _contentTypeIcon(String value) => switch (value) {
+  'quran' => Icons.menu_book_rounded,
+  'hadith' => Icons.format_quote_rounded,
+  'dua' || 'azkar' => Icons.auto_awesome_rounded,
+  'ruqyah' => Icons.health_and_safety_outlined,
+  'book' || 'book_chapter' || 'pdf' => Icons.library_books_outlined,
+  'audio' => Icons.headphones_rounded,
+  'video' => Icons.play_circle_outline_rounded,
+  _ => Icons.article_outlined,
+};
+
+String _visibilityDescription(String value) => switch (value) {
+  'public' => 'Visible to guests and signed-in users after publishing.',
+  'patient_only' => 'Available only to authenticated patients.',
+  'assigned_only' => 'Visible only when linked to a patient’s care plan.',
+  'staff_only' => 'Restricted to verified Super Admin users.',
+  _ => 'Apply the approved audience rule.',
+};
+
+IconData _visibilityIcon(String value) => switch (value) {
+  'public' => Icons.public_rounded,
+  'patient_only' => Icons.person_outline_rounded,
+  'assigned_only' => Icons.assignment_ind_outlined,
+  _ => Icons.admin_panel_settings_outlined,
+};
+
+String _mediaDescription(String value) => switch (value) {
+  'audio' => 'Direct audio URL with background playback support.',
+  'youtube' => 'A YouTube video ID opened in the in-app player.',
+  'video' => 'Direct external video URL.',
+  'pdf' => 'External PDF opened in a secure viewer.',
+  'webpage' => 'Trusted external webpage.',
+  _ => 'Externally hosted media.',
+};
+
+IconData _mediaIcon(String value) => switch (value) {
+  'audio' => Icons.headphones_rounded,
+  'youtube' || 'video' => Icons.play_circle_outline_rounded,
+  'pdf' => Icons.picture_as_pdf_outlined,
+  _ => Icons.open_in_new_rounded,
+};

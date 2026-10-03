@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/brand_logo.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
@@ -294,7 +296,7 @@ class _SessionLanding extends StatelessWidget {
   Widget build(BuildContext context) {
     return sessionState.when(
       data: (_) => const GuestHomeScreen(),
-      loading: () => const Scaffold(body: AppLoadingState()),
+      loading: () => const _SukunLaunchScreen(),
       error: (error, stackTrace) => const Scaffold(
         body: AppErrorState(
           message: 'We could not verify your session. Please try again.',
@@ -302,4 +304,41 @@ class _SessionLanding extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SukunLaunchScreen extends StatelessWidget {
+  const _SukunLaunchScreen();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SukunLifeLogo(height: 132),
+              const SizedBox(height: 36),
+              Text(
+                'Faith. Care. Peace of mind.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 24),
+              const SizedBox(
+                width: 120,
+                child: LinearProgressIndicator(
+                  borderRadius: BorderRadius.all(Radius.circular(99)),
+                  color: SukunColors.sukunBlue,
+                  backgroundColor: SukunColors.softBlue,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

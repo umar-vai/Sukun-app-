@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
@@ -101,22 +102,45 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   Future<void> _snooze(PatientTask task) async {
     final minutes = await showModalBottomSheet<int>(
       context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
+      useSafeArea: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ListTile(
-              title: Text('Snooze this action'),
-              subtitle: Text('Choose when you want to see it again.'),
+            const SukunPageIntro(
+              eyebrow: 'Reminder',
+              title: 'Snooze this action',
+              subtitle: 'Choose when you want to see it again.',
             ),
-            ListTile(
-              title: const Text('15 minutes'),
+            const SizedBox(height: 18),
+            SukunSurface(
               onTap: () => Navigator.pop(context, 15),
+              radius: 18,
+              padding: const EdgeInsets.all(16),
+              child: const Row(
+                children: [
+                  SukunIconBadge(icon: Icons.timer_outlined, size: 42),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('In 15 minutes')),
+                  Icon(Icons.chevron_right_rounded),
+                ],
+              ),
             ),
-            ListTile(
-              title: const Text('1 hour'),
+            const SizedBox(height: 10),
+            SukunSurface(
               onTap: () => Navigator.pop(context, 60),
+              radius: 18,
+              padding: const EdgeInsets.all(16),
+              child: const Row(
+                children: [
+                  SukunIconBadge(icon: Icons.schedule_rounded, size: 42),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('In 1 hour')),
+                  Icon(Icons.chevron_right_rounded),
+                ],
+              ),
             ),
           ],
         ),
@@ -133,21 +157,40 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   Future<void> _skip(PatientTask task) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Skip this action today?'),
-        content: const Text(
-          'This will be recorded in your progress. It does not change the prescribed care plan.',
+      builder: (context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SukunIconBadge(
+                icon: Icons.skip_next_rounded,
+                color: SukunColors.error,
+                backgroundColor: SukunColors.errorSoft,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Skip this action today?',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This will be recorded in your progress. It does not change the prescribed care plan.',
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Skip today'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep action'),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Skip today'),
-          ),
-        ],
       ),
     );
     if (confirmed == true) {
@@ -185,29 +228,36 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
-                Text(
-                  'Assalamu Alaikum${widget.displayName == null ? '' : ', ${widget.displayName}'}',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                SukunPageIntro(
+                  eyebrow: _longDate(DateTime.now()),
+                  title:
+                      'Assalamu Alaikum${widget.displayName == null ? '' : ', ${widget.displayName}'}',
+                  subtitle: 'Here is your care plan for today.',
                 ),
-                const SizedBox(height: 6),
-                Text(_longDate(DateTime.now())),
-                const SizedBox(height: 22),
+                const SizedBox(height: 24),
                 if (day.activePlan == null)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text(
-                        'Your practitioner has not published an active care plan yet.',
-                      ),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    child: Row(
+                      children: [
+                        SukunIconBadge(icon: Icons.hourglass_empty_rounded),
+                        SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'Your practitioner has not published an active care plan yet.',
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else ...[
                   _DayProgress(day: day),
                   const SizedBox(height: 18),
                   if (day.nextTask != null) ...[
-                    Text(
-                      'Next action',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    const SukunSectionHeader(
+                      title: 'Next action',
+                      subtitle: 'Your most immediate pending task',
                     ),
                     const SizedBox(height: 10),
                     _TaskCard(
@@ -222,19 +272,17 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                     ),
                     const SizedBox(height: 22),
                   ],
-                  Text(
-                    "Today's plan",
-                    style: Theme.of(context).textTheme.titleLarge,
+                  SukunSectionHeader(
+                    title: "Today's plan",
+                    subtitle:
+                        '${day.completedCount} of ${day.tasks.length} completed',
                   ),
                   const SizedBox(height: 10),
                   if (day.tasks.isEmpty)
-                    const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text(
-                          'There are no actions scheduled for today.',
-                        ),
-                      ),
+                    const SukunSurface(
+                      tone: SukunSurfaceTone.soft,
+                      showBorder: false,
+                      child: Text('There are no actions scheduled for today.'),
                     )
                   else
                     for (final task in day.tasks) ...[
@@ -266,23 +314,40 @@ class _DayProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: SukunColors.mist,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              day.activePlan!.name,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(value: day.completionRatio),
-            const SizedBox(height: 8),
-            Text('${day.completedCount} of ${day.tasks.length} completed'),
-          ],
-        ),
+    return SukunSurface(
+      tone: SukunSurfaceTone.navy,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  day.activePlan!.name,
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(color: Colors.white),
+                ),
+              ),
+              SukunStatusPill(
+                label: '${(day.completionRatio * 100).round()}%',
+                tone: SukunStatusTone.brand,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: day.completionRatio,
+            color: SukunColors.saffron,
+            backgroundColor: Colors.white24,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${day.completedCount} of ${day.tasks.length} completed',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
       ),
     );
   }
@@ -310,107 +375,118 @@ class _TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canUpdate = task.status.canUpdate && !busy;
-    return Card(
-      elevation: featured ? 2 : null,
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SukunSurface(
+      tone: featured ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SukunIconBadge(
+                size: 42,
+                icon: task.status == PatientTaskStatus.completed
+                    ? Icons.check_rounded
+                    : featured
+                    ? Icons.notifications_active_outlined
+                    : Icons.circle_outlined,
+                color: task.status == PatientTaskStatus.completed
+                    ? SukunColors.success
+                    : SukunColors.deepTide,
+                backgroundColor: task.status == PatientTaskStatus.completed
+                    ? SukunColors.successSoft
+                    : Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.action.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(_timing(task)),
+                  ],
+                ),
+              ),
+              SukunStatusPill(
+                label: task.status.label,
+                tone: task.status == PatientTaskStatus.completed
+                    ? SukunStatusTone.success
+                    : task.status == PatientTaskStatus.skipped
+                    ? SukunStatusTone.warning
+                    : SukunStatusTone.brand,
+              ),
+            ],
+          ),
+          if (task.action.instruction?.isNotEmpty == true) ...[
+            const SizedBox(height: 12),
+            Text(task.action.instruction!),
+          ],
+          if (task.action.countTarget != null ||
+              task.action.durationMinutes != null) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
               children: [
-                Icon(
-                  task.status == PatientTaskStatus.completed
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  color: task.status == PatientTaskStatus.completed
-                      ? SukunColors.deepTide
-                      : SukunColors.sukunBlue,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.action.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(_timing(task)),
-                    ],
-                  ),
-                ),
-                Chip(label: Text(task.status.label)),
+                if (task.action.countTarget != null)
+                  Chip(label: Text('${task.action.countTarget} repetitions')),
+                if (task.action.durationMinutes != null)
+                  Chip(label: Text('${task.action.durationMinutes} minutes')),
               ],
             ),
-            if (task.action.instruction?.isNotEmpty == true) ...[
-              const SizedBox(height: 12),
-              Text(task.action.instruction!),
-            ],
-            if (task.action.countTarget != null ||
-                task.action.durationMinutes != null) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (task.action.countTarget != null)
-                    Chip(label: Text('${task.action.countTarget} repetitions')),
-                  if (task.action.durationMinutes != null)
-                    Chip(label: Text('${task.action.durationMinutes} minutes')),
-                ],
-              ),
-            ],
-            if (task.action.resource != null) ...[
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: onOpenResource,
-                icon: const Icon(Icons.menu_book_outlined, size: 18),
-                label: Text('Open ${task.action.resource!.title}'),
-              ),
-            ],
-            if (task.isPendingSync) ...[
-              const SizedBox(height: 8),
-              const Row(
-                children: [
-                  Icon(Icons.cloud_upload_outlined, size: 18),
-                  SizedBox(width: 7),
-                  Expanded(child: Text('Waiting to sync securely')),
-                ],
-              ),
-            ],
-            if (task.status == PatientTaskStatus.snoozed &&
-                task.snoozedUntil != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Snoozed until ${TimeOfDay.fromDateTime(task.snoozedUntil!).format(context)}',
-              ),
-            ],
-            if (task.status.canUpdate) ...[
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: canUpdate ? onDone : null,
-                    icon: const Icon(Icons.check),
-                    label: const Text('Done'),
-                  ),
-                  OutlinedButton(
-                    onPressed: canUpdate ? onSnooze : null,
-                    child: const Text('Snooze'),
-                  ),
-                  TextButton(
-                    onPressed: canUpdate ? onSkip : null,
-                    child: const Text('Skip'),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+          if (task.action.resource != null) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onOpenResource,
+              icon: const Icon(Icons.menu_book_outlined, size: 18),
+              label: Text('Open ${task.action.resource!.title}'),
+            ),
+          ],
+          if (task.isPendingSync) ...[
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.cloud_upload_outlined, size: 18),
+                SizedBox(width: 7),
+                Expanded(child: Text('Waiting to sync securely')),
+              ],
+            ),
+          ],
+          if (task.status == PatientTaskStatus.snoozed &&
+              task.snoozedUntil != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Snoozed until ${TimeOfDay.fromDateTime(task.snoozedUntil!).format(context)}',
+            ),
+          ],
+          if (task.status.canUpdate) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: canUpdate ? onDone : null,
+                  icon: const Icon(Icons.check),
+                  label: const Text('Done'),
+                ),
+                OutlinedButton(
+                  onPressed: canUpdate ? onSnooze : null,
+                  child: const Text('Snooze'),
+                ),
+                TextButton(
+                  onPressed: canUpdate ? onSkip : null,
+                  child: const Text('Skip'),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

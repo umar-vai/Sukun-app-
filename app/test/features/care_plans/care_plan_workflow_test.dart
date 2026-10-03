@@ -115,7 +115,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(repository.published, isTrue);
-    expect(find.text('Active'), findsOneWidget);
+    expect(find.text('ACTIVE'), findsOneWidget);
   });
 }
 

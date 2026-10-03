@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 class PatientScaffold extends StatelessWidget {
   const PatientScaffold({
@@ -20,9 +21,9 @@ class PatientScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       body: body,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: selectedIndex,
-        onDestinationSelected: (index) {
+        onSelected: (index) {
           final route = switch (index) {
             0 => '/patient/home',
             1 => '/patient/plan',
@@ -33,29 +34,29 @@ class PatientScaffold extends StatelessWidget {
           context.go(route);
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+          SukunNavDestination(
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home,
             label: 'Today',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
+          SukunNavDestination(
+            icon: Icons.checklist_outlined,
+            selectedIcon: Icons.checklist,
             label: 'My Plan',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
+          SukunNavDestination(
+            icon: Icons.menu_book_outlined,
+            selectedIcon: Icons.menu_book,
             label: 'Resources',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
+          SukunNavDestination(
+            icon: Icons.insights_outlined,
+            selectedIcon: Icons.insights,
             label: 'Progress',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+          SukunNavDestination(
+            icon: Icons.person_outline,
+            selectedIcon: Icons.person,
             label: 'Profile',
           ),
         ],

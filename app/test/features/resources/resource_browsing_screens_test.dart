@@ -16,9 +16,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Selected & Ruqyah Ayat collections'), findsOneWidget);
+      expect(find.text('Selected & Ruqyah Ayat'), findsOneWidget);
       expect(find.text('আল-ফাতিহা'), findsOneWidget);
-      expect(find.text('Al-Fatihah • 2 published Ayat'), findsOneWidget);
+      expect(find.text('1 · Al-Fatihah · 2 published Ayat'), findsOneWidget);
     },
   );
 

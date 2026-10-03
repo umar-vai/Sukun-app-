@@ -52,11 +52,20 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Audio').first,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Audio').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Audio').first);
     await tester.pumpAndSettle();
     expect(repository.lastTypes, {'audio'});
 
-    await tester.enterText(find.byType(SearchBar), 'আয়াতুল কুরসি Ayatul Kursi');
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 900));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি Ayatul Kursi');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -45,11 +48,10 @@ class _SukunYoutubePlayerScreenState extends State<SukunYoutubePlayerScreen> {
     if (controller == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Video')),
-        body: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('This video does not have a valid YouTube ID.'),
-          ),
+        body: const AppEmptyState(
+          icon: Icons.videocam_off_outlined,
+          title: 'Video unavailable',
+          message: 'This resource does not have a valid YouTube video ID.',
         ),
       );
     }
@@ -58,34 +60,65 @@ class _SukunYoutubePlayerScreenState extends State<SukunYoutubePlayerScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: YoutubePlayer(controller: controller),
-          ),
-          const SizedBox(height: 22),
-          Text(
-            widget.resource.titleBn?.trim().isNotEmpty == true
+          SukunPageIntro(
+            eyebrow: 'External video',
+            title: widget.resource.titleBn?.trim().isNotEmpty == true
                 ? widget.resource.titleBn!
                 : widget.resource.title,
-            style: Theme.of(context).textTheme.headlineSmall,
+            subtitle: widget.resource.titleBn?.trim().isNotEmpty == true
+                ? widget.resource.title
+                : 'Played through the official YouTube player.',
+            trailing: const SukunIconBadge(
+              icon: Icons.play_circle_outline_rounded,
+              size: 54,
+            ),
           ),
-          if (widget.resource.titleBn?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 6),
-            Text(widget.resource.title),
-          ],
+          const SizedBox(height: 22),
+          SukunSurface(
+            tone: SukunSurfaceTone.navy,
+            showBorder: false,
+            padding: const EdgeInsets.all(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(17),
+              child: YoutubePlayer(controller: controller),
+            ),
+          ),
           if (widget.resource.rightsNote?.trim().isNotEmpty == true) ...[
             const SizedBox(height: 22),
-            Text(
-              'Rights & source',
-              style: Theme.of(context).textTheme.titleSmall,
+            SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rights & source',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(widget.resource.rightsNote!),
+                ],
+              ),
             ),
-            const SizedBox(height: 6),
-            Text(widget.resource.rightsNote!),
           ],
           const SizedBox(height: 18),
-          Text(
-            'YouTube playback uses the official IFrame Player API. Sukun Life does not extract or redistribute the audio track.',
-            style: Theme.of(context).textTheme.bodySmall,
+          SukunSurface(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: SukunColors.deepTide,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'YouTube playback uses the official IFrame Player API. Sukun Life does not extract or redistribute the audio track.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

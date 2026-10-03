@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:sukun_life/features/progress/data/progress_providers.dart';
 import 'package:sukun_life/features/progress/domain/adherence_summary.dart';
@@ -71,29 +72,35 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 7, label: Text('7 days')),
-                    ButtonSegment(value: 30, label: Text('30 days')),
-                  ],
-                  selected: {_days},
-                  onSelectionChanged: (values) => _setRange(values.first),
+                const SukunPageIntro(
+                  eyebrow: 'Care activity',
+                  title: 'Your progress',
+                  subtitle: 'A gentle overview of completed care-plan actions—not a clinical assessment.',
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
+                _RangeToggle(value: _days, onChanged: _setRange),
+                const SizedBox(height: 16),
                 _ProgressOverview(summary: summary),
                 const SizedBox(height: 24),
-                Text(
-                  'Daily activity',
-                  style: Theme.of(context).textTheme.titleLarge,
+                const SukunSectionHeader(
+                  title: 'Daily activity',
+                  subtitle: 'Completion by day',
                 ),
                 const SizedBox(height: 10),
                 if (summary.total == 0)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text(
-                        'No task activity has been tracked in this period yet.',
-                      ),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    child: Row(
+                      children: [
+                        SukunIconBadge(icon: Icons.insights_outlined),
+                        SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'No task activity has been tracked in this period yet.',
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -115,6 +122,60 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
   }
 }
 
+class _RangeToggle extends StatelessWidget {
+  const _RangeToggle({required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(5),
+    decoration: BoxDecoration(
+      color: SukunColors.softBlue,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Row(
+      children: [
+        for (final days in const [7, 30])
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => onChanged(days),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: value == days ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: value == days
+                      ? [
+                          BoxShadow(
+                            color: SukunColors.nightNavy.withValues(
+                              alpha: 0.07,
+                            ),
+                            blurRadius: 12,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  '$days days',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: value == days
+                        ? SukunColors.deepTide
+                        : SukunColors.muted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
 class _ProgressOverview extends StatelessWidget {
   const _ProgressOverview({required this.summary});
 
@@ -123,32 +184,41 @@ class _ProgressOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentage = (summary.completionRate * 100).round();
-    return Card(
-      color: SukunColors.mist,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$percentage% completed',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(value: summary.completionRate),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _MetricChip(label: 'Done', value: summary.completed),
-                _MetricChip(label: 'Remaining', value: summary.remaining),
-                _MetricChip(label: 'Skipped', value: summary.skipped),
-                _MetricChip(label: 'Missed', value: summary.missed),
-              ],
-            ),
-          ],
-        ),
+    return SukunSurface(
+      tone: SukunSurfaceTone.navy,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$percentage% completed',
+            style: Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Actions completed in this period',
+            style: TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: summary.completionRate,
+            color: SukunColors.saffron,
+            backgroundColor: Colors.white24,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _MetricChip(label: 'Done', value: summary.completed),
+              _MetricChip(label: 'Remaining', value: summary.remaining),
+              _MetricChip(label: 'Skipped', value: summary.skipped),
+              _MetricChip(label: 'Missed', value: summary.missed),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -161,7 +231,18 @@ class _MetricChip extends StatelessWidget {
   final int value;
 
   @override
-  Widget build(BuildContext context) => Chip(label: Text('$label $value'));
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white24),
+    ),
+    child: Text(
+      '$value  $label',
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+    ),
+  );
 }
 
 class _ProgressDayTile extends StatelessWidget {
@@ -171,41 +252,40 @@ class _ProgressDayTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 58,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _weekday(day.date),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  Text(_shortDate(day.date)),
-                ],
-              ),
+    return SukunSurface(
+      radius: 18,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 58,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _weekday(day.date),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Text(_shortDate(day.date)),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: day.completionRate),
-                  const SizedBox(height: 7),
-                  Text(
-                    day.total == 0
-                        ? 'No tracked tasks'
-                        : '${day.completed} of ${day.total} completed',
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(value: day.completionRate),
+                const SizedBox(height: 7),
+                Text(
+                  day.total == 0
+                      ? 'No tracked tasks'
+                      : '${day.completed} of ${day.total} completed',
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/ai_actions_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
@@ -236,32 +237,32 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
               children: [
+                const SukunPageIntro(
+                  eyebrow: 'AI-assisted parsing',
+                  title: 'Review suggested actions',
+                  subtitle: 'Compare every field with the human-authored prescription before importing it as draft work.',
+                ),
+                const SizedBox(height: 20),
                 const _SafetyNotice(),
                 const SizedBox(height: 16),
                 _SourcePrescription(prescription: data.prescription),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${_drafts!.length} suggestions',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _importing
-                          ? null
-                          : () => setState(() {
-                              final select = _drafts!.any(
-                                (draft) => !draft.imported && !draft.selected,
-                              );
-                              for (final draft in _drafts!) {
-                                if (!draft.imported) draft.selected = select;
-                              }
-                            }),
-                      child: const Text('Select all'),
-                    ),
-                  ],
+                SukunSectionHeader(
+                  title: '${_drafts!.length} suggestions',
+                  subtitle: 'Expand each suggestion to verify and edit',
+                  action: TextButton(
+                    onPressed: _importing
+                        ? null
+                        : () => setState(() {
+                            final select = _drafts!.any(
+                              (draft) => !draft.imported && !draft.selected,
+                            );
+                            for (final draft in _drafts!) {
+                              if (!draft.imported) draft.selected = select;
+                            }
+                          }),
+                    child: const Text('Select all'),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 for (var index = 0; index < _drafts!.length; index++) ...[
@@ -375,22 +376,22 @@ class _SafetyNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
-      color: SukunColors.mist,
-      child: Padding(
-        padding: EdgeInsets.all(18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.verified_user_outlined, color: SukunColors.deepTide),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'These are parser suggestions, not medical or religious decisions. Check every field against the original prescription. Imported actions stay unapproved until you explicitly approve them in the plan builder.',
-              ),
+    return const SukunSurface(
+      tone: SukunSurfaceTone.warning,
+      showBorder: false,
+      radius: 18,
+      padding: EdgeInsets.all(18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.verified_user_outlined, color: SukunColors.deepTide),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'These are parser suggestions, not medical or religious decisions. Check every field against the original prescription. Imported actions stay unapproved until you explicitly approve them in the plan builder.',
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -413,7 +414,8 @@ class _SuggestedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return SukunSurface(
+      padding: EdgeInsets.zero,
       child: ExpansionTile(
         initiallyExpanded: draft.source.needsReview,
         leading: Checkbox(
@@ -447,8 +449,8 @@ class _SuggestedActionCard extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: SukunColors.saffron.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(12),
+                color: SukunColors.warningSoft,
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,29 +530,51 @@ class _SuggestedActionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<ActionFrequencyType>(
+          FormField<ActionFrequencyType>(
             initialValue: draft.frequencyType,
-            decoration: const InputDecoration(labelText: 'Frequency'),
-            items: const [
-              DropdownMenuItem(
-                value: ActionFrequencyType.daily,
-                child: Text('Daily'),
-              ),
-              DropdownMenuItem(
-                value: ActionFrequencyType.weekly,
-                child: Text('Selected days'),
-              ),
-            ],
-            onChanged: !enabled || draft.imported
-                ? null
-                : (value) {
-                    draft.frequencyType = value;
-                    onChanged();
-                  },
             validator: (value) =>
                 draft.selected && !draft.imported && value == null
                 ? 'Choose the frequency from the prescription.'
                 : null,
+            builder: (field) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SukunChoiceField<ActionFrequencyType>(
+                  label: 'Frequency',
+                  placeholder: 'Choose an approved recurrence',
+                  value: field.value,
+                  enabled: enabled && !draft.imported,
+                  options: const [
+                    SukunChoiceOption(
+                      value: ActionFrequencyType.daily,
+                      title: 'Daily',
+                      description: 'Repeat every approved N-day interval.',
+                      icon: Icons.today_outlined,
+                    ),
+                    SukunChoiceOption(
+                      value: ActionFrequencyType.weekly,
+                      title: 'Selected days',
+                      description:
+                          'Repeat only on explicitly approved weekdays.',
+                      icon: Icons.date_range_outlined,
+                    ),
+                  ],
+                  onChanged: (value) {
+                    field.didChange(value);
+                    draft.frequencyType = value;
+                    onChanged();
+                  },
+                ),
+                if (field.errorText != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    field.errorText!,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+              ],
+            ),
           ),
           if (draft.frequencyType == ActionFrequencyType.daily) ...[
             const SizedBox(height: 12),
@@ -590,22 +614,47 @@ class _SuggestedActionCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: draft.timeWindow,
-            decoration: const InputDecoration(
-              labelText: 'Time window (optional)',
-            ),
-            items: const [
-              DropdownMenuItem(value: '', child: Text('Not specified')),
-              DropdownMenuItem(value: 'morning', child: Text('Morning')),
-              DropdownMenuItem(value: 'afternoon', child: Text('Afternoon')),
-              DropdownMenuItem(value: 'evening', child: Text('Evening')),
-              DropdownMenuItem(value: 'night', child: Text('Night')),
-              DropdownMenuItem(value: 'anytime', child: Text('Anytime')),
+          SukunChoiceField<String>(
+            label: 'Time window (optional)',
+            placeholder: 'Choose only if the prescription specifies one',
+            value: draft.timeWindow,
+            enabled: enabled && !draft.imported,
+            options: const [
+              SukunChoiceOption(
+                value: '',
+                title: 'Not specified',
+                description: 'Do not infer a time window.',
+              ),
+              SukunChoiceOption(
+                value: 'morning',
+                title: 'Morning',
+                icon: Icons.wb_sunny_outlined,
+              ),
+              SukunChoiceOption(
+                value: 'afternoon',
+                title: 'Afternoon',
+                icon: Icons.light_mode_outlined,
+              ),
+              SukunChoiceOption(
+                value: 'evening',
+                title: 'Evening',
+                icon: Icons.nights_stay_outlined,
+              ),
+              SukunChoiceOption(
+                value: 'night',
+                title: 'Night',
+                icon: Icons.bedtime_outlined,
+              ),
+              SukunChoiceOption(
+                value: 'anytime',
+                title: 'Anytime',
+                icon: Icons.schedule_outlined,
+              ),
             ],
-            onChanged: !enabled || draft.imported
-                ? null
-                : (value) => draft.timeWindow = value ?? '',
+            onChanged: (value) {
+              draft.timeWindow = value;
+              onChanged();
+            },
           ),
           const SizedBox(height: 8),
           ListTile(
@@ -676,30 +725,32 @@ class _SuggestedActionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-          DropdownButtonFormField<String>(
+          SukunChoiceField<String>(
             key: ValueKey(draft.contentItemId),
-            initialValue: draft.contentItemId,
-            decoration: const InputDecoration(
-              labelText: 'Linked resource (optional)',
-              helperText: 'A match is linked only after you select it.',
-            ),
-            items: [
-              const DropdownMenuItem(
+            value: draft.contentItemId,
+            label: 'Linked resource (optional)',
+            placeholder: 'Choose a canonical resource',
+            helperText: 'A match is linked only after you select it.',
+            enabled: enabled && !draft.imported,
+            options: [
+              const SukunChoiceOption(
                 value: '',
-                child: Text('No linked resource'),
+                title: 'No linked resource',
+                description: 'Keep this action text-only.',
+                icon: Icons.link_off_rounded,
               ),
               for (final resource in resources)
-                DropdownMenuItem(
+                SukunChoiceOption(
                   value: resource.id,
-                  child: Text(resource.title, overflow: TextOverflow.ellipsis),
+                  title: resource.title,
+                  description: resource.titleBn,
+                  icon: Icons.library_books_outlined,
                 ),
             ],
-            onChanged: !enabled || draft.imported
-                ? null
-                : (value) {
-                    draft.contentItemId = value ?? '';
-                    onChanged();
-                  },
+            onChanged: (value) {
+              draft.contentItemId = value;
+              onChanged();
+            },
           ),
         ],
       ),
@@ -714,7 +765,10 @@ class _SourcePrescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return SukunSurface(
+      tone: SukunSurfaceTone.soft,
+      showBorder: false,
+      padding: EdgeInsets.zero,
       child: ExpansionTile(
         initiallyExpanded: true,
         leading: const Icon(Icons.description_outlined),
@@ -750,37 +804,32 @@ class _GenerationUnavailable extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.edit_note_outlined,
-                    size: 48,
-                    color: SukunColors.deepTide,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Continue with manual action entry',
-                    style: Theme.of(context).textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(message, textAlign: TextAlign.center),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: onManual,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Open Manual Action Builder'),
-                  ),
-                  TextButton(
-                    onPressed: onRetry,
-                    child: const Text('Try again'),
-                  ),
-                ],
-              ),
+          child: SukunSurface(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.edit_note_outlined,
+                  size: 48,
+                  color: SukunColors.deepTide,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Continue with manual action entry',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(message, textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: onManual,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Open Manual Action Builder'),
+                ),
+                TextButton(onPressed: onRetry, child: const Text('Try again')),
+              ],
             ),
           ),
         ),

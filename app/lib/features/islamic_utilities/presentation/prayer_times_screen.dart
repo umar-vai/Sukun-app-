@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
@@ -113,39 +114,29 @@ class _SetupRequired extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: SukunColors.mist,
-                  foregroundColor: SukunColors.deepTide,
-                  child: Icon(Icons.schedule_outlined, size: 30),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Set up prayer times',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                const Text('Choose these settings before calculation:'),
-                const SizedBox(height: 8),
-                const Text(
-                  '• Location\n• Calculation method\n• Asr convention',
-                ),
-                const SizedBox(height: 8),
-                const Text('Nothing is selected automatically.'),
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  onPressed: onConfigure,
-                  icon: const Icon(Icons.tune),
-                  label: const Text('Choose settings'),
-                ),
-              ],
-            ),
+        SukunSurface(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SukunIconBadge(icon: Icons.schedule_outlined, size: 58),
+              const SizedBox(height: 18),
+              Text(
+                'Set up prayer times',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text('Choose these settings before calculation:'),
+              const SizedBox(height: 8),
+              const Text('• Location\n• Calculation method\n• Asr convention'),
+              const SizedBox(height: 8),
+              const Text('Nothing is selected automatically.'),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: onConfigure,
+                icon: const Icon(Icons.tune),
+                label: const Text('Choose settings'),
+              ),
+            ],
           ),
         ),
       ],
@@ -168,56 +159,76 @@ class _PrayerScheduleView extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
-          Text(
-            _longDate(schedule.date),
-            style: Theme.of(context).textTheme.bodyLarge,
+          SukunPageIntro(
+            eyebrow: _longDate(schedule.date),
+            title: 'Your daily prayer rhythm',
+            subtitle:
+                '${settings.location!.name} · ${settings.calculationMethod!.label}',
           ),
-          const SizedBox(height: 14),
-          Card(
-            color: SukunColors.sukunBlue,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NEXT PRAYER',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.1,
-                    ),
+          const SizedBox(height: 22),
+          SukunSurface(
+            tone: SukunSurfaceTone.blue,
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'NEXT PRAYER',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          schedule.nextPrayer.label,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(color: Colors.white),
-                        ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            schedule.nextPrayer.label,
+                            style: Theme.of(context).textTheme.headlineLarge
+                                ?.copyWith(color: Colors.white),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Most recent · ${schedule.currentPrayer.label}',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
                       ),
-                      Text(
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
                         _time(context, schedule.nextPrayer.time),
-                        style: Theme.of(context).textTheme.headlineMedium
+                        style: Theme.of(context).textTheme.titleLarge
                             ?.copyWith(color: Colors.white),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Most recent prayer: ${schedule.currentPrayer.label}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
-          Text("Today's times", style: Theme.of(context).textTheme.titleLarge),
+          const SukunSectionHeader(
+            title: "Today's times",
+            subtitle: 'Times follow your selected preferences',
+          ),
           const SizedBox(height: 10),
-          Card(
+          SukunSurface(
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
                 for (
@@ -237,35 +248,35 @@ class _PrayerScheduleView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Card(
-            color: SukunColors.mist,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          settings.location!.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+          SukunSurface(
+            tone: SukunSurfaceTone.soft,
+            showBorder: false,
+            radius: 20,
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        settings.location!.name,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 7),
-                  Text(settings.calculationMethod!.label),
-                  Text('${settings.asrConvention!.label} Asr convention'),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Calculated times may differ from a local mosque timetable. Follow trusted local guidance where applicable.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Text(settings.calculationMethod!.label),
+                Text('${settings.asrConvention!.label} Asr convention'),
+                const SizedBox(height: 10),
+                const Text(
+                  'Calculated times may differ from a local mosque timetable. Follow trusted local guidance where applicable.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),

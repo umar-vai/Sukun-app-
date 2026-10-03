@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
@@ -58,35 +59,59 @@ class _AdminContentPreviewScreenState
     final notesController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('${_label(transition)} resource?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_transitionExplanation(transition)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: notesController,
-              maxLines: 3,
-              maxLength: 4000,
-              decoration: const InputDecoration(
-                labelText: 'Reviewer note (optional)',
-                helperText: 'Admin-only; never shown to patients.',
-              ),
+      builder: (dialogContext) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SukunIconBadge(icon: _transitionIcon(transition), size: 54),
+                const SizedBox(height: 16),
+                Text(
+                  '${_label(transition)} resource?',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _transitionExplanation(transition),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: SukunColors.muted),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: notesController,
+                  maxLines: 3,
+                  maxLength: 4000,
+                  decoration: const InputDecoration(
+                    labelText: 'Reviewer note (optional)',
+                    helperText: 'Admin-only; never shown to patients.',
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: Text(_label(transition)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(_label(transition)),
-          ),
-        ],
       ),
     );
     final notes = notesController.text;
@@ -145,6 +170,18 @@ class _AdminContentPreviewScreenState
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
             children: [
+              SukunPageIntro(
+                eyebrow: 'Editorial review',
+                title: item.title,
+                subtitle: 'Preview the patient-facing content and verify every source detail before publishing.',
+                trailing: SukunIconBadge(
+                  icon: item.isCanonical
+                      ? Icons.verified_outlined
+                      : Icons.visibility_outlined,
+                  size: 54,
+                ),
+              ),
+              const SizedBox(height: 18),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -156,13 +193,8 @@ class _AdminContentPreviewScreenState
                     _StatusChip(label: _label(item.verificationStatus)),
                 ],
               ),
-              const SizedBox(height: 18),
-              Text(
-                item.title,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
               if (item.titleBn != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 18),
                 Text(
                   item.titleBn!,
                   style: Theme.of(context).textTheme.titleLarge,
@@ -203,15 +235,19 @@ class _AdminContentPreviewScreenState
                 _PreviewSection(title: 'Translation', body: item.translation!),
               if (item.body != null)
                 _PreviewSection(title: 'Content', body: item.body!),
-              const SizedBox(height: 22),
-              Text(
-                'Structured metadata',
-                style: Theme.of(context).textTheme.titleLarge,
+              const SizedBox(height: 26),
+              const SukunSectionHeader(
+                title: 'Structured metadata',
+                subtitle: 'Source, ownership, visibility, and canonical reference details.',
               ),
               const SizedBox(height: 8),
               _Metadata(item: item),
               const SizedBox(height: 24),
-              Text('Workflow', style: Theme.of(context).textTheme.titleLarge),
+              const SukunSectionHeader(
+                title: 'Editorial workflow',
+                subtitle:
+                    'Each state transition is audited and preserves history.',
+              ),
               const SizedBox(height: 10),
               if (_working) const LinearProgressIndicator(),
               const SizedBox(height: 8),
@@ -269,25 +305,38 @@ class _AdminContentPreviewScreenState
                 ],
               ),
               const SizedBox(height: 24),
-              Text(
-                'Admin-only review history',
-                style: Theme.of(context).textTheme.titleLarge,
+              const SukunSectionHeader(
+                title: 'Review history',
+                subtitle: 'Admin-only notes and workflow events.',
               ),
               const SizedBox(height: 8),
               if (data.reviews.isEmpty)
-                const Text('No workflow events yet.')
+                const SukunSurface(
+                  tone: SukunSurfaceTone.soft,
+                  showBorder: false,
+                  child: Text('No workflow events yet.'),
+                )
               else
-                for (final review in data.reviews)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.history),
-                    title: Text(_label(review.decision)),
-                    subtitle: Text(
-                      review.notes ?? 'No reviewer note',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                SukunSurface(
+                  child: Column(
+                    children: [
+                      for (final review in data.reviews)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const SukunIconBadge(
+                            icon: Icons.history_rounded,
+                            size: 40,
+                          ),
+                          title: Text(_label(review.decision)),
+                          subtitle: Text(
+                            review.notes ?? 'No reviewer note',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
                   ),
+                ),
             ],
           );
         },
@@ -302,10 +351,11 @@ class _StatusChip extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Chip(
-    backgroundColor: SukunColors.mist,
-    side: BorderSide.none,
-    label: Text(label),
+  Widget build(BuildContext context) => SukunStatusPill(
+    label: label,
+    tone: label == 'Published' || label == 'Verified'
+        ? SukunStatusTone.success
+        : SukunStatusTone.brand,
   );
 }
 
@@ -325,16 +375,19 @@ class _PreviewSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 22),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 7),
-        Directionality(
-          textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
-          child: SelectableText(body, style: textStyle),
-        ),
-      ],
+    child: SukunSurface(
+      tone: rtl ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Directionality(
+            textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+            child: SelectableText(body, style: textStyle),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -367,30 +420,27 @@ class _Metadata extends StatelessWidget {
       ('Media URL', item.mediaUrl),
       ('YouTube video ID', item.youtubeVideoId),
     ].where((row) => row.$2 != null && row.$2!.trim().isNotEmpty);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            for (final row in rows)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 132,
-                      child: Text(
-                        row.$1,
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
+    return SukunSurface(
+      child: Column(
+        children: [
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 132,
+                    child: Text(
+                      row.$1,
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
-                    Expanded(child: SelectableText(row.$2!)),
-                  ],
-                ),
+                  ),
+                  Expanded(child: SelectableText(row.$2!)),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -441,4 +491,14 @@ String _pastTense(String transition) => switch (transition) {
   'unpublish' => 'unpublished',
   'archive' => 'archived',
   _ => 'updated',
+};
+
+IconData _transitionIcon(String transition) => switch (transition) {
+  'submit' => Icons.rate_review_outlined,
+  'verify' => Icons.verified_outlined,
+  'reject' => Icons.report_outlined,
+  'publish' => Icons.publish_outlined,
+  'unpublish' => Icons.visibility_off_outlined,
+  'archive' => Icons.archive_outlined,
+  _ => Icons.sync_rounded,
 };

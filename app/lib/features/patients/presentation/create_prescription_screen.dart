@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient_inputs.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 class CreatePrescriptionScreen extends ConsumerStatefulWidget {
   const CreatePrescriptionScreen({super.key, required this.patientId});
@@ -84,71 +84,99 @@ class _CreatePrescriptionScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: SukunColors.mist,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      'Enter the practitioner’s original instruction exactly. Do not add a dose, repetition, exact time, or ruling that was not supplied.',
+                  const SukunPageIntro(
+                    eyebrow: 'Source record',
+                    title: 'Record the prescription',
+                    subtitle: 'Preserve the practitioner’s original human-authored instruction before creating structured actions.',
+                  ),
+                  const SizedBox(height: 20),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.warning,
+                    showBorder: false,
+                    radius: 18,
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Enter the original instruction exactly. Never add a dose, repetition, exact time, or ruling that was not supplied.',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _textController,
-                    minLines: 7,
-                    maxLines: 14,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Original prescription / instruction',
-                      alignLabelWithHint: true,
-                    ),
-                    validator: validatePrescriptionText,
-                  ),
-                  const SizedBox(height: 14),
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.event_outlined),
-                      title: const Text('Session date'),
-                      subtitle: Text(
-                        _sessionDate == null
-                            ? 'Not specified'
-                            : _formatDate(_sessionDate!),
-                      ),
-                      trailing: _sessionDate == null
-                          ? const Icon(Icons.chevron_right)
-                          : IconButton(
-                              tooltip: 'Clear date',
-                              onPressed: () =>
-                                  setState(() => _sessionDate = null),
-                              icon: const Icon(Icons.close),
+                  SukunSurface(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _textController,
+                          minLines: 7,
+                          maxLines: 14,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: const InputDecoration(
+                            labelText: 'Original prescription / instruction',
+                            alignLabelWithHint: true,
+                          ),
+                          validator: validatePrescriptionText,
+                        ),
+                        const SizedBox(height: 14),
+                        SukunSurface(
+                          radius: 18,
+                          padding: EdgeInsets.zero,
+                          child: ListTile(
+                            leading: const Icon(Icons.event_outlined),
+                            title: const Text('Session date'),
+                            subtitle: Text(
+                              _sessionDate == null
+                                  ? 'Not specified'
+                                  : _formatDate(_sessionDate!),
                             ),
-                      onTap: _pickDate,
+                            trailing: _sessionDate == null
+                                ? const Icon(Icons.chevron_right)
+                                : IconButton(
+                                    tooltip: 'Clear date',
+                                    onPressed: () =>
+                                        setState(() => _sessionDate = null),
+                                    icon: const Icon(Icons.close),
+                                  ),
+                            onTap: _pickDate,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        SwitchListTile(
+                          value: _patientVisible,
+                          onChanged: (value) =>
+                              setState(() => _patientVisible = value),
+                          title: const Text('Visible to patient'),
+                          subtitle: Text(
+                            _patientVisible
+                                ? 'The patient may read this prescription.'
+                                : 'Staff-only notes are hidden from the patient.',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: _submitting ? null : _submit,
+                          icon: _submitting
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.save_outlined),
+                          label: Text(
+                            _submitting ? 'Saving…' : 'Save prescription',
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  SwitchListTile(
-                    value: _patientVisible,
-                    onChanged: (value) =>
-                        setState(() => _patientVisible = value),
-                    title: const Text('Visible to patient'),
-                    subtitle: Text(
-                      _patientVisible
-                          ? 'The patient may read this prescription.'
-                          : 'Staff-only notes are hidden from the patient.',
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _submitting ? null : _submit,
-                    icon: _submitting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.save_outlined),
-                    label: Text(_submitting ? 'Saving…' : 'Save prescription'),
                   ),
                 ],
               ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
@@ -83,11 +84,18 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
+                const SukunPageIntro(
+                  eyebrow: 'Personal care',
+                  title: 'Your current plan',
+                  subtitle: 'Practitioner-approved actions and instructions in one clear view.',
+                ),
+                const SizedBox(height: 20),
                 _PlanHeader(plan: data.plan!),
                 const SizedBox(height: 24),
-                Text(
-                  'Plan actions',
-                  style: Theme.of(context).textTheme.titleLarge,
+                SukunSectionHeader(
+                  title: 'Plan actions',
+                  subtitle:
+                      '${data.actions.length} approved action${data.actions.length == 1 ? '' : 's'}',
                 ),
                 const SizedBox(height: 10),
                 for (final action in data.actions) ...[
@@ -100,36 +108,37 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                   const SizedBox(height: 10),
                 ],
                 const SizedBox(height: 14),
-                Text(
-                  'Prescription',
-                  style: Theme.of(context).textTheme.titleLarge,
+                const SukunSectionHeader(
+                  title: 'Prescription',
+                  subtitle: 'Original patient-visible instruction',
                 ),
                 const SizedBox(height: 10),
                 if (data.prescriptions.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(18),
-                      child: Text(
-                        'No patient-visible prescription is available.',
-                      ),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    child: Text(
+                      'No patient-visible prescription is available.',
                     ),
                   )
                 else
                   for (final prescription in data.prescriptions) ...[
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(prescription.rawText),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Recorded ${_date(prescription.createdAt)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
+                    SukunSurface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SukunIconBadge(
+                            icon: Icons.description_outlined,
+                            size: 42,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(prescription.rawText),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Recorded ${_date(prescription.createdAt)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -162,23 +171,40 @@ class _PlanHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: SukunColors.mist,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(plan.name, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 6),
-            Text('Version ${plan.version} · active'),
-            const SizedBox(height: 8),
-            Text(
-              '${_date(plan.startDate)} – '
-              '${plan.endDate == null ? 'ongoing' : _date(plan.endDate!)}',
-            ),
-          ],
-        ),
+    return SukunSurface(
+      tone: SukunSurfaceTone.navy,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SukunIconBadge(
+                icon: Icons.assignment_turned_in_outlined,
+                color: Colors.white,
+                backgroundColor: Color(0x3328B8EF),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  plan.name,
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(color: Colors.white),
+                ),
+              ),
+              const SukunStatusPill(
+                label: 'ACTIVE',
+                tone: SukunStatusTone.brand,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Version ${plan.version}  ·  ${_date(plan.startDate)} – '
+            '${plan.endDate == null ? 'ongoing' : _date(plan.endDate!)}',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
       ),
     );
   }
@@ -192,29 +218,48 @@ class _PlanActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(action.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 5),
-            Text('${action.frequency.label} · ${_timeLabel(action)}'),
-            if (action.instruction?.isNotEmpty == true) ...[
-              const SizedBox(height: 10),
-              Text(action.instruction!),
-            ],
-            if (action.resource != null) ...[
-              const Divider(height: 26),
-              OutlinedButton.icon(
-                onPressed: onOpenResource,
-                icon: const Icon(Icons.menu_book_outlined, size: 18),
-                label: Text('Open ${action.resource!.title}'),
+    return SukunSurface(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SukunIconBadge(icon: Icons.checklist_rounded, size: 42),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${action.frequency.label} · ${_timeLabel(action)}',
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: SukunColors.muted),
+                    ),
+                  ],
+                ),
               ),
             ],
+          ),
+          if (action.instruction?.isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            Text(action.instruction!),
           ],
-        ),
+          if (action.resource != null) ...[
+            const Divider(height: 26),
+            OutlinedButton.icon(
+              onPressed: onOpenResource,
+              icon: const Icon(Icons.menu_book_outlined, size: 18),
+              label: Text('Open ${action.resource!.title}'),
+            ),
+          ],
+        ],
       ),
     );
   }

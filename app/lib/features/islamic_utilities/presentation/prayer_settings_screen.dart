@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/data/utility_location_gateway.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
@@ -101,152 +102,183 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
-                Text('Location', style: Theme.of(context).textTheme.titleLarge),
+                const SukunPageIntro(
+                  eyebrow: 'Personal preference',
+                  title: 'Set your prayer timetable',
+                  subtitle: 'Choose the location and scholarly calculation settings you follow. Nothing is selected automatically.',
+                ),
+                const SizedBox(height: 26),
+                const SukunSectionHeader(
+                  title: 'Your location',
+                  subtitle: 'Used only for on-device calculation',
+                ),
                 const SizedBox(height: 10),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_location != null) ...[
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                color: SukunColors.deepTide,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _location!.name,
+                SukunSurface(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          SukunIconBadge(
+                            icon:
+                                _location?.source ==
+                                    UtilityLocationSource.device
+                                ? Icons.my_location_rounded
+                                : Icons.location_city_rounded,
+                          ),
+                          const SizedBox(width: 13),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _location?.name ?? 'Location not selected',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium,
                                 ),
-                              ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Stored privately on this device',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: SukunColors.muted),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.tonalIcon(
+                        onPressed: _locating ? null : _useCurrentLocation,
+                        icon: _locating
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.near_me_rounded),
+                        label: Text(
+                          _locating
+                              ? 'Finding your location'
+                              : 'Use current location',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SukunChoiceField<UtilityLocation>(
+                        label: 'Or select a Bangladesh city',
+                        placeholder: 'Select a Bangladesh city',
+                        sheetTitle: 'Choose a city',
+                        value: _manualSelection,
+                        options: [
+                          for (final city in manualBangladeshCities)
+                            SukunChoiceOption(
+                              value: city,
+                              title: city.name,
+                              description: 'Bangladesh · Asia/Dhaka',
+                              icon: Icons.location_city_rounded,
+                            ),
+                        ],
+                        onChanged: (city) => setState(() {
+                          _location = city;
+                          _locationFailure = null;
+                        }),
+                      ),
+                      if (_locationFailure != null) ...[
+                        const SizedBox(height: 12),
+                        SukunSurface(
+                          tone: SukunSurfaceTone.warning,
+                          radius: 16,
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_locationFailure!.userMessage),
+                              if (_locationFailure!.failure ==
+                                  LocationAccessFailure.deniedForever)
+                                TextButton(
+                                  onPressed: () => ref
+                                      .read(utilityLocationGatewayProvider)
+                                      .openAppSettings(),
+                                  child: const Text('Open app settings'),
+                                ),
+                              if (_locationFailure!.failure ==
+                                  LocationAccessFailure.serviceDisabled)
+                                TextButton(
+                                  onPressed: () => ref
+                                      .read(utilityLocationGatewayProvider)
+                                      .openLocationSettings(),
+                                  child: const Text('Open location settings'),
+                                ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                        const Text(
-                          'Location is stored on this device for calculation and is not added to patient care records.',
-                          style: TextStyle(fontSize: 12),
                         ),
-                        const SizedBox(height: 12),
-                        FilledButton.tonalIcon(
-                          onPressed: _locating ? null : _useCurrentLocation,
-                          icon: _locating
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.my_location),
-                          label: Text(
-                            _locating
-                                ? 'Finding location'
-                                : 'Use current location',
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        DropdownButtonFormField<UtilityLocation>(
-                          initialValue: _manualSelection,
-                          decoration: const InputDecoration(
-                            labelText: 'Or select a Bangladesh city',
-                          ),
-                          items: [
-                            for (final city in manualBangladeshCities)
-                              DropdownMenuItem(
-                                value: city,
-                                child: Text(city.name),
-                              ),
-                          ],
-                          onChanged: (city) {
-                            if (city != null) setState(() => _location = city);
-                          },
-                        ),
-                        if (_locationFailure != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            _locationFailure!.userMessage,
-                            style: const TextStyle(color: SukunColors.error),
-                          ),
-                          if (_locationFailure!.failure ==
-                              LocationAccessFailure.deniedForever)
-                            TextButton(
-                              onPressed: () => ref
-                                  .read(utilityLocationGatewayProvider)
-                                  .openAppSettings(),
-                              child: const Text('Open app settings'),
-                            ),
-                          if (_locationFailure!.failure ==
-                              LocationAccessFailure.serviceDisabled)
-                            TextButton(
-                              onPressed: () => ref
-                                  .read(utilityLocationGatewayProvider)
-                                  .openLocationSettings(),
-                              child: const Text('Open location settings'),
-                            ),
-                        ],
                       ],
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Calculation method',
-                  style: Theme.of(context).textTheme.titleLarge,
+                const SizedBox(height: 26),
+                const SukunSectionHeader(
+                  title: 'Calculation preferences',
+                  subtitle: 'Choose the convention you personally follow',
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<PrayerCalculationMethodOption>(
-                  initialValue: _method,
-                  decoration: const InputDecoration(
-                    labelText: 'Choose a calculation method',
-                  ),
-                  items: [
+                SukunChoiceField<PrayerCalculationMethodOption>(
+                  label: 'Calculation method',
+                  placeholder: 'Choose a method',
+                  sheetTitle: 'Calculation method',
+                  value: _method,
+                  options: [
                     for (final method in PrayerCalculationMethodOption.values)
-                      DropdownMenuItem(
+                      SukunChoiceOption(
                         value: method,
-                        child: Text(
-                          method.label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        title: method.label,
+                        description: method.description,
+                        icon: Icons.calculate_outlined,
                       ),
                   ],
-                  onChanged: (value) => setState(() => _method = value),
+                  onChanged: (method) => setState(() => _method = method),
                 ),
-                if (_method != null) ...[
-                  const SizedBox(height: 7),
-                  Text(_method!.description),
-                ],
-                const SizedBox(height: 20),
-                DropdownButtonFormField<AsrConvention>(
-                  initialValue: _asrConvention,
-                  decoration: const InputDecoration(
-                    labelText: 'Choose an Asr convention',
-                  ),
-                  items: [
+                const SizedBox(height: 12),
+                SukunChoiceField<AsrConvention>(
+                  label: 'Asr convention',
+                  placeholder: 'Choose an Asr convention',
+                  sheetTitle: 'Asr convention',
+                  value: _asrConvention,
+                  options: [
                     for (final convention in AsrConvention.values)
-                      DropdownMenuItem(
+                      SukunChoiceOption(
                         value: convention,
-                        child: Text(
-                          convention.label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        title: convention.label,
+                        description: convention.description,
+                        icon: Icons.wb_twilight_rounded,
                       ),
                   ],
-                  onChanged: (value) => setState(() => _asrConvention = value),
+                  onChanged: (convention) =>
+                      setState(() => _asrConvention = convention),
                 ),
-                if (_asrConvention != null) ...[
-                  const SizedBox(height: 7),
-                  Text(_asrConvention!.description),
-                ],
-                const SizedBox(height: 14),
-                const Text(
-                  'These settings affect calculated utility times only. They do not change a patient care plan or any prescribed reminder.',
-                  style: TextStyle(fontSize: 12),
+                const SizedBox(height: 16),
+                const SukunSurface(
+                  tone: SukunSurfaceTone.soft,
+                  radius: 18,
+                  showBorder: false,
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: SukunColors.deepTide,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'These preferences affect this utility only. They never change a care plan or prescribed reminder.',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 FilledButton.icon(

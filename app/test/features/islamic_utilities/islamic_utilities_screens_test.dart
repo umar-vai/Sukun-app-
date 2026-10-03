@@ -64,6 +64,10 @@ void main() {
       ),
       findsOneWidget,
     );
+    await tester.scrollUntilVisible(
+      find.text('Or select a Bangladesh city'),
+      250,
+    );
     expect(find.text('Or select a Bangladesh city'), findsOneWidget);
   });
 
@@ -79,6 +83,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Compass sensor unavailable'),
+      250,
+    );
     expect(find.text('Compass sensor unavailable'), findsOneWidget);
     expect(find.textContaining('from North'), findsOneWidget);
     expect(find.textContaining('another trusted compass'), findsOneWidget);
@@ -96,6 +104,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('Calibrate the compass'), 250);
     expect(find.text('Calibrate the compass'), findsOneWidget);
     expect(find.textContaining('figure-eight pattern'), findsOneWidget);
     expect(find.textContaining('from North'), findsOneWidget);

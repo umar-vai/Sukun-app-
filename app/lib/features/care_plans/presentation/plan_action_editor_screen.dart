@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -213,12 +214,28 @@ class _PlanActionEditorScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(18),
-                          child: Text(
-                            'Only enter instructions explicitly provided by the practitioner. Leave unknown count, duration, time, or resource fields blank and mark the action “Needs review”.',
-                          ),
+                      SukunPageIntro(
+                        eyebrow: editing ? 'Structured action' : 'New action',
+                        title: editing ? 'Edit plan action' : 'Add plan action',
+                        subtitle: 'Capture only what the practitioner explicitly provided.',
+                      ),
+                      const SizedBox(height: 18),
+                      const SukunSurface(
+                        tone: SukunSurfaceTone.warning,
+                        showBorder: false,
+                        radius: 18,
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.fact_check_outlined),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Leave unknown count, duration, time, or resource fields blank and mark the action “Needs review”.',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -322,42 +339,33 @@ class _PlanActionEditorScreenState
                         ),
                       ],
                       const SizedBox(height: 14),
-                      DropdownButtonFormField<String>(
-                        initialValue: _timeWindow,
-                        decoration: const InputDecoration(
-                          labelText: 'Time window (optional)',
-                        ),
-                        items: const [
-                          DropdownMenuItem(
+                      SukunChoiceField<String>(
+                        label: 'Time window',
+                        placeholder: 'Not specified',
+                        value: _timeWindow,
+                        options: const [
+                          SukunChoiceOption(
                             value: '',
-                            child: Text('Not specified'),
+                            title: 'Not specified',
+                            description:
+                                'Keep time flexible and do not infer one.',
                           ),
-                          DropdownMenuItem(
-                            value: 'morning',
-                            child: Text('Morning'),
-                          ),
-                          DropdownMenuItem(
+                          SukunChoiceOption(value: 'morning', title: 'Morning'),
+                          SukunChoiceOption(
                             value: 'afternoon',
-                            child: Text('Afternoon'),
+                            title: 'Afternoon',
                           ),
-                          DropdownMenuItem(
-                            value: 'evening',
-                            child: Text('Evening'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'night',
-                            child: Text('Night'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'anytime',
-                            child: Text('Anytime'),
-                          ),
+                          SukunChoiceOption(value: 'evening', title: 'Evening'),
+                          SukunChoiceOption(value: 'night', title: 'Night'),
+                          SukunChoiceOption(value: 'anytime', title: 'Anytime'),
                         ],
                         onChanged: (value) =>
-                            setState(() => _timeWindow = value ?? ''),
+                            setState(() => _timeWindow = value),
                       ),
                       const SizedBox(height: 10),
-                      Card(
+                      SukunSurface(
+                        radius: 20,
+                        padding: EdgeInsets.zero,
                         child: ListTile(
                           leading: const Icon(Icons.schedule_outlined),
                           title: const Text('Exact time'),
@@ -394,49 +402,54 @@ class _PlanActionEditorScreenState
                             : () => setState(() => _endDate = null),
                       ),
                       const SizedBox(height: 22),
-                      DropdownButtonFormField<ActionReviewStatus>(
-                        initialValue: _reviewStatus,
-                        decoration: const InputDecoration(
-                          labelText: 'Review status',
-                        ),
-                        items: [
+                      SukunChoiceField<ActionReviewStatus>(
+                        label: 'Review status',
+                        placeholder: 'Choose review status',
+                        value: _reviewStatus,
+                        options: [
                           for (final status in const [
                             ActionReviewStatus.draft,
                             ActionReviewStatus.needsReview,
                             ActionReviewStatus.approved,
                           ])
-                            DropdownMenuItem(
+                            SukunChoiceOption(
                               value: status,
-                              child: Text(status.label),
-                            ),
-                        ],
-                        onChanged: (value) => setState(
-                          () =>
-                              _reviewStatus = value ?? ActionReviewStatus.draft,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      DropdownButtonFormField<String>(
-                        initialValue: _contentItemId,
-                        decoration: const InputDecoration(
-                          labelText: 'Linked resource (optional)',
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: '',
-                            child: Text('No linked resource'),
-                          ),
-                          for (final resource in data.resources)
-                            DropdownMenuItem(
-                              value: resource.id,
-                              child: Text(
-                                resource.title,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              title: status.label,
+                              description: switch (status) {
+                                ActionReviewStatus.draft =>
+                                  'Still being prepared.',
+                                ActionReviewStatus.needsReview =>
+                                  'Contains missing or ambiguous information.',
+                                ActionReviewStatus.approved =>
+                                  'Reviewed and eligible for plan publication.',
+                                _ => 'Not available for this workflow.',
+                              },
                             ),
                         ],
                         onChanged: (value) =>
-                            setState(() => _contentItemId = value ?? ''),
+                            setState(() => _reviewStatus = value),
+                      ),
+                      const SizedBox(height: 14),
+                      SukunChoiceField<String>(
+                        label: 'Linked resource',
+                        placeholder: 'No linked resource',
+                        value: _contentItemId,
+                        options: [
+                          const SukunChoiceOption(
+                            value: '',
+                            title: 'No linked resource',
+                            description: 'Keep this action instruction-only.',
+                          ),
+                          for (final resource in data.resources)
+                            SukunChoiceOption(
+                              value: resource.id,
+                              title: resource.title,
+                              description: 'Reuse this canonical resource without copying it.',
+                              icon: Icons.menu_book_outlined,
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _contentItemId = value),
                       ),
                       if (_contentItemId.isNotEmpty) ...[
                         const SizedBox(height: 14),
@@ -509,7 +522,9 @@ class _ActionDateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return SukunSurface(
+      radius: 20,
+      padding: EdgeInsets.zero,
       child: ListTile(
         leading: const Icon(Icons.event_outlined),
         title: Text(label),

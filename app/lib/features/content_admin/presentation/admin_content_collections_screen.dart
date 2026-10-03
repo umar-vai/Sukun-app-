@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
@@ -136,47 +136,77 @@ class _AdminContentCollectionsScreenState
           }
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-            itemCount: collections.length,
+            itemCount: collections.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final collection = collections[index];
-              return Card(
+              if (index == 0) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: SukunPageIntro(
+                    eyebrow: 'Canonical reuse',
+                    title: 'Ayat collections',
+                    subtitle: 'Curate selected and Ruqyah sets without duplicating verified Qur’an text.',
+                    trailing: SukunIconBadge(
+                      icon: Icons.collections_bookmark_outlined,
+                      size: 54,
+                    ),
+                  ),
+                );
+              }
+              final collection = collections[index - 1];
+              return SukunSurface(
+                radius: 20,
+                padding: EdgeInsets.zero,
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  leading: const CircleAvatar(
-                    backgroundColor: SukunColors.mist,
-                    child: Icon(Icons.bookmarks_outlined),
-                  ),
+                  leading: const SukunIconBadge(icon: Icons.bookmarks_outlined),
                   title: Text(collection.title),
-                  subtitle: Text(
-                    '${_label(collection.type)} • ${collection.contentItemIds.length} Ayat • ${_label(collection.status)}',
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      '${_label(collection.type)} · ${collection.contentItemIds.length} Ayat',
+                    ),
                   ),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (action) {
-                      if (action == 'edit') {
-                        _openEditor(ayat, collection);
-                      } else {
-                        _transition(collection, action);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (collection.status == 'draft') ...[
-                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        const PopupMenuItem(
-                          value: 'publish',
-                          child: Text('Publish'),
-                        ),
-                      ],
-                      if (collection.status == 'published')
-                        const PopupMenuItem(
-                          value: 'unpublish',
-                          child: Text('Unpublish'),
-                        ),
-                      if (collection.status != 'archived')
-                        const PopupMenuItem(
-                          value: 'archive',
-                          child: Text('Archive'),
-                        ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SukunStatusPill(
+                        label: _label(collection.status),
+                        tone: collection.status == 'published'
+                            ? SukunStatusTone.success
+                            : SukunStatusTone.neutral,
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (action) {
+                          if (action == 'edit') {
+                            _openEditor(ayat, collection);
+                          } else {
+                            _transition(collection, action);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          if (collection.status == 'draft') ...[
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'publish',
+                              child: Text('Publish'),
+                            ),
+                          ],
+                          if (collection.status == 'published')
+                            const PopupMenuItem(
+                              value: 'unpublish',
+                              child: Text('Unpublish'),
+                            ),
+                          if (collection.status != 'archived')
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Text('Archive'),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -276,115 +306,170 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.collection == null ? 'New Ayat collection' : 'Edit collection',
-      ),
-      content: SizedBox(
-        width: 640,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 680,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _type,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'selected_ayat',
-                      child: Text('Selected Ayat'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'ruqyah_ayat',
-                      child: Text('Ruqyah Ayat'),
-                    ),
-                  ],
-                  onChanged: (value) => setState(() => _type = value!),
-                ),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Title is required.'
-                      : null,
-                ),
-                TextFormField(
-                  controller: _titleBnController,
-                  decoration: const InputDecoration(labelText: 'Bangla title'),
-                ),
-                TextFormField(
-                  controller: _slugController,
-                  decoration: const InputDecoration(labelText: 'Slug'),
-                  validator: (value) =>
-                      value == null ||
-                          !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(value)
-                      ? 'Use lowercase words separated by hyphens.'
-                      : null,
-                ),
-                TextFormField(
-                  controller: _summaryController,
-                  decoration: const InputDecoration(labelText: 'Summary'),
-                  maxLines: 2,
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: _visibility,
-                  decoration: const InputDecoration(labelText: 'Visibility'),
-                  items: const [
-                    DropdownMenuItem(value: 'public', child: Text('Public')),
-                    DropdownMenuItem(
-                      value: 'patient_only',
-                      child: Text('Patient only'),
-                    ),
-                  ],
-                  onChanged: (value) => setState(() => _visibility = value!),
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Verified canonical Ayat (${_selectedIds.length} selected)',
-                    style: Theme.of(context).textTheme.titleSmall,
+                SukunPageIntro(
+                  eyebrow: 'Collection editor',
+                  title: widget.collection == null
+                      ? 'New Ayat collection'
+                      : 'Edit collection',
+                  subtitle: 'Select verified canonical Ayat and set the approved audience.',
+                  trailing: const SukunIconBadge(
+                    icon: Icons.collections_bookmark_outlined,
+                    size: 54,
                   ),
                 ),
-                if (widget.ayat.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No verified Ayat are available.'),
-                  )
-                else
-                  for (final ayah in widget.ayat)
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _selectedIds.contains(ayah.id),
-                      title: Text(ayah.titleBn ?? ayah.title),
-                      subtitle: Text(
-                        'Surah ${ayah.surahNumber ?? '-'} • Ayah ${ayah.ayahNumber ?? '-'} • ${_label(ayah.status)}',
-                      ),
-                      onChanged: (selected) => setState(() {
-                        if (selected == true) {
-                          _selectedIds.add(ayah.id);
-                        } else {
-                          _selectedIds.remove(ayah.id);
-                        }
-                      }),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        SukunChoiceField<String>(
+                          value: _type,
+                          label: 'Collection type',
+                          placeholder: 'Choose a type',
+                          options: const [
+                            SukunChoiceOption(
+                              value: 'selected_ayat',
+                              title: 'Selected Ayat',
+                              description: 'A curated reading collection.',
+                              icon: Icons.bookmarks_outlined,
+                            ),
+                            SukunChoiceOption(
+                              value: 'ruqyah_ayat',
+                              title: 'Ruqyah Ayat',
+                              description:
+                                  'Approved Ayat grouped for Ruqyah browsing.',
+                              icon: Icons.health_and_safety_outlined,
+                            ),
+                          ],
+                          onChanged: (value) => setState(() => _type = value),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(labelText: 'Title'),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Title is required.'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _titleBnController,
+                          decoration: const InputDecoration(
+                            labelText: 'Bangla title',
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _slugController,
+                          decoration: const InputDecoration(labelText: 'Slug'),
+                          validator: (value) =>
+                              value == null ||
+                                  !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
+                                      .hasMatch(value)
+                              ? 'Use lowercase words separated by hyphens.'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _summaryController,
+                          decoration: const InputDecoration(
+                            labelText: 'Summary',
+                          ),
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 12),
+                        SukunChoiceField<String>(
+                          value: _visibility,
+                          label: 'Visibility',
+                          placeholder: 'Choose the audience',
+                          options: const [
+                            SukunChoiceOption(
+                              value: 'public',
+                              title: 'Public',
+                              description: 'Available to guests and signed-in users after publishing.',
+                              icon: Icons.public_rounded,
+                            ),
+                            SukunChoiceOption(
+                              value: 'patient_only',
+                              title: 'Patient only',
+                              description:
+                                  'Restricted to authenticated patients.',
+                              icon: Icons.person_outline_rounded,
+                            ),
+                          ],
+                          onChanged: (value) =>
+                              setState(() => _visibility = value),
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Verified canonical Ayat (${_selectedIds.length} selected)',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        if (widget.ayat.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Text('No verified Ayat are available.'),
+                          )
+                        else
+                          for (final ayah in widget.ayat)
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              value: _selectedIds.contains(ayah.id),
+                              title: Text(ayah.titleBn ?? ayah.title),
+                              subtitle: Text(
+                                'Surah ${ayah.surahNumber ?? '-'} • Ayah ${ayah.ayahNumber ?? '-'} • ${_label(ayah.status)}',
+                              ),
+                              onChanged: (selected) => setState(() {
+                                if (selected == true) {
+                                  _selectedIds.add(ayah.id);
+                                } else {
+                                  _selectedIds.remove(ayah.id);
+                                }
+                              }),
+                            ),
+                      ],
                     ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _saving
+                            ? null
+                            : () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? 'Saving…' : 'Save draft'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _save,
-          child: Text(_saving ? 'Saving…' : 'Save draft'),
-        ),
-      ],
     );
   }
 }

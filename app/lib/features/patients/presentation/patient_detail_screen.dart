@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -111,6 +112,12 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
               children: [
+                const SukunPageIntro(
+                  eyebrow: 'Care workspace',
+                  title: 'Patient overview',
+                  subtitle: 'Plans, prescriptions, and adherence in one protected view.',
+                ),
+                const SizedBox(height: 18),
                 _PatientSummaryCard(patient: patient),
                 const SizedBox(height: 14),
                 _PatientProgressCard(
@@ -118,38 +125,33 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   patientId: patient.id,
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Care plans',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    Text(
-                      '${plans.length} version${plans.length == 1 ? '' : 's'}',
-                    ),
-                  ],
+                SukunSectionHeader(
+                  title: 'Care plans',
+                  subtitle:
+                      'Versioned patient instructions and structured actions.',
+                  action: SukunStatusPill(
+                    label:
+                        '${plans.length} version${plans.length == 1 ? '' : 's'}',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 if (plans.isEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'No care plan has been created yet. Record a prescription first, or build a plan manually.',
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: _createPlan,
-                            icon: const Icon(Icons.add_task),
-                            label: const Text('Create care plan'),
-                          ),
-                        ],
-                      ),
+                  SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'No care plan has been created yet. Record a prescription first, or build a plan manually.',
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _createPlan,
+                          icon: const Icon(Icons.add_task),
+                          label: const Text('Create care plan'),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -166,25 +168,18 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                     const SizedBox(height: 10),
                   ],
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Prescriptions',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    Text('${prescriptions.length}'),
-                  ],
+                SukunSectionHeader(
+                  title: 'Prescriptions',
+                  subtitle: 'Original human-authored source instructions.',
+                  action: SukunStatusPill(label: '${prescriptions.length}'),
                 ),
                 const SizedBox(height: 12),
                 if (prescriptions.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text(
-                        'No prescription has been recorded yet. Add the original human-authored instruction before building a care plan.',
-                      ),
+                  const SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    child: Text(
+                      'No prescription has been recorded yet. Add the original human-authored instruction before building a care plan.',
                     ),
                   )
                 else
@@ -209,20 +204,42 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.note_add_outlined),
-              title: const Text('Add prescription'),
-              onTap: () => context.pop('prescription'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_task),
-              title: const Text('Create care plan'),
-              onTap: () => context.pop('plan'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SukunPageIntro(
+                eyebrow: 'Patient care',
+                title: 'What would you like to add?',
+                subtitle: 'Preserve the human instruction or create a structured draft plan.',
+              ),
+              const SizedBox(height: 18),
+              SukunSurface(
+                onTap: () => context.pop('prescription'),
+                child: const Row(
+                  children: [
+                    SukunIconBadge(icon: Icons.note_add_outlined),
+                    SizedBox(width: 14),
+                    Expanded(child: Text('Add original prescription')),
+                    Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SukunSurface(
+                onTap: () => context.pop('plan'),
+                child: const Row(
+                  children: [
+                    SukunIconBadge(icon: Icons.add_task),
+                    SizedBox(width: 14),
+                    Expanded(child: Text('Create care plan')),
+                    Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -261,15 +278,10 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
       future: _progress,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: LinearProgressIndicator(),
-            ),
-          );
+          return const SukunSurface(child: LinearProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Card(
+          return SukunSurface(
             child: ListTile(
               leading: const Icon(Icons.error_outline),
               title: const Text('Progress could not be loaded'),
@@ -285,32 +297,33 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
         }
         final progress = snapshot.data!;
         final percentage = (progress.completionRate * 100).round();
-        return Card(
-          color: SukunColors.mist,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Last 7 days',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+        return SukunSurface(
+          tone: SukunSurfaceTone.navy,
+          showBorder: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Last 7 days',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    Text('$percentage% completed'),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                LinearProgressIndicator(value: progress.completionRate),
-                const SizedBox(height: 10),
-                Text(
-                  '${progress.completed} done · ${progress.skipped} skipped · ${progress.remaining} remaining',
-                ),
-              ],
-            ),
+                  ),
+                  SukunStatusPill(
+                    label: '$percentage% completed',
+                    tone: SukunStatusTone.brand,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              LinearProgressIndicator(value: progress.completionRate),
+              const SizedBox(height: 10),
+              Text(
+                '${progress.completed} done · ${progress.skipped} skipped · ${progress.remaining} remaining',
+              ),
+            ],
           ),
         );
       },
@@ -325,48 +338,43 @@ class _PatientSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: SukunColors.mist,
-                  foregroundColor: SukunColors.deepTide,
-                  child: Icon(Icons.person_outline, size: 28),
+    return SukunSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SukunIconBadge(
+                icon: Icons.person_outline_rounded,
+                size: 58,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      patient.fullName,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(patient.patientCode),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        patient.fullName,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(patient.patientCode),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 32),
-            _DetailLine(
-              icon: Icons.phone_outlined,
-              label: patient.phone ?? 'No phone number',
-            ),
-            const SizedBox(height: 10),
-            _DetailLine(
-              icon: Icons.verified_user_outlined,
-              label: 'Status: ${patient.status.name}',
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const Divider(height: 32),
+          _DetailLine(
+            icon: Icons.phone_outlined,
+            label: patient.phone ?? 'No phone number',
+          ),
+          const SizedBox(height: 10),
+          _DetailLine(
+            icon: Icons.verified_user_outlined,
+            label: 'Status: ${patient.status.name}',
+          ),
+        ],
       ),
     );
   }
@@ -402,36 +410,33 @@ class _PrescriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sessionDate = prescription.sessionDate;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(label: Text(prescription.visibility.label)),
-                if (sessionDate != null)
-                  Chip(label: Text('Session ${_formatDate(sessionDate)}')),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(prescription.rawText),
-            const SizedBox(height: 12),
-            Text(
-              'Recorded ${_formatDate(prescription.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onBuildPlan,
-              icon: const Icon(Icons.add_task),
-              label: const Text('Build care plan'),
-            ),
-          ],
-        ),
+    return SukunSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SukunStatusPill(label: prescription.visibility.label),
+              if (sessionDate != null)
+                SukunStatusPill(label: 'Session ${_formatDate(sessionDate)}'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(prescription.rawText),
+          const SizedBox(height: 12),
+          Text(
+            'Recorded ${_formatDate(prescription.createdAt)}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: onBuildPlan,
+            icon: const Icon(Icons.add_task),
+            label: const Text('Build care plan'),
+          ),
+        ],
       ),
     );
   }
@@ -445,23 +450,42 @@ class _CarePlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: plan.status == CarePlanStatus.active
-              ? SukunColors.sukunBlue
-              : SukunColors.mist,
-          foregroundColor: plan.status == CarePlanStatus.active
-              ? Colors.white
-              : SukunColors.deepTide,
-          child: Text('${plan.version}'),
-        ),
-        title: Text(plan.name),
-        subtitle: Text(
-          'Version ${plan.version} · ${plan.status.label} · starts ${_formatDate(plan.startDate)}',
-        ),
-        trailing: const Icon(Icons.chevron_right),
+    return SukunSurface(
+      radius: 20,
+      padding: const EdgeInsets.all(16),
+      onTap: onTap,
+      child: Row(
+        children: [
+          SukunIconBadge(
+            icon: plan.status == CarePlanStatus.active
+                ? Icons.assignment_turned_in_outlined
+                : Icons.assignment_outlined,
+            backgroundColor: plan.status == CarePlanStatus.active
+                ? SukunColors.successSoft
+                : SukunColors.softBlue,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(plan.name, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Version ${plan.version} · starts ${_formatDate(plan.startDate)}',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: SukunColors.muted),
+                ),
+              ],
+            ),
+          ),
+          SukunStatusPill(
+            label: plan.status.label,
+            tone: plan.status == CarePlanStatus.active
+                ? SukunStatusTone.success
+                : SukunStatusTone.neutral,
+          ),
+        ],
       ),
     );
   }

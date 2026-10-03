@@ -226,6 +226,18 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Compass calibration states
 - [x] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
 
+## Blocking visual acceptance — Final UI Match & Redesign
+
+- [x] Expand the Sukun Life tokens into a reusable, brand-specific component system
+- [x] Replace generic Material cards, selectors, dialogs, search, filters, states, and bottom navigation on major screens
+- [x] Redesign the complete patient experience, including reminders and task interaction states
+- [x] Redesign the Islamic Resources hierarchy, browsing, detail, search, media, and empty/loading/error states
+- [x] Redesign Prayer Settings selection sheets, Prayer Times, and the branded Qibla compass/calibration experience
+- [x] Recompose the Admin Dashboard and redesign patient, prescription, care-plan, AI-review, and Content CMS workflows
+- [x] Review compact (360 × 640) and large (430 × 932) render captures across guest, admin, patient, resources, settings, and Qibla screen families
+- [x] Review Bangla wrapping and mixed English/Bangla resource layouts in the render matrix
+- [x] Run formatting, analysis, the full Flutter test suite, and an Android debug build after the redesign
+
 ## Phase 9 — Quality + release
 
 - [ ] Flutter analyze clean

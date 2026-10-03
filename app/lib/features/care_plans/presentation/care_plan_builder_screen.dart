@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -105,24 +105,13 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   }
 
   Future<void> _reject(PlanAction action) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSukunDecisionDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove action from draft?'),
-        content: Text(
+      title: 'Remove action from draft?',
+      message:
           '“${action.title}” will be marked rejected and kept in clinical history.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => context.pop(true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Remove',
+      icon: Icons.remove_circle_outline_rounded,
     );
     if (confirmed != true || _working) return;
     await _runMutation(() async {
@@ -137,26 +126,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
         .where((action) => action.reviewStatus == ActionReviewStatus.approved)
         .length;
     final unresolved = data.actions.length - approved;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSukunDecisionDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Publish care plan?'),
-        content: Text(
+      title: 'Publish care plan?',
+      message:
           'This will make version ${data.plan.version} the patient’s active plan. '
           'It contains $approved approved action${approved == 1 ? '' : 's'}.'
           '${unresolved == 0 ? '' : ' $unresolved action${unresolved == 1 ? '' : 's'} still require review and publishing will be refused.'}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Keep editing'),
-          ),
-          FilledButton(
-            onPressed: () => context.pop(true),
-            child: const Text('Publish'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Publish',
+      cancelLabel: 'Keep editing',
+      icon: Icons.publish_outlined,
     );
     if (confirmed != true || _working) return;
     await _runMutation(() async {
@@ -167,24 +146,12 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   }
 
   Future<void> _archive(CarePlan plan) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSukunDecisionDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Archive this plan?'),
-        content: const Text(
-          'The history will be preserved, but this version will no longer be usable as an active plan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => context.pop(true),
-            child: const Text('Archive'),
-          ),
-        ],
-      ),
+      title: 'Archive this plan?',
+      message: 'The history will be preserved, but this version will no longer be usable as an active plan.',
+      confirmLabel: 'Archive',
+      icon: Icons.archive_outlined,
     );
     if (confirmed != true || _working) return;
     await _runMutation(() async {
@@ -253,6 +220,12 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                   sliver: SliverList.list(
                     children: [
+                      const SukunPageIntro(
+                        eyebrow: 'Patient care workflow',
+                        title: 'Build the care plan',
+                        subtitle: 'Review every structured action before publishing anything to the patient.',
+                      ),
+                      const SizedBox(height: 20),
                       _PlanSummary(plan: data.plan),
                       const SizedBox(height: 16),
                       _PlanActions(
@@ -268,22 +241,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         onCreateVersion: () => _createVersion(data.plan),
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Structured actions',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          Text('${data.actions.length}'),
-                        ],
-                      ),
-                      if (data.plan.isEditable)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text('Drag actions to change patient order.'),
+                      SukunSectionHeader(
+                        title: 'Structured actions',
+                        subtitle: data.plan.isEditable
+                            ? 'Drag to reorder · review before publish'
+                            : 'Published patient order',
+                        action: SukunStatusPill(
+                          label: '${data.actions.length}',
+                          tone: SukunStatusTone.brand,
                         ),
+                      ),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -342,49 +309,59 @@ class _PlanSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const CircleAvatar(
-                  backgroundColor: SukunColors.mist,
-                  foregroundColor: SukunColors.deepTide,
-                  child: Icon(Icons.assignment_outlined),
+    return SukunSurface(
+      tone: SukunSurfaceTone.navy,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SukunIconBadge(
+                icon: Icons.assignment_outlined,
+                color: Colors.white,
+                backgroundColor: Color(0x3328B8EF),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plan.name,
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(color: Colors.white),
+                    ),
+                    Text(
+                      'Version ${plan.version}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        plan.name,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text('Version ${plan.version}'),
-                    ],
-                  ),
-                ),
-                Chip(label: Text(plan.status.label)),
-              ],
-            ),
-            const Divider(height: 28),
-            Text(
-              '${_formatDate(plan.startDate)} – '
-              '${plan.endDate == null ? 'No end date' : _formatDate(plan.endDate!)}',
-            ),
-            if (plan.isEditable) ...[
-              const SizedBox(height: 10),
-              const Text(
-                'Draft actions are not visible to the patient until every action is reviewed and the plan is published.',
+              ),
+              SukunStatusPill(
+                label: plan.status.label.toUpperCase(),
+                tone: plan.isEditable
+                    ? SukunStatusTone.warning
+                    : SukunStatusTone.success,
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '${_formatDate(plan.startDate)} – '
+            '${plan.endDate == null ? 'No end date' : _formatDate(plan.endDate!)}',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          if (plan.isEditable) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Draft actions are not visible to the patient until every action is reviewed and the plan is published.',
+              style: TextStyle(color: Colors.white70),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -474,63 +451,66 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (editable)
-              ReorderableDragStartListener(
-                index: index,
-                child: const Padding(
-                  padding: EdgeInsets.only(right: 10, top: 8),
-                  child: Icon(Icons.drag_indicator),
-                ),
-              ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        action.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Chip(label: Text(action.reviewStatus.label)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text('${action.frequency.label} · ${_timingLabel(action)}'),
-                  if (action.countTarget != null)
-                    Text('Count: ${action.countTarget}'),
-                  if (action.durationMinutes != null)
-                    Text('Duration: ${action.durationMinutes} minutes'),
-                  if (action.instruction?.isNotEmpty == true) ...[
-                    const SizedBox(height: 6),
-                    Text(action.instruction!),
-                  ],
-                  if (action.resource != null) ...[
-                    const SizedBox(height: 8),
-                    Text('Resource: ${action.resource!.title}'),
-                  ],
-                ],
+    return SukunSurface(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (editable)
+            ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.only(right: 10, top: 8),
+                child: Icon(Icons.drag_indicator),
               ),
             ),
-            if (editable)
-              PopupMenuButton<String>(
-                onSelected: (value) => value == 'edit' ? onEdit() : onReject(),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'remove', child: Text('Remove')),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      action.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SukunStatusPill(
+                      label: action.reviewStatus.label,
+                      tone: action.reviewStatus == ActionReviewStatus.approved
+                          ? SukunStatusTone.success
+                          : SukunStatusTone.warning,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text('${action.frequency.label} · ${_timingLabel(action)}'),
+                if (action.countTarget != null)
+                  Text('Count: ${action.countTarget}'),
+                if (action.durationMinutes != null)
+                  Text('Duration: ${action.durationMinutes} minutes'),
+                if (action.instruction?.isNotEmpty == true) ...[
+                  const SizedBox(height: 6),
+                  Text(action.instruction!),
                 ],
-              ),
-          ],
-        ),
+                if (action.resource != null) ...[
+                  const SizedBox(height: 8),
+                  Text('Resource: ${action.resource!.title}'),
+                ],
+              ],
+            ),
+          ),
+          if (editable)
+            PopupMenuButton<String>(
+              onSelected: (value) => value == 'edit' ? onEdit() : onReject(),
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'remove', child: Text('Remove')),
+              ],
+            ),
+        ],
       ),
     );
   }

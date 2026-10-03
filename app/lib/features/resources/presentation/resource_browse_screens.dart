@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
@@ -29,27 +31,54 @@ class QuranBrowserScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
-              Text(
-                'সূরা ও আয়াত',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Browse only verified, published Qur’an text and approved translations.',
-              ),
-              const SizedBox(height: 18),
-              Card(
-                color: SukunColors.mist,
-                child: ListTile(
-                  leading: const Icon(Icons.collections_bookmark_outlined),
-                  title: const Text('Selected & Ruqyah Ayat collections'),
-                  subtitle: const Text('নির্বাচিত ও রুকইয়াহ আয়াত'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/resources/quran/collections'),
+              const SukunPageIntro(
+                eyebrow: 'Verified scripture',
+                title: "Qur'an",
+                subtitle:
+                    'সূরা ও আয়াত · Approved Arabic and Bangla sources only',
+                trailing: SukunIconBadge(
+                  icon: Icons.menu_book_rounded,
+                  size: 54,
                 ),
               ),
               const SizedBox(height: 18),
-              Text('Surahs', style: Theme.of(context).textTheme.titleLarge),
+              SukunSurface(
+                tone: SukunSurfaceTone.navy,
+                showBorder: false,
+                onTap: () => context.push('/resources/quran/collections'),
+                child: const Row(
+                  children: [
+                    SukunIconBadge(
+                      icon: Icons.collections_bookmark_outlined,
+                      color: Colors.white,
+                      backgroundColor: Color(0x3326B6EA),
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Selected & Ruqyah Ayat',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'নির্বাচিত ও রুকইয়াহ আয়াত',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              const SukunSectionHeader(
+                title: 'Surahs',
+                subtitle: 'Canonical items grouped by Surah number.',
+              ),
               const SizedBox(height: 8),
               if (surahs.isEmpty)
                 const AppEmptyState(
@@ -59,20 +88,44 @@ class QuranBrowserScreen extends ConsumerWidget {
                 )
               else
                 for (final surah in surahs)
-                  Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: SukunColors.mist,
-                        foregroundColor: SukunColors.deepTide,
-                        child: Text('${surah.surahNumber}'),
-                      ),
-                      title: Text(surah.nameBn ?? surah.name),
-                      subtitle: Text(
-                        '${surah.name}${surah.nameBn == null ? '' : ' • ${surah.ayahCount} published Ayat'}',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SukunSurface(
+                      padding: const EdgeInsets.all(16),
+                      radius: 20,
                       onTap: () =>
                           context.push('/resources/quran/${surah.surahNumber}'),
+                      child: Row(
+                        children: [
+                          SukunIconBadge(
+                            icon: Icons.auto_stories_outlined,
+                            size: 46,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  surah.nameBn ?? surah.name,
+                                  style: SukunTypography.banglaBody(
+                                    textStyle: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '${surah.surahNumber} · ${surah.name} · ${surah.ayahCount} published Ayat',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: SukunColors.muted),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                        ],
+                      ),
                     ),
                   ),
             ],
@@ -139,24 +192,38 @@ class QuranCollectionsScreen extends ConsumerWidget {
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final collection = collections[index];
-              return Card(
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: const CircleAvatar(
-                    backgroundColor: SukunColors.mist,
-                    child: Icon(Icons.bookmarks_outlined),
-                  ),
-                  title: Text(collection.titleBn ?? collection.title),
-                  subtitle: Text(
-                    collection.summary ??
-                        (collection.type == 'ruqyah_ayat'
-                            ? 'Ruqyah Ayat'
-                            : 'Selected Ayat'),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    '/resources/quran/collections/${collection.id}',
-                  ),
+              return SukunSurface(
+                padding: const EdgeInsets.all(16),
+                radius: 20,
+                onTap: () => context.push(
+                  '/resources/quran/collections/${collection.id}',
+                ),
+                child: Row(
+                  children: [
+                    const SukunIconBadge(icon: Icons.bookmarks_outlined),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            collection.titleBn ?? collection.title,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            collection.summary ??
+                                (collection.type == 'ruqyah_ayat'
+                                    ? 'Ruqyah Ayat'
+                                    : 'Selected Ayat'),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: SukunColors.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                  ],
                 ),
               );
             },
@@ -197,16 +264,17 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
-              Text(
-                details.collection.titleBn ?? details.collection.title,
-                style: Theme.of(context).textTheme.headlineSmall,
+              SukunPageIntro(
+                eyebrow: 'Ayat collection',
+                title: details.collection.titleBn ?? details.collection.title,
+                subtitle: details.collection.titleBn == null
+                    ? details.collection.summary
+                    : '${details.collection.title}${details.collection.summary == null ? '' : ' · ${details.collection.summary}'}',
+                trailing: const SukunIconBadge(
+                  icon: Icons.collections_bookmark_outlined,
+                  size: 54,
+                ),
               ),
-              if (details.collection.titleBn != null)
-                Text(details.collection.title),
-              if (details.collection.summary case final summary?) ...[
-                const SizedBox(height: 8),
-                Text(summary),
-              ],
               const SizedBox(height: 18),
               for (final resource in details.items)
                 Padding(
@@ -250,32 +318,31 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
-              Text(
-                'হাদিসের বিষয়',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Topics are created by the CMS. Only verified and published Hadith are shown.',
+              const SukunPageIntro(
+                eyebrow: 'Verified references',
+                title: 'Hadith by topic',
+                subtitle: 'হাদিসের বিষয় · Collection, book, number, and approved grading',
+                trailing: SukunIconBadge(
+                  icon: Icons.format_quote_rounded,
+                  size: 54,
+                ),
               ),
               const SizedBox(height: 14),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ChoiceChip(
-                    label: const Text('All topics'),
+                  SukunFilterPill(
+                    label: 'All topics',
                     selected: _topicSlug == null,
-                    onSelected: (_) => setState(() => _topicSlug = null),
+                    onTap: () => setState(() => _topicSlug = null),
                   ),
                   for (final topic in data.$1)
-                    ChoiceChip(
-                      label: Text(
-                        '${topic.nameBn ?? topic.name} (${topic.resourceCount})',
-                      ),
+                    SukunFilterPill(
+                      label:
+                          '${topic.nameBn ?? topic.name} (${topic.resourceCount})',
                       selected: _topicSlug == topic.slug,
-                      onSelected: (_) =>
-                          setState(() => _topicSlug = topic.slug),
+                      onTap: () => setState(() => _topicSlug = topic.slug),
                     ),
                 ],
               ),
@@ -355,32 +422,34 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
-              Text(
-                isDua ? 'দুআ ও আযকার' : 'রুকইয়াহ',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                isDua
-                    ? 'Browse approved Dua and Azkar by daily-life category.'
-                    : 'General resources are separate from prescribed patient care plans.',
+              SukunPageIntro(
+                eyebrow: isDua ? 'Daily remembrance' : 'Faith-anchored care',
+                title: isDua ? 'Dua & Azkar' : 'Ruqyah',
+                subtitle: isDua
+                    ? 'দুআ ও আযকার · Approved daily-life categories'
+                    : 'রুকইয়াহ · General resources remain separate from prescribed care',
+                trailing: SukunIconBadge(
+                  icon: isDua
+                      ? Icons.auto_awesome_rounded
+                      : Icons.health_and_safety_outlined,
+                  size: 54,
+                ),
               ),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ChoiceChip(
-                    label: const Text('All'),
+                  SukunFilterPill(
+                    label: 'All',
                     selected: _selectedSlug == null,
-                    onSelected: (_) => setState(() => _selectedSlug = null),
+                    onTap: () => setState(() => _selectedSlug = null),
                   ),
                   for (final entry in _entries)
-                    ChoiceChip(
-                      label: Text(entry.titleBn),
+                    SukunFilterPill(
+                      label: entry.titleBn,
                       selected: _selectedSlug == entry.slug,
-                      onSelected: (_) =>
-                          setState(() => _selectedSlug = entry.slug),
+                      onTap: () => setState(() => _selectedSlug = entry.slug),
                     ),
                 ],
               ),
@@ -467,22 +536,74 @@ class _ResourceListTile extends StatelessWidget {
       ].whereType<String>().join(' • '),
       _ => resource.categoryName,
     };
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: leadingLabel == null
-            ? null
-            : CircleAvatar(
-                backgroundColor: SukunColors.mist,
-                child: Text(leadingLabel!),
-              ),
-        title: Text(resource.titleBn ?? resource.title),
-        subtitle: reference == null || reference.isEmpty
-            ? (resource.summary == null ? null : Text(resource.summary!))
-            : Text(reference),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push('/resources/${resource.id}'),
+    return SukunSurface(
+      radius: 20,
+      padding: const EdgeInsets.all(16),
+      onTap: () => context.push('/resources/${resource.id}'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          leadingLabel == null
+              ? SukunIconBadge(icon: _resourceIcon(resource.type), size: 46)
+              : Container(
+                  width: 46,
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: SukunColors.softBlue,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    leadingLabel!,
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: SukunColors.deepTide),
+                  ),
+                ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resource.titleBn ?? resource.title,
+                  style: SukunTypography.banglaBody(
+                    textStyle: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                if (reference != null && reference.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    reference,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: SukunColors.muted),
+                  ),
+                ] else if (resource.summary != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    resource.summary!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: SukunColors.muted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+        ],
       ),
     );
   }
 }
+
+IconData _resourceIcon(String type) => switch (type) {
+  'quran' => Icons.menu_book_rounded,
+  'hadith' => Icons.format_quote_rounded,
+  'dua' || 'amal' => Icons.auto_awesome_rounded,
+  'audio' => Icons.headphones_rounded,
+  'video' => Icons.play_circle_outline_rounded,
+  'pdf' || 'book' => Icons.library_books_outlined,
+  _ => Icons.article_outlined,
+};

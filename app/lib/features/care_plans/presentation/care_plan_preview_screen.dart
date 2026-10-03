@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -66,47 +67,46 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
             children: [
               if (plan.status == CarePlanStatus.draft) ...[
-                const Card(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.visibility_outlined),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Preview only. The patient cannot see this draft until it is reviewed and published.',
-                          ),
+                const SukunSurface(
+                  tone: SukunSurfaceTone.warning,
+                  showBorder: false,
+                  child: Row(
+                    children: [
+                      SukunIconBadge(icon: Icons.visibility_outlined),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Preview only. The patient cannot see this draft until it is reviewed and published.',
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
               ],
-              Text(
-                'Your care plan',
-                style: Theme.of(context).textTheme.headlineMedium,
+              SukunPageIntro(
+                eyebrow: 'Patient preview',
+                title: 'Your care plan',
+                subtitle:
+                    '${plan.name} · Starting ${_formatDate(plan.startDate)}',
+                trailing: const SukunIconBadge(
+                  icon: Icons.assignment_turned_in_outlined,
+                  size: 54,
+                ),
               ),
-              const SizedBox(height: 6),
-              Text(plan.name, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text('Starting ${_formatDate(plan.startDate)}'),
               const SizedBox(height: 24),
-              Text(
-                "Today's actions",
-                style: Theme.of(context).textTheme.titleLarge,
+              const SukunSectionHeader(
+                title: "Today's actions",
+                subtitle:
+                    'Only approved actions appear in the patient experience.',
               ),
               const SizedBox(height: 12),
               if (actions.isEmpty)
-                const Card(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                      'No approved actions are available in this preview yet.',
-                    ),
+                const SukunSurface(
+                  tone: SukunSurfaceTone.soft,
+                  showBorder: false,
+                  child: Text(
+                    'No approved actions are available in this preview yet.',
                   ),
                 )
               else
@@ -129,73 +129,64 @@ class _PatientActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SukunSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SukunIconBadge(icon: Icons.check_circle_outline),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${action.frequency.label} · ${_timingLabel(action, context)}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (action.instruction?.isNotEmpty == true) ...[
+            const SizedBox(height: 14),
+            Text(action.instruction!),
+          ],
+          if (action.countTarget != null || action.durationMinutes != null) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
               children: [
-                const CircleAvatar(
-                  backgroundColor: SukunColors.mist,
-                  foregroundColor: SukunColors.deepTide,
-                  child: Icon(Icons.check_circle_outline),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        action.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${action.frequency.label} · ${_timingLabel(action, context)}',
-                      ),
-                    ],
-                  ),
-                ),
+                if (action.countTarget != null)
+                  SukunStatusPill(label: '${action.countTarget} repetitions'),
+                if (action.durationMinutes != null)
+                  SukunStatusPill(label: '${action.durationMinutes} minutes'),
               ],
             ),
-            if (action.instruction?.isNotEmpty == true) ...[
-              const SizedBox(height: 14),
-              Text(action.instruction!),
-            ],
-            if (action.countTarget != null ||
-                action.durationMinutes != null) ...[
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (action.countTarget != null)
-                    Chip(label: Text('${action.countTarget} repetitions')),
-                  if (action.durationMinutes != null)
-                    Chip(label: Text('${action.durationMinutes} minutes')),
-                ],
-              ),
-            ],
-            if (action.resource != null) ...[
-              const Divider(height: 28),
-              Row(
-                children: [
-                  const Icon(Icons.library_books_outlined, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(action.resource!.title)),
-                ],
-              ),
-              if (action.resource!.usageNote?.isNotEmpty == true)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(action.resource!.usageNote!),
-                ),
-            ],
           ],
-        ),
+          if (action.resource != null) ...[
+            const Divider(height: 28),
+            Row(
+              children: [
+                const Icon(Icons.library_books_outlined, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(action.resource!.title)),
+              ],
+            ),
+            if (action.resource!.usageNote?.isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(action.resource!.usageNote!),
+              ),
+          ],
+        ],
       ),
     );
   }
