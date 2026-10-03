@@ -78,17 +78,22 @@ identifiers through the runtime configuration described in
 credentials. The Firebase service-account JSON is server-only and must never
 be requested in chat, committed, logged, or placed in Flutter.
 
-The repository and Supabase connector do not expose secret values, so live
-FCM/APNs delivery still requires an authorized release operator to confirm the
-Firebase service-account secret, Android app registration, iOS app
-registration, and APNs key/certificate in the Firebase console. When those are
-absent, plan publication remains successful and the Edge Function returns a
-neutral `not_configured` result without exposing infrastructure details.
+The repository and Supabase connector do not expose secret values. An
+authorized release operator has confirmed the server-side Firebase credential
+and Android app registration through successful live delivery. iOS app
+registration and APNs key/certificate verification remain separate release
+requirements. When sender configuration is absent, plan publication remains
+successful and the Edge Function returns a neutral `not_configured` result
+without exposing infrastructure details.
 
 Production `send-notification` version 3 was deployed on 2026-10-03 with the
-dedicated Android `care_updates` channel. A prior live test confirmed that FCM
-accepted the plan-update message and the patient app processed the background
-sync without exposing sender credentials.
+dedicated Android `care_updates` channel. Live testing on 2026-10-03 confirmed
+that a locked physical Android patient device received the visible plan-update
+FCM notification and processed the background plan sync. The same device also
+received an exact `RTC_WAKEUP` local reminder for an approved action after a
+patient-selected 15-minute Snooze; Android reported a zero-width alarm window
+authorized by the user-controlled exact-alarm permission. No sender credential
+was exposed to Flutter, logs, documentation, or source control.
 
 ## Flutter production connection rules
 

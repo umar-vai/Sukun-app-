@@ -214,8 +214,8 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Android precise reminder timing requests user-controlled exact-alarm access with safe fallback
 - [x] Plan-update pushes use a dedicated high-importance Android channel
 - [x] Production Android device registration and patient ownership verified
-- [ ] Live plan-updated FCM notification received on a physical patient device
-- [ ] Live approved exact-time local reminder received on a physical patient device
+- [x] Live plan-updated FCM notification received on a physical patient device
+- [x] Live approved exact-time/Snooze local reminder received on a locked physical patient device
 
 ## Phase 8 — Islamic utilities
 
