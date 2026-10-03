@@ -11,10 +11,12 @@ class CareNotificationStatus {
   const CareNotificationStatus({
     required this.enabled,
     required this.permissionGranted,
+    required this.preciseTimingAvailable,
   });
 
   final bool enabled;
   final bool permissionGranted;
+  final bool preciseTimingAvailable;
 }
 
 final class NotificationCoordinator {
@@ -59,6 +61,7 @@ final class NotificationCoordinator {
     return CareNotificationStatus(
       enabled: await _store.isEnabled(),
       permissionGranted: await _local.isPermissionGranted(),
+      preciseTimingAvailable: await _local.canSchedulePrecisely(),
     );
   }
 
@@ -76,9 +79,21 @@ final class NotificationCoordinator {
         // Local reminders remain available when remote delivery is unavailable.
       }
     }
+    await _local.requestPreciseSchedulingPermission();
     await _store.setEnabled(true);
     await syncIfEnabled();
     return true;
+  }
+
+  Future<bool> requestPreciseTimingAccess() async {
+    try {
+      await initialize();
+      final granted = await _local.requestPreciseSchedulingPermission();
+      if (granted) await syncIfEnabled();
+      return granted;
+    } on Object {
+      return false;
+    }
   }
 
   Future<void> syncIfEnabled() {
@@ -99,6 +114,7 @@ final class NotificationCoordinator {
       final timezone = await _local.configureTimezone();
       final window = await _repository.getReminderTasks(horizonDays: 30);
       final reminders = planCareReminders(tasks: window.tasks, now: _now());
+      final precise = await _local.canSchedulePrecisely();
       final previousIds = await _store.scheduledNotificationIds();
       for (final id in previousIds) {
         await _local.cancel(id);
@@ -106,7 +122,7 @@ final class NotificationCoordinator {
 
       final scheduledIds = <int>[];
       for (final reminder in reminders) {
-        await _local.schedule(reminder);
+        await _local.schedule(reminder, precise: precise);
         scheduledIds.add(reminder.notificationId);
       }
       await _store.setScheduledNotificationIds(scheduledIds);
@@ -127,8 +143,9 @@ final class NotificationCoordinator {
         task: task,
         snoozedUntil: snoozedUntil,
       );
+      final precise = await _local.canSchedulePrecisely();
       await _local.cancel(reminder.notificationId);
-      await _local.schedule(reminder);
+      await _local.schedule(reminder, precise: precise);
       final ids = await _store.scheduledNotificationIds()
         ..add(reminder.notificationId);
       await _store.setScheduledNotificationIds(ids);

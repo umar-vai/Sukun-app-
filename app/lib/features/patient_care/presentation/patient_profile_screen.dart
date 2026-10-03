@@ -59,6 +59,26 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     });
   }
 
+  Future<void> _enablePreciseTiming() async {
+    if (_updatingNotifications) return;
+    setState(() => _updatingNotifications = true);
+    final granted = await ref
+        .read(notificationCoordinatorProvider)
+        .requestPreciseTimingAccess();
+    if (!mounted) return;
+    setState(() {
+      _updatingNotifications = false;
+      _refreshNotificationStatus();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          granted ? 'Precise reminder timing is enabled.' : 'Precise timing was not enabled. Android may deliver reminders within a time window.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _signOut() async {
     await ref.read(notificationCoordinatorProvider).disable();
     await ref.read(authRepositoryProvider).signOut();
@@ -122,7 +142,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       const SizedBox(height: 10),
                       Text(
                         enabled
-                            ? 'Enabled for approved actions with an exact reminder time.'
+                            ? status!.preciseTimingAvailable
+                                  ? 'Enabled with precise timing for approved actions that have an exact reminder time.'
+                                  : 'Enabled for approved actions. Android may deliver reminders within a time window until precise timing is allowed.'
                             : 'Get reminders only for actions and times approved in your care plan.',
                       ),
                       const SizedBox(height: 6),
@@ -134,10 +156,24 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                           _updatingNotifications)
                         const Center(child: CircularProgressIndicator())
                       else if (enabled)
-                        OutlinedButton.icon(
-                          onPressed: _disableNotifications,
-                          icon: const Icon(Icons.notifications_off_outlined),
-                          label: const Text('Turn off reminders'),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            if (!status!.preciseTimingAvailable)
+                              FilledButton.tonalIcon(
+                                onPressed: _enablePreciseTiming,
+                                icon: const Icon(Icons.alarm_outlined),
+                                label: const Text('Allow precise timing'),
+                              ),
+                            OutlinedButton.icon(
+                              onPressed: _disableNotifications,
+                              icon: const Icon(
+                                Icons.notifications_off_outlined,
+                              ),
+                              label: const Text('Turn off reminders'),
+                            ),
+                          ],
                         )
                       else
                         FilledButton.icon(

@@ -26,6 +26,10 @@ As of 2026-10-03:
   authenticated patient device registration/removal, approved exact-time
   reminder generation, inactive-plan cancellation, and notification event
   idempotency support. RLS remains enabled on notification tables.
+- Android reminder delivery requests the user-controlled `Alarms & reminders`
+  access for precise timing and safely falls back to inexact delivery when it
+  is denied. Plan-update FCM messages use the dedicated high-importance
+  `care_updates` notification channel.
 - The following Edge Functions are deployed and ACTIVE:
   - `admin-create-patient`
   - `patient-sign-in`
@@ -80,6 +84,11 @@ Firebase service-account secret, Android app registration, iOS app
 registration, and APNs key/certificate in the Firebase console. When those are
 absent, plan publication remains successful and the Edge Function returns a
 neutral `not_configured` result without exposing infrastructure details.
+
+Production `send-notification` version 3 was deployed on 2026-10-03 with the
+dedicated Android `care_updates` channel. A prior live test confirmed that FCM
+accepted the plan-update message and the patient app processed the background
+sync without exposing sender credentials.
 
 ## Flutter production connection rules
 

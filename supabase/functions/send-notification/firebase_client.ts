@@ -8,7 +8,10 @@ export type FirebaseMessage = {
   token: string;
   notification: { title: string; body: string };
   data: Record<string, string>;
-  android: { priority: "high" };
+  android: {
+    priority: "high";
+    notification: { channel_id: "care_updates"; sound: "default" };
+  };
   apns: {
     payload: { aps: { sound: "default"; "content-available": number } };
   };
@@ -46,7 +49,10 @@ export function buildPlanUpdatedMessage(
       body: "Your care plan has been updated.",
     },
     data: { type: "plan_updated", care_plan_id: carePlanId },
-    android: { priority: "high" },
+    android: {
+      priority: "high",
+      notification: { channel_id: "care_updates", sound: "default" },
+    },
     apns: {
       payload: { aps: { sound: "default", "content-available": 1 } },
     },

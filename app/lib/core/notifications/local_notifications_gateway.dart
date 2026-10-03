@@ -9,8 +9,10 @@ abstract interface class LocalNotificationsGateway {
   Future<void> initialize();
   Future<bool> requestPermission();
   Future<bool> isPermissionGranted();
+  Future<bool> requestPreciseSchedulingPermission();
+  Future<bool> canSchedulePrecisely();
   Future<String> configureTimezone();
-  Future<void> schedule(ReminderSchedule reminder);
+  Future<void> schedule(ReminderSchedule reminder, {required bool precise});
   Future<void> cancel(int notificationId);
   Future<void> showRemote({required String title, required String body});
 }
@@ -22,6 +24,8 @@ final class PluginLocalNotificationsGateway
 
   static const _channelId = 'care_reminders';
   static const _channelName = 'Care plan reminders';
+  static const _updatesChannelId = 'care_updates';
+  static const _updatesChannelName = 'Care plan updates';
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
@@ -36,6 +40,26 @@ final class PluginLocalNotificationsGateway
           requestBadgePermission: false,
           requestSoundPermission: false,
         ),
+      ),
+    );
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: 'Approved Sukun Life care plan reminders',
+        importance: Importance.high,
+      ),
+    );
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _updatesChannelId,
+        _updatesChannelName,
+        description: 'Updates to an assigned Sukun Life care plan',
+        importance: Importance.high,
       ),
     );
     await configureTimezone();
@@ -99,7 +123,32 @@ final class PluginLocalNotificationsGateway
   }
 
   @override
-  Future<void> schedule(ReminderSchedule reminder) async {
+  Future<bool> requestPreciseSchedulingPermission() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    return await _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.requestExactAlarmsPermission() ??
+        false;
+  }
+
+  @override
+  Future<bool> canSchedulePrecisely() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    return await _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.canScheduleExactNotifications() ??
+        false;
+  }
+
+  @override
+  Future<void> schedule(
+    ReminderSchedule reminder, {
+    required bool precise,
+  }) async {
     final local = reminder.scheduledAt.toLocal();
     await _plugin.zonedSchedule(
       id: reminder.notificationId,
@@ -114,7 +163,9 @@ final class PluginLocalNotificationsGateway
         local.minute,
       ),
       notificationDetails: _details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: precise
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       payload: reminder.payload,
     );
   }

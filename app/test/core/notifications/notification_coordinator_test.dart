@@ -42,6 +42,21 @@ void main() {
       expect(local.scheduled.map((item) => item.taskId), ['task-1']);
       expect(repository.registeredToken, 'fresh-token');
       expect(repository.registeredInstallation, 'installation-id');
+      expect(local.precisePermissionRequested, isTrue);
+      expect(local.scheduledCalls.single.precise, isTrue);
+    },
+  );
+
+  test(
+    'denied precise timing safely falls back to inexact scheduling',
+    () async {
+      local.precisePermission = false;
+      repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
+
+      expect(await coordinator.enable(), isTrue);
+
+      expect(local.scheduledCalls.single.precise, isFalse);
+      expect(repository.registeredToken, 'fresh-token');
     },
   );
 
@@ -134,8 +149,13 @@ final class _FakeRepository implements NotificationRepository {
 
 final class _FakeLocalNotifications implements LocalNotificationsGateway {
   final List<int> cancelled = [];
-  final List<ReminderSchedule> scheduled = [];
   bool permission = true;
+  bool precisePermission = true;
+  bool precisePermissionRequested = false;
+  final List<({ReminderSchedule reminder, bool precise})> scheduledCalls = [];
+
+  List<ReminderSchedule> get scheduled =>
+      scheduledCalls.map((call) => call.reminder).toList(growable: false);
 
   @override
   Future<void> initialize() async {}
@@ -147,11 +167,23 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
   Future<bool> isPermissionGranted() async => permission;
 
   @override
+  Future<bool> requestPreciseSchedulingPermission() async {
+    precisePermissionRequested = true;
+    return precisePermission;
+  }
+
+  @override
+  Future<bool> canSchedulePrecisely() async => precisePermission;
+
+  @override
   Future<String> configureTimezone() async => 'Asia/Dhaka';
 
   @override
-  Future<void> schedule(ReminderSchedule reminder) async {
-    scheduled.add(reminder);
+  Future<void> schedule(
+    ReminderSchedule reminder, {
+    required bool precise,
+  }) async {
+    scheduledCalls.add((reminder: reminder, precise: precise));
   }
 
   @override

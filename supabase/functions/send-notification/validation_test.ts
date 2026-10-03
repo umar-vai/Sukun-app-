@@ -31,5 +31,6 @@ Deno.test("plan update payload contains no prescription or action content", () =
   );
   assertEquals(message.notification.body, "Your care plan has been updated.");
   assertEquals(message.data.type, "plan_updated");
+  assertEquals(message.android.notification.channel_id, "care_updates");
   assertEquals(Object.keys(message.data).sort(), ["care_plan_id", "type"]);
 });
