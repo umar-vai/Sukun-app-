@@ -37,7 +37,11 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     return day;
   }
 
-  void _reload() => setState(() => _day = _load());
+  void _reload() {
+    setState(() {
+      _day = _load();
+    });
+  }
 
   Future<void> _record(
     PatientTask task,

@@ -27,7 +27,11 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
   Future<AdherenceSummary> _load() =>
       ref.read(progressRepositoryProvider).getMyProgress(days: _days);
 
-  void _reload() => setState(() => _summary = _load());
+  void _reload() {
+    setState(() {
+      _summary = _load();
+    });
+  }
 
   void _setRange(int days) {
     if (days == _days) return;

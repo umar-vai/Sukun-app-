@@ -30,7 +30,11 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   Future<ContentResource?> _load() =>
       ref.read(resourcesRepositoryProvider).getResource(widget.resourceId);
 
-  void _reload() => setState(() => _resource = _load());
+  void _reload() {
+    setState(() {
+      _resource = _load();
+    });
+  }
 
   Future<void> _openMedia(ContentResource resource) async {
     final target = resolveResourceMedia(resource.linkedResource);

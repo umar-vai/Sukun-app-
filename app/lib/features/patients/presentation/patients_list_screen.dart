@@ -36,7 +36,11 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
         .searchPatients(query: _searchController.text);
   }
 
-  void _reload() => setState(() => _patients = _search());
+  void _reload() {
+    setState(() {
+      _patients = _search();
+    });
+  }
 
   Future<void> _createPatient() async {
     final created = await context.push<Patient>('/admin/patients/new');

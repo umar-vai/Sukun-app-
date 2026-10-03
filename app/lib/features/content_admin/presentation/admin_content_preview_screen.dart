@@ -41,7 +41,11 @@ class _AdminContentPreviewScreenState
     );
   }
 
-  void _reload() => setState(() => _data = _load());
+  void _reload() {
+    setState(() {
+      _data = _load();
+    });
+  }
 
   Future<void> _edit() async {
     final updated = await context.push<AdminContentItem>(

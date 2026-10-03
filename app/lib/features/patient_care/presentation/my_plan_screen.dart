@@ -42,7 +42,11 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
     );
   }
 
-  void _reload() => setState(() => _data = _load());
+  void _reload() {
+    setState(() {
+      _data = _load();
+    });
+  }
 
   Future<void> _openResource(LinkedResource resource) async {
     await context.push<void>(

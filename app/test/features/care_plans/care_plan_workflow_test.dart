@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 
 void main() {
@@ -81,9 +83,43 @@ void main() {
     expect(find.text('Assigned recording'), findsOneWidget);
     expect(find.textContaining('Preview only'), findsOneWidget);
   });
+
+  testWidgets('publishing refreshes the builder without a setState error', (
+    tester,
+  ) async {
+    final repository = _PublishingCarePlansRepository();
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const CarePlanBuilderScreen(
+            patientId: 'patient-1',
+            planId: 'plan-1',
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Publish plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Publish'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(repository.published, isTrue);
+    expect(find.text('Active'), findsOneWidget);
+  });
 }
 
-final class _FakeCarePlansRepository implements CarePlansRepository {
+class _FakeCarePlansRepository implements CarePlansRepository {
   final plan = CarePlan(
     id: 'plan-1',
     patientId: 'patient-1',
@@ -166,4 +202,29 @@ final class _FakeCarePlansRepository implements CarePlansRepository {
   @override
   Future<PlanAction> saveAction(SavePlanActionInput input) =>
       throw UnimplementedError();
+}
+
+final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
+  bool published = false;
+
+  @override
+  Future<List<PlanAction>> getActions(String planId) async => [approvedAction];
+
+  @override
+  Future<CarePlan?> getPlan(String planId) async => CarePlan(
+    id: plan.id,
+    patientId: plan.patientId,
+    version: plan.version,
+    name: plan.name,
+    startDate: plan.startDate,
+    status: published ? CarePlanStatus.active : CarePlanStatus.draft,
+    createdAt: plan.createdAt,
+    publishedAt: published ? DateTime(2026, 10, 3) : null,
+  );
+
+  @override
+  Future<CarePlan> publishPlan(String planId, String requestId) async {
+    published = true;
+    return (await getPlan(planId))!;
+  }
 }

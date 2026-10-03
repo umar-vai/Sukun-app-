@@ -47,7 +47,11 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     return _BuilderData(plan: plan, actions: results[1] as List<PlanAction>);
   }
 
-  void _reload() => setState(() => _data = _load());
+  void _reload() {
+    setState(() {
+      _data = _load();
+    });
+  }
 
   Future<void> _openAction([PlanAction? action]) async {
     final suffix = action == null ? 'new' : action.id;

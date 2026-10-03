@@ -44,7 +44,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     );
   }
 
-  void _reload() => setState(() => _details = _load());
+  void _reload() {
+    setState(() {
+      _details = _load();
+    });
+  }
 
   Future<void> _addPrescription() async {
     final created = await context.push<bool>(
@@ -271,7 +275,9 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
               title: const Text('Progress could not be loaded'),
               trailing: IconButton(
                 tooltip: 'Retry progress',
-                onPressed: () => setState(() => _progress = _load()),
+                onPressed: () => setState(() {
+                  _progress = _load();
+                }),
                 icon: const Icon(Icons.refresh),
               ),
             ),

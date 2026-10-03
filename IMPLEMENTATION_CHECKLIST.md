@@ -211,6 +211,9 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Plan-updated push
 - [x] Optional admin broadcast assessed and excluded from the MVP
 - [x] Device token registration, refresh, removal, and invalid-token cleanup
+- [x] Production Android device registration and patient ownership verified
+- [ ] Live plan-updated FCM notification received on a physical patient device
+- [ ] Live approved exact-time local reminder received on a physical patient device
 
 ## Phase 8 — Islamic utilities
 

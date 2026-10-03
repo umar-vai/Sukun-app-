@@ -101,7 +101,9 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   }
 
   void _retry() {
-    setState(() => _data = _load());
+    setState(() {
+      _data = _load();
+    });
   }
 
   void _startNewGeneration() {

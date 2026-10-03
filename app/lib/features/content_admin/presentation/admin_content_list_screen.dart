@@ -39,7 +39,11 @@ class _AdminContentListScreenState
       .read(contentAdminRepositoryProvider)
       .listContent(query: _searchController.text);
 
-  void _reload() => setState(() => _items = _load());
+  void _reload() {
+    setState(() {
+      _items = _load();
+    });
+  }
 
   Future<void> _create() async {
     final created = await context.push<AdminContentItem>('/admin/content/new');
