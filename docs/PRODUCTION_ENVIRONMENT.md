@@ -13,7 +13,7 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
-As of 2026-10-02:
+As of 2026-10-03:
 
 - Repository database schema/migrations have been deployed to the production Supabase project.
 - 24 public tables are present.
@@ -22,11 +22,16 @@ As of 2026-10-02:
 - Phase 5 CMS/resource taxonomy/collection database changes are deployed.
 - The Phase 6 published-media rights/licensing constraint is deployed and
   validated; published external media cannot omit `rights_note`.
+- The Phase 7 notification delivery migration is deployed. Production has
+  authenticated patient device registration/removal, approved exact-time
+  reminder generation, inactive-plan cancellation, and notification event
+  idempotency support. RLS remains enabled on notification tables.
 - The following Edge Functions are deployed and ACTIVE:
   - `admin-create-patient`
   - `patient-sign-in`
   - `patient-change-password`
   - `prescription-to-actions`
+  - `send-notification`
 - A Super Admin Auth user exists and has the database role `super_admin`.
 
 ## Gemini production secrets
@@ -52,6 +57,29 @@ GEMINI_QUOTA_SCOPE_4
 ```
 
 Do not assume four keys imply four independent quotas. Respect the provider quota/project scope and the failover rules in `docs/AI_FAILOVER_ARCHITECTURE.md`.
+
+## Firebase production configuration
+
+The `send-notification` Edge Function is deployed and ACTIVE. Live FCM
+delivery additionally requires these server-side Supabase secrets:
+
+```text
+FIREBASE_SERVICE_ACCOUNT_JSON
+FIREBASE_PROJECT_ID
+```
+
+The Flutter release must receive its public Android and iOS Firebase client
+identifiers through the runtime configuration described in
+`app/config/production.example.json`. These client identifiers are not sender
+credentials. The Firebase service-account JSON is server-only and must never
+be requested in chat, committed, logged, or placed in Flutter.
+
+The repository and Supabase connector do not expose secret values, so live
+FCM/APNs delivery still requires an authorized release operator to confirm the
+Firebase service-account secret, Android app registration, iOS app
+registration, and APNs key/certificate in the Firebase console. When those are
+absent, plan publication remains successful and the Edge Function returns a
+neutral `not_configured` result without exposing infrastructure details.
 
 ## Flutter production connection rules
 
