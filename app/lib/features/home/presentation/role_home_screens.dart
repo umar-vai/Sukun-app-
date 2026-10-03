@@ -33,7 +33,64 @@ class GuestHomeScreen extends StatelessWidget {
             onPressed: () => context.go('/resources'),
             child: const Text('Explore Islamic Resources'),
           ),
+          const SizedBox(height: 24),
+          Text(
+            'Daily utilities',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _UtilityCard(
+                  icon: Icons.schedule_outlined,
+                  label: 'Prayer times',
+                  onTap: () => context.push('/prayer-times'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _UtilityCard(
+                  icon: Icons.explore_outlined,
+                  label: 'Qibla',
+                  onTap: () => context.push('/qibla'),
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _UtilityCard extends StatelessWidget {
+  const _UtilityCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            children: [
+              Icon(icon, color: SukunColors.deepTide, size: 30),
+              const SizedBox(height: 9),
+              Text(label, style: Theme.of(context).textTheme.titleSmall),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -86,6 +143,31 @@ class AdminHomeScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.go('/admin/content'),
             ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Daily utilities',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _UtilityCard(
+                  icon: Icons.schedule_outlined,
+                  label: 'Prayer times',
+                  onTap: () => context.push('/prayer-times'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _UtilityCard(
+                  icon: Icons.explore_outlined,
+                  label: 'Qibla',
+                  onTap: () => context.push('/qibla'),
+                ),
+              ),
+            ],
           ),
           TextButton.icon(
             onPressed: () => context.go('/resources'),

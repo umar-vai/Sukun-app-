@@ -16,6 +16,9 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_col
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
+import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
+import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_profile_screen.dart';
@@ -71,6 +74,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _SessionLanding(sessionState: sessionState),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/prayer-times',
+        builder: (context, state) => const PrayerTimesScreen(),
+        routes: [
+          GoRoute(
+            path: 'settings',
+            builder: (context, state) => const PrayerSettingsScreen(),
+          ),
+        ],
+      ),
+      GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
       GoRoute(
         path: '/resources',
         builder: (context, state) => ResourcesHomeScreen(

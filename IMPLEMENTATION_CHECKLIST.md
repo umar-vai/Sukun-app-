@@ -219,12 +219,12 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 8 — Islamic utilities
 
-- [ ] Prayer time calculation
-- [ ] Location permission + manual city fallback
-- [ ] Calculation method settings
-- [ ] Qibla direction
-- [ ] Compass calibration states
-- [ ] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
+- [x] Prayer time calculation
+- [x] Location permission + manual city fallback
+- [x] Calculation method settings
+- [x] Qibla direction
+- [x] Compass calibration states
+- [x] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
 
 ## Phase 9 — Quality + release
 
