@@ -102,6 +102,24 @@ Before any production database or Edge Function change:
 7. Never weaken security checks just to make CI or deployment pass.
 8. After production changes, update this document if the operational state materially changes.
 
+## Patient authentication identity
+
+Patient-facing sign-in accepts the Sukun Patient ID or the patient's phone
+number plus a password. The backend resolves either identifier to a private,
+confirmed email-backed Supabase Auth identity. This avoids requiring an SMS
+gateway for password authentication; the private Auth email is never returned
+to Flutter or shown to the patient. Existing phone-backed patient accounts are
+migrated to the private email identity by `patient-sign-in` without changing
+their password or patient record.
+
+Do not enable or configure a paid SMS provider unless an explicitly approved
+SMS OTP or recovery feature is added later.
+
+Production verification on 2026-10-03 confirmed that an existing phone-backed
+patient was migrated automatically and successfully signed in with the same
+Patient ID and temporary password. `admin-create-patient` and
+`patient-sign-in` are deployed as ACTIVE version 7.
+
 ## Known security-linter context
 
 The server-only AI tables use RLS with no client-readable policies by design and have client grants revoked. Some intentional authenticated RPCs use `SECURITY DEFINER` while performing their own authorization checks. Treat Supabase security-advisor warnings as items to review, not as permission to weaken or remove authorization logic.

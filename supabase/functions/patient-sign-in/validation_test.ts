@@ -7,7 +7,25 @@ Deno.test("normalizes a valid patient ID", () => {
       patient_code: " sl-test-1 ",
       password: "Pass-1234",
     }),
-    { patientCode: "SL-TEST-1", password: "Pass-1234" },
+    {
+      identifier: "SL-TEST-1",
+      identifierKind: "patient_code",
+      password: "Pass-1234",
+    },
+  );
+});
+
+Deno.test("normalizes a patient phone identifier", () => {
+  assertEquals(
+    parsePatientSignInInput({
+      identifier: "+880 1712-345678",
+      password: "Pass-1234",
+    }),
+    {
+      identifier: "+8801712345678",
+      identifierKind: "phone",
+      password: "Pass-1234",
+    },
   );
 });
 

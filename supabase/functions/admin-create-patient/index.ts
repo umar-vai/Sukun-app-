@@ -3,6 +3,7 @@ import {
   type CreatePatientInput,
   parseCreatePatientInput,
 } from "./validation.ts";
+import { createInternalPatientEmail } from "./auth-identity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -120,10 +121,15 @@ Deno.serve(async (request) => {
 
     const { data: authData, error: authError } = await adminClient.auth.admin
       .createUser({
+        email: createInternalPatientEmail(),
         phone: input.phone,
         password: input.temporaryPassword,
+        email_confirm: true,
         phone_confirm: true,
-        user_metadata: { full_name: input.fullName },
+        user_metadata: {
+          full_name: input.fullName,
+          patient_phone: input.phone,
+        },
       });
     if (authError || !authData.user) {
       const duplicate = authError?.status === 422;

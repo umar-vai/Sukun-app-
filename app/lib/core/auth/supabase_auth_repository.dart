@@ -52,13 +52,6 @@ final class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final normalized = identifier.trim();
     try {
-      if (normalized.startsWith('+')) {
-        await _client.auth.signInWithPassword(
-          phone: normalized.replaceAll(RegExp(r'[\s()-]'), ''),
-          password: password,
-        );
-        return;
-      }
       if (normalized.contains('@')) {
         await _client.auth.signInWithPassword(
           email: normalized,
@@ -69,7 +62,7 @@ final class SupabaseAuthRepository implements AuthRepository {
 
       final response = await _client.functions.invoke(
         'patient-sign-in',
-        body: {'patient_code': normalized, 'password': password},
+        body: {'identifier': normalized, 'password': password},
       );
       final body = response.data;
       if (body is! Map || body['refresh_token'] is! String) {

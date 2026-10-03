@@ -66,6 +66,7 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 ## Phase 3 — Patient core flow
 
 - [x] Patient login
+- [x] Patient ID/phone password login works without an SMS-gateway dependency
 - [x] First-login credential change
 - [x] Patient home
 - [x] Next action card
