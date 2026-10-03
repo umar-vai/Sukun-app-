@@ -41,6 +41,7 @@ void main() {
 
     expect(repository.recordedStatus, PatientTaskStatus.completed);
     expect(find.text('1 of 1 completed'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 

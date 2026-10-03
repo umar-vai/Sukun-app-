@@ -62,7 +62,11 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
-              if (mounted) setState(() => _summary = Future.value(updated));
+              if (mounted) {
+                setState(() {
+                  _summary = Future.value(updated);
+                });
+              }
             },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),

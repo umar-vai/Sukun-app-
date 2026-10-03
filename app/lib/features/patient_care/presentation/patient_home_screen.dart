@@ -69,7 +69,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       }
       final currentDay = await _day;
       if (!mounted) return;
-      setState(() => _day = Future.value(currentDay.replaceTask(updated)));
+      setState(() {
+        _day = Future.value(currentDay.replaceTask(updated));
+      });
       if (updated.isPendingSync) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -174,7 +176,11 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
-              if (mounted) setState(() => _day = Future.value(updated));
+              if (mounted) {
+                setState(() {
+                  _day = Future.value(updated);
+                });
+              }
             },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
