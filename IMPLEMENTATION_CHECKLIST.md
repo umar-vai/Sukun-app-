@@ -1,6 +1,6 @@
 # Sukun Life App — Implementation Checklist
 
-Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, `docs/AI_FAILOVER_ARCHITECTURE.md`, and `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
+Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, `docs/FINAL_UI_REFERENCE.md`, `docs/VISUAL_ACCEPTANCE_GATE.md`, `docs/AI_FAILOVER_ARCHITECTURE.md`, and `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 0 — Project foundation
 
@@ -225,6 +225,33 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Qibla direction
 - [x] Compass calibration states
 - [x] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
+
+## Phase 8.5 — Mandatory Final UI Match & Visual Acceptance
+
+Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
+
+- [ ] Rebuild/refine reusable Sukun Life visual component system
+- [ ] Admin Dashboard passes visual acceptance
+- [ ] Patient List/Detail/Create Patient passes visual acceptance
+- [ ] Prescription/Plan Builder/AI Review passes visual acceptance
+- [ ] Content CMS/editor/review/publish passes visual acceptance
+- [ ] Patient Home/My Plan/Prescription/Progress/Profile passes visual acceptance
+- [ ] Resource Hub/Search/Detail/Qur'an/Hadith/Dua/Ruqyah passes visual acceptance
+- [ ] Audio/Video/PDF states pass visual acceptance
+- [ ] Prayer Times passes visual acceptance
+- [ ] Prayer Settings/location/method/madhhab selectors pass visual acceptance
+- [ ] Qibla/compass/calibration states pass visual acceptance
+- [ ] Search/input/dropdown/modal/bottom-sheet components are custom-refined
+- [ ] Bottom navigation is custom-refined and no longer default-looking
+- [ ] Empty/loading/error states are branded
+- [ ] Compact Android visual QA complete
+- [ ] Large Android visual QA complete
+- [ ] Modern iPhone visual QA complete
+- [ ] Long Bangla/Arabic wrapping visually reviewed
+- [ ] No major screen still looks like default Flutter/Material UI
+- [ ] Visual acceptance gate marked complete with evidence/report
+
+**Blocking rule:** Phase 9 non-visual QA may proceed, but the app must not be described as release-ready or visually complete until Phase 8.5 passes.
 
 ## Phase 9 — Quality + release
 
