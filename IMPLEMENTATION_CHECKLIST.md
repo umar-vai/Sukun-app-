@@ -1,6 +1,6 @@
 # Sukun Life App — Implementation Checklist
 
-Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, `docs/AI_FAILOVER_ARCHITECTURE.md`, and `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
+Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE.md`, `docs/FINAL_UI_REFERENCE.md`, `docs/VISUAL_ACCEPTANCE_GATE.md`, `docs/AI_FAILOVER_ARCHITECTURE.md`, and `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ## Phase 0 — Project foundation
 
@@ -226,17 +226,32 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Compass calibration states
 - [x] Keep Prayer/Qibla utilities visually consistent with Sukun Life brand and separate from canonical content verification logic
 
-## Blocking visual acceptance — Final UI Match & Redesign
+## Phase 8.5 — Mandatory Final UI Match & Visual Acceptance
 
-- [x] Expand the Sukun Life tokens into a reusable, brand-specific component system
-- [x] Replace generic Material cards, selectors, dialogs, search, filters, states, and bottom navigation on major screens
-- [x] Redesign the complete patient experience, including reminders and task interaction states
-- [x] Redesign the Islamic Resources hierarchy, browsing, detail, search, media, and empty/loading/error states
-- [x] Redesign Prayer Settings selection sheets, Prayer Times, and the branded Qibla compass/calibration experience
-- [x] Recompose the Admin Dashboard and redesign patient, prescription, care-plan, AI-review, and Content CMS workflows
-- [x] Review compact (360 × 640) and large (430 × 932) render captures across guest, admin, patient, resources, settings, and Qibla screen families
-- [x] Review Bangla wrapping and mixed English/Bangla resource layouts in the render matrix
-- [x] Run formatting, analysis, the full Flutter test suite, and an Android debug build after the redesign
+Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
+
+- [x] Rebuild/refine reusable Sukun Life visual component system
+- [x] Admin Dashboard passes visual acceptance
+- [x] Patient List/Detail/Create Patient passes visual acceptance
+- [x] Prescription/Plan Builder/AI Review passes visual acceptance
+- [x] Content CMS/editor/review/publish passes visual acceptance
+- [x] Patient Home/My Plan/Prescription/Progress/Profile passes visual acceptance
+- [x] Resource Hub/Search/Detail/Qur'an/Hadith/Dua/Ruqyah passes visual acceptance
+- [x] Audio/Video/PDF states pass visual acceptance
+- [x] Prayer Times passes visual acceptance
+- [x] Prayer Settings/location/method/madhhab selectors pass visual acceptance
+- [x] Qibla/compass/calibration states pass visual acceptance
+- [x] Search/input/dropdown/modal/bottom-sheet components are custom-refined
+- [x] Bottom navigation is custom-refined and no longer default-looking
+- [x] Empty/loading/error states are branded
+- [x] Compact Android-size visual QA complete at 360 × 640
+- [x] Large Android-size visual QA complete at 430 × 932
+- [x] Modern iPhone-size visual QA complete at 430 × 932
+- [x] Long Bangla/Arabic wrapping visually reviewed
+- [x] No major screen still looks like default Flutter/Material UI
+- [x] Visual acceptance gate marked complete with evidence in `docs/VISUAL_QA_REPORT.md`
+
+**Blocking rule:** Phase 9 non-visual QA may proceed, but the app must not be described as release-ready or visually complete until Phase 8.5 passes.
 
 ## Phase 9 — Quality + release
 

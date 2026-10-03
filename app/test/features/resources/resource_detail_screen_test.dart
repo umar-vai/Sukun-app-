@@ -11,6 +11,11 @@ void main() {
   testWidgets('assigned resource detail renders canonical text and reference', (
     tester,
   ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -29,6 +34,7 @@ void main() {
     expect(find.text('ARABIC'), findsOneWidget);
     expect(find.text('REFERENCE'), findsOneWidget);
     expect(find.text('Surah Al-Baqarah 2:255'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -48,7 +54,7 @@ final class _FakeResourcesRepository implements ResourcesRepository {
         id: 'resource-1',
         type: 'quran',
         title: 'Ayatul Kursi',
-        arabicText: 'Canonical Arabic text from an approved source',
+        arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
         referenceText: 'Surah Al-Baqarah 2:255',
         visibility: 'assigned_only',
         status: 'published',

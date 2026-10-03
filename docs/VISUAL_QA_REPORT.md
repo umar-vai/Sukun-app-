@@ -2,7 +2,7 @@
 
 Date: 2026-10-04
 
-This report records the blocking visual acceptance pass completed after Phase 8. It does not start or complete Phase 9.
+This report records the blocking visual acceptance pass completed after Phase 8 against both `FINAL_UI_REFERENCE.md` and `VISUAL_ACCEPTANCE_GATE.md`. It does not start or complete Phase 9.
 
 ## Design-system work
 
@@ -24,9 +24,9 @@ Default-looking cards, dropdowns, dialogs, filters, and navigation were replaced
 Temporary screenshot captures were generated and manually inspected at:
 
 - Compact phone: 360 × 640 logical pixels
-- Large phone: 430 × 932 logical pixels
+- Large Android / modern iPhone-class viewport: 430 × 932 logical pixels
 
-The matrix covered representative guest, admin, patient Today, Resources, Prayer Settings, and Qibla screens. It verified scrolling and safe-area behavior, hierarchy, card grouping, custom navigation, compact-width fit, and Bangla/mixed-language wrapping. The temporary capture artifacts were deliberately not committed.
+The matrix covered representative guest, admin, patient Today, Resources, Prayer Settings, and Qibla screens. It verified scrolling and safe-area behavior, hierarchy, card grouping, custom navigation, compact-width fit, and Bangla/mixed-language wrapping. A compact-width canonical resource test also renders a real Arabic sample and asserts that the screen produces no layout exception. The temporary capture artifacts were deliberately not committed.
 
 ## Automated verification
 

@@ -9,9 +9,10 @@ Before writing code, read these files completely in this order:
 1. `CODEX_START_HERE.md` — master product and engineering specification.
 2. `docs/PRODUCTION_ENVIRONMENT.md` — mandatory production Supabase state, deployment context, and change-control rules.
 3. `docs/FINAL_UI_REFERENCE.md` — mandatory final visual target and UI acceptance contract.
-4. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
-5. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
-6. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
+4. `docs/VISUAL_ACCEPTANCE_GATE.md` — blocking screen-by-screen visual acceptance gate after Phase 8 and before release acceptance.
+5. `docs/AI_FAILOVER_ARCHITECTURE.md` — mandatory Prescription → Action AI reliability/failover specification.
+6. `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` — mandatory dedicated Qur'an/Hadith/Dua/Ruqyah/resources architecture and verification rules.
+7. `IMPLEMENTATION_CHECKLIST.md` — execution checklist.
 
 ## 2. Non-negotiable product rules
 
@@ -34,6 +35,7 @@ Before writing code, read these files completely in this order:
 14. Qur'an/Hadith canonical text and references must come from verified approved sources. Never treat canonical religious text as generic AI-generated copy.
 15. Reuse a single canonical resource across public browsing and patient plans through resource IDs/relations; do not duplicate the same content per patient.
 16. Functional completion is not visual completion. The finished app must receive the dedicated final visual pass in `docs/FINAL_UI_REFERENCE.md` and must not be declared complete while major screens still look like default Flutter/Material UI.
+17. After Phase 8, the app must pass `docs/VISUAL_ACCEPTANCE_GATE.md`. Do not describe the app as release-ready or visually complete while that gate is materially incomplete.
 
 ## 3. Brand rules — mandatory
 
@@ -166,6 +168,7 @@ Do not scrape/copy third-party media into our storage unless Sukun Life has perm
 - Update documentation when architecture changes.
 - Preserve green CI. Never disable meaningful tests/lints/security checks to make a change pass.
 - After the functional phases, execute the mandatory `Final UI Match & Polish` phase from `docs/FINAL_UI_REFERENCE.md` across all major patient, resource, utility and admin screens.
+- Use `docs/VISUAL_ACCEPTANCE_GATE.md` as a blocking checklist after Phase 8. Phase 9 may continue for non-visual QA, but release readiness must not be declared until the visual gate passes.
 - Do not finish with generic/default Material styling. Create/refine reusable branded components so spacing, cards, typography, buttons, states and navigation feel consistent across the app.
 - Manually review compact and large phone layouts, long Bangla strings, Arabic wrapping, loading/empty/error states and safe areas before declaring visual completion.
 
