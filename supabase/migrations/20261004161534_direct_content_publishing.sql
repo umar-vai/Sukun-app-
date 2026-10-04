@@ -95,6 +95,30 @@ begin
       raise exception 'Only Qur''an or Hadith content in review can be verified.'
         using errcode = '55000';
     end if;
+    if nullif(btrim(item.source_reference), '') is null
+      or nullif(btrim(item.source_type), '') is null
+      or lower(btrim(item.source_type)) = 'generative_ai'
+      or nullif(btrim(item.source_edition), '') is null then
+      raise exception 'Verified canonical content requires approved source metadata.'
+        using errcode = '22023';
+    end if;
+    if item.bangla_text is not null
+      and nullif(btrim(item.translation_source), '') is null then
+      raise exception 'Bangla canonical text requires an approved translation source.'
+        using errcode = '22023';
+    end if;
+    if item.type = 'quran' and nullif(btrim(item.arabic_text), '') is null then
+      raise exception 'Verified Qur''an content requires sourced Arabic text.'
+        using errcode = '22023';
+    end if;
+    if item.type = 'hadith' and (
+      nullif(btrim(item.collection_name), '') is null
+      or nullif(btrim(item.book_name), '') is null
+      or nullif(btrim(item.hadith_number), '') is null
+    ) then
+      raise exception 'Verified Hadith requires collection, book, and Hadith number.'
+        using errcode = '22023';
+    end if;
     update public.content_items
     set status = 'verified', verification_status = 'verified',
         verified_by = caller_user_id, verified_at = now(), updated_by = caller_user_id
