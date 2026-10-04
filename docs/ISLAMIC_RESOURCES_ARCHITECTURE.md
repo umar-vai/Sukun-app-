@@ -305,6 +305,12 @@ Implemented workflow constraints:
   Qur'an requires sourced Arabic text, Bangla text requires its translation
   source, and Hadith requires collection, book, and number. These are source
   integrity validations, not an approval workflow.
+- The editor and preview must explain missing publication metadata before the
+  publish request. Database constraints remain the final safety net, but raw
+  constraint names must not be shown in the normal admin experience.
+- A recitation-only item should use the `audio` content type and Qur'an
+  category/taxonomy. The `quran` content type represents canonical sourced text
+  and therefore requires its approved Arabic text and source metadata.
 
 Recommended fields:
 

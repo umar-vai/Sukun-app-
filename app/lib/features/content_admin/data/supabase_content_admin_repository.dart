@@ -258,9 +258,19 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
       final response = await _client.rpc(functionName, params: params);
       return AdminContentItem.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (error) {
-      throw ContentAdminException(error.message);
+      throw ContentAdminException(_contentMutationMessage(error));
     }
   }
+}
+
+String _contentMutationMessage(PostgrestException error) {
+  if (error.message.contains('content_items_canonical_publication')) {
+    return "This Qur'an or Hadith resource is missing required approved-source metadata. Edit it and add the source type, source reference, edition or dataset version, and required canonical fields before publishing.";
+  }
+  if (error.message.contains('content_items_published_media_rights')) {
+    return 'External media cannot be published until its rights or licensing note is complete.';
+  }
+  return error.message;
 }
 
 String? _value(String? input) {

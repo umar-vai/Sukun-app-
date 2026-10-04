@@ -81,6 +81,44 @@ void main() {
     );
   });
 
+  test('publication validation explains missing canonical source fields', () {
+    final input = _input(
+      type: 'quran',
+      surahNumber: 25,
+      ayahNumber: 1,
+      mediaSourceType: 'direct_audio_url',
+      mediaUrl: 'https://cdn.example.test/recitation.mp3',
+      rightsNote: 'Licensed recitation.',
+    );
+
+    expect(input.validate(), isNull);
+    expect(
+      input.publicationValidationError(),
+      allOf(
+        contains('source type'),
+        contains('source reference'),
+        contains('edition or dataset version'),
+        contains('sourced Arabic text'),
+        contains('choose Audio as the content type'),
+      ),
+    );
+  });
+
+  test('publication validation accepts complete canonical metadata', () {
+    final input = _input(
+      type: 'quran',
+      sourceType: 'licensed_publication',
+      sourceReference: 'Approved Quran 25:1',
+      sourceEdition: 'Approved edition',
+      arabicText: 'fixture sourced Arabic text',
+      surahNumber: 25,
+      ayahNumber: 1,
+    );
+
+    expect(input.validate(), isNull);
+    expect(input.publicationValidationError(), isNull);
+  });
+
   testWidgets('admin CMS lists canonical state, visibility, and status', (
     tester,
   ) async {
@@ -165,11 +203,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('resource preview explains incomplete canonical publication', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(
+              content: _FakeContentAdminRepository.incompleteQuranAudio,
+            ),
+          ),
+        ],
+        child: const MaterialApp(
+          home: AdminContentPreviewScreen(contentItemId: 'content-2'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Publish Now'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    await tester.tap(find.text('Publish Now'));
+    await tester.pump();
+
+    expect(find.textContaining('source type'), findsOneWidget);
+    expect(
+      find.textContaining('choose Audio as the content type'),
+      findsOneWidget,
+    );
+    expect(find.text('Publish Now resource?'), findsNothing);
+  });
 }
 
 SaveContentInput _input({
   required String type,
   String? sourceType,
+  String? sourceReference,
+  String? sourceEdition,
+  String? arabicText,
   int? surahNumber,
   int? ayahNumber,
   String? mediaSourceType,
@@ -183,6 +259,9 @@ SaveContentInput _input({
   status: 'draft',
   requestId: 'request',
   sourceType: sourceType,
+  sourceReference: sourceReference,
+  sourceEdition: sourceEdition,
+  arabicText: arabicText,
   surahNumber: surahNumber,
   ayahNumber: ayahNumber,
   mediaSourceType: mediaSourceType,
@@ -191,7 +270,9 @@ SaveContentInput _input({
 );
 
 final class _FakeContentAdminRepository implements ContentAdminRepository {
-  const _FakeContentAdminRepository();
+  const _FakeContentAdminRepository({this.content = item});
+
+  final AdminContentItem content;
 
   static const item = AdminContentItem(
     id: 'content-1',
@@ -201,16 +282,37 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
     visibility: 'public',
     status: 'draft',
     verificationStatus: 'pending',
+    arabicText: 'fixture sourced Arabic text',
+    sourceType: 'licensed_publication',
+    sourceReference: 'Approved Quran 2:255',
+    sourceEdition: 'Approved edition',
     surahNumber: 2,
     ayahNumber: 255,
   );
 
-  @override
-  Future<AdminContentItem?> getContent(String contentItemId) async => item;
+  static const incompleteQuranAudio = AdminContentItem(
+    id: 'content-2',
+    type: 'quran',
+    title: 'Recitation',
+    slug: 'recitation',
+    visibility: 'public',
+    status: 'draft',
+    verificationStatus: 'pending',
+    surahNumber: 25,
+    ayahNumber: 1,
+    ayahEndNumber: 25,
+    mediaSourceType: 'direct_audio_url',
+    mediaUrl: 'https://cdn.example.test/recitation.mp3',
+    rightsNote: 'Licensed recitation.',
+  );
 
   @override
-  Future<List<AdminContentItem>> listContent({String query = ''}) async =>
-      const [item];
+  Future<AdminContentItem?> getContent(String contentItemId) async => content;
+
+  @override
+  Future<List<AdminContentItem>> listContent({String query = ''}) async => [
+    content,
+  ];
 
   @override
   Future<List<ContentCategory>> listCategories() async => const [];
@@ -240,7 +342,7 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
   }) => throw UnimplementedError();
 
   @override
-  Future<AdminContentItem> saveContent(SaveContentInput input) async => item;
+  Future<AdminContentItem> saveContent(SaveContentInput input) async => content;
 
   @override
   Future<ContentCategory> saveCategory({
@@ -260,5 +362,5 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
     required String transition,
     required String requestId,
     String? notes,
-  }) async => item;
+  }) async => content;
 }

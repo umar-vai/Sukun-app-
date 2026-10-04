@@ -123,6 +123,13 @@ class _AdminContentEditorScreenState
       _show(error);
       return;
     }
+    if (publish) {
+      final publicationError = input.publicationValidationError();
+      if (publicationError != null) {
+        _show(publicationError);
+        return;
+      }
+    }
     setState(() => _saving = true);
     try {
       final repository = ref.read(contentAdminRepositoryProvider);
@@ -481,7 +488,12 @@ class _AdminContentEditorScreenState
                 _field('summary', 'Summary', lines: 3),
                 _field('body', 'Body / article text', lines: 8),
                 if (_type == 'quran' || _type == 'hadith') ...[
-                  _field('arabicText', 'Sourced Arabic text', lines: 6),
+                  _field(
+                    'arabicText',
+                    'Sourced Arabic text${_type == 'quran' ? ' *' : ''}',
+                    lines: 6,
+                    required: _type == 'quran',
+                  ),
                   _field(
                     'banglaText',
                     'Approved Bangla text / translation',
@@ -525,9 +537,9 @@ class _AdminContentEditorScreenState
                 ],
                 if (_type == 'hadith') ...[
                   const _SectionTitle(title: 'Hadith reference'),
-                  _field('collectionName', 'Collection *'),
-                  _field('bookName', 'Book *'),
-                  _field('hadithNumber', 'Hadith number *'),
+                  _field('collectionName', 'Collection *', required: true),
+                  _field('bookName', 'Book *', required: true),
+                  _field('hadithNumber', 'Hadith number *', required: true),
                   _field('narrator', 'Narrator'),
                   _field('grade', 'Approved grade / classification'),
                 ],
@@ -537,11 +549,20 @@ class _AdminContentEditorScreenState
                 ),
                 _field(
                   'sourceType',
-                  'Source type',
+                  'Source type${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
                   hint: 'official_api or licensed_publication',
+                  required: _type == 'quran' || _type == 'hadith',
                 ),
-                _field('sourceReference', 'Source reference'),
-                _field('sourceEdition', 'Edition / API dataset version'),
+                _field(
+                  'sourceReference',
+                  'Source reference${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
+                  required: _type == 'quran' || _type == 'hadith',
+                ),
+                _field(
+                  'sourceEdition',
+                  'Edition / API dataset version${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
+                  required: _type == 'quran' || _type == 'hadith',
+                ),
                 _field('sourceUrl', 'Source URL (HTTPS)'),
                 _field('translationSource', 'Bangla translation source'),
                 _field('languageCode', 'Language code', hint: 'bn-BD'),

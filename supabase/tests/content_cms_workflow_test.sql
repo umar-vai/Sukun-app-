@@ -321,8 +321,8 @@ select throws_ok(
     p_transition => 'publish',
     p_request_id => '92000000-0000-4000-8000-000000000015'
   )$$,
-  '23514',
-  null,
+  '22023',
+  'Publishing Qur''an or Hadith requires an approved source type.',
   'direct publish still enforces canonical source metadata'
 );
 
@@ -337,8 +337,8 @@ select throws_ok(
     '00000000-0000-4000-8000-000000000201',
     '00000000-0000-4000-8000-000000000201', now()
   )$$,
-  '23514',
-  'new row for relation "content_items" violates check constraint "content_items_published_media_rights"',
+  '22023',
+  'Publishing external media requires a rights or licensing note.',
   'published external media requires a rights or licensing note'
 );
 

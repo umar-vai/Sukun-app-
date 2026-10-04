@@ -342,8 +342,8 @@ select throws_ok(
       '00000000-0000-4000-8000-000000000101',
       '00000000-0000-4000-8000-000000000101', now()
     )$$,
-  '23514',
-  null,
+  '22023',
+  'Canonical Qur''an and Hadith content cannot use a generative AI source.',
   'AI-sourced or unsourced Quran content cannot be published'
 );
 select results_eq(

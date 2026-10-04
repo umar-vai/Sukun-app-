@@ -161,6 +161,17 @@ unpublish, and archive actions remain recorded in lifecycle and admin audit
 history. The deployment did not rewrite existing content rows; the existing
 historical Qur'an `review`/`pending` row was preserved unchanged.
 
+On 2026-10-05, forward migration
+`20261004172726_clarify_canonical_publish_validation.sql` was applied and
+recorded in production as
+`20261004211242_clarify_canonical_publish_validation`. It added a private,
+security-invoker publication trigger that returns actionable source/rights
+validation messages before the database safety constraints run. Direct
+publishing remains unchanged. Incomplete canonical content is still preserved
+as a draft/review record, RLS remains enabled, and no source metadata is
+invented. Recitation-only resources may be modeled as `audio` content linked to
+the Qur'an taxonomy instead of being represented as canonical Qur'an text.
+
 ## Next production verification
 
 The next hosted AI milestone is to verify the real `prescription-to-actions` flow against this production project while preserving human review, neutral fallback behavior, safe logging, and no raw Gemini/quota/key errors in Flutter.

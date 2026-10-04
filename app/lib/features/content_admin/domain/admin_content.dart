@@ -175,6 +175,21 @@ class AdminContentItem {
 
   bool get isCanonical => type == 'quran' || type == 'hadith';
   bool get canEdit => status != 'archived';
+
+  String? publicationValidationError() => _publicationValidationError(
+    type: type,
+    sourceType: sourceType,
+    sourceReference: sourceReference,
+    sourceEdition: sourceEdition,
+    arabicText: arabicText,
+    banglaText: banglaText,
+    translationSource: translationSource,
+    collectionName: collectionName,
+    bookName: bookName,
+    hadithNumber: hadithNumber,
+    mediaSourceType: mediaSourceType,
+    rightsNote: rightsNote,
+  );
 }
 
 class ContentReview {
@@ -279,6 +294,65 @@ class SaveContentCollectionInput {
     }
     return null;
   }
+}
+
+String? _publicationValidationError({
+  required String type,
+  String? sourceType,
+  String? sourceReference,
+  String? sourceEdition,
+  String? arabicText,
+  String? banglaText,
+  String? translationSource,
+  String? collectionName,
+  String? bookName,
+  String? hadithNumber,
+  String? mediaSourceType,
+  String? rightsNote,
+}) {
+  final canonical = type == 'quran' || type == 'hadith';
+  if (canonical && sourceType?.trim().toLowerCase() == 'generative_ai') {
+    return "Canonical Qur'an and Hadith content cannot use a generative AI source.";
+  }
+
+  final missing = <String>[];
+  if (canonical) {
+    if (sourceType?.trim().isNotEmpty != true) missing.add('source type');
+    if (sourceReference?.trim().isNotEmpty != true) {
+      missing.add('source reference');
+    }
+    if (sourceEdition?.trim().isNotEmpty != true) {
+      missing.add('edition or dataset version');
+    }
+    if (banglaText?.trim().isNotEmpty == true &&
+        translationSource?.trim().isNotEmpty != true) {
+      missing.add('Bangla translation source');
+    }
+    if (type == 'quran' && arabicText?.trim().isNotEmpty != true) {
+      missing.add('sourced Arabic text');
+    }
+    if (type == 'hadith') {
+      if (collectionName?.trim().isNotEmpty != true) {
+        missing.add('Hadith collection');
+      }
+      if (bookName?.trim().isNotEmpty != true) missing.add('Hadith book');
+      if (hadithNumber?.trim().isNotEmpty != true) {
+        missing.add('Hadith number');
+      }
+    }
+  }
+  if (mediaSourceType != null && rightsNote?.trim().isNotEmpty != true) {
+    missing.add('rights or licensing note');
+  }
+  if (missing.isEmpty) return null;
+
+  final guidance =
+      type == 'quran' &&
+          mediaSourceType == 'direct_audio_url' &&
+          arabicText?.trim().isNotEmpty != true
+      ? ' For a recitation-only resource, choose Audio as the content type and assign a Qur’an category.'
+      : '';
+  return 'Complete before publishing: ${missing.join(', ')}.$guidance';
 }
 
 class SaveContentInput {
@@ -416,6 +490,21 @@ class SaveContentInput {
     }
     return null;
   }
+
+  String? publicationValidationError() => _publicationValidationError(
+    type: type,
+    sourceType: sourceType,
+    sourceReference: sourceReference,
+    sourceEdition: sourceEdition,
+    arabicText: arabicText,
+    banglaText: banglaText,
+    translationSource: translationSource,
+    collectionName: collectionName,
+    bookName: bookName,
+    hadithNumber: hadithNumber,
+    mediaSourceType: mediaSourceType,
+    rightsNote: rightsNote,
+  );
 }
 
 DateTime? _date(Object? value) =>

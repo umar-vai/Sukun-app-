@@ -54,7 +54,19 @@ class _AdminContentPreviewScreenState
     if (updated != null && mounted) _reload();
   }
 
-  Future<void> _transition(String transition) async {
+  Future<void> _transition(String transition, {AdminContentItem? item}) async {
+    if (transition == 'publish' && item != null) {
+      final validation = item.publicationValidationError();
+      if (validation != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(validation),
+            action: SnackBarAction(label: 'Edit', onPressed: _edit),
+          ),
+        );
+        return;
+      }
+    }
     final confirmed = await showSukunDecisionDialog(
       context: context,
       title: '${_transitionLabel(transition)} resource?',
@@ -206,7 +218,9 @@ class _AdminContentPreviewScreenState
                     ),
                   if (item.status != 'published' && item.status != 'archived')
                     FilledButton.icon(
-                      onPressed: _working ? null : () => _transition('publish'),
+                      onPressed: _working
+                          ? null
+                          : () => _transition('publish', item: item),
                       icon: const Icon(Icons.publish_outlined),
                       label: const Text('Publish Now'),
                     ),

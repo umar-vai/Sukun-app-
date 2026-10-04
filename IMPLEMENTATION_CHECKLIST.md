@@ -182,6 +182,7 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Public/patient/assigned/staff-only visibility
 - [x] Super Admin create/edit/preview/direct-publish/unpublish/archive
 - [x] Publish/unpublish/archive actions retain the responsible Super Admin and timestamp in audit history
+- [x] Incomplete canonical/media publication is blocked with actionable admin guidance instead of raw database constraint errors
 - [x] Link a canonical resource into one or many patient plans using `content_id`
 - [x] Do not create duplicate resource copies per patient
 - [x] Patient/guest resource browsing
