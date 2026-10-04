@@ -260,11 +260,11 @@ Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
 ## Phase 9 — Quality + release
 
 - [ ] Flutter analyze clean
-- [ ] Flutter tests pass
-- [ ] RLS tests pass
+- [x] Flutter tests pass
+- [x] RLS tests pass
 - [ ] Patient isolation manually verified
-- [ ] Resource visibility/security tests pass
-- [ ] Qur'an/Hadith direct publication cannot bypass source/reference/translation integrity rules
+- [x] Resource visibility/security tests pass
+- [x] Qur'an/Hadith direct publication cannot bypass source/reference/translation integrity rules
 - [ ] AI failover integration tests pass
 - [ ] No Gemini quota/provider/key details are exposed in normal admin UX
 - [ ] Accessibility/contrast review

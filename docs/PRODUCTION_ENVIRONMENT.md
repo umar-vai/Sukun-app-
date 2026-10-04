@@ -138,6 +138,29 @@ Patient ID and temporary password. `admin-create-patient` and
 
 The server-only AI tables use RLS with no client-readable policies by design and have client grants revoked. Some intentional authenticated RPCs use `SECURITY DEFINER` while performing their own authorization checks. Treat Supabase security-advisor warnings as items to review, not as permission to weaken or remove authorization logic.
 
+## Direct content publishing deployment
+
+On 2026-10-04, the forward migration
+`20261004161534_direct_content_publishing.sql` was applied to the existing
+production project and recorded by Supabase as
+`20261004163845_direct_content_publishing`.
+
+The active CMS workflow is now:
+
+```text
+Create/Edit → Save Draft or Publish Now → Published
+```
+
+An authorized Super Admin may publish every content type directly. Unpublish
+returns the item to draft; archive preserves the item and history. Legacy
+review/verification columns and records remain intact for backward
+compatibility, but no longer gate publication. Qur'an/Hadith source,
+reference, edition, translation, and canonical-text constraints remain active,
+published external media still requires rights metadata, and publish,
+unpublish, and archive actions remain recorded in lifecycle and admin audit
+history. The deployment did not rewrite existing content rows; the existing
+historical Qur'an `review`/`pending` row was preserved unchanged.
+
 ## Next production verification
 
 The next hosted AI milestone is to verify the real `prescription-to-actions` flow against this production project while preserving human review, neutral fallback behavior, safe logging, and no raw Gemini/quota/key errors in Flutter.
