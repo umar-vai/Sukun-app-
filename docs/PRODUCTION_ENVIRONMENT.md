@@ -138,23 +138,23 @@ Patient ID and temporary password. `admin-create-patient` and
 
 The server-only AI tables use RLS with no client-readable policies by design and have client grants revoked. Some intentional authenticated RPCs use `SECURITY DEFINER` while performing their own authorization checks. Treat Supabase security-advisor warnings as items to review, not as permission to weaken or remove authorization logic.
 
-## Direct content publishing deployment
+## Historical direct content publishing deployment
 
 On 2026-10-04, the forward migration
 `20261004161534_direct_content_publishing.sql` was applied to the existing
 production project and recorded by Supabase as
 `20261004163845_direct_content_publishing`.
 
-The active CMS workflow is now:
+That migration temporarily made the CMS workflow:
 
 ```text
 Create/Edit → Save Draft or Publish Now → Published
 ```
 
-An authorized Super Admin may publish every content type directly. Unpublish
-returns the item to draft; archive preserves the item and history. Legacy
-review/verification columns and records remain intact for backward
-compatibility, but no longer gate publication. Qur'an/Hadith source,
+During that temporary policy, an authorized Super Admin could publish every
+content type directly. Unpublish returned the item to draft; archive preserved
+the item and history. Legacy review/verification columns and records remained
+intact for backward compatibility, but did not gate publication. Qur'an/Hadith source,
 reference, edition, translation, and canonical-text constraints remain active,
 published external media still requires rights metadata, and publish,
 unpublish, and archive actions remain recorded in lifecycle and admin audit
@@ -166,11 +166,37 @@ On 2026-10-05, forward migration
 recorded in production as
 `20261004211242_clarify_canonical_publish_validation`. It added a private,
 security-invoker publication trigger that returns actionable source/rights
-validation messages before the database safety constraints run. Direct
-publishing remains unchanged. Incomplete canonical content is still preserved
+validation messages before the database safety constraints run. Incomplete canonical content is still preserved
 as a draft/review record, RLS remains enabled, and no source metadata is
 invented. Recitation-only resources may be modeled as `audio` content linked to
 the Qur'an taxonomy instead of being represented as canonical Qur'an text.
+
+## Active reviewed content publishing deployment
+
+On 2026-10-05, forward migration
+`20261005090000_restore_canonical_content_review_gate.sql` was applied and
+recorded in production as
+`20261004214238_restore_canonical_content_review_gate`.
+
+The active CMS workflow is now:
+
+```text
+Choose resource type → Complete the simple form → Preview → Save Draft
+→ Submit for Review → Verify Source for Qur'an/Hadith → Publish
+```
+
+The migration restored server-enforced review publication transitions without
+deleting historical migrations, content, or audit events. Canonical Qur'an and
+Hadith cannot publish until `verification_status = verified` with a recorded
+verifier and verification time. Other resource types must be submitted for
+review before publication. RLS and server-verified Super Admin authorization
+remain unchanged.
+
+One Qur'an row created during the historical direct-publish window was found in
+`published` / `pending` state. The migration preserved the row and its entered
+content, returned it to `review`, cleared its publication timestamp, and wrote
+the `content_item_policy_returned_to_review` system-policy audit event. No
+source data was invented and no content row was deleted.
 
 ## Next production verification
 

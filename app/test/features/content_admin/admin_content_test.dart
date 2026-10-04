@@ -95,11 +95,11 @@ void main() {
     expect(
       input.publicationValidationError(),
       allOf(
-        contains('source type'),
-        contains('source reference'),
-        contains('edition or dataset version'),
+        contains('approved source format'),
+        contains('source name or reference'),
+        contains('edition or version'),
         contains('sourced Arabic text'),
-        contains('choose Audio as the content type'),
+        contains('choose Qur’an / Surah Audio'),
       ),
     );
   });
@@ -117,6 +117,33 @@ void main() {
 
     expect(input.validate(), isNull);
     expect(input.publicationValidationError(), isNull);
+  });
+
+  test('simple resource choices generate the correct backend types', () {
+    expect(AdminResourceKind.quranAyah.contentType, 'quran');
+    expect(AdminResourceKind.hadith.contentType, 'hadith');
+    expect(AdminResourceKind.quranAudio.contentType, 'audio');
+    expect(AdminResourceKind.quranAudio.mediaSourceType, 'direct_audio_url');
+    expect(AdminResourceKind.ruqyahAudio.contentType, 'audio');
+    expect(AdminResourceKind.ruqyahAudio.mediaSourceType, 'direct_audio_url');
+    expect(AdminResourceKind.bookPdf.contentType, 'pdf');
+    expect(AdminResourceKind.bookPdf.mediaSourceType, 'external_pdf');
+    expect(AdminResourceKind.video.contentType, 'video');
+    expect(AdminResourceKind.duaAzkar.contentType, 'dua');
+    expect(AdminResourceKind.articleGuide.contentType, 'article');
+  });
+
+  test('internal media and slug fields are inferred safely', () {
+    expect(
+      inferYoutubeVideoId('https://www.youtube.com/watch?v=abc123'),
+      'abc123',
+    );
+    expect(inferYoutubeVideoId('https://youtu.be/xyz789'), 'xyz789');
+    expect(
+      generatedResourceSlug('Morning Ruqyah Audio', 'ABCDEF12-more'),
+      'morning-ruqyah-audio-abcdef12',
+    );
+    expect(generatedResourceSlug('দুআ', 'ABCDEF12-more'), 'resource-abcdef12');
   });
 
   testWidgets('admin CMS lists canonical state, visibility, and status', (
@@ -145,7 +172,7 @@ void main() {
     );
   });
 
-  testWidgets('resource editor exposes direct publish without review actions', (
+  testWidgets('resource editor starts with eight plain-language choices', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -159,19 +186,110 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Publish Now'),
-      600,
-      scrollable: find.byType(Scrollable).first,
-    );
 
-    expect(find.text('Save Draft'), findsOneWidget);
-    expect(find.text('Publish Now'), findsOneWidget);
-    expect(find.text('Submit for review'), findsNothing);
-    expect(find.text('Verify source'), findsNothing);
+    for (final label in const [
+      "Qur'an Ayah",
+      'Hadith',
+      "Qur'an / Surah Audio",
+      'Ruqyah Audio',
+      'Book / PDF',
+      'Video',
+      'Dua / Azkar',
+      'Article / Guide',
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
+    expect(find.text('Slug'), findsNothing);
+    expect(find.text('Media type'), findsNothing);
+    expect(find.text('Visibility'), findsNothing);
   });
 
-  testWidgets('resource preview publishes without verification dialog', (
+  for (final scenario in const <(String, String)>[
+    ("Qur'an Ayah", 'Arabic text *'),
+    ('Hadith', 'Kitab / collection *'),
+    ("Qur'an / Surah Audio", 'Audio link *'),
+    ('Ruqyah Audio', 'Audio link *'),
+    ('Book / PDF', 'PDF link *'),
+    ('Video', 'YouTube or video link *'),
+    ('Dua / Azkar', 'Arabic *'),
+    ('Article / Guide', 'Article body *'),
+  ]) {
+    testWidgets('${scenario.$1} opens its tailored form', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentAdminRepositoryProvider.overrideWithValue(
+              const _FakeContentAdminRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: AdminContentEditorScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text(scenario.$1),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text(scenario.$1));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text(scenario.$2),
+        350,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      expect(find.text(scenario.$2), findsOneWidget);
+      expect(find.text('Slug'), findsNothing);
+      expect(find.text('Media source type'), findsNothing);
+      expect(find.text('Request ID'), findsNothing);
+    });
+  }
+
+  testWidgets('Quran form shows only human-facing required fields', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: AdminContentEditorScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Qur'an Ayah"));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Arabic text *'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Bangla translation *'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Surah *'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Approved source *'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Advanced settings'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Save Draft'), findsOneWidget);
+    expect(find.text('Submit for Review'), findsOneWidget);
+    expect(find.text('Slug'), findsNothing);
+    expect(find.text('Request ID'), findsNothing);
+    expect(find.text('Media type'), findsNothing);
+  });
+
+  testWidgets('canonical preview requires review before verification', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -188,18 +306,19 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Publish Now'),
+      find.text('Submit for Review'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    expect(find.text('Verify source'), findsNothing);
-    expect(find.text('Reject verification'), findsNothing);
-    await tester.tap(find.text('Publish Now'));
+    expect(find.text('Publish'), findsNothing);
+    expect(find.text('Verify Source'), findsNothing);
+    await tester.tap(find.text('Submit for Review'));
     await tester.pumpAndSettle();
-    expect(find.text('Publish Now resource?'), findsOneWidget);
-    expect(find.text('Verify resource?'), findsNothing);
-    await tester.tap(find.widgetWithText(FilledButton, 'Publish Now').last);
+    expect(find.text('Submit for Review resource?'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Submit for Review').last,
+    );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
@@ -223,20 +342,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Publish Now'),
+      find.text('Submit for Review'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    await tester.tap(find.text('Publish Now'));
+    await tester.tap(find.text('Submit for Review'));
     await tester.pump();
 
-    expect(find.textContaining('source type'), findsOneWidget);
-    expect(
-      find.textContaining('choose Audio as the content type'),
-      findsOneWidget,
-    );
-    expect(find.text('Publish Now resource?'), findsNothing);
+    expect(find.textContaining('approved source format'), findsOneWidget);
+    expect(find.textContaining('choose Qur’an / Surah Audio'), findsOneWidget);
+    expect(find.text('Submit for Review resource?'), findsNothing);
   });
 }
 

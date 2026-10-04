@@ -1,3 +1,101 @@
+enum AdminResourceKind {
+  quranAyah,
+  hadith,
+  quranAudio,
+  ruqyahAudio,
+  bookPdf,
+  video,
+  duaAzkar,
+  articleGuide,
+}
+
+extension AdminResourceKindDetails on AdminResourceKind {
+  String get contentType => switch (this) {
+    AdminResourceKind.quranAyah => 'quran',
+    AdminResourceKind.hadith => 'hadith',
+    AdminResourceKind.quranAudio || AdminResourceKind.ruqyahAudio => 'audio',
+    AdminResourceKind.bookPdf => 'pdf',
+    AdminResourceKind.video => 'video',
+    AdminResourceKind.duaAzkar => 'dua',
+    AdminResourceKind.articleGuide => 'article',
+  };
+
+  String? get mediaSourceType => switch (this) {
+    AdminResourceKind.quranAudio ||
+    AdminResourceKind.ruqyahAudio => 'direct_audio_url',
+    AdminResourceKind.bookPdf => 'external_pdf',
+    _ => null,
+  };
+
+  bool get requiresApprovedSource => switch (this) {
+    AdminResourceKind.quranAyah ||
+    AdminResourceKind.hadith ||
+    AdminResourceKind.duaAzkar => true,
+    _ => false,
+  };
+
+  bool get isCanonical =>
+      this == AdminResourceKind.quranAyah || this == AdminResourceKind.hadith;
+}
+
+AdminResourceKind resourceKindForItem(
+  AdminContentItem item, {
+  ContentCategory? category,
+}) {
+  if (item.type == 'quran') return AdminResourceKind.quranAyah;
+  if (item.type == 'hadith') return AdminResourceKind.hadith;
+  if (item.type == 'audio') {
+    final categoryText = '${category?.slug ?? ''} ${category?.name ?? ''}'
+        .toLowerCase();
+    return categoryText.contains('ruqyah')
+        ? AdminResourceKind.ruqyahAudio
+        : AdminResourceKind.quranAudio;
+  }
+  if (item.type == 'pdf' || item.type == 'book') {
+    return AdminResourceKind.bookPdf;
+  }
+  if (item.type == 'video') return AdminResourceKind.video;
+  if (item.type == 'dua' || item.type == 'amal') {
+    return AdminResourceKind.duaAzkar;
+  }
+  return AdminResourceKind.articleGuide;
+}
+
+String inferYoutubeVideoId(String url) {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null) return '';
+  final host = uri.host.toLowerCase();
+  if (host == 'youtu.be') {
+    return uri.pathSegments.isEmpty ? '' : uri.pathSegments.first;
+  }
+  if (host.endsWith('youtube.com')) {
+    if (uri.queryParameters['v'] case final value? when value.isNotEmpty) {
+      return value;
+    }
+    final segments = uri.pathSegments;
+    if (segments.length >= 2 &&
+        (segments.first == 'embed' || segments.first == 'shorts')) {
+      return segments[1];
+    }
+  }
+  return '';
+}
+
+String generatedResourceSlug(String title, String fallbackKey) {
+  final normalized = title
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r"[^a-z0-9]+"), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  final base = normalized.isEmpty ? 'resource' : normalized;
+  final cleanedKey = fallbackKey.toLowerCase().replaceAll(
+    RegExp('[^a-z0-9]'),
+    '',
+  );
+  final suffix = cleanedKey.substring(0, cleanedKey.length.clamp(0, 8));
+  return suffix.isEmpty ? base : '$base-$suffix';
+}
+
 class ContentCategory {
   const ContentCategory({
     required this.id,
@@ -317,12 +415,14 @@ String? _publicationValidationError({
 
   final missing = <String>[];
   if (canonical) {
-    if (sourceType?.trim().isNotEmpty != true) missing.add('source type');
+    if (sourceType?.trim().isNotEmpty != true) {
+      missing.add('approved source format');
+    }
     if (sourceReference?.trim().isNotEmpty != true) {
-      missing.add('source reference');
+      missing.add('source name or reference');
     }
     if (sourceEdition?.trim().isNotEmpty != true) {
-      missing.add('edition or dataset version');
+      missing.add('edition or version');
     }
     if (banglaText?.trim().isNotEmpty == true &&
         translationSource?.trim().isNotEmpty != true) {
@@ -333,7 +433,7 @@ String? _publicationValidationError({
     }
     if (type == 'hadith') {
       if (collectionName?.trim().isNotEmpty != true) {
-        missing.add('Hadith collection');
+        missing.add('Kitab or collection');
       }
       if (bookName?.trim().isNotEmpty != true) missing.add('Hadith book');
       if (hadithNumber?.trim().isNotEmpty != true) {
@@ -350,7 +450,7 @@ String? _publicationValidationError({
       type == 'quran' &&
           mediaSourceType == 'direct_audio_url' &&
           arabicText?.trim().isNotEmpty != true
-      ? ' For a recitation-only resource, choose Audio as the content type and assign a Qur’an category.'
+      ? ' For a recitation-only resource, choose Qur’an / Surah Audio instead.'
       : '';
   return 'Complete before publishing: ${missing.join(', ')}.$guidance';
 }

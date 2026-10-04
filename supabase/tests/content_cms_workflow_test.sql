@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(30);
 
 insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-000000000201', 'cms-admin@sukun.test'),
@@ -112,7 +112,7 @@ select lives_ok(
 select results_eq(
   $$select status::text from public.content_items where slug = 'ayatul-kursi'$$,
   array['draft'::text],
-  'canonical resource remains a draft until Publish Now'
+  'canonical resource remains a draft until submitted'
 );
 
 select results_eq(
@@ -142,32 +142,33 @@ select throws_ok(
 select lives_ok(
   $$select public.transition_content_item(
     p_content_item_id => (select id from public.content_items where slug = 'ayatul-kursi'),
-    p_transition => 'publish',
+    p_transition => 'submit',
     p_request_id => '92000000-0000-4000-8000-000000000006'
   )$$,
-  'Super Admin can directly publish sourced Qur''an content'
+  'Super Admin submits sourced Qur''an content for review'
 );
 
 select results_eq(
   $$select status::text, verification_status::text
     from public.content_items where slug = 'ayatul-kursi'$$,
-  $$values ('published'::text, 'pending'::text)$$,
-  'direct publishing does not require or fabricate verification state'
+  $$values ('review'::text, 'pending'::text)$$,
+  'submitted canonical content awaits source verification'
 );
 
 select lives_ok(
   $$select public.transition_content_item(
     p_content_item_id => (select id from public.content_items where slug = 'ayatul-kursi'),
-    p_transition => 'unpublish',
+    p_transition => 'verify',
     p_request_id => '92000000-0000-4000-8000-000000000007'
   )$$,
-  'published canonical content can be unpublished directly'
+  'canonical source can be verified after review'
 );
 
 select results_eq(
-  $$select status::text from public.content_items where slug = 'ayatul-kursi'$$,
-  array['draft'::text],
-  'unpublish returns content to draft'
+  $$select status::text, verification_status::text
+    from public.content_items where slug = 'ayatul-kursi'$$,
+  $$values ('verified'::text, 'verified'::text)$$,
+  'source verification records the verified state'
 );
 
 select lives_ok(
@@ -176,21 +177,21 @@ select lives_ok(
     p_transition => 'publish',
     p_request_id => '92000000-0000-4000-8000-000000000008'
   )$$,
-  'unpublished canonical content can be published again'
+  'verified canonical content can be published'
 );
 
 select results_eq(
   $$select count(*) from public.content_reviews
     where content_item_id = (select id from public.content_items where slug = 'ayatul-kursi')$$,
   array[3::bigint],
-  'publish, unpublish, and republish are retained in lifecycle history'
+  'submit, verify, and publish are retained in lifecycle history'
 );
 
 select results_eq(
   $$select count(*) from public.admin_audit_logs
     where entity_id = (select id from public.content_items where slug = 'ayatul-kursi')$$,
   array[4::bigint],
-  'content save, publish, unpublish, and republish are audited'
+  'content save, submit, verify, and publish are audited'
 );
 
 select throws_ok(
@@ -200,7 +201,7 @@ select throws_ok(
     p_title => 'Changed published content',
     p_slug => 'ayatul-kursi',
     p_visibility => 'public',
-    p_status => 'review',
+    p_status => 'draft',
     p_surah_number => 2,
     p_ayah_number => 255,
     p_request_id => '92000000-0000-4000-8000-000000000009'
@@ -216,7 +217,7 @@ select lives_ok(
     p_transition => 'unpublish',
     p_request_id => '92000000-0000-4000-8000-000000000010'
   )$$,
-  'published content can be returned to draft'
+  'published canonical content can return to its verified review state'
 );
 
 select lives_ok(
@@ -257,10 +258,24 @@ select lives_ok(
 select lives_ok(
   $$select public.transition_content_item(
     p_content_item_id => (select id from public.content_items where slug = 'incomplete-hadith-fixture'),
-    p_transition => 'publish',
+    p_transition => 'submit',
     p_request_id => '92000000-0000-4000-8000-000000000013'
   )$$,
-  'Super Admin can directly publish sourced Hadith content'
+  'Super Admin submits sourced Hadith content for review'
+);
+
+select lives_ok(
+  $$select public.transition_content_item(
+    p_content_item_id => (select id from public.content_items where slug = 'incomplete-hadith-fixture'),
+    p_transition => 'verify',
+    p_request_id => '92000000-0000-4000-8000-000000000017'
+  );
+  select public.transition_content_item(
+    p_content_item_id => (select id from public.content_items where slug = 'incomplete-hadith-fixture'),
+    p_transition => 'publish',
+    p_request_id => '92000000-0000-4000-8000-000000000018'
+  )$$,
+  'verified Hadith can publish after source review'
 );
 
 select lives_ok(
@@ -295,13 +310,18 @@ select lives_ok(
       )).id into resource_id;
       perform public.transition_content_item(
         p_content_item_id => resource_id,
+        p_transition => 'submit',
+        p_request_id => gen_random_uuid()
+      );
+      perform public.transition_content_item(
+        p_content_item_id => resource_id,
         p_transition => 'publish',
         p_request_id => gen_random_uuid()
       );
     end loop;
   end
   $test$;$$,
-  'audio, video, PDF, and article drafts can publish directly'
+  'audio, video, PDF, and article publish after review'
 );
 
 select throws_ok(
@@ -321,9 +341,9 @@ select throws_ok(
     p_transition => 'publish',
     p_request_id => '92000000-0000-4000-8000-000000000015'
   )$$,
-  '22023',
-  'Publishing Qur''an or Hadith requires an approved source type.',
-  'direct publish still enforces canonical source metadata'
+  '55000',
+  'Qur''an and Hadith must pass source verification before publishing.',
+  'canonical draft cannot bypass source verification'
 );
 
 select throws_ok(

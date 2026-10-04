@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -17,23 +18,28 @@ class AdminContentEditorScreen extends ConsumerStatefulWidget {
       _AdminContentEditorScreenState();
 }
 
+enum _SaveAction { draft, preview, submit }
+
 class _AdminContentEditorScreenState
     extends ConsumerState<AdminContentEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = <String, TextEditingController>{};
+  final String _resourceKey = const Uuid().v4();
   late Future<_EditorData> _data;
-  String _type = 'dua';
-  String _visibility = 'staff_only';
+  AdminResourceKind? _kind;
+  String _visibility = 'public';
   String? _categoryId;
-  String? _parentContentId;
-  String? _mediaSourceType;
+  String? _savedContentId;
   String? _initialStatus;
+  String? _existingSlug;
+  String? _existingType;
   bool _populated = false;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _savedContentId = widget.contentItemId;
     _data = _load();
   }
 
@@ -53,79 +59,74 @@ class _AdminContentEditorScreenState
     final results = await Future.wait([
       repository.listCategories(),
       repository.listContent(),
-      if (widget.contentItemId != null)
-        repository.getContent(widget.contentItemId!),
+      if (_savedContentId != null) repository.getContent(_savedContentId!),
     ]);
     return _EditorData(
       categories: results[0] as List<ContentCategory>,
       allContent: results[1] as List<AdminContentItem>,
-      item: widget.contentItemId == null
-          ? null
-          : results[2] as AdminContentItem?,
+      item: _savedContentId == null ? null : results[2] as AdminContentItem?,
     );
   }
 
-  void _populate(AdminContentItem? item) {
+  void _populate(AdminContentItem? item, List<ContentCategory> categories) {
     if (_populated) return;
     _populated = true;
     if (item == null) return;
-    _type = item.type;
+    ContentCategory? category;
+    for (final candidate in categories) {
+      if (candidate.id == item.categoryId) category = candidate;
+    }
+    _kind = resourceKindForItem(item, category: category);
     _visibility = item.visibility;
     _categoryId = item.categoryId;
-    _parentContentId = item.parentContentId;
-    _mediaSourceType = item.mediaSourceType;
     _initialStatus = item.status;
+    _existingSlug = item.slug;
+    _existingType = item.type;
     final values = <String, Object?>{
       'title': item.title,
       'titleBn': item.titleBn,
-      'slug': item.slug,
       'summary': item.summary,
       'body': item.body,
       'arabicText': item.arabicText,
       'banglaText': item.banglaText,
-      'transliteration': item.transliteration,
-      'translation': item.translation,
-      'referenceText': item.referenceText,
       'sourceType': item.sourceType,
       'sourceReference': item.sourceReference,
       'sourceUrl': item.sourceUrl,
       'sourceEdition': item.sourceEdition,
       'translationSource': item.translationSource,
       'surahNumber': item.surahNumber,
-      'surahName': item.surahName,
-      'surahNameBn': item.surahNameBn,
       'ayahNumber': item.ayahNumber,
       'ayahEndNumber': item.ayahEndNumber,
       'collectionName': item.collectionName,
-      'bookName': item.bookName,
       'hadithNumber': item.hadithNumber,
-      'narrator': item.narrator,
       'grade': item.grade,
       'author': item.author,
-      'publisher': item.publisher,
-      'chapterNumber': item.chapterNumber,
-      'languageCode': item.languageCode,
       'rightsNote': item.rightsNote,
+      'mediaUrl': item.mediaSourceType == 'youtube'
+          ? item.sourceUrl ??
+                (item.youtubeVideoId == null
+                    ? null
+                    : 'https://www.youtube.com/watch?v=${item.youtubeVideoId}')
+          : item.mediaUrl,
       'thumbnailUrl': item.thumbnailUrl,
-      'mediaUrl': item.mediaUrl,
-      'youtubeVideoId': item.youtubeVideoId,
+      'repeatCount': _repeatCount(item.referenceText),
     };
     for (final entry in values.entries) {
       _controller(entry.key).text = entry.value?.toString() ?? '';
     }
   }
 
-  Future<void> _save({required bool publish}) async {
+  Future<void> _save(_SaveAction action) async {
     if (!_formKey.currentState!.validate()) return;
-    final input = _input('draft');
-    final error = input.validate();
+    final input = _input();
+    final error = input.validate() ?? _simpleValidationError();
     if (error != null) {
       _show(error);
       return;
     }
-    if (publish) {
+    if (action == _SaveAction.submit) {
       final publicationError = input.publicationValidationError();
-      if (publicationError != null) {
+      if (publicationError != null && _kind?.isCanonical == true) {
         _show(publicationError);
         return;
       }
@@ -133,24 +134,36 @@ class _AdminContentEditorScreenState
     setState(() => _saving = true);
     try {
       final repository = ref.read(contentAdminRepositoryProvider);
-      if (_initialStatus == 'published' && widget.contentItemId != null) {
+      if (_initialStatus == 'published' && _savedContentId != null) {
         await repository.transitionContent(
-          contentItemId: widget.contentItemId!,
+          contentItemId: _savedContentId!,
           transition: 'unpublish',
           requestId: const Uuid().v4(),
         );
-        _initialStatus = 'draft';
+        _initialStatus = _kind?.isCanonical == true ? 'verified' : 'review';
       }
       var item = await repository.saveContent(input);
-      if (publish) {
+      _savedContentId = item.id;
+      _existingSlug = item.slug;
+      _existingType = item.type;
+      _initialStatus = item.status;
+      if (action == _SaveAction.submit) {
         item = await repository.transitionContent(
           contentItemId: item.id,
-          transition: 'publish',
+          transition: 'submit',
           requestId: const Uuid().v4(),
         );
+        _initialStatus = item.status;
       }
       if (!mounted) return;
-      Navigator.of(context).pop(item);
+      if (action == _SaveAction.preview) {
+        await context.push('/admin/content/${item.id}/preview');
+        if (mounted) {
+          setState(() => _data = _load());
+        }
+      } else {
+        Navigator.of(context).pop(item);
+      }
     } catch (error) {
       if (mounted) _show(error.toString());
     } finally {
@@ -158,49 +171,111 @@ class _AdminContentEditorScreenState
     }
   }
 
-  SaveContentInput _input(String status) => SaveContentInput(
-    contentItemId: widget.contentItemId,
-    type: _type,
-    categoryId: _categoryId,
-    parentContentId: _type == 'book_chapter' ? _parentContentId : null,
-    title: _text('title'),
-    titleBn: _nullable('titleBn'),
-    slug: _text('slug'),
-    summary: _nullable('summary'),
-    body: _nullable('body'),
-    arabicText: _nullable('arabicText'),
-    banglaText: _nullable('banglaText'),
-    transliteration: _nullable('transliteration'),
-    translation: _nullable('translation'),
-    referenceText: _nullable('referenceText'),
-    sourceType: _nullable('sourceType'),
-    sourceReference: _nullable('sourceReference'),
-    sourceUrl: _nullable('sourceUrl'),
-    sourceEdition: _nullable('sourceEdition'),
-    translationSource: _nullable('translationSource'),
-    surahNumber: _integer('surahNumber'),
-    surahName: _nullable('surahName'),
-    surahNameBn: _nullable('surahNameBn'),
-    ayahNumber: _integer('ayahNumber'),
-    ayahEndNumber: _integer('ayahEndNumber'),
-    collectionName: _nullable('collectionName'),
-    bookName: _nullable('bookName'),
-    hadithNumber: _nullable('hadithNumber'),
-    narrator: _nullable('narrator'),
-    grade: _nullable('grade'),
-    author: _nullable('author'),
-    publisher: _nullable('publisher'),
-    chapterNumber: _integer('chapterNumber'),
-    languageCode: _nullable('languageCode'),
-    rightsNote: _nullable('rightsNote'),
-    thumbnailUrl: _nullable('thumbnailUrl'),
-    mediaSourceType: _mediaSourceType,
-    mediaUrl: _nullable('mediaUrl'),
-    youtubeVideoId: _nullable('youtubeVideoId'),
-    visibility: _visibility,
-    status: status,
-    requestId: const Uuid().v4(),
-  );
+  SaveContentInput _input() {
+    final kind = _kind!;
+    final title = _generatedTitle(kind);
+    final mediaLink = _nullable('mediaUrl');
+    final youtubeId = kind == AdminResourceKind.video && mediaLink != null
+        ? inferYoutubeVideoId(mediaLink)
+        : '';
+    final type = _existingType ?? kind.contentType;
+    final mediaSourceType = kind == AdminResourceKind.video
+        ? (youtubeId.isNotEmpty ? 'youtube' : 'direct_video_url')
+        : kind.mediaSourceType;
+    final referenceText = kind == AdminResourceKind.duaAzkar
+        ? _repeatReference()
+        : null;
+    return SaveContentInput(
+      contentItemId: _savedContentId,
+      type: type,
+      categoryId: _categoryId,
+      title: title,
+      titleBn: kind == AdminResourceKind.duaAzkar
+          ? _nullable('banglaText')
+          : _nullable('titleBn'),
+      slug: _existingSlug ?? generatedResourceSlug(title, _resourceKey),
+      summary: _nullable('summary'),
+      body: kind == AdminResourceKind.articleGuide ? _nullable('body') : null,
+      arabicText: _nullable('arabicText'),
+      banglaText: _nullable('banglaText'),
+      referenceText: referenceText,
+      sourceType: _nullable('sourceType'),
+      sourceReference: _nullable('sourceReference'),
+      sourceUrl: kind == AdminResourceKind.video && youtubeId.isNotEmpty
+          ? mediaLink
+          : _nullable('sourceUrl'),
+      sourceEdition: _nullable('sourceEdition'),
+      translationSource: _nullable('translationSource'),
+      surahNumber: _integer('surahNumber'),
+      ayahNumber: _integer('ayahNumber'),
+      ayahEndNumber: _integer('ayahEndNumber'),
+      collectionName: _nullable('collectionName'),
+      bookName: kind == AdminResourceKind.hadith
+          ? _nullable('collectionName')
+          : null,
+      hadithNumber: _nullable('hadithNumber'),
+      grade: _nullable('grade'),
+      author: _nullable('author'),
+      rightsNote: _nullable('rightsNote'),
+      thumbnailUrl: _nullable('thumbnailUrl'),
+      mediaSourceType: mediaSourceType,
+      mediaUrl: youtubeId.isEmpty ? mediaLink : null,
+      youtubeVideoId: youtubeId.isEmpty ? null : youtubeId,
+      visibility: _visibility,
+      status: 'draft',
+      requestId: const Uuid().v4(),
+    );
+  }
+
+  String? _simpleValidationError() {
+    final kind = _kind;
+    if (kind == null) return 'Choose what you want to add.';
+    if (kind.requiresApprovedSource && _nullable('sourceType') == null) {
+      return 'Choose the approved source used for this resource.';
+    }
+    if (kind.requiresApprovedSource &&
+        (_nullable('sourceReference') == null ||
+            _nullable('sourceEdition') == null)) {
+      return 'Complete the approved source name and edition or version.';
+    }
+    if (kind == AdminResourceKind.duaAzkar) {
+      final repeatCount = _nullable('repeatCount');
+      if (repeatCount != null &&
+          (int.tryParse(repeatCount) == null || int.parse(repeatCount) < 1)) {
+        return 'Repeat count must be a positive whole number from the source.';
+      }
+    }
+    return null;
+  }
+
+  String _generatedTitle(AdminResourceKind kind) => switch (kind) {
+    AdminResourceKind.quranAyah =>
+      'Surah ${_text('surahNumber')}, Ayah ${_ayahLabel()}',
+    AdminResourceKind.hadith =>
+      '${_text('collectionName')} — Hadith ${_text('hadithNumber')}',
+    AdminResourceKind.duaAzkar => _shortTitle(
+      _nullable('banglaText') ?? _nullable('arabicText') ?? 'Dua / Azkar',
+    ),
+    _ => _text('title'),
+  };
+
+  String _ayahLabel() {
+    final start = _text('ayahNumber');
+    final end = _nullable('ayahEndNumber');
+    return end == null ? start : '$start–$end';
+  }
+
+  String? _repeatReference() {
+    final count = _nullable('repeatCount');
+    return count == null ? null : 'Repeat count from approved source: $count';
+  }
+
+  String _shortTitle(String value) {
+    final singleLine = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return singleLine.length <= 56
+        ? singleLine
+        : '${singleLine.substring(0, 53)}…';
+  }
 
   String _text(String key) => _controller(key).text.trim();
   String? _nullable(String key) {
@@ -214,104 +289,163 @@ class _AdminContentEditorScreenState
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
 
-  Future<void> _addCategory(_EditorData data) async {
-    final name = TextEditingController();
-    final slug = TextEditingController();
-    final nameBn = TextEditingController();
-    final created = await showDialog<ContentCategory>(
+  void _chooseKind(AdminResourceKind kind, List<ContentCategory> categories) {
+    setState(() {
+      _kind = kind;
+      _existingType = null;
+      _categoryId = switch (kind) {
+        AdminResourceKind.ruqyahAudio => _categoryIdForSlug(
+          categories,
+          'ruqyah-audio',
+        ),
+        AdminResourceKind.duaAzkar => _categoryIdForSlug(
+          categories,
+          'dua-azkar',
+        ),
+        _ => null,
+      };
+    });
+  }
+
+  String? _categoryIdForSlug(List<ContentCategory> categories, String slug) {
+    for (final category in categories) {
+      if (category.slug == slug) return category.id;
+    }
+    return null;
+  }
+
+  Future<void> _editApprovedSource() async {
+    final sourceType = ValueNotifier<String>(
+      _nullable('sourceType') ?? 'official_dataset',
+    );
+    final reference = TextEditingController(
+      text: _controller('sourceReference').text,
+    );
+    final edition = TextEditingController(
+      text: _controller('sourceEdition').text,
+    );
+    final translation = TextEditingController(
+      text: _controller('translationSource').text,
+    );
+    final sourceUrl = TextEditingController(
+      text: _controller('sourceUrl').text,
+    );
+    final saved = await showModalBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SukunIconBadge(icon: Icons.create_new_folder_outlined),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Add category',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Create a reusable taxonomy label for the Resources library.',
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: SukunColors.muted),
-                  ),
-                  const SizedBox(height: 18),
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Name *'),
-                  ),
-                  TextField(
-                    controller: nameBn,
-                    decoration: const InputDecoration(labelText: 'Bangla name'),
-                  ),
-                  TextField(
-                    controller: slug,
-                    decoration: const InputDecoration(
-                      labelText: 'Slug *',
-                      hintText: 'dua-morning',
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () async {
-                            try {
-                              final result = await ref
-                                  .read(contentAdminRepositoryProvider)
-                                  .saveCategory(
-                                    name: name.text,
-                                    nameBn: nameBn.text,
-                                    slug: slug.text,
-                                    requestId: const Uuid().v4(),
-                                  );
-                              if (dialogContext.mounted) {
-                                Navigator.pop(dialogContext, result);
-                              }
-                            } catch (error) {
-                              if (dialogContext.mounted) {
-                                ScaffoldMessenger.of(dialogContext)
-                                    .showSnackBar(
-                                      SnackBar(content: Text(error.toString())),
-                                    );
-                              }
-                            }
-                          },
-                          child: const Text('Add'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SukunPageIntro(
+                eyebrow: 'Source check',
+                title: 'Approved source',
+                subtitle: 'Record where the text came from so a reviewer can check it confidently.',
               ),
-            ),
+              const SizedBox(height: 20),
+              ValueListenableBuilder<String>(
+                valueListenable: sourceType,
+                builder: (context, value, _) => SukunChoiceField<String>(
+                  label: 'Source format',
+                  placeholder: 'Choose the source format',
+                  value: value,
+                  options: const [
+                    SukunChoiceOption(
+                      value: 'official_dataset',
+                      title: 'Official or verified dataset',
+                      description:
+                          'A trusted API or checked digital text source.',
+                      icon: Icons.dataset_outlined,
+                    ),
+                    SukunChoiceOption(
+                      value: 'licensed_publication',
+                      title: 'Licensed publication',
+                      description:
+                          'A printed or digital edition Sukun Life may use.',
+                      icon: Icons.menu_book_outlined,
+                    ),
+                    SukunChoiceOption(
+                      value: 'sukun_approved_reference',
+                      title: 'Sukun Life approved reference',
+                      description:
+                          'A source already checked by the Sukun Life team.',
+                      icon: Icons.verified_outlined,
+                    ),
+                  ],
+                  onChanged: (next) => sourceType.value = next,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _SourceTextField(
+                controller: reference,
+                label: 'Source name or reference *',
+                helper: 'Example: publication title, collection reference, or dataset name.',
+              ),
+              _SourceTextField(
+                controller: edition,
+                label: 'Edition or version *',
+                helper: 'Enter the edition, revision, or dataset version shown by the source.',
+              ),
+              if (_nullable('banglaText') != null)
+                _SourceTextField(
+                  controller: translation,
+                  label: 'Bangla translation source *',
+                  helper: 'Name the approved Bangla translator or publication.',
+                ),
+              _SourceTextField(
+                controller: sourceUrl,
+                label: 'Source link (optional)',
+                helper: 'Paste an HTTPS link when the source is online.',
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    if (reference.text.trim().isEmpty ||
+                        edition.text.trim().isEmpty ||
+                        (_nullable('banglaText') != null &&
+                            translation.text.trim().isEmpty)) {
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Complete the required source information.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(sheetContext, true);
+                  },
+                  child: const Text('Use this source'),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
-    name.dispose();
-    slug.dispose();
-    nameBn.dispose();
-    if (created == null || !mounted) return;
-    setState(() {
-      _categoryId = created.id;
-      _data = _load();
-    });
+    if (saved == true) {
+      _controller('sourceType').text = sourceType.value;
+      _controller('sourceReference').text = reference.text.trim();
+      _controller('sourceEdition').text = edition.text.trim();
+      _controller('translationSource').text = translation.text.trim();
+      _controller('sourceUrl').text = sourceUrl.text.trim();
+      if (mounted) setState(() {});
+    }
+    sourceType.dispose();
+    reference.dispose();
+    edition.dispose();
+    translation.dispose();
+    sourceUrl.dispose();
   }
 
   @override
@@ -319,14 +453,14 @@ class _AdminContentEditorScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.contentItemId == null ? 'New resource' : 'Edit resource',
+          _savedContentId == null ? 'Add a resource' : 'Edit resource',
         ),
       ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing content editor');
+            return const AppLoadingState(label: 'Preparing resource form');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -335,356 +469,594 @@ class _AdminContentEditorScreenState
             );
           }
           final data = snapshot.data!;
-          _populate(data.item);
-          if (widget.contentItemId != null && data.item == null) {
+          _populate(data.item, data.categories);
+          if (_savedContentId != null && data.item == null) {
             return const AppEmptyState(
               title: 'Resource not found',
-              message: 'This content item may have been archived or removed.',
+              message: 'This resource may have been archived or removed.',
               icon: Icons.search_off_rounded,
             );
           }
-          return Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-              children: [
-                SukunPageIntro(
-                  eyebrow: 'Content workspace',
-                  title: widget.contentItemId == null
-                      ? 'Create a resource'
-                      : 'Refine this resource',
-                  subtitle: 'Build one canonical, source-aware item that can be reused across browsing and care plans.',
-                  trailing: const SukunIconBadge(
-                    icon: Icons.auto_stories_outlined,
-                    size: 54,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const SukunSurface(
-                  tone: SukunSurfaceTone.warning,
-                  showBorder: false,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.verified_user_outlined,
-                        color: SukunColors.deepTide,
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Canonical Qur’an and Hadith text must be entered from an approved, traceable source. The Super Admin publishes directly and remains accountable through audit history.',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const _SectionTitle(
-                  title: 'Resource identity',
-                  subtitle: 'One canonical resource can be reused publicly and in care plans.',
-                ),
-                SukunChoiceField<String>(
-                  key: ValueKey(_type),
-                  label: 'Content type *',
-                  placeholder: 'Choose content type',
-                  value: _type,
-                  options: [
-                    for (final type in contentTypes)
-                      SukunChoiceOption(
-                        value: type,
-                        title: _label(type),
-                        description: _contentTypeDescription(type),
-                        icon: _contentTypeIcon(type),
-                      ),
-                  ],
-                  onChanged: (value) => setState(() => _type = value),
-                ),
-                _field('title', 'English / primary title *', required: true),
-                _field('titleBn', 'Bangla title'),
-                _field(
-                  'slug',
-                  'Slug *',
-                  required: true,
-                  hint: 'morning-adhkar',
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: SukunChoiceField<String>(
-                        value: _categoryId ?? '',
-                        label: 'Category',
-                        placeholder: 'Choose category',
-                        options: [
-                          const SukunChoiceOption(
-                            value: '',
-                            title: 'No category',
-                            description:
-                                'Keep this resource outside a taxonomy group.',
-                          ),
-                          for (final category in data.categories.where(
-                            (c) => c.isActive,
-                          ))
-                            SukunChoiceOption(
-                              value: category.id,
-                              title: category.name,
-                              description: category.nameBn,
-                            ),
-                        ],
-                        onChanged: (value) => setState(
-                          () => _categoryId = value.isEmpty ? null : value,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      tooltip: 'Add category',
-                      onPressed: () => _addCategory(data),
-                      icon: const Icon(Icons.create_new_folder_outlined),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SukunChoiceField<String>(
-                  value: _visibility,
-                  label: 'Visibility *',
-                  placeholder: 'Choose who may see this',
-                  options: [
-                    for (final visibility in resourceVisibilities)
-                      SukunChoiceOption(
-                        value: visibility,
-                        title: _label(visibility),
-                        description: _visibilityDescription(visibility),
-                        icon: _visibilityIcon(visibility),
-                      ),
-                  ],
-                  onChanged: (value) => setState(() => _visibility = value),
-                ),
-                if (_type == 'book_chapter') ...[
-                  const SizedBox(height: 12),
-                  SukunChoiceField<String>(
-                    value: _parentContentId,
-                    label: 'Parent book *',
-                    placeholder: 'Choose a parent book',
-                    options: [
-                      for (final book in data.allContent.where(
-                        (item) => item.type == 'book',
-                      ))
-                        SukunChoiceOption(
-                          value: book.id,
-                          title: book.title,
-                          description: book.titleBn,
-                        ),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _parentContentId = value),
-                  ),
-                  _field('chapterNumber', 'Chapter number *', numeric: true),
-                ],
-                const _SectionTitle(
-                  title: 'Content',
-                  subtitle: 'Canonical religious text must be copied only from an approved source.',
-                ),
-                _field('summary', 'Summary', lines: 3),
-                _field('body', 'Body / article text', lines: 8),
-                if (_type == 'quran' || _type == 'hadith') ...[
-                  _field(
-                    'arabicText',
-                    'Sourced Arabic text${_type == 'quran' ? ' *' : ''}',
-                    lines: 6,
-                    required: _type == 'quran',
-                  ),
-                  _field(
-                    'banglaText',
-                    'Approved Bangla text / translation',
-                    lines: 6,
-                  ),
-                  _field('transliteration', 'Transliteration', lines: 4),
-                  _field('translation', 'Additional translation', lines: 4),
-                ],
-                _field('referenceText', 'Display reference'),
-                if (_type == 'quran') ...[
-                  const _SectionTitle(title: "Qur'an reference"),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _field(
-                          'surahNumber',
-                          'Surah no. *',
-                          numeric: true,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _field(
-                          'ayahNumber',
-                          'Start Ayah *',
-                          numeric: true,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _field(
-                          'ayahEndNumber',
-                          'End Ayah',
-                          numeric: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  _field('surahName', 'Surah name'),
-                  _field('surahNameBn', 'Bangla Surah name'),
-                ],
-                if (_type == 'hadith') ...[
-                  const _SectionTitle(title: 'Hadith reference'),
-                  _field('collectionName', 'Collection *', required: true),
-                  _field('bookName', 'Book *', required: true),
-                  _field('hadithNumber', 'Hadith number *', required: true),
-                  _field('narrator', 'Narrator'),
-                  _field('grade', 'Approved grade / classification'),
-                ],
-                const _SectionTitle(
-                  title: 'Source and rights',
-                  subtitle: 'Publishing is direct, but canonical text still requires complete approved-source metadata and can never use AI as its source.',
-                ),
-                _field(
-                  'sourceType',
-                  'Source type${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
-                  hint: 'official_api or licensed_publication',
-                  required: _type == 'quran' || _type == 'hadith',
-                ),
-                _field(
-                  'sourceReference',
-                  'Source reference${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
-                  required: _type == 'quran' || _type == 'hadith',
-                ),
-                _field(
-                  'sourceEdition',
-                  'Edition / API dataset version${_type == 'quran' || _type == 'hadith' ? ' *' : ''}',
-                  required: _type == 'quran' || _type == 'hadith',
-                ),
-                _field('sourceUrl', 'Source URL (HTTPS)'),
-                _field('translationSource', 'Bangla translation source'),
-                _field('languageCode', 'Language code', hint: 'bn-BD'),
-                if ({
-                  'book',
-                  'book_chapter',
-                  'article',
-                  'guide',
-                  'pdf',
-                }.contains(_type)) ...[
-                  _field('author', 'Author'),
-                  _field('publisher', 'Publisher'),
-                ],
-                _field('rightsNote', 'Rights / licensing note', lines: 3),
-                const _SectionTitle(title: 'External media'),
-                SukunChoiceField<String>(
-                  value: _mediaSourceType ?? '',
-                  label: 'Media type',
-                  placeholder: 'Choose external media',
-                  options: [
-                    const SukunChoiceOption(
-                      value: '',
-                      title: 'No external media',
-                      description: 'This resource is text-only.',
-                      icon: Icons.article_outlined,
-                    ),
-                    for (final type in mediaSourceTypes)
-                      SukunChoiceOption(
-                        value: type,
-                        title: _label(type),
-                        description: _mediaDescription(type),
-                        icon: _mediaIcon(type),
-                      ),
-                  ],
-                  onChanged: (value) => setState(
-                    () => _mediaSourceType = value.isEmpty ? null : value,
-                  ),
-                ),
-                if (_mediaSourceType == 'youtube')
-                  _field('youtubeVideoId', 'YouTube video ID *')
-                else if (_mediaSourceType != null)
-                  _field('mediaUrl', 'External media URL (HTTPS) *'),
-                _field('thumbnailUrl', 'Thumbnail URL (HTTPS)'),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _saving ? null : () => _save(publish: false),
-                        child: const Text('Save Draft'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _saving ? null : () => _save(publish: true),
-                        icon: _saving
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.publish_outlined),
-                        label: const Text('Publish Now'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
+          if (_kind == null) return _typeChooser(data: data);
+          return _resourceForm(data);
         },
       ),
     );
   }
 
+  Widget _typeChooser({required _EditorData data}) => ListView(
+    padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
+    children: [
+      const SukunPageIntro(
+        eyebrow: 'Step 1 of 2',
+        title: 'What do you want to add?',
+        subtitle: 'Choose a resource type. The next screen will show only the information you need.',
+        trailing: SukunIconBadge(icon: Icons.add_box_outlined, size: 54),
+      ),
+      const SizedBox(height: 22),
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final twoColumns = constraints.maxWidth >= 520;
+          final width = twoColumns
+              ? (constraints.maxWidth - 12) / 2
+              : constraints.maxWidth;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final kind in AdminResourceKind.values)
+                SizedBox(
+                  width: width,
+                  child: _ResourceTypeCard(
+                    kind: kind,
+                    onTap: () => _chooseKind(kind, data.categories),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ],
+  );
+
+  Widget _resourceForm(_EditorData data) {
+    final kind = _kind!;
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+        children: [
+          SukunPageIntro(
+            eyebrow: 'Step 2 of 2',
+            title: _kindTitle(kind),
+            subtitle: _kindInstruction(kind),
+            trailing: SukunIconBadge(icon: _kindIcon(kind), size: 54),
+          ),
+          if (_savedContentId == null) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _kind = null),
+                icon: const Icon(Icons.swap_horiz_rounded),
+                label: const Text('Choose a different type'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (kind.isCanonical)
+            const SukunSurface(
+              tone: SukunSurfaceTone.warning,
+              showBorder: false,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_user_outlined),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Copy the text exactly from an approved source. It will be checked before publishing.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ..._fieldsFor(kind, data),
+          const SizedBox(height: 18),
+          _advancedSettings(data),
+          const SizedBox(height: 26),
+          if (_saving) const LinearProgressIndicator(),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _saving ? null : () => _save(_SaveAction.preview),
+            icon: const Icon(Icons.visibility_outlined),
+            label: const Text('Preview resource'),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _saving ? null : () => _save(_SaveAction.draft),
+                  child: const Text('Save Draft'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : () => _save(_SaveAction.submit),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('Submit for Review'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _fieldsFor(
+    AdminResourceKind kind,
+    _EditorData data,
+  ) => switch (kind) {
+    AdminResourceKind.quranAyah => [
+      _section('Ayah text'),
+      _field(
+        'arabicText',
+        'Arabic text *',
+        helper: 'Copy the Arabic exactly from the approved source.',
+        lines: 7,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'Bangla translation *',
+        helper: 'Copy the approved Bangla translation without rewriting it.',
+        lines: 6,
+        required: true,
+      ),
+      _surahField(required: true),
+      _ayahFields(required: true),
+      _approvedSourceField(),
+    ],
+    AdminResourceKind.hadith => [
+      _section('Hadith text'),
+      _field(
+        'arabicText',
+        'Arabic text *',
+        helper: 'Copy the Arabic exactly as it appears in the approved source.',
+        lines: 7,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'Bangla translation *',
+        helper: 'Copy the approved Bangla translation without rewriting it.',
+        lines: 6,
+        required: true,
+      ),
+      _field(
+        'collectionName',
+        'Kitab / collection *',
+        helper: 'Enter the collection and book name used by the source.',
+        required: true,
+      ),
+      _field(
+        'hadithNumber',
+        'Hadith number *',
+        helper: 'Enter the number exactly as shown by the source.',
+        required: true,
+      ),
+      _approvedSourceField(),
+      _field(
+        'grade',
+        'Grade (optional)',
+        helper: 'Only enter a grade when the approved source provides one.',
+      ),
+    ],
+    AdminResourceKind.quranAudio => [
+      _section('Audio details'),
+      _titleField(),
+      _surahField(required: true),
+      _ayahFields(required: false),
+      _field(
+        'mediaUrl',
+        'Audio link *',
+        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
+        required: true,
+        url: true,
+      ),
+      _field(
+        'author',
+        'Reciter or source (optional)',
+        helper: 'Enter the reciter or organization when known.',
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.ruqyahAudio => [
+      _section('Ruqyah audio'),
+      _titleField(),
+      _categoryField(data, prefix: 'ruqyah-', required: true),
+      _field(
+        'mediaUrl',
+        'Audio link *',
+        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.bookPdf => [
+      _section('Book or PDF'),
+      _titleField(),
+      _field(
+        'author',
+        'Author (optional)',
+        helper: 'Enter the author exactly as credited by the publication.',
+      ),
+      _field(
+        'mediaUrl',
+        'PDF link *',
+        helper: 'Paste the external PDF link. The file will not be uploaded to Sukun Life.',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.video => [
+      _section('Video details'),
+      _titleField(),
+      _field(
+        'mediaUrl',
+        'YouTube or video link *',
+        helper: 'Paste the YouTube or direct video link. The video remains externally hosted.',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.duaAzkar => [
+      _section('Dua or Azkar'),
+      _field(
+        'arabicText',
+        'Arabic *',
+        helper: 'Copy the Arabic exactly from the approved source.',
+        lines: 6,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'Bangla *',
+        helper: 'Enter the approved Bangla meaning or translation.',
+        lines: 5,
+        required: true,
+      ),
+      _categoryField(data, prefix: 'dua-azkar', required: true),
+      _approvedSourceField(),
+      _field(
+        'repeatCount',
+        'Repeat count (optional)',
+        helper:
+            'Only enter a count when the approved source explicitly states it.',
+        numeric: true,
+      ),
+    ],
+    AdminResourceKind.articleGuide => [
+      _section('Article or guide'),
+      _titleField(),
+      _field(
+        'body',
+        'Article body *',
+        helper: 'Write the complete reader-facing article or guide.',
+        lines: 12,
+        required: true,
+      ),
+      _field(
+        'author',
+        'Author or source (optional)',
+        helper: 'Credit the author or source when applicable.',
+      ),
+    ],
+  };
+
+  Widget _section(String title) => Padding(
+    padding: const EdgeInsets.only(top: 22, bottom: 2),
+    child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+  );
+
+  Widget _titleField() => _field(
+    'title',
+    'Title *',
+    helper: 'Use a short, clear title that readers will understand.',
+    required: true,
+  );
+
+  Widget _rightsField() => _field(
+    'rightsNote',
+    'Source / rights acknowledgement *',
+    helper: 'State who owns the resource or why Sukun Life is allowed to link to it.',
+    lines: 3,
+    required: true,
+  );
+
+  Widget _surahField({required bool required}) => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: SukunChoiceField<String>(
+      label: 'Surah${required ? ' *' : ''}',
+      placeholder: 'Choose the Surah',
+      helperText: 'Choose the Surah this resource belongs to.',
+      value: _nullable('surahNumber'),
+      options: [
+        for (var number = 1; number <= 114; number++)
+          SukunChoiceOption(
+            value: '$number',
+            title: 'Surah $number',
+            description: 'Qur’an Surah number $number',
+          ),
+      ],
+      onChanged: (value) =>
+          setState(() => _controller('surahNumber').text = value),
+    ),
+  );
+
+  Widget _ayahFields({required bool required}) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: _field(
+          'ayahNumber',
+          required ? 'Ayah number *' : 'Start Ayah (optional)',
+          helper: required
+              ? 'Enter the Ayah number, e.g. 255.'
+              : 'Use this only when the audio covers selected Ayat.',
+          required: required,
+          numeric: true,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _field(
+          'ayahEndNumber',
+          'End Ayah (optional)',
+          helper: 'For a range, enter the final Ayah number.',
+          numeric: true,
+        ),
+      ),
+    ],
+  );
+
+  Widget _categoryField(
+    _EditorData data, {
+    required String prefix,
+    required bool required,
+  }) {
+    final options = data.categories
+        .where(
+          (category) => category.isActive && category.slug.startsWith(prefix),
+        )
+        .toList(growable: false);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SukunChoiceField<String>(
+        label: 'Category${required ? ' *' : ''}',
+        placeholder: 'Choose the most suitable category',
+        helperText: 'This helps readers find the resource easily.',
+        value: _categoryId,
+        options: [
+          for (final category in options)
+            SukunChoiceOption(
+              value: category.id,
+              title: category.name,
+              description: category.nameBn,
+            ),
+        ],
+        onChanged: (value) => setState(() => _categoryId = value),
+      ),
+    );
+  }
+
+  Widget _approvedSourceField() {
+    final selected = _nullable('sourceReference');
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SukunSurface(
+        tone: selected == null
+            ? SukunSurfaceTone.warning
+            : SukunSurfaceTone.soft,
+        radius: 18,
+        onTap: _editApprovedSource,
+        child: Row(
+          children: [
+            SukunIconBadge(
+              icon: selected == null
+                  ? Icons.add_moderator_outlined
+                  : Icons.verified_outlined,
+              size: 44,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Approved source *',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    selected ?? 'Tap to choose and record the checked source.',
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: SukunColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _advancedSettings(_EditorData data) => SukunSurface(
+    padding: EdgeInsets.zero,
+    child: ExpansionTile(
+      shape: const Border(),
+      collapsedShape: const Border(),
+      leading: const Icon(Icons.tune_rounded, color: SukunColors.deepTide),
+      title: const Text('Advanced settings'),
+      subtitle: const Text('Optional audience and presentation choices'),
+      childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+      children: [
+        SukunChoiceField<String>(
+          label: 'Who can see this?',
+          placeholder: 'Choose the audience',
+          value: _visibility,
+          options: const [
+            SukunChoiceOption(
+              value: 'public',
+              title: 'Everyone',
+              description: 'Guests and signed-in users can see it.',
+              icon: Icons.public_rounded,
+            ),
+            SukunChoiceOption(
+              value: 'patient_only',
+              title: 'Signed-in patients',
+              description: 'Only authenticated Sukun Life patients can see it.',
+              icon: Icons.person_outline_rounded,
+            ),
+            SukunChoiceOption(
+              value: 'assigned_only',
+              title: 'Assigned patients only',
+              description: 'Only patients with this resource in a care plan.',
+              icon: Icons.assignment_ind_outlined,
+            ),
+            SukunChoiceOption(
+              value: 'staff_only',
+              title: 'Sukun Life staff only',
+              description: 'Keep this resource inside the admin workspace.',
+              icon: Icons.admin_panel_settings_outlined,
+            ),
+          ],
+          onChanged: (value) => setState(() => _visibility = value),
+        ),
+        _field(
+          'summary',
+          'Short description (optional)',
+          helper: 'Add one or two sentences to help readers understand it.',
+          lines: 3,
+        ),
+        _field(
+          'thumbnailUrl',
+          'Cover image link (optional)',
+          helper: 'Paste an HTTPS image link if a cover is available.',
+          url: true,
+        ),
+      ],
+    ),
+  );
+
   Widget _field(
     String key,
     String label, {
-    String? hint,
+    required String helper,
     int lines = 1,
     bool required = false,
     bool numeric = false,
+    bool url = false,
+    bool rtl = false,
   }) => Padding(
     padding: const EdgeInsets.only(top: 12),
     child: TextFormField(
       controller: _controller(key),
       maxLines: lines,
+      textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
       keyboardType: numeric
           ? TextInputType.number
+          : url
+          ? TextInputType.url
           : lines > 1
           ? TextInputType.multiline
           : TextInputType.text,
-      decoration: InputDecoration(labelText: label, hintText: hint),
-      validator: required
-          ? (value) => value == null || value.trim().isEmpty
-                ? '$label is required.'
-                : null
-          : null,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helper,
+        helperMaxLines: 3,
+      ),
+      validator: (value) {
+        final text = value?.trim() ?? '';
+        if (required && text.isEmpty) return 'Please complete this field.';
+        if (url && text.isNotEmpty && !text.startsWith('https://')) {
+          return 'Please paste a secure HTTPS link.';
+        }
+        return null;
+      },
     ),
   );
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.subtitle});
+class _ResourceTypeCard extends StatelessWidget {
+  const _ResourceTypeCard({required this.kind, required this.onTap});
 
-  final String title;
-  final String? subtitle;
+  final AdminResourceKind kind;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SukunSurface(
+    radius: 22,
+    onTap: onTap,
+    child: Row(
+      children: [
+        SukunIconBadge(icon: _kindIcon(kind), size: 48),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _kindTitle(kind),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _kindCardDescription(kind),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: SukunColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+      ],
+    ),
+  );
+}
+
+class _SourceTextField extends StatelessWidget {
+  const _SourceTextField({
+    required this.controller,
+    required this.label,
+    required this.helper,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String helper;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 24, bottom: 2),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        if (subtitle != null) ...[
-          const SizedBox(height: 4),
-          Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
-        ],
-      ],
+    padding: const EdgeInsets.only(top: 12),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helper,
+        helperMaxLines: 3,
+      ),
     ),
   );
 }
@@ -701,67 +1073,61 @@ class _EditorData {
   final AdminContentItem? item;
 }
 
-String _label(String value) => value
-    .split('_')
-    .map(
-      (word) =>
-          word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}',
-    )
-    .join(' ');
-
-String _contentTypeDescription(String value) => switch (value) {
-  'quran' => 'Sourced Surah and Ayah text with complete reference metadata.',
-  'hadith' => 'Collection, book, number, grade, and approved source.',
-  'dua' => 'Dua or daily supplication with translation and reference.',
-  'azkar' => 'Categorised remembrance for a specific moment or routine.',
-  'ruqyah' => 'Approved Ruqyah guidance, recitation, or linked media.',
-  'book' => 'A reusable book record with chapters or external PDF.',
-  'book_chapter' => 'A structured chapter connected to a canonical book.',
-  'article' => 'An authored educational article or guide.',
-  'audio' => 'A direct, licensed external audio resource.',
-  'video' => 'An external video or YouTube resource.',
-  'pdf' => 'An external document with ownership metadata.',
-  _ => 'A reusable Sukun Life resource.',
+String _kindTitle(AdminResourceKind kind) => switch (kind) {
+  AdminResourceKind.quranAyah => "Qur'an Ayah",
+  AdminResourceKind.hadith => 'Hadith',
+  AdminResourceKind.quranAudio => "Qur'an / Surah Audio",
+  AdminResourceKind.ruqyahAudio => 'Ruqyah Audio',
+  AdminResourceKind.bookPdf => 'Book / PDF',
+  AdminResourceKind.video => 'Video',
+  AdminResourceKind.duaAzkar => 'Dua / Azkar',
+  AdminResourceKind.articleGuide => 'Article / Guide',
 };
 
-IconData _contentTypeIcon(String value) => switch (value) {
-  'quran' => Icons.menu_book_rounded,
-  'hadith' => Icons.format_quote_rounded,
-  'dua' || 'azkar' => Icons.auto_awesome_rounded,
-  'ruqyah' => Icons.health_and_safety_outlined,
-  'book' || 'book_chapter' || 'pdf' => Icons.library_books_outlined,
-  'audio' => Icons.headphones_rounded,
-  'video' => Icons.play_circle_outline_rounded,
-  _ => Icons.article_outlined,
+String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
+  AdminResourceKind.quranAyah => 'Arabic Ayah and approved Bangla translation',
+  AdminResourceKind.hadith => 'Sourced Hadith text and reference',
+  AdminResourceKind.quranAudio => 'External Surah or selected-Ayah recitation',
+  AdminResourceKind.ruqyahAudio => 'External approved Ruqyah recording',
+  AdminResourceKind.bookPdf => 'Externally hosted book or PDF',
+  AdminResourceKind.video => 'YouTube or direct external video',
+  AdminResourceKind.duaAzkar => 'Approved Dua or daily Azkar',
+  AdminResourceKind.articleGuide => 'Reader-friendly article or guide',
 };
 
-String _visibilityDescription(String value) => switch (value) {
-  'public' => 'Visible to guests and signed-in users after publishing.',
-  'patient_only' => 'Available only to authenticated patients.',
-  'assigned_only' => 'Visible only when linked to a patient’s care plan.',
-  'staff_only' => 'Restricted to verified Super Admin users.',
-  _ => 'Apply the approved audience rule.',
+String _kindInstruction(AdminResourceKind kind) => switch (kind) {
+  AdminResourceKind.quranAyah =>
+    'Enter the Ayah exactly as it appears in an approved source.',
+  AdminResourceKind.hadith =>
+    'Record the text and reference exactly from an approved collection.',
+  AdminResourceKind.quranAudio =>
+    'Link to an externally hosted recitation. No file will be uploaded.',
+  AdminResourceKind.ruqyahAudio =>
+    'Add an approved external recording and choose its Ruqyah category.',
+  AdminResourceKind.bookPdf =>
+    'Link to an externally hosted PDF and confirm permission to use it.',
+  AdminResourceKind.video =>
+    'Add a YouTube or direct video link without uploading the file.',
+  AdminResourceKind.duaAzkar =>
+    'Enter only sourced wording and repetition guidance.',
+  AdminResourceKind.articleGuide =>
+    'Write a clear reader-facing article with attribution where needed.',
 };
 
-IconData _visibilityIcon(String value) => switch (value) {
-  'public' => Icons.public_rounded,
-  'patient_only' => Icons.person_outline_rounded,
-  'assigned_only' => Icons.assignment_ind_outlined,
-  _ => Icons.admin_panel_settings_outlined,
+IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
+  AdminResourceKind.quranAyah => Icons.auto_stories_outlined,
+  AdminResourceKind.hadith => Icons.format_quote_rounded,
+  AdminResourceKind.quranAudio => Icons.graphic_eq_rounded,
+  AdminResourceKind.ruqyahAudio => Icons.headphones_rounded,
+  AdminResourceKind.bookPdf => Icons.picture_as_pdf_outlined,
+  AdminResourceKind.video => Icons.play_circle_outline_rounded,
+  AdminResourceKind.duaAzkar => Icons.auto_awesome_rounded,
+  AdminResourceKind.articleGuide => Icons.article_outlined,
 };
 
-String _mediaDescription(String value) => switch (value) {
-  'audio' => 'Direct audio URL with background playback support.',
-  'youtube' => 'A YouTube video ID opened in the in-app player.',
-  'video' => 'Direct external video URL.',
-  'pdf' => 'External PDF opened in a secure viewer.',
-  'webpage' => 'Trusted external webpage.',
-  _ => 'Externally hosted media.',
-};
-
-IconData _mediaIcon(String value) => switch (value) {
-  'audio' => Icons.headphones_rounded,
-  'youtube' || 'video' => Icons.play_circle_outline_rounded,
-  'pdf' => Icons.picture_as_pdf_outlined,
-  _ => Icons.open_in_new_rounded,
-};
+String? _repeatCount(String? reference) {
+  if (reference == null) return null;
+  return RegExp(r'Repeat count from approved source: (\d+)')
+      .firstMatch(reference)
+      ?.group(1);
+}

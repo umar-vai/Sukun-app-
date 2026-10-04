@@ -55,7 +55,10 @@ class _AdminContentPreviewScreenState
   }
 
   Future<void> _transition(String transition, {AdminContentItem? item}) async {
-    if (transition == 'publish' && item != null) {
+    if ((transition == 'submit' ||
+            transition == 'verify' ||
+            transition == 'publish') &&
+        item != null) {
       final validation = item.publicationValidationError();
       if (validation != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,9 +131,9 @@ class _AdminContentPreviewScreenState
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
             children: [
               SukunPageIntro(
-                eyebrow: 'Publishing workspace',
+                eyebrow: 'Resource preview',
                 title: item.title,
-                subtitle: 'Preview the patient-facing content, confirm its source and rights metadata, then publish directly.',
+                subtitle: 'Review what readers will see, then move the resource through the appropriate publishing step.',
                 trailing: SukunIconBadge(
                   icon: item.isCanonical
                       ? Icons.verified_outlined
@@ -144,8 +147,12 @@ class _AdminContentPreviewScreenState
                 runSpacing: 8,
                 children: [
                   _StatusChip(label: _label(item.type)),
-                  _StatusChip(label: _label(item.status)),
-                  _StatusChip(label: _label(item.visibility)),
+                  _StatusChip(label: _statusLabel(item)),
+                  _StatusChip(label: _audienceLabel(item.visibility)),
+                  if (item.isCanonical)
+                    _StatusChip(
+                      label: _verificationLabel(item.verificationStatus),
+                    ),
                 ],
               ),
               if (item.titleBn != null) ...[
@@ -192,8 +199,8 @@ class _AdminContentPreviewScreenState
                 _PreviewSection(title: 'Content', body: item.body!),
               const SizedBox(height: 26),
               const SukunSectionHeader(
-                title: 'Structured metadata',
-                subtitle: 'Source, ownership, visibility, and canonical reference details.',
+                title: 'Source and reference',
+                subtitle: 'The human-readable details used to check and credit this resource.',
               ),
               const SizedBox(height: 8),
               _Metadata(item: item),
@@ -216,13 +223,40 @@ class _AdminContentPreviewScreenState
                       icon: const Icon(Icons.edit_outlined),
                       label: const Text('Edit'),
                     ),
-                  if (item.status != 'published' && item.status != 'archived')
+                  if (item.status == 'draft')
+                    FilledButton.icon(
+                      onPressed: _working
+                          ? null
+                          : () => _transition('submit', item: item),
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: const Text('Submit for Review'),
+                    ),
+                  if (item.isCanonical &&
+                      item.status == 'review' &&
+                      item.verificationStatus != 'verified')
+                    FilledButton.icon(
+                      onPressed: _working
+                          ? null
+                          : () => _transition('verify', item: item),
+                      icon: const Icon(Icons.verified_outlined),
+                      label: const Text('Verify Source'),
+                    ),
+                  if (item.isCanonical &&
+                      item.status == 'review' &&
+                      item.verificationStatus != 'verified')
+                    OutlinedButton.icon(
+                      onPressed: _working ? null : () => _transition('reject'),
+                      icon: const Icon(Icons.undo_rounded),
+                      label: const Text('Return for Changes'),
+                    ),
+                  if ((!item.isCanonical && item.status == 'review') ||
+                      (item.isCanonical && item.status == 'verified'))
                     FilledButton.icon(
                       onPressed: _working
                           ? null
                           : () => _transition('publish', item: item),
                       icon: const Icon(Icons.publish_outlined),
-                      label: const Text('Publish Now'),
+                      label: const Text('Publish'),
                     ),
                   if (item.status == 'published')
                     OutlinedButton.icon(
@@ -336,25 +370,20 @@ class _Metadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = <(String, String?)>[
-      ('Slug', item.slug),
       ('Reference', item.referenceText),
-      ('Source type', item.sourceType),
-      ('Source reference', item.sourceReference),
-      ('Source edition', item.sourceEdition),
-      ('Source URL', item.sourceUrl),
-      ('Translation source', item.translationSource),
+      ('Approved source', item.sourceReference),
+      ('Edition or version', item.sourceEdition),
+      ('Online source', item.sourceUrl),
+      ('Bangla translation source', item.translationSource),
       ('Surah', _surah(item)),
       ('Ayah', _ayah(item)),
-      ('Hadith collection', item.collectionName),
-      ('Hadith book', item.bookName),
+      ('Kitab / collection', item.collectionName),
       ('Hadith number', item.hadithNumber),
       ('Grade', item.grade),
       ('Author', item.author),
       ('Publisher', item.publisher),
-      ('Rights', item.rightsNote),
-      ('Media type', item.mediaSourceType),
-      ('Media URL', item.mediaUrl),
-      ('YouTube video ID', item.youtubeVideoId),
+      ('Source / rights acknowledgement', item.rightsNote),
+      ('External link', _externalLink(item)),
     ].where((row) => row.$2 != null && row.$2!.trim().isNotEmpty);
     return SukunSurface(
       child: Column(
@@ -410,18 +439,57 @@ String _label(String value) => value
     .join(' ');
 
 String _transitionExplanation(String transition) => switch (transition) {
-  'publish' => 'Publish this resource immediately using its configured visibility. Source, reference, and rights requirements still apply.',
-  'unpublish' => 'Remove this resource from browsing and return it to draft while preserving its history.',
+  'submit' => 'Send this resource to the review queue. Qur’an and Hadith sources must be verified before publishing.',
+  'verify' => 'Confirm that the canonical text and source details match the approved reference.',
+  'reject' =>
+    'Return this resource for correction without deleting its text or history.',
+  'publish' =>
+    'Make this reviewed resource available to its selected audience.',
+  'unpublish' => 'Remove this resource from browsing while preserving its review and audit history.',
   'archive' => 'Preserve this resource and its history as archived. It will not be editable or visible to patients.',
   _ => 'Apply this workflow change.',
 };
 
 String _transitionLabel(String transition) => switch (transition) {
-  'publish' => 'Publish Now',
+  'submit' => 'Submit for Review',
+  'verify' => 'Verify Source',
+  'reject' => 'Return for Changes',
+  'publish' => 'Publish',
   'unpublish' => 'Unpublish',
   'archive' => 'Archive',
   _ => _label(transition),
 };
+
+String _statusLabel(AdminContentItem item) => switch (item.status) {
+  'draft' => 'Draft',
+  'review' => item.isCanonical ? 'Awaiting source check' : 'Ready to publish',
+  'verified' => 'Source verified',
+  'published' => 'Published',
+  'archived' => 'Archived',
+  _ => _label(item.status),
+};
+
+String _verificationLabel(String value) => switch (value) {
+  'pending' => 'Source check pending',
+  'verified' => 'Source verified',
+  'rejected' => 'Changes requested',
+  _ => 'Source check not started',
+};
+
+String _audienceLabel(String value) => switch (value) {
+  'public' => 'Everyone',
+  'patient_only' => 'Signed-in patients',
+  'assigned_only' => 'Assigned patients',
+  'staff_only' => 'Staff only',
+  _ => _label(value),
+};
+
+String? _externalLink(AdminContentItem item) {
+  if (item.mediaSourceType == 'youtube' && item.youtubeVideoId != null) {
+    return 'https://www.youtube.com/watch?v=${item.youtubeVideoId}';
+  }
+  return item.mediaUrl;
+}
 
 String _pastTense(String transition) => switch (transition) {
   'submit' => 'submitted for review',

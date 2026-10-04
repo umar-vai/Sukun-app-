@@ -373,7 +373,7 @@ At minimum:
 - Prescription creation
 - Manual Plan Builder
 - AI Action Review
-- Content CMS list/editor/direct-publish screens
+- Content CMS type chooser/editor/review/publish screens
 - notification/reminder related screens
 
 ## 20. Completion gate

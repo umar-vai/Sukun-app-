@@ -92,12 +92,12 @@ class _AdminContentListScreenState
                 const SukunPageIntro(
                   eyebrow: 'Editorial workspace',
                   title: 'Content library',
-                  subtitle: 'Create, publish, unpublish, and archive reusable resources with clear source control.',
+                  subtitle: 'Add and review reusable resources through a simple guided workflow.',
                 ),
                 const SizedBox(height: 18),
                 SukunSearchField(
                   controller: _searchController,
-                  hintText: 'Search title, slug, or type',
+                  hintText: 'Search resources by title',
                   onSubmitted: (_) => _reload(),
                   onClear: () {
                     _searchController.clear();
@@ -135,6 +135,8 @@ class _AdminContentListScreenState
                 for (final status in const [
                   'all',
                   'draft',
+                  'review',
+                  'verified',
                   'published',
                   'archived',
                 ])

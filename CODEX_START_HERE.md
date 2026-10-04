@@ -1081,18 +1081,27 @@ Super Admin workflow:
 Content
   → Add
   → choose type
-  → fill metadata/body/URL
-  → Save Draft
+  → fill the short type-specific form
   → Preview
-  → Publish Now
+  → Save Draft
+  → Submit for Review
+  → Verify Source when the item is Qur'an or Hadith
+  → Publish
   → Published
 ```
 
-The server-verified Super Admin is the final content publisher. The normal CMS
-does not require self-review, source-verification approval, or a second
-verification state before publishing any content type. Qur'an/Hadith source,
-reference, translation, and rights metadata remain mandatory where applicable;
-direct publishing never permits AI-generated canonical religious text.
+The editor is resource-type-first and intended for non-technical staff. It must
+not expose slugs, request IDs, database identifiers, raw media-source codes, or
+other implementation details in the normal flow. Internal values are generated
+where safe, with rare audience/presentation options kept in a collapsed
+Advanced settings area. Large audio, video, and PDF files remain externally
+hosted.
+
+The server-verified Super Admin remains the final publisher. Every resource is
+submitted for review before publication. Qur'an and Hadith additionally require
+an explicit source-verification transition with approved source, reference,
+translation, and edition/version details. Canonical religious text can never be
+AI-generated.
 
 Editing content should update database content without requiring a Play Store/App Store release.
 
