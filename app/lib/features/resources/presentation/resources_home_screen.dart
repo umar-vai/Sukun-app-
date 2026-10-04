@@ -87,7 +87,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
             sliver: SliverList.list(
               children: [
                 SukunPageIntro(
-                  eyebrow: 'Verified library',
+                  eyebrow: 'Published library',
                   title: 'Islamic Resources',
                   subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
                   trailing: const SukunIconBadge(
@@ -146,7 +146,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 SukunSectionHeader(
                   title: _selectedSection?.title ?? 'Recently published',
                   subtitle: _selectedSection == null
-                      ? 'Latest verified additions'
+                      ? 'Latest published additions'
                       : 'Published items in this section',
                 ),
                 const SizedBox(height: 10),

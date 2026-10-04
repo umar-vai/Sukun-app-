@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -56,67 +55,14 @@ class _AdminContentPreviewScreenState
   }
 
   Future<void> _transition(String transition) async {
-    final notesController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSukunDecisionDialog(
       context: context,
-      builder: (dialogContext) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SukunIconBadge(icon: _transitionIcon(transition), size: 54),
-                const SizedBox(height: 16),
-                Text(
-                  '${_label(transition)} resource?',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _transitionExplanation(transition),
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: SukunColors.muted),
-                ),
-                const SizedBox(height: 18),
-                TextField(
-                  controller: notesController,
-                  maxLines: 3,
-                  maxLength: 4000,
-                  decoration: const InputDecoration(
-                    labelText: 'Reviewer note (optional)',
-                    helperText: 'Admin-only; never shown to patients.',
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(dialogContext, true),
-                        child: Text(_label(transition)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      title: '${_transitionLabel(transition)} resource?',
+      message: _transitionExplanation(transition),
+      confirmLabel: _transitionLabel(transition),
+      icon: _transitionIcon(transition),
     );
-    final notes = notesController.text;
-    notesController.dispose();
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     setState(() => _working = true);
     try {
       await ref
@@ -124,7 +70,6 @@ class _AdminContentPreviewScreenState
           .transitionContent(
             contentItemId: widget.contentItemId,
             transition: transition,
-            notes: notes,
             requestId: const Uuid().v4(),
           );
       if (!mounted) return;
@@ -171,9 +116,9 @@ class _AdminContentPreviewScreenState
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
             children: [
               SukunPageIntro(
-                eyebrow: 'Editorial review',
+                eyebrow: 'Publishing workspace',
                 title: item.title,
-                subtitle: 'Preview the patient-facing content and verify every source detail before publishing.',
+                subtitle: 'Preview the patient-facing content, confirm its source and rights metadata, then publish directly.',
                 trailing: SukunIconBadge(
                   icon: item.isCanonical
                       ? Icons.verified_outlined
@@ -189,8 +134,6 @@ class _AdminContentPreviewScreenState
                   _StatusChip(label: _label(item.type)),
                   _StatusChip(label: _label(item.status)),
                   _StatusChip(label: _label(item.visibility)),
-                  if (item.isCanonical)
-                    _StatusChip(label: _label(item.verificationStatus)),
                 ],
               ),
               if (item.titleBn != null) ...[
@@ -244,9 +187,9 @@ class _AdminContentPreviewScreenState
               _Metadata(item: item),
               const SizedBox(height: 24),
               const SukunSectionHeader(
-                title: 'Editorial workflow',
+                title: 'Publishing controls',
                 subtitle:
-                    'Each state transition is audited and preserves history.',
+                    'Every publish, unpublish, and archive action is audited.',
               ),
               const SizedBox(height: 10),
               if (_working) const LinearProgressIndicator(),
@@ -261,32 +204,11 @@ class _AdminContentPreviewScreenState
                       icon: const Icon(Icons.edit_outlined),
                       label: const Text('Edit'),
                     ),
-                  if (item.status == 'draft')
-                    FilledButton.icon(
-                      onPressed: _working ? null : () => _transition('submit'),
-                      icon: const Icon(Icons.rate_review_outlined),
-                      label: const Text('Submit for review'),
-                    ),
-                  if (item.isCanonical &&
-                      item.status == 'review' &&
-                      item.verificationStatus != 'rejected') ...[
-                    FilledButton.icon(
-                      onPressed: _working ? null : () => _transition('verify'),
-                      icon: const Icon(Icons.verified_outlined),
-                      label: const Text('Verify source'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _working ? null : () => _transition('reject'),
-                      icon: const Icon(Icons.report_outlined),
-                      label: const Text('Reject verification'),
-                    ),
-                  ],
-                  if ((!item.isCanonical && item.status == 'review') ||
-                      (item.isCanonical && item.status == 'verified'))
+                  if (item.status != 'published' && item.status != 'archived')
                     FilledButton.icon(
                       onPressed: _working ? null : () => _transition('publish'),
                       icon: const Icon(Icons.publish_outlined),
-                      label: const Text('Publish'),
+                      label: const Text('Publish Now'),
                     ),
                   if (item.status == 'published')
                     OutlinedButton.icon(
@@ -306,8 +228,8 @@ class _AdminContentPreviewScreenState
               ),
               const SizedBox(height: 24),
               const SukunSectionHeader(
-                title: 'Review history',
-                subtitle: 'Admin-only notes and workflow events.',
+                title: 'Publishing history',
+                subtitle: 'Admin-only lifecycle events retained for audit.',
               ),
               const SizedBox(height: 8),
               if (data.reviews.isEmpty)
@@ -329,7 +251,7 @@ class _AdminContentPreviewScreenState
                           ),
                           title: Text(_label(review.decision)),
                           subtitle: Text(
-                            review.notes ?? 'No reviewer note',
+                            review.notes ?? 'No lifecycle note',
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -474,13 +396,17 @@ String _label(String value) => value
     .join(' ');
 
 String _transitionExplanation(String transition) => switch (transition) {
-  'submit' => 'Move this draft into the review queue.',
-  'verify' => 'Confirm that the canonical text and all source metadata were checked against an approved source.',
-  'reject' => 'Reject this verification. The item remains editable and cannot be published.',
-  'publish' => 'Make this resource available according to its visibility rule.',
-  'unpublish' => 'Remove this resource from public and patient browsing while preserving it for review.',
+  'publish' => 'Publish this resource immediately using its configured visibility. Source, reference, and rights requirements still apply.',
+  'unpublish' => 'Remove this resource from browsing and return it to draft while preserving its history.',
   'archive' => 'Preserve this resource and its history as archived. It will not be editable or visible to patients.',
   _ => 'Apply this workflow change.',
+};
+
+String _transitionLabel(String transition) => switch (transition) {
+  'publish' => 'Publish Now',
+  'unpublish' => 'Unpublish',
+  'archive' => 'Archive',
+  _ => _label(transition),
 };
 
 String _pastTense(String transition) => switch (transition) {

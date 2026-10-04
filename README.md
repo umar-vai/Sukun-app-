@@ -194,17 +194,17 @@ Phase 5 now includes a dedicated, patient-care-independent Islamic Resources
 hub and a server-authorized Super Admin CMS. Guests and patients can browse the
 eight required sections, search permitted published metadata, filter by
 section/type, and open canonical resource details. Admins can create categories
-and resources; save drafts; preview; submit for review; verify or reject
-canonical sources; publish; unpublish; and archive without deleting history.
+and resources; save drafts; preview; publish directly; unpublish; and archive
+without deleting history. The authenticated Super Admin is the final publisher.
 
 The content schema records Surah/Ayah ranges, approved Arabic and Bangla source
 metadata, Hadith collection/book/number/grade, book/chapter relationships,
 author/publisher/rights information, visibility, and external-media metadata.
-Qur'an and Hadith cannot be verified or published without approved source
-metadata, and `generative_ai` is rejected as a canonical source even for a
-draft. Reviewer notes live in a separate Super-Admin-only history table and are
-not patient-readable. Published content must be explicitly unpublished before
-editing; editing canonical content resets its verification state.
+Qur'an and Hadith cannot be published without approved source metadata, and
+`generative_ai` is rejected as a canonical source even for a draft. Historical
+review/verification records remain in a separate Super-Admin-only table and are
+not patient-readable, but they no longer gate publication. Published content
+must be explicitly unpublished before editing.
 
 Database RLS remains the source of truth: guest searches receive only published
 public rows, patients also receive permitted patient/assigned rows, and

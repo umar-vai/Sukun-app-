@@ -1084,8 +1084,15 @@ Content
   → fill metadata/body/URL
   → Save Draft
   → Preview
-  → Publish
+  → Publish Now
+  → Published
 ```
+
+The server-verified Super Admin is the final content publisher. The normal CMS
+does not require self-review, source-verification approval, or a second
+verification state before publishing any content type. Qur'an/Hadith source,
+reference, translation, and rights metadata remain mandatory where applicable;
+direct publishing never permits AI-generated canonical religious text.
 
 Editing content should update database content without requiring a Play Store/App Store release.
 

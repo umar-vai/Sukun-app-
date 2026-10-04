@@ -27,6 +27,7 @@ class _AdminContentEditorScreenState
   String? _categoryId;
   String? _parentContentId;
   String? _mediaSourceType;
+  String? _initialStatus;
   bool _populated = false;
   bool _saving = false;
 
@@ -73,6 +74,7 @@ class _AdminContentEditorScreenState
     _categoryId = item.categoryId;
     _parentContentId = item.parentContentId;
     _mediaSourceType = item.mediaSourceType;
+    _initialStatus = item.status;
     final values = <String, Object?>{
       'title': item.title,
       'titleBn': item.titleBn,
@@ -113,9 +115,9 @@ class _AdminContentEditorScreenState
     }
   }
 
-  Future<void> _save(String status) async {
+  Future<void> _save({required bool publish}) async {
     if (!_formKey.currentState!.validate()) return;
-    final input = _input(status);
+    final input = _input('draft');
     final error = input.validate();
     if (error != null) {
       _show(error);
@@ -123,9 +125,23 @@ class _AdminContentEditorScreenState
     }
     setState(() => _saving = true);
     try {
-      final item = await ref
-          .read(contentAdminRepositoryProvider)
-          .saveContent(input);
+      final repository = ref.read(contentAdminRepositoryProvider);
+      if (_initialStatus == 'published' && widget.contentItemId != null) {
+        await repository.transitionContent(
+          contentItemId: widget.contentItemId!,
+          transition: 'unpublish',
+          requestId: const Uuid().v4(),
+        );
+        _initialStatus = 'draft';
+      }
+      var item = await repository.saveContent(input);
+      if (publish) {
+        item = await repository.transitionContent(
+          contentItemId: item.id,
+          transition: 'publish',
+          requestId: const Uuid().v4(),
+        );
+      }
       if (!mounted) return;
       Navigator.of(context).pop(item);
     } catch (error) {
@@ -350,7 +366,7 @@ class _AdminContentEditorScreenState
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Canonical Qur’an and Hadith text must be entered from an approved source, independently reviewed, and verified before publishing.',
+                          'Canonical Qur’an and Hadith text must be entered from an approved, traceable source. The Super Admin publishes directly and remains accountable through audit history.',
                         ),
                       ),
                     ],
@@ -465,7 +481,7 @@ class _AdminContentEditorScreenState
                 _field('summary', 'Summary', lines: 3),
                 _field('body', 'Body / article text', lines: 8),
                 if (_type == 'quran' || _type == 'hadith') ...[
-                  _field('arabicText', 'Verified Arabic text', lines: 6),
+                  _field('arabicText', 'Sourced Arabic text', lines: 6),
                   _field(
                     'banglaText',
                     'Approved Bangla text / translation',
@@ -516,8 +532,8 @@ class _AdminContentEditorScreenState
                   _field('grade', 'Approved grade / classification'),
                 ],
                 const _SectionTitle(
-                  title: 'Source and verification',
-                  subtitle: 'AI is never an approved source for canonical Qur’an or Hadith text.',
+                  title: 'Source and rights',
+                  subtitle: 'Publishing is direct, but canonical text still requires complete approved-source metadata and can never use AI as its source.',
                 ),
                 _field(
                   'sourceType',
@@ -574,14 +590,14 @@ class _AdminContentEditorScreenState
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _saving ? null : () => _save('draft'),
-                        child: const Text('Save draft'),
+                        onPressed: _saving ? null : () => _save(publish: false),
+                        child: const Text('Save Draft'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: _saving ? null : () => _save('review'),
+                        onPressed: _saving ? null : () => _save(publish: true),
                         icon: _saving
                             ? const SizedBox.square(
                                 dimension: 18,
@@ -589,8 +605,8 @@ class _AdminContentEditorScreenState
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.rate_review_outlined),
-                        label: const Text('Submit for review'),
+                            : const Icon(Icons.publish_outlined),
+                        label: const Text('Publish Now'),
                       ),
                     ),
                   ],
@@ -673,7 +689,7 @@ String _label(String value) => value
     .join(' ');
 
 String _contentTypeDescription(String value) => switch (value) {
-  'quran' => 'Verified Surah and Ayah text with source metadata.',
+  'quran' => 'Sourced Surah and Ayah text with complete reference metadata.',
   'hadith' => 'Collection, book, number, grade, and approved source.',
   'dua' => 'Dua or daily supplication with translation and reference.',
   'azkar' => 'Categorised remembrance for a specific moment or routine.',

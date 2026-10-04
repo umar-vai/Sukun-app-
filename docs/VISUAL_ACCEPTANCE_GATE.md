@@ -82,7 +82,7 @@ All of the following must be custom-refined and consistent:
 - [x] Manual Plan Builder visually refined
 - [x] AI Action Review visually refined
 - [x] Content CMS list visually refined
-- [x] Content editor/review/publish flow visually refined
+- [x] Content editor/direct-publish flow visually refined
 - [x] Admin navigation visually refined
 - [x] Admin search/filter states visually refined
 

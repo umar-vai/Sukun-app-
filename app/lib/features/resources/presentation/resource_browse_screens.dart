@@ -32,7 +32,7 @@ class QuranBrowserScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               const SukunPageIntro(
-                eyebrow: 'Verified scripture',
+                eyebrow: 'Sourced scripture',
                 title: "Qur'an",
                 subtitle:
                     'সূরা ও আয়াত · Approved Arabic and Bangla sources only',
@@ -83,8 +83,8 @@ class QuranBrowserScreen extends ConsumerWidget {
               if (surahs.isEmpty)
                 const AppEmptyState(
                   icon: Icons.auto_stories_outlined,
-                  title: 'No verified Surahs published yet',
-                  message: 'A Super Admin must verify and publish canonical Ayat before they appear here.',
+                  title: 'No Surahs published yet',
+                  message: 'A Super Admin must add complete source metadata and publish canonical Ayat before they appear here.',
                 )
               else
                 for (final surah in surahs)
@@ -183,7 +183,7 @@ class QuranCollectionsScreen extends ConsumerWidget {
             return const AppEmptyState(
               icon: Icons.collections_bookmark_outlined,
               title: 'No Ayat collections published yet',
-              message: 'Collections reuse verified canonical Ayat and never duplicate Qur’an text.',
+              message: 'Collections reuse sourced canonical Ayat and never duplicate Qur’an text.',
             );
           }
           return ListView.separated(
@@ -319,7 +319,7 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               const SukunPageIntro(
-                eyebrow: 'Verified references',
+                eyebrow: 'Sourced references',
                 title: 'Hadith by topic',
                 subtitle: 'হাদিসের বিষয় · Collection, book, number, and approved grading',
                 trailing: SukunIconBadge(
@@ -506,7 +506,7 @@ class _ResourceFutureList extends StatelessWidget {
     if (resources.isEmpty) {
       return AppEmptyState(
         title: emptyTitle,
-        message: 'Only verified and published resources appear here.',
+        message: 'Only published resources available to you appear here.',
       );
     }
     return ListView.separated(

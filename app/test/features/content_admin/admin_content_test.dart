@@ -5,6 +5,8 @@ import 'package:sukun_life/features/content_admin/data/content_admin_providers.d
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 
 void main() {
   test('Ayat collection validation rejects unsafe or ambiguous input', () {
@@ -17,7 +19,7 @@ void main() {
         contentItemIds: [],
         requestId: 'request',
       ).validate(),
-      'Select at least one verified Ayah.',
+      'Select at least one Ayah.',
     );
     expect(
       const SaveContentCollectionInput(
@@ -96,13 +98,72 @@ void main() {
 
     expect(find.text('Ayatul Kursi'), findsOneWidget);
     expect(find.text('Quran'), findsOneWidget);
-    expect(find.text('Review'), findsWidgets);
+    expect(find.text('Draft'), findsWidgets);
     expect(find.text('Public'), findsOneWidget);
-    expect(find.text('Pending'), findsOneWidget);
+    expect(find.text('Pending'), findsNothing);
     expect(
       find.widgetWithText(FloatingActionButton, 'New resource'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('resource editor exposes direct publish without review actions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: AdminContentEditorScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Publish Now'),
+      600,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Save Draft'), findsOneWidget);
+    expect(find.text('Publish Now'), findsOneWidget);
+    expect(find.text('Submit for review'), findsNothing);
+    expect(find.text('Verify source'), findsNothing);
+  });
+
+  testWidgets('resource preview publishes without verification dialog', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: AdminContentPreviewScreen(contentItemId: 'content-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Publish Now'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Verify source'), findsNothing);
+    expect(find.text('Reject verification'), findsNothing);
+    await tester.tap(find.text('Publish Now'));
+    await tester.pumpAndSettle();
+    expect(find.text('Publish Now resource?'), findsOneWidget);
+    expect(find.text('Verify resource?'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'Publish Now').last);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -138,7 +199,7 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
     title: 'Ayatul Kursi',
     slug: 'ayatul-kursi',
     visibility: 'public',
-    status: 'review',
+    status: 'draft',
     verificationStatus: 'pending',
     surahNumber: 2,
     ayahNumber: 255,

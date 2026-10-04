@@ -344,13 +344,13 @@ select throws_ok(
     )$$,
   '23514',
   null,
-  'unverified or AI-sourced Quran content cannot be published'
+  'AI-sourced or unsourced Quran content cannot be published'
 );
 select results_eq(
   $$select count(*) from public.content_items
     where type = 'quran' and status = 'published'$$,
   array[1::bigint],
-  'verified sourced Quran fixture remains publishable'
+  'historically verified sourced Quran content remains valid'
 );
 select ok(
   not has_table_privilege('anon', 'public.content_items', 'INSERT'),

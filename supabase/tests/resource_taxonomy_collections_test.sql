@@ -85,9 +85,9 @@ insert into public.content_items (
   ),
   (
     '71000000-0000-4000-8000-000000000302', 'quran',
-    'Verified Ayah 2', 'taxonomy-verified-ayah-2', 'verified fixture 2',
+    'Direct-published Ayah 2', 'taxonomy-verified-ayah-2', 'sourced fixture 2',
     'licensed_publication', 'Quran 1:2 fixture', 'Approved fixture edition',
-    'verified', '00000000-0000-4000-8000-000000000301', now(),
+    'pending', null, null,
     1, 'Al-Fatihah', 2, 'public', 'published',
     '00000000-0000-4000-8000-000000000301',
     '00000000-0000-4000-8000-000000000301', now()
@@ -111,7 +111,7 @@ select throws_ok(
     p_request_id => '93000000-0000-4000-8000-000000000002'
   )$$,
   '22023',
-  'Collections may only reference verified canonical Qur''an Ayat.',
+  'Collections may only reference active canonical Qur''an Ayat.',
   'collection rejects non-Quran content'
 );
 

@@ -110,7 +110,7 @@ The Hadith area may include:
 - Do not publish unsourced Hadith.
 - Store collection/source reference and Hadith number where available.
 - Do not let AI invent or fabricate Hadith wording, source, grading, narrator, or numbering.
-- AI may assist with non-canonical metadata only if the result is reviewed before publication.
+- AI may assist with non-canonical metadata only when the Super Admin checks it before choosing Publish Now; this check is not a separate approval state.
 
 Suggested metadata:
 
@@ -270,40 +270,41 @@ Examples:
 - Specific prescribed audio → `assigned_only`
 - Practitioner-only reference material → `staff_only`
 
-## 12. Publication and verification workflow
+## 12. Direct publication workflow
 
-Recommended lifecycle:
+Required normal CMS lifecycle:
 
 ```text
 draft
-→ review
-→ verified
+→ Publish Now
 → published
-→ archived
 ```
 
-For ordinary editorial content, `verified` may be combined with review where appropriate.
-
-For Qur'an/Hadith/religious-source-sensitive material, publication must require explicit source verification.
+Published content may be unpublished back to draft or archived. This direct
+workflow applies to every content type, including Qur'an and Hadith. The
+server-verified Super Admin is the final publisher; there is no self-approval
+or mandatory verification step in the normal admin UX.
 
 Implemented workflow constraints:
 
 - Flutter requests audited `save_content_item` and `transition_content_item`
   database functions; RLS and a server-verified Super Admin role remain
   authoritative.
-- Content is saved only as `draft` or `review`. Qur'an/Hadith progresses through
-  explicit verification before publication; ordinary editorial content may
-  publish after review.
+- Content is saved as `draft`, then an authorized Super Admin may publish it
+  directly. Legacy `review` / `verified` rows remain valid and may also move
+  directly to `published`.
 - Published content is immutable until it is explicitly unpublished. Editing
-  canonical content clears its previous reviewer identity and resets
-  verification to `pending`.
-- `content_reviews` stores the admin-only lifecycle/reviewer history separately
-  from patient-readable content. Review notes are not exposed to guests or
-  patients.
+  a published resource first unpublishes it to draft so history is preserved.
+- Historical verification fields and records remain for backward compatibility,
+  but verification state no longer blocks publication.
+- `content_reviews` and `admin_audit_logs` store admin-only lifecycle history
+  separately from patient-readable content. Publish, unpublish, and archive
+  events record the responsible Super Admin and timestamp.
 - Canonical Qur'an/Hadith rejects `generative_ai` as a source even in draft form.
-  Verification also requires approved source reference and edition metadata;
+  Publication still requires approved source reference and edition metadata;
   Qur'an requires sourced Arabic text, Bangla text requires its translation
-  source, and Hadith requires collection, book, and number.
+  source, and Hadith requires collection, book, and number. These are source
+  integrity validations, not an approval workflow.
 
 Recommended fields:
 
@@ -335,8 +336,8 @@ Admin functions:
 - Set visibility
 - Save draft
 - Preview
-- Submit/review/verify
-- Publish/unpublish
+- Publish Now
+- Unpublish
 - Archive
 - Search/filter existing resources
 - Link an existing resource to a patient's plan
@@ -414,4 +415,4 @@ Minimum first release of the Resources hub should include:
 
 ## 18. Non-negotiable rule
 
-**Qur'an/Hadith content must never be treated as generic AI-generated copy. Canonical text and references must come from verified approved sources and be reviewed before publication.**
+**Qur'an/Hadith content must never be treated as generic AI-generated copy. Canonical text and references must come from approved, traceable sources with complete metadata. The authorized Super Admin publishes directly and remains accountable through audit history.**

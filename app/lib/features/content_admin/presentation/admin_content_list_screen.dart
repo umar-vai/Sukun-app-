@@ -92,7 +92,7 @@ class _AdminContentListScreenState
                 const SukunPageIntro(
                   eyebrow: 'Editorial workspace',
                   title: 'Content library',
-                  subtitle: 'Draft, verify, publish, and archive reusable resources with clear source control.',
+                  subtitle: 'Create, publish, unpublish, and archive reusable resources with clear source control.',
                 ),
                 const SizedBox(height: 18),
                 SukunSearchField(
@@ -135,8 +135,6 @@ class _AdminContentListScreenState
                 for (final status in const [
                   'all',
                   'draft',
-                  'review',
-                  'verified',
                   'published',
                   'archived',
                 ])
@@ -231,13 +229,6 @@ class _ContentCard extends StatelessWidget {
                           : SukunStatusTone.neutral,
                     ),
                     SukunStatusPill(label: _display(item.visibility)),
-                    if (item.isCanonical)
-                      SukunStatusPill(
-                        label: _display(item.verificationStatus),
-                        tone: item.verificationStatus == 'verified'
-                            ? SukunStatusTone.success
-                            : SukunStatusTone.warning,
-                      ),
                   ],
                 ),
               ],

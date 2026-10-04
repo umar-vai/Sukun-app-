@@ -174,7 +174,7 @@ class AdminContentItem {
   final DateTime? updatedAt;
 
   bool get isCanonical => type == 'quran' || type == 'hadith';
-  bool get canEdit => status == 'draft' || status == 'review';
+  bool get canEdit => status != 'archived';
 }
 
 class ContentReview {
@@ -273,7 +273,7 @@ class SaveContentCollectionInput {
     if (visibility != 'public' && visibility != 'patient_only') {
       return 'Collections can be public or patient-only.';
     }
-    if (contentItemIds.isEmpty) return 'Select at least one verified Ayah.';
+    if (contentItemIds.isEmpty) return 'Select at least one Ayah.';
     if (contentItemIds.toSet().length != contentItemIds.length) {
       return 'The same Ayah cannot be selected twice.';
     }
@@ -375,8 +375,8 @@ class SaveContentInput {
     if (!RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(slug)) {
       return 'Slug must use lowercase words separated by hyphens.';
     }
-    if (status != 'draft' && status != 'review') {
-      return 'Content can only be saved as draft or review.';
+    if (status != 'draft') {
+      return 'Content must be saved as a draft before publishing.';
     }
     if (isCanonical && sourceType?.trim().toLowerCase() == 'generative_ai') {
       return "Canonical Qur'an and Hadith text cannot be AI-generated.";

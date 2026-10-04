@@ -178,9 +178,10 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 
 ### CMS lifecycle and reuse
 
-- [x] `draft` / `review` / `verified` / `published` / `archived` workflow where applicable
+- [x] Direct `draft` → `Publish Now` → `published` workflow for every content type; legacy review/verification history retained
 - [x] Public/patient/assigned/staff-only visibility
-- [x] Super Admin create/edit/preview/verify/publish/unpublish/archive
+- [x] Super Admin create/edit/preview/direct-publish/unpublish/archive
+- [x] Publish/unpublish/archive actions retain the responsible Super Admin and timestamp in audit history
 - [x] Link a canonical resource into one or many patient plans using `content_id`
 - [x] Do not create duplicate resource copies per patient
 - [x] Patient/guest resource browsing
@@ -234,7 +235,7 @@ Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
 - [x] Admin Dashboard passes visual acceptance
 - [x] Patient List/Detail/Create Patient passes visual acceptance
 - [x] Prescription/Plan Builder/AI Review passes visual acceptance
-- [x] Content CMS/editor/review/publish passes visual acceptance
+- [x] Content CMS/editor/direct-publish flow passes visual acceptance
 - [x] Patient Home/My Plan/Prescription/Progress/Profile passes visual acceptance
 - [x] Resource Hub/Search/Detail/Qur'an/Hadith/Dua/Ruqyah passes visual acceptance
 - [x] Audio/Video/PDF states pass visual acceptance
@@ -263,7 +264,7 @@ Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
 - [ ] RLS tests pass
 - [ ] Patient isolation manually verified
 - [ ] Resource visibility/security tests pass
-- [ ] Qur'an/Hadith publication cannot bypass required verification rules
+- [ ] Qur'an/Hadith direct publication cannot bypass source/reference/translation integrity rules
 - [ ] AI failover integration tests pass
 - [ ] No Gemini quota/provider/key details are exposed in normal admin UX
 - [ ] Accessibility/contrast review

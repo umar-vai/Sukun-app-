@@ -37,12 +37,7 @@ class _AdminContentCollectionsScreenState
     final content = await contentFuture;
     final ayat =
         content
-            .where(
-              (item) =>
-                  item.type == 'quran' &&
-                  item.verificationStatus == 'verified' &&
-                  (item.status == 'verified' || item.status == 'published'),
-            )
+            .where((item) => item.type == 'quran' && item.status == 'published')
             .toList(growable: false)
           ..sort((a, b) {
             final surah = (a.surahNumber ?? 999).compareTo(
@@ -130,7 +125,7 @@ class _AdminContentCollectionsScreenState
               icon: Icons.collections_bookmark_outlined,
               title: 'No Ayat collections yet',
               message: ayat.isEmpty
-                  ? 'Verify Qur’an Ayat before creating a collection.'
+                  ? 'Publish Qur’an Ayat before creating a collection.'
                   : 'Create a selected-Ayat or Ruqyah-Ayat collection.',
             );
           }
@@ -145,7 +140,7 @@ class _AdminContentCollectionsScreenState
                   child: SukunPageIntro(
                     eyebrow: 'Canonical reuse',
                     title: 'Ayat collections',
-                    subtitle: 'Curate selected and Ruqyah sets without duplicating verified Qur’an text.',
+                    subtitle: 'Curate selected and Ruqyah sets without duplicating sourced Qur’an text.',
                     trailing: SukunIconBadge(
                       icon: Icons.collections_bookmark_outlined,
                       size: 54,
@@ -324,7 +319,7 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                   title: widget.collection == null
                       ? 'New Ayat collection'
                       : 'Edit collection',
-                  subtitle: 'Select verified canonical Ayat and set the approved audience.',
+                  subtitle: 'Select published, sourced canonical Ayat and set the approved audience.',
                   trailing: const SukunIconBadge(
                     icon: Icons.collections_bookmark_outlined,
                     size: 54,
@@ -415,14 +410,14 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Verified canonical Ayat (${_selectedIds.length} selected)',
+                            'Published canonical Ayat (${_selectedIds.length} selected)',
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
                         if (widget.ayat.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Text('No verified Ayat are available.'),
+                            child: Text('No published Ayat are available.'),
                           )
                         else
                           for (final ayah in widget.ayat)
