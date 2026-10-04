@@ -27,7 +27,7 @@ class PatientScaffold extends StatelessWidget {
           final route = switch (index) {
             0 => '/patient/home',
             1 => '/patient/plan',
-            2 => '/resources',
+            2 => '/patient/resources',
             3 => '/patient/progress',
             _ => '/patient/profile',
           };

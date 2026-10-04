@@ -245,6 +245,9 @@ Follow both `docs/FINAL_UI_REFERENCE.md` and `docs/VISUAL_ACCEPTANCE_GATE.md`.
 - [x] Bottom navigation is custom-refined and no longer default-looking
 - [x] Empty/loading/error states are branded
 - [x] Compact Android-size visual QA complete at 360 × 640
+- [x] Physical Android 14 compact-device visual QA complete at 360 logical-pixel width
+- [x] Cold start uses the official supplied logo and no template Flutter branding
+- [x] Patient Resources remains inside the custom patient bottom-navigation shell
 - [x] Large Android-size visual QA complete at 430 × 932
 - [x] Modern iPhone-size visual QA complete at 430 × 932
 - [x] Long Bangla/Arabic wrapping visually reviewed

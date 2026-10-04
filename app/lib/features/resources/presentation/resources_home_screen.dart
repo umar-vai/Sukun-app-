@@ -10,9 +10,14 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 class ResourcesHomeScreen extends ConsumerStatefulWidget {
-  const ResourcesHomeScreen({super.key, this.initialSectionSlug});
+  const ResourcesHomeScreen({
+    super.key,
+    this.initialSectionSlug,
+    this.embedded = false,
+  });
 
   final String? initialSectionSlug;
+  final bool embedded;
 
   @override
   ConsumerState<ResourcesHomeScreen> createState() =>
@@ -73,133 +78,135 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Islamic Resources')),
-      body: RefreshIndicator(
-        onRefresh: () async => _refresh(),
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              sliver: SliverList.list(
-                children: [
-                  SukunPageIntro(
-                    eyebrow: 'Verified library',
-                    title: 'Islamic Resources',
-                    subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
-                    trailing: const SukunIconBadge(
-                      icon: Icons.auto_stories_outlined,
-                      size: 54,
-                    ),
+    final content = RefreshIndicator(
+      onRefresh: () async => _refresh(),
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            sliver: SliverList.list(
+              children: [
+                SukunPageIntro(
+                  eyebrow: 'Verified library',
+                  title: 'Islamic Resources',
+                  subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
+                  trailing: const SukunIconBadge(
+                    icon: Icons.auto_stories_outlined,
+                    size: 54,
                   ),
-                  const SizedBox(height: 20),
-                  SukunSearchField(
-                    controller: _searchController,
-                    hintText: 'Search title, topic or reference',
-                    onChanged: (_) => setState(() {}),
-                    onSubmitted: (_) => _refresh(),
-                    onClear: () {
-                      _searchController.clear();
-                      _refresh();
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  SukunSectionHeader(
-                    title: 'Browse the library',
-                    subtitle: 'Eight curated collections',
-                    action: _selectedSection == null
-                        ? null
-                        : TextButton(
-                            onPressed: () => _selectSection(null),
-                            child: const Text('Show all'),
-                          ),
-                  ),
-                  const SizedBox(height: 10),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final columns = constraints.maxWidth >= 720 ? 4 : 2;
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: columns == 4 ? 1.08 : 0.86,
+                ),
+                const SizedBox(height: 20),
+                SukunSearchField(
+                  controller: _searchController,
+                  hintText: 'Search title, topic or reference',
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _refresh(),
+                  onClear: () {
+                    _searchController.clear();
+                    _refresh();
+                  },
+                ),
+                const SizedBox(height: 22),
+                SukunSectionHeader(
+                  title: 'Browse the library',
+                  subtitle: 'Eight curated collections',
+                  action: _selectedSection == null
+                      ? null
+                      : TextButton(
+                          onPressed: () => _selectSection(null),
+                          child: const Text('Show all'),
                         ),
-                        itemCount: resourceSections.length,
-                        itemBuilder: (context, index) {
-                          final section = resourceSections[index];
-                          return _SectionCard(
-                            section: section,
-                            selected: section.slug == _selectedSection?.slug,
-                            onTap: () => _selectSection(section),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SukunSectionHeader(
-                    title: _selectedSection?.title ?? 'Recently published',
-                    subtitle: _selectedSection == null
-                        ? 'Latest verified additions'
-                        : 'Published items in this section',
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = constraints.maxWidth >= 720 ? 4 : 2;
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: columns == 4 ? 1.08 : 0.86,
+                      ),
+                      itemCount: resourceSections.length,
+                      itemBuilder: (context, index) {
+                        final section = resourceSections[index];
+                        return _SectionCard(
+                          section: section,
+                          selected: section.slug == _selectedSection?.slug,
+                          onTap: () => _selectSection(section),
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                SukunSectionHeader(
+                  title: _selectedSection?.title ?? 'Recently published',
+                  subtitle: _selectedSection == null
+                      ? 'Latest verified additions'
+                      : 'Published items in this section',
+                ),
+                const SizedBox(height: 10),
+              ],
             ),
-            FutureBuilder<List<ContentResource>>(
-              future: _resources,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 160,
-                      child: AppLoadingState(label: 'Loading resources'),
-                    ),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppErrorState(
-                      message: snapshot.error.toString(),
-                      onRetry: _refresh,
-                    ),
-                  );
-                }
-                final resources = snapshot.data!;
-                if (resources.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppEmptyState(
-                      title: 'No published resources found',
-                      message: _selectedSection == null
-                          ? 'Try another search. Only resources you are permitted to read appear here.'
-                          : 'No permitted resources are published in this section yet.',
-                    ),
-                  );
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                  sliver: SliverList.separated(
-                    itemCount: resources.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 10),
-                    itemBuilder: (context, index) => _ResourceCard(
-                      resource: resources[index],
-                      onTap: () =>
-                          context.push('/resources/${resources[index].id}'),
-                    ),
+          ),
+          FutureBuilder<List<ContentResource>>(
+            future: _resources,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 160,
+                    child: AppLoadingState(label: 'Loading resources'),
                   ),
                 );
-              },
-            ),
-          ],
-        ),
+              }
+              if (snapshot.hasError) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppErrorState(
+                    message: snapshot.error.toString(),
+                    onRetry: _refresh,
+                  ),
+                );
+              }
+              final resources = snapshot.data!;
+              if (resources.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    title: 'No published resources found',
+                    message: _selectedSection == null
+                        ? 'Try another search. Only resources you are permitted to read appear here.'
+                        : 'No permitted resources are published in this section yet.',
+                  ),
+                );
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                sliver: SliverList.separated(
+                  itemCount: resources.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemBuilder: (context, index) => _ResourceCard(
+                    resource: resources[index],
+                    onTap: () =>
+                        context.push('/resources/${resources[index].id}'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
+    );
+    if (widget.embedded) return content;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Islamic Resources')),
+      body: content,
     );
   }
 }

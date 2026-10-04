@@ -34,4 +34,11 @@ The repository's existing feature tests continue to cover the critical screen fa
 
 ## Device note
 
-The previously connected physical Android phone was unavailable during this pass. Exact logical-size Flutter renders were used for compact and large-phone visual inspection; a final real-device sweep remains part of Phase 9 release readiness and is not represented here as completed.
+A physical Android 14 phone (360 logical pixels wide) was subsequently used for a production-configured compact-device sweep. Patient Today, My Plan, Resources, Profile, Prayer Settings, Qibla, and the core Super Admin patient/care-plan path were inspected on-device. Bangla wrapping, safe areas, custom navigation, branded selectors, compass behavior, push delivery, and local reminders were all exercised in the real device environment.
+
+The sweep found and corrected two visual/navigation regressions that were not apparent in the render matrix:
+
+- Android cold start displayed the template Flutter mark and then remained blank while services initialized. The native window now uses a neutral black surface with no unofficial mark, and Flutter renders the exact supplied Sukun Life logo while Supabase, Firebase, and audio services initialize.
+- Opening Resources from the patient bottom navigation previously left the patient shell. Resources now remains inside the branded patient navigation with the Resources destination selected.
+
+The corrected cold-start sequence and patient Resources shell were recaptured and visually verified on the connected phone. Large-phone and iPhone-class checks remain simulator/render-matrix evidence until iOS signing and physical iOS hardware are available in Phase 9.
