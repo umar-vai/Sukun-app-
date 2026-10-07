@@ -116,8 +116,7 @@ export class AiRouter {
             continue;
           }
 
-          const shouldPersistSlotFailure =
-            decision.type === "quota" ||
+          const shouldPersistSlotFailure = decision.type === "quota" ||
             decision.type === "rate_limit" ||
             decision.type === "invalid_credential";
           if (shouldPersistSlotFailure) {
