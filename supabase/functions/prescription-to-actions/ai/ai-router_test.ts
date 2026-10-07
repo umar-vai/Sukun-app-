@@ -99,6 +99,7 @@ Deno.test("provider outage does not poison a key for the next request", async ()
   const client = new FakeGeminiClient({
     "secret-key-1": [
       new GeminiProviderError(503, "UNAVAILABLE", null),
+      new GeminiProviderError(503, "UNAVAILABLE", null),
       fixture,
     ],
     "secret-key-2": [fixture],
@@ -109,6 +110,7 @@ Deno.test("provider outage does not poison a key for the next request", async ()
   await aiRouter.generate("source", "request-provider-outage-2");
 
   assertEquals(client.calls, [
+    "secret-key-1",
     "secret-key-1",
     "secret-key-2",
     "secret-key-1",
