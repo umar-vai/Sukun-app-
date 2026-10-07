@@ -223,8 +223,8 @@ Deno.serve(async (request) => {
       return jsonResponse(fallback);
     }
 
-    const configuredParserModel = Deno.env.get("GEMINI_MODEL")?.trim();
-    const parserModel = configuredParserModel || "gemini-3.5-flash";
+    const configuredParserModel = Deno.env.get("GEMINI_PARSER_MODEL")?.trim();
+    const parserModel = configuredParserModel || documentModel;
     const router = new AiRouter(
       slots,
       geminiClient,
