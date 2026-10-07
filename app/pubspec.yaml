@@ -54,6 +54,7 @@ dependencies:
   adhan_dart: 2.0.1
   geolocator: 14.1.1
   flutter_compass: 0.8.1
+  file_picker: 13.1.0
 
 dev_dependencies:
   flutter_test:
