@@ -19,6 +19,7 @@ const slots: GeminiKeySlot[] = [1, 2, 3, 4].map((id) => ({
 }));
 
 const fixture: SuggestedActions = {
+  source_text: null,
   actions: [{
     type: "amal",
     title: "Ayatul Kursi",
@@ -29,6 +30,7 @@ const fixture: SuggestedActions = {
     time_window: "morning",
     exact_time: null,
     resource_match_query: "Ayatul Kursi",
+    source_evidence: "৩ বার পড়বেন",
     confidence: 0.95,
     needs_review: false,
     ambiguities: [],
