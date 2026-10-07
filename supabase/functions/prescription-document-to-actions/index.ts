@@ -181,8 +181,7 @@ Deno.serve(async (request) => {
     const healthStore = new SupabaseSlotHealthStore(adminClient);
     const geminiClient = new RestGeminiClient();
     const timeoutMs = positiveInteger("AI_DOCUMENT_TIMEOUT_MS", 35000);
-    const cooldownMs =
-      positiveInteger("AI_KEY_COOLDOWN_SECONDS", 3600) * 1000;
+    const cooldownMs = positiveInteger("AI_KEY_COOLDOWN_SECONDS", 3600) * 1000;
     const document = {
       mimeType: attachment.mime_type,
       base64Data: bytesToBase64(bytes),
