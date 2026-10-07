@@ -171,7 +171,7 @@ function interactionOutputText(value: unknown): string | null {
   if (typeof direct === "string" && direct.trim()) return direct;
 
   const steps = (value as Record<string, unknown>).steps;
-  if (!Array.isArray(steps)) return null;
+  if (!Array.isArray(steps)) return candidateText(value);
   const texts: string[] = [];
   for (const step of steps) {
     if (!step || typeof step !== "object") continue;
