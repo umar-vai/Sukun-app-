@@ -12,12 +12,16 @@ export type SuggestedAction = {
   time_window: "morning" | "afternoon" | "evening" | "night" | "anytime" | null;
   exact_time: string | null;
   resource_match_query: string | null;
+  source_evidence: string;
   confidence: number;
   needs_review: boolean;
   ambiguities: string[];
 };
 
-export type SuggestedActions = { actions: SuggestedAction[] };
+export type SuggestedActions = {
+  actions: SuggestedAction[];
+  source_text: string | null;
+};
 
 const timeWindows = new Set([
   "morning",
@@ -34,7 +38,12 @@ export function parseSuggestedActions(value: unknown): SuggestedActions {
   if (value.actions.length > 50) {
     throw new Error("AI output contains too many actions.");
   }
-  return { actions: value.actions.map(parseAction) };
+  return {
+    actions: value.actions.map(parseAction),
+    source_text: value.source_text === undefined
+      ? null
+      : optionalText(value.source_text, 50000, "source text"),
+  };
 }
 
 function parseAction(value: unknown, index: number): SuggestedAction {
@@ -65,6 +74,11 @@ function parseAction(value: unknown, index: number): SuggestedAction {
     160,
     "resource match query",
   );
+  const sourceEvidence = requiredText(
+    value.source_evidence,
+    600,
+    "source evidence",
+  );
   if (
     typeof value.confidence !== "number" ||
     value.confidence < 0 || value.confidence > 1
@@ -84,6 +98,9 @@ function parseAction(value: unknown, index: number): SuggestedAction {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 20);
+  if (value.needs_review && ambiguities.length === 0) {
+    throw new Error("An action needing review must explain the uncertainty.");
+  }
 
   return {
     type,
@@ -95,6 +112,7 @@ function parseAction(value: unknown, index: number): SuggestedAction {
     time_window: timeWindow,
     exact_time: exactTime,
     resource_match_query: resourceMatchQuery,
+    source_evidence: sourceEvidence,
     confidence: value.confidence,
     needs_review: value.needs_review || ambiguities.length > 0 ||
       frequency === null,
@@ -168,6 +186,7 @@ export const geminiResponseSchema = {
   type: "object",
   required: ["actions"],
   properties: {
+    source_text: { type: ["string", "null"] },
     actions: {
       type: "array",
       maxItems: 50,
@@ -183,6 +202,7 @@ export const geminiResponseSchema = {
           "time_window",
           "exact_time",
           "resource_match_query",
+          "source_evidence",
           "confidence",
           "needs_review",
           "ambiguities",
@@ -224,6 +244,7 @@ export const geminiResponseSchema = {
           },
           exact_time: { type: ["string", "null"] },
           resource_match_query: { type: ["string", "null"] },
+          source_evidence: { type: "string" },
           confidence: { type: "number", minimum: 0, maximum: 1 },
           needs_review: { type: "boolean" },
           ambiguities: { type: "array", items: { type: "string" } },
