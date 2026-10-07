@@ -38,6 +38,7 @@ void main() {
               'time_window': 'morning',
               'exact_time': null,
               'resource_match_query': 'Ayatul Kursi আয়াতুল কুরসি',
+              'source_evidence': 'সকাল-সন্ধ্যা পড়বেন',
               'confidence': 0.76,
               'needs_review': false,
               'ambiguities': ['Frequency was not explicit'],
@@ -210,6 +211,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('আয়াতুল কুরসি'), findsWidgets);
+      expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
       await tester.scrollUntilVisible(
@@ -287,6 +289,7 @@ final class _GeneratedAiActionsRepository implements AiActionsRepository {
         frequency: ActionFrequency.daily(),
         timeWindow: 'morning',
         resourceMatchQuery: 'আয়াতুল কুরসি',
+        sourceEvidence: 'সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।',
         confidence: 0.8,
         needsReview: true,
         ambiguities: ['Confirm whether this is also required in the evening.'],
