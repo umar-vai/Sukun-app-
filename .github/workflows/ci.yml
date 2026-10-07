@@ -17,8 +17,6 @@ jobs:
   flutter-quality:
     name: Flutter / Format Analyze Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     timeout-minutes: 20
     defaults:
       run:
@@ -27,8 +25,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -39,25 +35,6 @@ jobs:
 
       - name: Resolve dependencies
         run: flutter pub get
-
-      - name: Format web preview changes
-        if: github.event_name == 'pull_request' && github.head_ref == 'web-preview'
-        run: dart format lib test
-
-      - name: Commit web preview formatting
-        if: github.event_name == 'pull_request' && github.head_ref == 'web-preview'
-        working-directory: .
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/lib app/test app/pubspec.lock
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "style: apply Dart formatter"
-          git push origin HEAD:web-preview
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
