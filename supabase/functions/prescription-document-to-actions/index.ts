@@ -4,6 +4,10 @@ import {
   type GeminiKeySlot,
 } from "../prescription-to-actions/ai/ai-router.ts";
 import { RestGeminiClient } from "../prescription-to-actions/ai/gemini-client.ts";
+import {
+  classifyFailure,
+  GeminiProviderError,
+} from "../prescription-to-actions/ai/error-classifier.ts";
 import { SupabaseSlotHealthStore } from "../prescription-to-actions/ai/supabase-health-store.ts";
 import {
   InvalidDocumentError,
@@ -174,29 +178,30 @@ Deno.serve(async (request) => {
         configuredDocumentModel === "gemini-2.5-flash"
       ? "gemini-3.5-flash-lite"
       : configuredDocumentModel;
-    const router = new AiRouter(
-      slots,
-      new RestGeminiClient(),
-      new SupabaseSlotHealthStore(adminClient),
-      {
+    const healthStore = new SupabaseSlotHealthStore(adminClient);
+    const geminiClient = new RestGeminiClient();
+    const timeoutMs = positiveInteger("AI_DOCUMENT_TIMEOUT_MS", 35000);
+    const cooldownMs =
+      positiveInteger("AI_KEY_COOLDOWN_SECONDS", 3600) * 1000;
+    const document = {
+      mimeType: attachment.mime_type,
+      base64Data: bytesToBase64(bytes),
+    } as const;
+
+    const transcription = slots.length === 0
+      ? null
+      : await transcribeDocumentWithFailover({
+        slots,
+        client: geminiClient,
+        health: healthStore,
         model: documentModel,
-        timeoutMs: positiveInteger("AI_DOCUMENT_TIMEOUT_MS", 35000),
-        cooldownMs: positiveInteger("AI_KEY_COOLDOWN_SECONDS", 3600) * 1000,
-        maxRetryPerKey: nonnegativeInteger(
-          "AI_DOCUMENT_MAX_RETRY_PER_KEY",
-          0,
-        ),
-        log: (event) => console.log(JSON.stringify(event)),
-      },
-    );
-    const result = slots.length === 0
-      ? manualRequired()
-      : await router.generate("", input.requestId, {
-        mimeType: attachment.mime_type,
-        base64Data: bytesToBase64(bytes),
+        document,
+        timeoutMs,
+        cooldownMs,
+        requestId: input.requestId,
       });
 
-    if (result.status === "manual_required" || !result.source_text?.trim()) {
+    if (!transcription?.trim()) {
       const fallback = {
         request_id: input.requestId,
         ...manualRequired(),
@@ -214,7 +219,46 @@ Deno.serve(async (request) => {
         attachment.patient_id,
         attachment.id,
         input.requestId,
-        "manual_required",
+        "transcription_failed",
+      );
+      return jsonResponse(fallback);
+    }
+
+    const configuredParserModel = Deno.env.get("GEMINI_MODEL")?.trim();
+    const parserModel = configuredParserModel || "gemini-3.5-flash";
+    const router = new AiRouter(
+      slots,
+      geminiClient,
+      healthStore,
+      {
+        model: parserModel,
+        timeoutMs: positiveInteger("AI_TIMEOUT_MS", 20000),
+        cooldownMs,
+        maxRetryPerKey: nonnegativeInteger("AI_MAX_RETRY_PER_KEY", 1),
+        log: (event) => console.log(JSON.stringify(event)),
+      },
+    );
+    const result = await router.generate(transcription, input.requestId);
+
+    if (result.status === "manual_required") {
+      const fallback = {
+        request_id: input.requestId,
+        ...manualRequired(),
+        attachment_id: attachment.id,
+      };
+      await adminClient.from("prescription_attachments").update({
+        extraction_status: "manual_required",
+        normalized_result: fallback,
+        processed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", attachment.id);
+      await recordFailure(
+        adminClient,
+        user.id,
+        attachment.patient_id,
+        attachment.id,
+        input.requestId,
+        "action_generation_failed",
       );
       return jsonResponse(fallback);
     }
@@ -222,6 +266,7 @@ Deno.serve(async (request) => {
     const normalizedResult = {
       request_id: input.requestId,
       status: "generated",
+      source_text: transcription,
       actions: result.actions,
     };
     const { data: finalized, error: finalizeError } = await adminClient.rpc(
@@ -230,9 +275,9 @@ Deno.serve(async (request) => {
         p_attachment_id: attachment.id,
         p_actor_user_id: user.id,
         p_request_id: input.requestId,
-        p_extracted_text: result.source_text,
+        p_extracted_text: transcription,
         p_normalized_result: normalizedResult,
-        p_provider_model: documentModel,
+        p_provider_model: `${documentModel} -> ${parserModel}`,
       },
     );
     if (finalizeError || !finalized) throw new Error("finalization_failed");
@@ -278,6 +323,101 @@ Deno.serve(async (request) => {
     });
   }
 });
+
+async function transcribeDocumentWithFailover(args: {
+  slots: GeminiKeySlot[];
+  client: RestGeminiClient;
+  health: SupabaseSlotHealthStore;
+  model: string;
+  document: {
+    mimeType: "application/pdf" | "image/jpeg" | "image/png";
+    base64Data: string;
+  };
+  timeoutMs: number;
+  cooldownMs: number;
+  requestId: string;
+}): Promise<string | null> {
+  const now = () => new Date();
+  for (const slot of args.slots.toSorted((left, right) => left.id - right.id)) {
+    if (!await args.health.isAvailable(slot.id, now())) {
+      console.log(JSON.stringify({
+        model: args.model,
+        event: "document_transcription_slot_skipped",
+        request_id: args.requestId,
+        slot_id: slot.id,
+      }));
+      continue;
+    }
+
+    const startedAt = Date.now();
+    try {
+      const text = await args.client.transcribeDocument({
+        apiKey: slot.apiKey,
+        model: args.model,
+        document: args.document,
+        timeoutMs: args.timeoutMs,
+      });
+      await args.health.markHealthy(slot.id, now());
+      console.log(JSON.stringify({
+        model: args.model,
+        event: "document_transcription_succeeded",
+        request_id: args.requestId,
+        slot_id: slot.id,
+        latency_ms: Date.now() - startedAt,
+      }));
+      return text;
+    } catch (error) {
+      const decision = classifyFailure(error);
+      const providerDiagnostics = error instanceof GeminiProviderError
+        ? {
+          http_status: error.status,
+          provider_status: error.providerStatus,
+        }
+        : {};
+      console.log(JSON.stringify({
+        model: args.model,
+        event: "document_transcription_failed",
+        request_id: args.requestId,
+        slot_id: slot.id,
+        failure_type: decision.type,
+        latency_ms: Date.now() - startedAt,
+        ...providerDiagnostics,
+      }));
+
+      if (decision.type === "invalid_credential") {
+        await args.health.markFailure(
+          [slot.id],
+          decision.type,
+          null,
+          true,
+          now(),
+        );
+      } else if (
+        decision.type === "quota" || decision.type === "rate_limit"
+      ) {
+        const retryAfterMs = error instanceof GeminiProviderError
+          ? error.retryAfterMs
+          : null;
+        const retryAt = new Date(
+          now().getTime() + Math.max(args.cooldownMs, retryAfterMs ?? 0),
+        );
+        const affectedSlots = args.slots
+          .filter((candidate) => candidate.quotaScope === slot.quotaScope)
+          .map((candidate) => candidate.id);
+        await args.health.markFailure(
+          affectedSlots,
+          decision.type,
+          retryAt,
+          false,
+          now(),
+        );
+      }
+
+      if (!decision.failover) return null;
+    }
+  }
+  return null;
+}
 
 function configuredSlots(): GeminiKeySlot[] {
   const slots: GeminiKeySlot[] = [];
