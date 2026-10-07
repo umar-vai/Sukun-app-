@@ -4,7 +4,6 @@ import {
   GeminiTimeoutError,
 } from "./error-classifier.ts";
 import {
-  geminiResponseSchema,
   parseSuggestedActions,
   type SuggestedActions,
 } from "./output-schema.ts";
@@ -34,78 +33,46 @@ export class RestGeminiClient implements GeminiClient {
   constructor(private readonly fetcher: typeof fetch = fetch) {}
 
   async generate(request: GeminiRequest): Promise<SuggestedActions> {
+    if (request.document) {
+      throw new Error(
+        "Document inputs must be transcribed before action generation.",
+      );
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
-      if (request.document) {
-        throw new Error(
-          "Document inputs must be transcribed before action generation.",
-        );
-      }
+      const response = await this.fetcher(
+        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": request.apiKey,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: request.model,
+            store: false,
+            input: prescriptionParserPrompt(request.prescriptionText),
+          }),
+        },
+      );
 
-      const contents = [{
-        role: "user",
-        parts: [{
-          text: prescriptionParserPrompt(request.prescriptionText),
-        }],
-      }];
-      const configurations: Record<string, unknown>[] = [
-        {
-          responseFormat: {
-            text: {
-              mimeType: "application/json",
-              schema: geminiResponseSchema,
-            },
-          },
-        },
-        {
-          responseMimeType: "application/json",
-          responseJsonSchema: geminiResponseSchema,
-        },
-      ];
-      let response: Response | null = null;
-      for (const generationConfig of configurations) {
-        response = await this.fetcher(
-          `https://generativelanguage.googleapis.com/v1beta/models/${
-            encodeURIComponent(request.model)
-          }:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": request.apiKey,
-              "X-Server-Timeout": String(
-                Math.max(1, Math.floor(request.timeoutMs / 1000)),
-              ),
-            },
-            signal: controller.signal,
-            body: JSON.stringify({ contents, generationConfig }),
-          },
-        );
-        if (response.ok) break;
+      if (!response.ok) {
         const body = await safeJson(response);
-        const providerStatus = providerErrorStatus(body);
-        if (response.status === 400 && providerStatus === "INVALID_ARGUMENT") {
-          continue;
-        }
         throw new GeminiProviderError(
           response.status,
-          providerStatus,
+          providerErrorStatus(body),
           parseRetryAfter(response.headers.get("retry-after")),
         );
       }
-      if (response == null || !response.ok) {
-        throw new GeminiProviderError(
-          response?.status ?? 500,
-          "INVALID_ARGUMENT",
-          null,
-        );
-      }
+
       const body = await response.json();
-      const text = candidateText(body);
+      const text = interactionOutputText(body);
       if (!text) throw new GeminiMalformedOutputError();
       try {
-        return parseSuggestedActions(JSON.parse(text));
+        return parseSuggestedActions(parseJsonObject(text));
       } catch {
         throw new GeminiMalformedOutputError();
       }
@@ -218,7 +185,22 @@ function interactionOutputText(value: unknown): string | null {
       }
     }
   }
-  return texts.join("") || null;
+  return texts.join("") || candidateText(value);
+}
+
+function parseJsonObject(text: string): unknown {
+  let candidate = text.trim();
+  if (candidate.startsWith("```")) {
+    candidate = candidate
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "");
+  }
+  const first = candidate.indexOf("{");
+  const last = candidate.lastIndexOf("}");
+  if (first < 0 || last < first) {
+    throw new Error("No JSON object found.");
+  }
+  return JSON.parse(candidate.slice(first, last + 1));
 }
 
 function candidateText(value: unknown): string | null {
