@@ -8,7 +8,10 @@ Deno.test("text action parsing uses Interactions API", async () => {
     url = String(input);
     body = JSON.parse(String(init?.body)) as Record<string, unknown>;
     return new Response(
-      JSON.stringify({ output_text: "{\"source_text\":\"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।\",\"actions\":[{\"type\":\"amal\",\"title\":\"Ayatul Kursi\",\"instruction\":\"৩ বার পড়বেন\",\"count_target\":3,\"duration_minutes\":null,\"frequency\":{\"type\":\"daily\",\"interval\":1},\"time_window\":\"morning\",\"exact_time\":null,\"resource_match_query\":\"Ayatul Kursi\",\"source_evidence\":\"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।\",\"confidence\":0.95,\"needs_review\":false,\"ambiguities\":[]}]}" }),
+      JSON.stringify({
+        output_text:
+          '{"source_text":"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।","actions":[{"type":"amal","title":"Ayatul Kursi","instruction":"৩ বার পড়বেন","count_target":3,"duration_minutes":null,"frequency":{"type":"daily","interval":1},"time_window":"morning","exact_time":null,"resource_match_query":"Ayatul Kursi","source_evidence":"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।","confidence":0.95,"needs_review":false,"ambiguities":[]}]}',
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   };
