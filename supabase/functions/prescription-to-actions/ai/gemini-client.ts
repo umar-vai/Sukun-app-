@@ -129,7 +129,7 @@ export class RestGeminiClient implements GeminiClient {
       ? "document"
       : "image";
     const response = await this.fetcher(
-      "https://generativelanguage.googleapis.com/v1beta/interactions",
+      "https://generativelanguage.googleapis.com/v1beta2/interactions",
       {
         method: "POST",
         headers: {
@@ -151,11 +151,11 @@ export class RestGeminiClient implements GeminiClient {
               text: prescriptionDocumentParserPrompt(),
             },
           ],
-          response_format: {
+          response_format: [{
             type: "text",
             mime_type: "application/json",
             schema: geminiResponseSchema,
-          },
+          }],
         }),
       },
     );
