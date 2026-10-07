@@ -235,6 +235,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       planId: state.pathParameters['planId']!,
                       prescriptionId:
                           state.uri.queryParameters['prescriptionId'] ?? '',
+                      initialSeed: state.extra is AiActionReviewSeed
+                          ? state.extra! as AiActionReviewSeed
+                          : null,
                     ),
                   ),
                   GoRoute(
