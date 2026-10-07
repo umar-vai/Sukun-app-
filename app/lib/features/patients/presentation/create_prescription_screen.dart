@@ -63,7 +63,9 @@ class _CreatePrescriptionScreenState
     final picked = result.files.single;
     final bytes = picked.bytes;
     if (bytes == null) {
-      _showMessage('The selected file could not be read. Please choose it again.');
+      _showMessage(
+        'The selected file could not be read. Please choose it again.',
+      );
       return;
     }
 
@@ -172,9 +174,8 @@ class _CreatePrescriptionScreenState
       : PrescriptionVisibility.staffOnly;
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -194,8 +195,7 @@ class _CreatePrescriptionScreenState
                   const SukunPageIntro(
                     eyebrow: 'Source record',
                     title: 'Record the prescription',
-                    subtitle:
-                        'Preserve the practitioner’s original instruction before creating structured actions.',
+                    subtitle: 'Preserve the practitioner’s original instruction before creating structured actions.',
                   ),
                   const SizedBox(height: 20),
                   _SourceModeSelector(
@@ -245,8 +245,7 @@ class _CreatePrescriptionScreenState
                             file: _documentFile,
                             enabled: !_submitting,
                             onPick: _pickDocument,
-                            onClear: () =>
-                                setState(() => _documentFile = null),
+                            onClear: () => setState(() => _documentFile = null),
                           ),
                         const SizedBox(height: 18),
                         _SessionDateTile(
@@ -405,10 +404,7 @@ class _SourceModeButton extends StatelessWidget {
               const SizedBox(height: 10),
               Text(title, style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -440,10 +436,7 @@ class _DocumentPicker extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(
-              Icons.description_outlined,
-              color: SukunColors.deepTide,
-            ),
+            const Icon(Icons.description_outlined, color: SukunColors.deepTide),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

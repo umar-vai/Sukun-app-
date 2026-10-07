@@ -244,12 +244,8 @@ DateTime? _exactTime(dynamic value) {
   return DateTime(2000, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
 }
 
-
 class AiActionReviewSeed {
-  const AiActionReviewSeed({
-    required this.result,
-    this.attachmentId,
-  });
+  const AiActionReviewSeed({required this.result, this.attachmentId});
 
   final AiActionGenerationResult result;
   final String? attachmentId;

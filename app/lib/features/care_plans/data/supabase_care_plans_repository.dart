@@ -86,9 +86,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
         'p_exact_time': input.exactTime == null
             ? null
             : _timeOnly(input.exactTime!),
-        'p_end_date': input.endDate == null
-            ? null
-            : _dateOnly(input.endDate!),
+        'p_end_date': input.endDate == null ? null : _dateOnly(input.endDate!),
         'p_review_status': input.reviewStatus.databaseValue,
         'p_reminder_enabled': input.reminderEnabled,
         'p_content_item_id': input.contentItemId,

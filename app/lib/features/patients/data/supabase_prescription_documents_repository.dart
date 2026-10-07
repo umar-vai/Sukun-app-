@@ -48,14 +48,16 @@ final class SupabasePrescriptionDocumentsRepository
         );
       }
 
-      await _client.storage.from(_bucket).uploadBinary(
-        storagePath,
-        input.file.bytes,
-        fileOptions: FileOptions(
-          contentType: input.file.mimeType,
-          upsert: false,
-        ),
-      );
+      await _client.storage
+          .from(_bucket)
+          .uploadBinary(
+            storagePath,
+            input.file.bytes,
+            fileOptions: FileOptions(
+              contentType: input.file.mimeType,
+              upsert: false,
+            ),
+          );
 
       final response = await _client.functions.invoke(
         'prescription-document-to-actions',
@@ -84,17 +86,13 @@ final class SupabasePrescriptionDocumentsRepository
     } on PrescriptionDocumentException {
       rethrow;
     } on PostgrestException catch (error) {
-      throw PrescriptionDocumentException(
-        _safeDatabaseMessage(error),
-      );
+      throw PrescriptionDocumentException(_safeDatabaseMessage(error));
     } on StorageException {
       throw const PrescriptionDocumentException(
         'The prescription file could not be uploaded securely. Please try again.',
       );
     } on FunctionException catch (error) {
-      throw PrescriptionDocumentException(
-        _safeFunctionMessage(error.status),
-      );
+      throw PrescriptionDocumentException(_safeFunctionMessage(error.status));
     } on AiActionSchemaException {
       throw const PrescriptionDocumentException(
         prescriptionDocumentManualMessage,
@@ -127,7 +125,8 @@ String _safeFunctionMessage(int status) => switch (status) {
   403 => 'Super Admin access is required to import prescriptions.',
   400 => 'The prescription file could not be read safely.',
   404 => 'The preserved prescription file could not be found.',
-  409 => 'This prescription is already being processed. Please try again shortly.',
+  409 =>
+    'This prescription is already being processed. Please try again shortly.',
   _ => prescriptionDocumentManualMessage,
 };
 

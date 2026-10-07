@@ -48,8 +48,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   void initState() {
     super.initState();
     _reviewSeed = widget.initialSeed;
-    _generationRequestId =
-        _reviewSeed?.result.requestId ?? const Uuid().v4();
+    _generationRequestId = _reviewSeed?.result.requestId ?? const Uuid().v4();
     _data = _load();
   }
 
@@ -402,11 +401,15 @@ class _EditableSuggestion {
       return true;
     }
     if (frequencyType == ActionFrequencyType.weekly &&
-        weekdays.difference(sourceFrequency?.weekdays ?? const <int>{}).isNotEmpty) {
+        weekdays
+            .difference(sourceFrequency?.weekdays ?? const <int>{})
+            .isNotEmpty) {
       return true;
     }
     if (frequencyType == ActionFrequencyType.weekly &&
-        (sourceFrequency?.weekdays ?? const <int>{}).difference(weekdays).isNotEmpty) {
+        (sourceFrequency?.weekdays ?? const <int>{})
+            .difference(weekdays)
+            .isNotEmpty) {
       return true;
     }
     final sourceTime = source.exactTime;
@@ -498,9 +501,7 @@ class _SuggestedActionCard extends StatelessWidget {
                 color: SukunColors.mist,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                'Source evidence: “${draft.source.sourceEvidence}”',
-              ),
+              child: Text('Source evidence: “${draft.source.sourceEvidence}”'),
             ),
           ],
           if (draft.source.ambiguities.isNotEmpty)
