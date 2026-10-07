@@ -8,12 +8,21 @@ import {
   parseSuggestedActions,
   type SuggestedActions,
 } from "./output-schema.ts";
-import { prescriptionParserPrompt } from "./prompt.ts";
+import {
+  prescriptionDocumentParserPrompt,
+  prescriptionParserPrompt,
+} from "./prompt.ts";
+
+export type GeminiDocument = {
+  mimeType: "application/pdf" | "image/jpeg" | "image/png";
+  base64Data: string;
+};
 
 export type GeminiRequest = {
   apiKey: string;
   model: string;
   prescriptionText: string;
+  document?: GeminiDocument;
   timeoutMs: number;
 };
 
@@ -28,45 +37,69 @@ export class RestGeminiClient implements GeminiClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
-      const response = await this.fetcher(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          encodeURIComponent(request.model)
-        }:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": request.apiKey,
-            "X-Server-Timeout": String(
-              Math.max(1, Math.floor(request.timeoutMs / 1000)),
-            ),
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{
-              role: "user",
-              parts: [{
-                text: prescriptionParserPrompt(request.prescriptionText),
-              }],
-            }],
-            generationConfig: {
-              responseFormat: {
-                text: {
-                  mimeType: "application/json",
-                  schema: geminiResponseSchema,
-                },
+      const contents = [{
+        role: "user",
+        parts: request.document
+          ? [
+            {
+              inlineData: {
+                mimeType: request.document.mimeType,
+                data: request.document.base64Data,
               },
             },
-          }),
+            { text: prescriptionDocumentParserPrompt() },
+          ]
+          : [{
+            text: prescriptionParserPrompt(request.prescriptionText),
+          }],
+      }];
+      const configurations: Record<string, unknown>[] = [
+        {
+          responseFormat: {
+            text: {
+              mimeType: "application/json",
+              schema: geminiResponseSchema,
+            },
+          },
         },
-      );
-      if (!response.ok) {
+        { responseMimeType: "application/json" },
+      ];
+      let response: Response | null = null;
+      for (const generationConfig of configurations) {
+        response = await this.fetcher(
+          `https://generativelanguage.googleapis.com/v1beta/models/${
+            encodeURIComponent(request.model)
+          }:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": request.apiKey,
+              "X-Server-Timeout": String(
+                Math.max(1, Math.floor(request.timeoutMs / 1000)),
+              ),
+            },
+            signal: controller.signal,
+            body: JSON.stringify({ contents, generationConfig }),
+          },
+        );
+        if (response.ok) break;
         const body = await safeJson(response);
         const providerStatus = providerErrorStatus(body);
+        if (response.status === 400 && providerStatus === "INVALID_ARGUMENT") {
+          continue;
+        }
         throw new GeminiProviderError(
           response.status,
           providerStatus,
           parseRetryAfter(response.headers.get("retry-after")),
+        );
+      }
+      if (response == null || !response.ok) {
+        throw new GeminiProviderError(
+          response?.status ?? 500,
+          "INVALID_ARGUMENT",
+          null,
         );
       }
       const body = await response.json();
