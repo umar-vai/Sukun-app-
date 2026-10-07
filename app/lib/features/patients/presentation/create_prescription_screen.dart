@@ -52,23 +52,13 @@ class _CreatePrescriptionScreenState
   }
 
   Future<void> _pickDocument() async {
-    final result = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
-      allowMultiple: false,
-      withData: true,
     );
-    if (result == null || result.files.isEmpty || !mounted) return;
+    if (picked == null || !mounted) return;
 
-    final picked = result.files.single;
-    final bytes = picked.bytes;
-    if (bytes == null) {
-      _showMessage(
-        'The selected file could not be read. Please choose it again.',
-      );
-      return;
-    }
-
+    final bytes = await picked.readAsBytes();
     final mimeType = _mimeTypeFor(picked.extension);
     if (mimeType == null) {
       _showMessage('Choose a PDF, JPG, or PNG prescription.');
