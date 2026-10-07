@@ -239,8 +239,13 @@ export const geminiResponseSchema = {
             ],
           },
           time_window: {
-            type: ["string", "null"],
-            enum: ["morning", "afternoon", "evening", "night", "anytime", null],
+            anyOf: [
+              {
+                type: "string",
+                enum: ["morning", "afternoon", "evening", "night", "anytime"],
+              },
+              { type: "null" },
+            ],
           },
           exact_time: { type: ["string", "null"] },
           resource_match_query: { type: ["string", "null"] },
