@@ -62,7 +62,10 @@ export class RestGeminiClient implements GeminiClient {
             },
           },
         },
-        { responseMimeType: "application/json" },
+        {
+          responseMimeType: "application/json",
+          responseSchema: geminiResponseSchema,
+        },
       ];
       let response: Response | null = null;
       for (const generationConfig of configurations) {
