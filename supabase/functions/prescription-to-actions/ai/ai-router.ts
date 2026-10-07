@@ -116,29 +116,37 @@ export class AiRouter {
             continue;
           }
 
-          const retryAfterMs = error instanceof GeminiProviderError
-            ? error.retryAfterMs
-            : null;
-          const cooldownMs = Math.max(
-            this.options.cooldownMs,
-            retryAfterMs ?? 0,
-          );
-          const retryAt = decision.disableSlot
-            ? null
-            : new Date(now().getTime() + cooldownMs);
-          const affectedSlots =
-            decision.type === "quota" || decision.type === "rate_limit"
-              ? this.slots
-                .filter((candidate) => candidate.quotaScope === slot.quotaScope)
-                .map((candidate) => candidate.id)
-              : [slot.id];
-          await this.health.markFailure(
-            affectedSlots,
-            decision.type,
-            retryAt,
-            decision.disableSlot,
-            now(),
-          );
+          const shouldPersistSlotFailure =
+            decision.type === "quota" ||
+            decision.type === "rate_limit" ||
+            decision.type === "invalid_credential";
+          if (shouldPersistSlotFailure) {
+            const retryAfterMs = error instanceof GeminiProviderError
+              ? error.retryAfterMs
+              : null;
+            const cooldownMs = Math.max(
+              this.options.cooldownMs,
+              retryAfterMs ?? 0,
+            );
+            const retryAt = decision.disableSlot
+              ? null
+              : new Date(now().getTime() + cooldownMs);
+            const affectedSlots =
+              decision.type === "quota" || decision.type === "rate_limit"
+                ? this.slots
+                  .filter((candidate) =>
+                    candidate.quotaScope === slot.quotaScope
+                  )
+                  .map((candidate) => candidate.id)
+                : [slot.id];
+            await this.health.markFailure(
+              affectedSlots,
+              decision.type,
+              retryAt,
+              decision.disableSlot,
+              now(),
+            );
+          }
           break;
         }
       }
