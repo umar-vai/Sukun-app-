@@ -59,7 +59,9 @@ Deno.test("HTTP Gemini adapter fails over exhausted slots 1-3 to slot 4", async 
     "slot-3-secret",
     "slot-4-secret",
   ]);
-  assert(!JSON.stringify(result).match(/429|RESOURCE_EXHAUSTED|slot-[1-4]-secret/i));
+  assert(
+    !JSON.stringify(result).match(/429|RESOURCE_EXHAUSTED|slot-[1-4]-secret/i),
+  );
 });
 
 Deno.test("HTTP Gemini adapter returns neutral manual fallback when all slots exhaust", async () => {
@@ -78,7 +80,10 @@ Deno.test("HTTP Gemini adapter returns neutral manual fallback when all slots ex
     },
   );
 
-  const result = await router.generate("private prescription", "integration-all");
+  const result = await router.generate(
+    "private prescription",
+    "integration-all",
+  );
 
   assertEquals(result.status, "manual_required");
   assertEquals(calls.length, 4);
