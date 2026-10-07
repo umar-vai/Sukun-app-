@@ -10,6 +10,7 @@ class AiActionGenerationResult {
     required this.requestId,
     required this.status,
     required this.actions,
+    this.sourceText,
   });
 
   factory AiActionGenerationResult.fromJson(
@@ -52,12 +53,14 @@ class AiActionGenerationResult {
       requestId: requestId as String,
       status: status,
       actions: List.unmodifiable(actions),
+      sourceText: _optionalText(json['source_text'], maxLength: 50000),
     );
   }
 
   final String requestId;
   final AiActionGenerationStatus status;
   final List<SuggestedPlanAction> actions;
+  final String? sourceText;
 
   bool get requiresManualBuilder =>
       status == AiActionGenerationStatus.manualRequired || actions.isEmpty;
@@ -78,6 +81,7 @@ class SuggestedPlanAction {
     this.timeWindow,
     this.exactTime,
     this.resourceMatchQuery,
+    this.sourceEvidence,
   });
 
   factory SuggestedPlanAction.fromJson(
@@ -95,6 +99,10 @@ class SuggestedPlanAction {
     final resourceMatchQuery = _optionalText(
       json['resource_match_query'],
       maxLength: 160,
+    );
+    final sourceEvidence = _requiredText(
+      json['source_evidence'],
+      maxLength: 600,
     );
     final confidence = json['confidence'];
     if (confidence is! num || confidence < 0 || confidence > 1) {
@@ -127,6 +135,7 @@ class SuggestedPlanAction {
       timeWindow: timeWindow,
       exactTime: exactTime,
       resourceMatchQuery: resourceMatchQuery,
+      sourceEvidence: sourceEvidence,
       confidence: confidence.toDouble(),
       needsReview: needsReview || ambiguities.isNotEmpty || frequency == null,
       ambiguities: List.unmodifiable(ambiguities),
@@ -143,6 +152,7 @@ class SuggestedPlanAction {
   final String? timeWindow;
   final DateTime? exactTime;
   final String? resourceMatchQuery;
+  final String? sourceEvidence;
   final double confidence;
   final bool needsReview;
   final List<String> ambiguities;
@@ -232,4 +242,15 @@ DateTime? _exactTime(dynamic value) {
   }
   final parts = value.split(':');
   return DateTime(2000, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+}
+
+
+class AiActionReviewSeed {
+  const AiActionReviewSeed({
+    required this.result,
+    this.attachmentId,
+  });
+
+  final AiActionGenerationResult result;
+  final String? attachmentId;
 }
