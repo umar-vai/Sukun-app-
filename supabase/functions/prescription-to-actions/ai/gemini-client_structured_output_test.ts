@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { RestGeminiClient } from "./gemini-client.ts";
 
-Deno.test("fallback GenerateContent request keeps the JSON schema", async () => {
+Deno.test("fallback GenerateContent request uses responseJsonSchema", async () => {
   const bodies: Record<string, unknown>[] = [];
   let call = 0;
   const fetcher: typeof fetch = async (_input, init) => {
@@ -59,7 +59,7 @@ Deno.test("fallback GenerateContent request keeps the JSON schema", async () => 
   assertEquals(bodies.length, 2);
   const secondConfig = bodies[1].generationConfig as Record<string, unknown>;
   assertEquals(secondConfig.responseMimeType, "application/json");
-  if (!secondConfig.responseSchema) {
-    throw new Error("Fallback request must include responseSchema.");
+  if (!secondConfig.responseJsonSchema) {
+    throw new Error("Fallback request must include responseJsonSchema.");
   }
 });
