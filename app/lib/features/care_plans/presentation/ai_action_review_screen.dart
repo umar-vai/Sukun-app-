@@ -23,11 +23,13 @@ class AiActionReviewScreen extends ConsumerStatefulWidget {
     required this.patientId,
     required this.planId,
     required this.prescriptionId,
+    this.initialSeed,
   });
 
   final String patientId;
   final String planId;
   final String prescriptionId;
+  final AiActionReviewSeed? initialSeed;
 
   @override
   ConsumerState<AiActionReviewScreen> createState() =>
@@ -38,29 +40,35 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   final _formKey = GlobalKey<FormState>();
   late String _generationRequestId;
   late Future<_ReviewData> _data;
+  late AiActionReviewSeed? _reviewSeed;
   List<_EditableSuggestion>? _drafts;
   bool _importing = false;
 
   @override
   void initState() {
     super.initState();
-    _generationRequestId = const Uuid().v4();
+    _reviewSeed = widget.initialSeed;
+    _generationRequestId =
+        _reviewSeed?.result.requestId ?? const Uuid().v4();
     _data = _load();
   }
 
   Future<_ReviewData> _load() async {
     final carePlans = ref.read(carePlansRepositoryProvider);
+    final generation = _reviewSeed?.result;
     final results = await Future.wait<Object?>([
       carePlans.getPlan(widget.planId),
       carePlans.getAvailableResources(),
       ref.read(patientsRepositoryProvider).getPrescriptions(widget.patientId),
-      ref
-          .read(aiActionsRepositoryProvider)
-          .generateActions(
-            prescriptionId: widget.prescriptionId,
-            carePlanId: widget.planId,
-            requestId: _generationRequestId,
-          ),
+      generation != null
+          ? Future<AiActionGenerationResult>.value(generation)
+          : ref
+                .read(aiActionsRepositoryProvider)
+                .generateActions(
+                  prescriptionId: widget.prescriptionId,
+                  carePlanId: widget.planId,
+                  requestId: _generationRequestId,
+                ),
     ]);
     final plan = results[0] as CarePlan?;
     if (plan == null ||
@@ -109,6 +117,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
 
   void _startNewGeneration() {
     setState(() {
+      _reviewSeed = null;
       _generationRequestId = const Uuid().v4();
       _drafts = null;
       _data = _load();
@@ -173,6 +182,12 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                 ? null
                 : draft.contentItemId,
             requestId: draft.importRequestId,
+            aiRequestId: data.result.requestId,
+            attachmentId: _reviewSeed?.attachmentId,
+            sourceEvidence: draft.source.sourceEvidence,
+            aiConfidence: draft.source.confidence,
+            aiAmbiguities: draft.source.ambiguities,
+            humanEdited: draft.wasEdited,
           ),
         );
         draft.imported = true;
@@ -369,6 +384,37 @@ class _EditableSuggestion {
   String contentItemId = '';
   bool selected = true;
   bool imported = false;
+
+  bool get wasEdited {
+    if (type.trim() != source.type ||
+        title.trim() != source.title ||
+        instruction.trim() != (source.instruction ?? '') ||
+        int.tryParse(count.trim()) != source.countTarget ||
+        int.tryParse(duration.trim()) != source.durationMinutes ||
+        timeWindow != (source.timeWindow ?? '') ||
+        contentItemId.isNotEmpty) {
+      return true;
+    }
+    final sourceFrequency = source.frequency;
+    if (sourceFrequency?.type != frequencyType) return true;
+    if (frequencyType == ActionFrequencyType.daily &&
+        int.tryParse(dailyInterval.trim()) != sourceFrequency?.interval) {
+      return true;
+    }
+    if (frequencyType == ActionFrequencyType.weekly &&
+        weekdays.difference(sourceFrequency?.weekdays ?? const <int>{}).isNotEmpty) {
+      return true;
+    }
+    if (frequencyType == ActionFrequencyType.weekly &&
+        (sourceFrequency?.weekdays ?? const <int>{}).difference(weekdays).isNotEmpty) {
+      return true;
+    }
+    final sourceTime = source.exactTime;
+    if (sourceTime == null) return exactTime != null;
+    return exactTime == null ||
+        sourceTime.hour != exactTime!.hour ||
+        sourceTime.minute != exactTime!.minute;
+  }
 }
 
 class _SafetyNotice extends StatelessWidget {
@@ -443,6 +489,20 @@ class _SuggestedActionCard extends StatelessWidget {
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
         children: [
+          if (draft.source.sourceEvidence != null) ...[
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: SukunColors.mist,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Source evidence: “${draft.source.sourceEvidence}”',
+              ),
+            ),
+          ],
           if (draft.source.ambiguities.isNotEmpty)
             Container(
               width: double.infinity,
