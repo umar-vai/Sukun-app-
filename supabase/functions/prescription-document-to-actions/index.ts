@@ -171,7 +171,7 @@ Deno.serve(async (request) => {
     const configuredDocumentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL")?.trim();
     const documentModel = !configuredDocumentModel ||
         configuredDocumentModel === "gemini-2.5-flash"
-      ? "gemini-3.8-flash"
+      ? "gemini-3.5-flash-lite"
       : configuredDocumentModel;
     const router = new AiRouter(
       slots,
