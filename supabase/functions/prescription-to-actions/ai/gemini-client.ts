@@ -37,21 +37,15 @@ export class RestGeminiClient implements GeminiClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
+      if (request.document) {
+        return await this.generateDocumentInteraction(request, controller.signal);
+      }
+
       const contents = [{
         role: "user",
-        parts: request.document
-          ? [
-            {
-              inlineData: {
-                mimeType: request.document.mimeType,
-                data: request.document.base64Data,
-              },
-            },
-            { text: prescriptionDocumentParserPrompt() },
-          ]
-          : [{
-            text: prescriptionParserPrompt(request.prescriptionText),
-          }],
+        parts: [{
+          text: prescriptionParserPrompt(request.prescriptionText),
+        }],
       }];
       const configurations: Record<string, unknown>[] = [
         {
@@ -122,6 +116,65 @@ export class RestGeminiClient implements GeminiClient {
       clearTimeout(timer);
     }
   }
+
+  private async generateDocumentInteraction(
+    request: GeminiRequest,
+    signal: AbortSignal,
+  ): Promise<SuggestedActions> {
+    const document = request.document!;
+    const inputType = document.mimeType === "application/pdf"
+      ? "document"
+      : "image";
+    const response = await this.fetcher(
+      "https://generativelanguage.googleapis.com/v1beta/interactions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": request.apiKey,
+        },
+        signal,
+        body: JSON.stringify({
+          model: request.model,
+          store: false,
+          input: [
+            {
+              type: inputType,
+              data: document.base64Data,
+              mime_type: document.mimeType,
+            },
+            {
+              type: "text",
+              text: prescriptionDocumentParserPrompt(),
+            },
+          ],
+          response_format: {
+            type: "text",
+            mime_type: "application/json",
+            schema: geminiResponseSchema,
+          },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const body = await safeJson(response);
+      throw new GeminiProviderError(
+        response.status,
+        providerErrorStatus(body),
+        parseRetryAfter(response.headers.get("retry-after")),
+      );
+    }
+
+    const body = await response.json();
+    const text = interactionOutputText(body);
+    if (!text) throw new GeminiMalformedOutputError();
+    try {
+      return parseSuggestedActions(JSON.parse(text));
+    } catch {
+      throw new GeminiMalformedOutputError();
+    }
+  }
 }
 
 async function safeJson(response: Response): Promise<unknown> {
@@ -138,6 +191,29 @@ function providerErrorStatus(value: unknown): string | null {
   if (!error || typeof error !== "object") return null;
   const status = (error as Record<string, unknown>).status;
   return typeof status === "string" ? status : null;
+}
+
+function interactionOutputText(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const direct = (value as Record<string, unknown>).output_text;
+  if (typeof direct === "string" && direct.trim()) return direct;
+
+  const steps = (value as Record<string, unknown>).steps;
+  if (!Array.isArray(steps)) return null;
+  const texts: string[] = [];
+  for (const step of steps) {
+    if (!step || typeof step !== "object") continue;
+    const content = (step as Record<string, unknown>).content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (!block || typeof block !== "object") continue;
+      const record = block as Record<string, unknown>;
+      if (record.type === "text" && typeof record.text === "string") {
+        texts.push(record.text);
+      }
+    }
+  }
+  return texts.join("") || null;
 }
 
 function candidateText(value: unknown): string | null {
