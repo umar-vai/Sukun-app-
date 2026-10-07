@@ -169,7 +169,7 @@ Deno.serve(async (request) => {
 
     const slots = configuredSlots();
     const documentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL") ??
-      "gemini-2.5-flash";
+      "gemini-3.8-flash";
     const router = new AiRouter(
       slots,
       new RestGeminiClient(),
