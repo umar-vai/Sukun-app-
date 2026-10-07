@@ -39,7 +39,6 @@ Safety rules:
 - Return JSON only and follow the supplied schema.`;
 }
 
-
 export function prescriptionDocumentTranscriptionPrompt(): string {
   return `Transcribe the attached prescription conservatively.
 
