@@ -198,6 +198,15 @@ content, returned it to `review`, cleared its publication timestamp, and wrote
 the `content_item_policy_returned_to_review` system-policy audit event. No
 source data was invented and no content row was deleted.
 
+On 2026-10-07, the forward correction
+`20261007090000_fix_content_review_transition_enum_casts.sql` was applied and
+recorded in production as
+`20261007101953_fix_content_review_transition_enum_casts`. It adds explicit
+PostgreSQL enum casts to the reviewed lifecycle transitions. Transactional
+production smoke checks confirmed both non-canonical `draft → review` and
+canonical `draft → review → verified → published → verified` behavior; every
+smoke-test row and audit event was rolled back.
+
 ## Next production verification
 
 The next hosted AI milestone is to verify the real `prescription-to-actions` flow against this production project while preserving human review, neutral fallback behavior, safe logging, and no raw Gemini/quota/key errors in Flutter.

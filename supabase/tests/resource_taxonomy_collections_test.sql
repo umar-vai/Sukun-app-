@@ -85,9 +85,9 @@ insert into public.content_items (
   ),
   (
     '71000000-0000-4000-8000-000000000302', 'quran',
-    'Direct-published Ayah 2', 'taxonomy-verified-ayah-2', 'sourced fixture 2',
+    'Verified Ayah 2', 'taxonomy-verified-ayah-2', 'sourced fixture 2',
     'licensed_publication', 'Quran 1:2 fixture', 'Approved fixture edition',
-    'pending', null, null,
+    'verified', '00000000-0000-4000-8000-000000000301', now(),
     1, 'Al-Fatihah', 2, 'public', 'published',
     '00000000-0000-4000-8000-000000000301',
     '00000000-0000-4000-8000-000000000301', now()
