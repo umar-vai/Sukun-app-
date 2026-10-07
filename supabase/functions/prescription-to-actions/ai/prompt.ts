@@ -38,3 +38,16 @@ Safety rules:
 - source_text must be a conservative transcription of all readable prescription text, preserving headings and line breaks. Mark unreadable fragments as [unclear]; do not fill them in.
 - Return JSON only and follow the supplied schema.`;
 }
+
+
+export function prescriptionDocumentTranscriptionPrompt(): string {
+  return `Transcribe the attached prescription conservatively.
+
+Rules:
+- Output plain text only. Do not output JSON or Markdown fences.
+- Preserve readable headings, line order, numbers, units, repetition counts, durations, and clock times exactly as visible.
+- Preserve Bengali, English, Arabic, and mixed-language text as written.
+- Do not add medical advice, treatment, dosage, religious rulings, or inferred instructions.
+- If a fragment is unreadable, write [unclear] instead of guessing.
+- Include only text that is visibly present in the prescription.`;
+}
