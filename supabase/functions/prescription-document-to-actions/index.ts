@@ -168,7 +168,8 @@ Deno.serve(async (request) => {
     validateDocumentBytes(bytes, attachment.mime_type, attachment.byte_size);
 
     const slots = configuredSlots();
-    const configuredDocumentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL")?.trim();
+    const configuredDocumentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL")
+      ?.trim();
     const documentModel = !configuredDocumentModel ||
         configuredDocumentModel === "gemini-2.5-flash"
       ? "gemini-3.5-flash-lite"
