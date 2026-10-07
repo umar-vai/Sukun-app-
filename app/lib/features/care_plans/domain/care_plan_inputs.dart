@@ -39,6 +39,12 @@ class SavePlanActionInput {
     this.endDate,
     this.contentItemId,
     this.resourceUsageNote,
+    this.aiRequestId,
+    this.attachmentId,
+    this.sourceEvidence,
+    this.aiConfidence,
+    this.aiAmbiguities = const [],
+    this.humanEdited = false,
   });
 
   final String carePlanId;
@@ -58,6 +64,15 @@ class SavePlanActionInput {
   final String? contentItemId;
   final String? resourceUsageNote;
   final String requestId;
+  final String? aiRequestId;
+  final String? attachmentId;
+  final String? sourceEvidence;
+  final double? aiConfidence;
+  final List<String> aiAmbiguities;
+  final bool humanEdited;
+
+  bool get isAiSuggestion =>
+      aiRequestId != null && sourceEvidence?.trim().isNotEmpty == true;
 }
 
 String? validatePlanName(String? value) {
