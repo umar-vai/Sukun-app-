@@ -50,6 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: flutter-quality
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: app
@@ -75,6 +77,31 @@ jobs:
           --dart-define=APP_ENVIRONMENT=development
           --dart-define=SUPABASE_URL=https://vydfafumxptanpkmtrpr.supabase.co
           --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+
+      - name: Publish generated site to gh-pages
+        if: github.event_name == 'pull_request' && github.head_ref == 'web-preview'
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sukun-web-preview
+          mkdir -p /tmp/sukun-web-preview
+          cp -R app/build/web/. /tmp/sukun-web-preview/
+          touch /tmp/sukun-web-preview/.nojekyll
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git switch --force-create gh-pages origin/gh-pages
+          else
+            git switch --orphan gh-pages
+          fi
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -R /tmp/sukun-web-preview/. .
+          git add -A
+          git commit -m "chore: publish Sukun Life web preview"
+          git push origin gh-pages --force
 
   android-debug-build:
     name: Flutter / Android Debug Build
