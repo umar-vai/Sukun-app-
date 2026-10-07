@@ -168,8 +168,11 @@ Deno.serve(async (request) => {
     validateDocumentBytes(bytes, attachment.mime_type, attachment.byte_size);
 
     const slots = configuredSlots();
-    const documentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL") ??
-      "gemini-3.8-flash";
+    const configuredDocumentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL")?.trim();
+    const documentModel = !configuredDocumentModel ||
+        configuredDocumentModel === "gemini-2.5-flash"
+      ? "gemini-3.8-flash"
+      : configuredDocumentModel;
     const router = new AiRouter(
       slots,
       new RestGeminiClient(),
