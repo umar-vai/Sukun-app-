@@ -9,7 +9,7 @@ import {
   type SuggestedActions,
 } from "./output-schema.ts";
 import {
-  prescriptionDocumentParserPrompt,
+  prescriptionDocumentTranscriptionPrompt,
   prescriptionParserPrompt,
 } from "./prompt.ts";
 
@@ -38,10 +38,7 @@ export class RestGeminiClient implements GeminiClient {
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
       if (request.document) {
-        return await this.generateDocumentInteraction(
-          request,
-          controller.signal,
-        );
+        throw new Error("Document inputs must be transcribed before action generation.");
       }
 
       const contents = [{
@@ -120,62 +117,65 @@ export class RestGeminiClient implements GeminiClient {
     }
   }
 
-  private async generateDocumentInteraction(
-    request: GeminiRequest,
-    signal: AbortSignal,
-  ): Promise<SuggestedActions> {
-    const document = request.document!;
-    const inputType = document.mimeType === "application/pdf"
-      ? "document"
-      : "image";
-    const response = await this.fetcher(
-      "https://generativelanguage.googleapis.com/v1beta2/interactions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": request.apiKey,
-        },
-        signal,
-        body: JSON.stringify({
-          model: request.model,
-          store: false,
-          input: [
-            {
-              type: inputType,
-              data: document.base64Data,
-              mime_type: document.mimeType,
-            },
-            {
-              type: "text",
-              text: prescriptionDocumentParserPrompt(),
-            },
-          ],
-          response_format: [{
-            type: "text",
-            mime_type: "application/json",
-            schema: geminiResponseSchema,
-          }],
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const body = await safeJson(response);
-      throw new GeminiProviderError(
-        response.status,
-        providerErrorStatus(body),
-        parseRetryAfter(response.headers.get("retry-after")),
-      );
-    }
-
-    const body = await response.json();
-    const text = interactionOutputText(body);
-    if (!text) throw new GeminiMalformedOutputError();
+  async transcribeDocument(request: {
+    apiKey: string;
+    model: string;
+    document: GeminiDocument;
+    timeoutMs: number;
+  }): Promise<string> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
-      return parseSuggestedActions(JSON.parse(text));
-    } catch {
-      throw new GeminiMalformedOutputError();
+      const inputType = request.document.mimeType === "application/pdf"
+        ? "document"
+        : "image";
+      const response = await this.fetcher(
+        "https://generativelanguage.googleapis.com/v1beta/interactions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": request.apiKey,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: request.model,
+            store: false,
+            input: [
+              {
+                type: "text",
+                text: prescriptionDocumentTranscriptionPrompt(),
+              },
+              {
+                type: inputType,
+                data: request.document.base64Data,
+                mime_type: request.document.mimeType,
+              },
+            ],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const body = await safeJson(response);
+        throw new GeminiProviderError(
+          response.status,
+          providerErrorStatus(body),
+          parseRetryAfter(response.headers.get("retry-after")),
+        );
+      }
+
+      const body = await response.json();
+      const text = interactionOutputText(body)?.trim();
+      if (!text) throw new GeminiMalformedOutputError();
+      return text;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new GeminiTimeoutError();
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
     }
   }
 }
