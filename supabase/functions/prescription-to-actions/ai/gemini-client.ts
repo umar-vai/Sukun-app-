@@ -38,7 +38,10 @@ export class RestGeminiClient implements GeminiClient {
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
       if (request.document) {
-        return await this.generateDocumentInteraction(request, controller.signal);
+        return await this.generateDocumentInteraction(
+          request,
+          controller.signal,
+        );
       }
 
       const contents = [{
