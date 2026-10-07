@@ -44,12 +44,17 @@ Deno.test("document extraction uses Interactions API structured output", async (
     timeoutMs: 1000,
   });
 
-  assertEquals(url, "https://generativelanguage.googleapis.com/v1beta/interactions");
+  assertEquals(
+    url,
+    "https://generativelanguage.googleapis.com/v1beta/interactions",
+  );
   assertEquals(result.actions.length, 1);
   const format = body.response_format as Record<string, unknown>;
   assertEquals(format.type, "text");
   assertEquals(format.mime_type, "application/json");
-  if (!format.schema) throw new Error("Interactions request must include schema.");
+  if (!format.schema) {
+    throw new Error("Interactions request must include schema.");
+  }
   const input = body.input as Record<string, unknown>[];
   assertEquals(input[0].type, "image");
   assertEquals(input[1].type, "text");
