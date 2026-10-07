@@ -38,7 +38,9 @@ export class RestGeminiClient implements GeminiClient {
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
       if (request.document) {
-        throw new Error("Document inputs must be transcribed before action generation.");
+        throw new Error(
+          "Document inputs must be transcribed before action generation.",
+        );
       }
 
       const contents = [{
