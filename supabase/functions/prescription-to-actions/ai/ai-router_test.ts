@@ -94,6 +94,27 @@ Deno.test("timeout retries once then falls through", async () => {
   assertEquals(client.calls, ["secret-key-1", "secret-key-1", "secret-key-2"]);
 });
 
+Deno.test("provider outage does not poison a key for the next request", async () => {
+  const health = new InMemorySlotHealthStore();
+  const client = new FakeGeminiClient({
+    "secret-key-1": [
+      new GeminiProviderError(503, "UNAVAILABLE", null),
+      fixture,
+    ],
+    "secret-key-2": [fixture],
+  });
+  const aiRouter = router(client, health);
+
+  await aiRouter.generate("source", "request-provider-outage-1");
+  await aiRouter.generate("source", "request-provider-outage-2");
+
+  assertEquals(client.calls, [
+    "secret-key-1",
+    "secret-key-2",
+    "secret-key-1",
+  ]);
+});
+
 Deno.test("cooling slot is skipped", async () => {
   const health = new InMemorySlotHealthStore();
   await health.markFailure(
