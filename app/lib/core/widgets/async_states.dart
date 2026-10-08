@@ -147,8 +147,10 @@ class AppErrorState extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  Localizations.of<AppLocalizations>(context, AppLocalizations)
-                          ?.attentionRequired ??
+                  Localizations.of<AppLocalizations>(
+                        context,
+                        AppLocalizations,
+                      )?.attentionRequired ??
                       'এই মুহূর্তে কাজটি করা যাচ্ছে না',
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
@@ -166,8 +168,10 @@ class AppErrorState extends StatelessWidget {
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh_rounded),
                     label: Text(
-                      Localizations.of<AppLocalizations>(context, AppLocalizations)
-                              ?.tryAgain ??
+                      Localizations.of<AppLocalizations>(
+                            context,
+                            AppLocalizations,
+                          )?.tryAgain ??
                           'আবার চেষ্টা করুন',
                     ),
                   ),
