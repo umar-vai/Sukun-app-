@@ -187,8 +187,9 @@ class _PlanActionEditorScreenState
       if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
