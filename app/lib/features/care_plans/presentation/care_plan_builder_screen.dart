@@ -131,7 +131,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       context: context,
       title: 'রোগীর জন্য পরিকল্পনাটি চালু করবেন?',
       message:
-          'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। ${approved}টি করণীয় অনুমোদিত হয়েছে।',
+          'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। $approvedটি করণীয় অনুমোদিত হয়েছে।',
       confirmLabel: 'চালু করুন',
       cancelLabel: 'আরও সংশোধন করব',
       icon: Icons.publish_outlined,
@@ -440,7 +440,7 @@ class _PlanActions extends StatelessWidget {
             Text(
               actionCount == 0
                   ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
-                  : '${unresolvedCount}টি করণীয় যাচাই ও অনুমোদন বাকি।',
+                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
             ),
         ] else ...[
           FilledButton.tonalIcon(
