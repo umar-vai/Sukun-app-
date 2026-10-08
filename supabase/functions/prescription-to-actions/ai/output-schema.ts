@@ -79,9 +79,7 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         duration_minutes: Object.hasOwn(action, "duration_minutes")
           ? action.duration_minutes
           : null,
-        frequency: Object.hasOwn(action, "frequency")
-          ? action.frequency
-          : null,
+        frequency: Object.hasOwn(action, "frequency") ? action.frequency : null,
         time_window: Object.hasOwn(action, "time_window")
           ? action.time_window
           : null,
@@ -101,19 +99,21 @@ export function normalizeSuggestedActions(value: unknown): unknown {
           : [],
       } as Record<string, unknown>;
 
-      for (const key of [
-        "instruction",
-        "count_target",
-        "duration_minutes",
-        "frequency",
-        "time_window",
-        "exact_time",
-        "resource_match_query",
-        "source_evidence",
-        "confidence",
-        "needs_review",
-        "ambiguities",
-      ]) {
+      for (
+        const key of [
+          "instruction",
+          "count_target",
+          "duration_minutes",
+          "frequency",
+          "time_window",
+          "exact_time",
+          "resource_match_query",
+          "source_evidence",
+          "confidence",
+          "needs_review",
+          "ambiguities",
+        ]
+      ) {
         if (!Object.hasOwn(action, key)) missing.push(key);
       }
 
@@ -123,7 +123,9 @@ export function normalizeSuggestedActions(value: unknown): unknown {
           ? normalized.ambiguities.filter((item) => typeof item === "string")
           : [];
         ambiguities.push(
-          `AI omitted metadata fields: ${[...new Set(missing)].join(", ")}. Verify against the original prescription.`,
+          `AI omitted metadata fields: ${
+            [...new Set(missing)].join(", ")
+          }. Verify against the original prescription.`,
         );
         normalized.ambiguities = ambiguities;
       }
