@@ -97,15 +97,15 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                 const SukunPageIntro(
                   eyebrow: 'আমার সেবা',
                   title: 'চলমান পরিকল্পনা',
-                  subtitle: 'আপনার জন্য যাচাই করা করণীয় ও নির্দেশনা এখানে রয়েছে।',
+                  subtitle:
+                      'আপনার জন্য যাচাই করা করণীয় ও নির্দেশনা এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 20),
                 _PlanHeader(plan: data.plan!),
                 const SizedBox(height: 24),
                 SukunSectionHeader(
                   title: 'আমার করণীয়',
-                  subtitle:
-                      'অনুমোদিত ${data.actions.length}টি করণীয়',
+                  subtitle: 'অনুমোদিত ${data.actions.length}টি করণীয়',
                 ),
                 const SizedBox(height: 10),
                 for (final action in data.actions) ...[
@@ -202,10 +202,7 @@ class _PlanHeader extends StatelessWidget {
                       ?.copyWith(color: Colors.white),
                 ),
               ),
-              const SukunStatusPill(
-                label: 'চালু',
-                tone: SukunStatusTone.brand,
-              ),
+              const SukunStatusPill(label: 'চালু', tone: SukunStatusTone.brand),
             ],
           ),
           const SizedBox(height: 18),
