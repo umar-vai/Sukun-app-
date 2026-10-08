@@ -107,10 +107,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   Future<void> _reject(PlanAction action) async {
     final confirmed = await showSukunDecisionDialog(
       context: context,
-      title: 'Remove action from draft?',
+      title: 'খসড়া থেকে করণীয় বাদ দেবেন?',
       message:
-          '“${action.title}” will be marked rejected and kept in clinical history.',
-      confirmLabel: 'Remove',
+          '“${action.title}” বাদ দেওয়া হিসেবে লেখা থাকবে; আগের তথ্য সংরক্ষিত থাকবে।',
+      confirmLabel: 'বাদ দিন',
       icon: Icons.remove_circle_outline_rounded,
     );
     if (confirmed != true || _working) return;
@@ -118,7 +118,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       await ref
           .read(carePlansRepositoryProvider)
           .rejectAction(action.id, const Uuid().v4());
-    }, successMessage: 'Action removed from this draft.');
+    }, successMessage: 'খসড়া থেকে করণীয়টি বাদ দেওয়া হয়েছে।');
   }
 
   Future<void> _publish(_BuilderData data) async {
@@ -126,15 +126,14 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
         .where((action) => action.reviewStatus == ActionReviewStatus.approved)
         .length;
     final unresolved = data.actions.length - approved;
+    if (approved == 0 || unresolved > 0 || _working) return;
     final confirmed = await showSukunDecisionDialog(
       context: context,
-      title: 'Publish care plan?',
+      title: 'রোগীর জন্য পরিকল্পনাটি চালু করবেন?',
       message:
-          'This will make version ${data.plan.version} the patient’s active plan. '
-          'It contains $approved approved action${approved == 1 ? '' : 's'}.'
-          '${unresolved == 0 ? '' : ' $unresolved action${unresolved == 1 ? '' : 's'} still require review and publishing will be refused.'}',
-      confirmLabel: 'Publish',
-      cancelLabel: 'Keep editing',
+          'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। $approvedটি করণীয় অনুমোদিত হয়েছে।',
+      confirmLabel: 'চালু করুন',
+      cancelLabel: 'আরও সংশোধন করব',
       icon: Icons.publish_outlined,
     );
     if (confirmed != true || _working) return;
@@ -142,23 +141,27 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       await ref
           .read(carePlansRepositoryProvider)
           .publishPlan(widget.planId, const Uuid().v4());
-    }, successMessage: 'Care plan published for the patient.');
+    }, successMessage: 'পরিকল্পনাটি রোগীর জন্য চালু হয়েছে।');
   }
 
   Future<void> _archive(CarePlan plan) async {
     final confirmed = await showSukunDecisionDialog(
       context: context,
-      title: 'Archive this plan?',
-      message: 'The history will be preserved, but this version will no longer be usable as an active plan.',
-      confirmLabel: 'Archive',
+      title: 'পরিকল্পনাটি সংরক্ষণাগারে রাখবেন?',
+      message: 'আগের তথ্য থাকবে, তবে এই সংস্করণটি আর চালু পরিকল্পনা হিসেবে ব্যবহার করা যাবে না।',
+      confirmLabel: 'সংরক্ষণাগারে রাখুন',
       icon: Icons.archive_outlined,
     );
     if (confirmed != true || _working) return;
-    await _runMutation(() async {
-      await ref
-          .read(carePlansRepositoryProvider)
-          .archivePlan(plan.id, const Uuid().v4());
-    }, successMessage: 'Care plan archived with its history intact.');
+    await _runMutation(
+      () async {
+        await ref
+            .read(carePlansRepositoryProvider)
+            .archivePlan(plan.id, const Uuid().v4());
+      },
+      successMessage:
+          'আগের তথ্য অক্ষত রেখে পরিকল্পনাটি সংরক্ষণাগারে রাখা হয়েছে।',
+    );
   }
 
   Future<void> _createVersion(CarePlan plan) async {
@@ -191,23 +194,26 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   }
 
   void _showError(Object error) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(error.toString())));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('কাজটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Care plan builder')),
+      appBar: AppBar(title: const Text('রোগীর পরিকল্পনা সাজান')),
       body: FutureBuilder<_BuilderData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading care plan');
+            return const AppLoadingState(label: 'পরিকল্পনা আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'পরিকল্পনাটি আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
@@ -221,9 +227,9 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                   sliver: SliverList.list(
                     children: [
                       const SukunPageIntro(
-                        eyebrow: 'Patient care workflow',
-                        title: 'Build the care plan',
-                        subtitle: 'Review every structured action before publishing anything to the patient.',
+                        eyebrow: 'রোগীর সেবার কাজ',
+                        title: 'রোগীর করণীয় সাজান',
+                        subtitle: 'রোগীর কাছে পাঠানোর আগে প্রতিটি করণীয় যাচাই ও অনুমোদন করুন।',
                       ),
                       const SizedBox(height: 20),
                       _PlanSummary(plan: data.plan),
@@ -231,6 +237,14 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       _PlanActions(
                         plan: data.plan,
                         working: _working,
+                        actionCount: data.actions.length,
+                        unresolvedCount: data.actions
+                            .where(
+                              (action) =>
+                                  action.reviewStatus !=
+                                  ActionReviewStatus.approved,
+                            )
+                            .length,
                         onPreview: () => context.push(
                           '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
                         ),
@@ -242,10 +256,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       ),
                       const SizedBox(height: 24),
                       SukunSectionHeader(
-                        title: 'Structured actions',
+                        title: 'করণীয় কাজগুলো',
                         subtitle: data.plan.isEditable
-                            ? 'Drag to reorder · review before publish'
-                            : 'Published patient order',
+                            ? 'ক্রম বদলাতে ধরে টানুন · চালু করার আগে যাচাই করুন'
+                            : 'রোগীর জন্য চালু করা ক্রম',
                         action: SukunStatusPill(
                           label: '${data.actions.length}',
                           tone: SukunStatusTone.brand,
@@ -259,8 +273,8 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                   const SliverFillRemaining(
                     hasScrollBody: false,
                     child: AppEmptyState(
-                      title: 'No actions yet',
-                      message: 'Add each explicit instruction as a structured action. Unknown details must remain blank or marked for review.',
+                      title: 'এখনো কোনো করণীয় নেই',
+                      message: 'প্রেসক্রিপশনের স্পষ্ট নির্দেশনা অনুযায়ী করণীয় যোগ করুন। অস্পষ্ট তথ্য অনুমোদনের আগে যাচাই করুন।',
                     ),
                   )
                 else
@@ -334,14 +348,14 @@ class _PlanSummary extends StatelessWidget {
                           ?.copyWith(color: Colors.white),
                     ),
                     Text(
-                      'Version ${plan.version}',
+                      'সংস্করণ ${plan.version}',
                       style: const TextStyle(color: Colors.white70),
                     ),
                   ],
                 ),
               ),
               SukunStatusPill(
-                label: plan.status.label.toUpperCase(),
+                label: _planStatusLabel(plan.status),
                 tone: plan.isEditable
                     ? SukunStatusTone.warning
                     : SukunStatusTone.success,
@@ -351,13 +365,13 @@ class _PlanSummary extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             '${_formatDate(plan.startDate)} – '
-            '${plan.endDate == null ? 'No end date' : _formatDate(plan.endDate!)}',
+            '${plan.endDate == null ? 'শেষ তারিখ নির্ধারিত নয়' : _formatDate(plan.endDate!)}',
             style: const TextStyle(color: Colors.white70),
           ),
           if (plan.isEditable) ...[
             const SizedBox(height: 10),
             const Text(
-              'Draft actions are not visible to the patient until every action is reviewed and the plan is published.',
+              'সব করণীয় যাচাই ও অনুমোদনের পর পরিকল্পনাটি চালু করা হলে রোগী দেখতে পাবেন।',
               style: TextStyle(color: Colors.white70),
             ),
           ],
@@ -371,6 +385,8 @@ class _PlanActions extends StatelessWidget {
   const _PlanActions({
     required this.plan,
     required this.working,
+    required this.actionCount,
+    required this.unresolvedCount,
     required this.onPreview,
     required this.onGenerate,
     required this.onAdd,
@@ -381,6 +397,8 @@ class _PlanActions extends StatelessWidget {
 
   final CarePlan plan;
   final bool working;
+  final int actionCount;
+  final int unresolvedCount;
   final VoidCallback onPreview;
   final VoidCallback onGenerate;
   final VoidCallback onAdd;
@@ -397,36 +415,44 @@ class _PlanActions extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onPreview,
           icon: const Icon(Icons.visibility_outlined),
-          label: const Text('Patient preview'),
+          label: const Text('রোগী যেমন দেখবেন'),
         ),
         if (plan.isEditable) ...[
           if (plan.prescriptionId != null)
             FilledButton.tonalIcon(
               onPressed: working ? null : onGenerate,
               icon: const Icon(Icons.auto_awesome_outlined),
-              label: const Text('Generate action suggestions'),
+              label: const Text('প্রেসক্রিপশন থেকে করণীয় সাজান'),
             ),
-          OutlinedButton.icon(
+          FilledButton.icon(
             onPressed: working ? null : onAdd,
             icon: const Icon(Icons.add),
-            label: const Text('Add action'),
+            label: const Text('নতুন করণীয় যোগ করুন'),
           ),
-          FilledButton.icon(
-            onPressed: working ? null : onPublish,
+          FilledButton.tonalIcon(
+            onPressed: working || actionCount == 0 || unresolvedCount > 0
+                ? null
+                : onPublish,
             icon: const Icon(Icons.publish_outlined),
-            label: const Text('Publish plan'),
+            label: const Text('রোগীর জন্য চালু করুন'),
           ),
+          if (actionCount == 0 || unresolvedCount > 0)
+            Text(
+              actionCount == 0
+                  ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
+                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
+            ),
         ] else ...[
           FilledButton.tonalIcon(
             onPressed: working ? null : onCreateVersion,
             icon: const Icon(Icons.copy_all_outlined),
-            label: const Text('Create new version'),
+            label: const Text('নতুন সংস্করণ তৈরি করুন'),
           ),
           if (plan.canArchive)
             TextButton.icon(
               onPressed: working ? null : onArchive,
               icon: const Icon(Icons.archive_outlined),
-              label: const Text('Archive'),
+              label: const Text('সংরক্ষণাগারে রাখুন'),
             ),
         ],
       ],
@@ -478,7 +504,7 @@ class _ActionCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     SukunStatusPill(
-                      label: action.reviewStatus.label,
+                      label: _reviewStatusLabel(action.reviewStatus),
                       tone: action.reviewStatus == ActionReviewStatus.approved
                           ? SukunStatusTone.success
                           : SukunStatusTone.warning,
@@ -486,30 +512,40 @@ class _ActionCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text('${action.frequency.label} · ${_timingLabel(action)}'),
+                Text(
+                  '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                ),
                 if (action.countTarget != null)
-                  Text('Count: ${action.countTarget}'),
+                  Text('কতবার: ${action.countTarget}'),
                 if (action.durationMinutes != null)
-                  Text('Duration: ${action.durationMinutes} minutes'),
+                  Text('সময়: ${action.durationMinutes} মিনিট'),
                 if (action.instruction?.isNotEmpty == true) ...[
                   const SizedBox(height: 6),
                   Text(action.instruction!),
                 ],
                 if (action.resource != null) ...[
                   const SizedBox(height: 8),
-                  Text('Resource: ${action.resource!.title}'),
+                  Text(
+                    'সহায়ক উপকরণ: ${action.resource!.titleBn ?? action.resource!.title}',
+                  ),
                 ],
               ],
             ),
           ),
-          if (editable)
+          if (editable) ...[
+            IconButton(
+              onPressed: onEdit,
+              tooltip: 'সংশোধন করুন',
+              icon: const Icon(Icons.edit_outlined),
+            ),
             PopupMenuButton<String>(
-              onSelected: (value) => value == 'edit' ? onEdit() : onReject(),
+              tooltip: 'আরও কাজ',
+              onSelected: (_) => onReject(),
               itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'remove', child: Text('Remove')),
+                PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
               ],
             ),
+          ],
         ],
       ),
     );
@@ -522,9 +558,34 @@ String _timingLabel(PlanAction action) {
     final minute = action.exactTime!.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
-  return action.timeWindow ?? 'Time not specified';
+  return action.timeWindow ?? 'সময় নির্ধারিত নেই';
 }
 
 String _formatDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _planStatusLabel(CarePlanStatus status) => switch (status) {
+  CarePlanStatus.draft => 'খসড়া',
+  CarePlanStatus.active => 'চালু',
+  CarePlanStatus.inactive => 'বন্ধ',
+  CarePlanStatus.archived => 'সংরক্ষিত',
+};
+
+String _reviewStatusLabel(ActionReviewStatus status) => switch (status) {
+  ActionReviewStatus.draft => 'খসড়া',
+  ActionReviewStatus.needsReview => 'যাচাই বাকি',
+  ActionReviewStatus.approved => 'অনুমোদিত',
+  ActionReviewStatus.rejected => 'বাদ দেওয়া',
+};
+
+String _frequencyLabel(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.daily) {
+    return frequency.interval == 1
+        ? 'প্রতিদিন'
+        : 'প্রতি ${frequency.interval} দিন পর';
+  }
+  const days = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'];
+  final selected = frequency.weekdays.toList()..sort();
+  return selected.map((day) => days[day - 1]).join(', ');
+}

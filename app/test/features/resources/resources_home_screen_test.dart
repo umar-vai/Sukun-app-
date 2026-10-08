@@ -21,14 +21,14 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final label in const [
-      "Qur'an",
-      'Hadith',
-      'Dua & Azkar',
-      'Ruqyah',
-      'Books & PDFs',
-      'Articles & Guides',
-      'Audio',
-      'Video',
+      'কুরআন',
+      'হাদিস',
+      'দোয়া ও যিকর',
+      'রুকইয়াহ',
+      'বই ও পিডিএফ',
+      'আর্টিকেল ও গাইড',
+      'অডিও',
+      'ভিডিও',
     ]) {
       expect(find.text(label), findsWidgets);
     }
@@ -40,9 +40,15 @@ void main() {
     expect(find.text('Published resource'), findsOneWidget);
   });
 
-  testWidgets('section and search controls update the repository filter', (
+  testWidgets('hub stays compact and search remains on the hub', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final repository = _FakeResourcesRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -52,23 +58,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('Audio').first,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(find.text('Audio').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Audio').first);
-    await tester.pumpAndSettle();
-    expect(repository.lastTypes, {'audio'});
+    final grid = tester.widget<GridView>(find.byType(GridView));
+    final delegate =
+        grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+    expect(delegate.mainAxisExtent, lessThanOrEqualTo(124));
+    expect(delegate.crossAxisCount, 2);
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, 900));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি Ayatul Kursi');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');
+    expect(repository.lastTypes, isEmpty);
   });
 }
 

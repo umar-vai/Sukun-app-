@@ -55,6 +55,17 @@ void main() {
       );
     });
 
+    test('staging cannot silently start without Supabase', () {
+      expect(
+        () => validateSupabaseRuntimeConfiguration(
+          environment: 'staging',
+          url: '',
+          publishableKey: '',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
     test('production cannot silently start without Supabase', () {
       expect(
         () => validateSupabaseRuntimeConfiguration(

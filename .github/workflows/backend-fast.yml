@@ -1,0 +1,68 @@
+name: Backend Fast Gate
+
+on:
+  push:
+    branches: [web-preview]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/backend-fast.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-fast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  edge-functions:
+    name: Edge Functions Fast Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check formatting
+        run: deno fmt --check supabase/functions
+
+      - name: Type-check Edge Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in supabase/functions/*; do
+            [ -d "$dir" ] || continue
+            [ -f "$dir/index.ts" ] || continue
+            if [ -f "$dir/deno.json" ]; then
+              deno check --allow-import --config "$dir/deno.json" "$dir/index.ts"
+            else
+              deno check --allow-import "$dir/index.ts"
+            fi
+          done
+
+      - name: Run Edge Function tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for dir in supabase/functions/*; do
+            [ -d "$dir" ] || continue
+            while IFS= read -r -d '' test_file; do
+              found=1
+              if [ -f "$dir/deno.json" ]; then
+                deno test --allow-import --config "$dir/deno.json" "$test_file"
+              else
+                deno test --allow-import "$test_file"
+              fi
+            done < <(find "$dir" -type f -name '*_test.ts' -print0)
+          done
+          if [ "$found" -eq 0 ]; then
+            echo 'No Edge Function tests found.' >&2
+            exit 1
+          fi

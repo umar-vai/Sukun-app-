@@ -38,6 +38,7 @@ void main() {
               'time_window': 'morning',
               'exact_time': null,
               'resource_match_query': 'Ayatul Kursi আয়াতুল কুরসি',
+              'source_evidence': 'সকাল-সন্ধ্যা পড়বেন',
               'confidence': 0.76,
               'needs_review': false,
               'ambiguities': ['Frequency was not explicit'],
@@ -116,12 +117,14 @@ void main() {
         titleBn: 'আয়াতুল কুরসি অডিও',
         type: 'audio',
         visibility: 'public',
+        status: 'published',
       ),
       ContentResourceOption(
         id: 'resource-2',
         title: 'Sleep Guide',
         type: 'article',
         visibility: 'patient_only',
+        status: 'published',
       ),
     ];
 
@@ -205,19 +208,58 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Original prescription'), findsOneWidget);
+      expect(find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'), findsNothing);
+      await tester.tap(find.text('Original prescription'));
+      await tester.pumpAndSettle();
       expect(
         find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
         findsOneWidget,
       );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
       expect(find.text('আয়াতুল কুরসি'), findsWidgets);
+      expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Import selected as drafts'),
-        400,
-        scrollable: find.byType(Scrollable).first,
+      expect(find.text('No actions selected'), findsOneWidget);
+      expect(find.text('0 ready · 1 need review'), findsOneWidget);
+      expect(find.text('Needs review · 1'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'reload recovers stored document suggestions without a fresh AI call',
+    (tester) async {
+      final repository = _StoredAiActionsRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            aiActionsRepositoryProvider.overrideWithValue(repository),
+            carePlansRepositoryProvider.overrideWithValue(
+              _ReviewCarePlansRepository(),
+            ),
+            patientsRepositoryProvider.overrideWithValue(
+              const _ReviewPatientsRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: AiActionReviewScreen(
+              patientId: 'patient-1',
+              planId: 'plan-1',
+              prescriptionId: 'prescription-1',
+            ),
+          ),
+        ),
       );
-      expect(find.text('Import selected as drafts'), findsOneWidget);
+      await tester.pumpAndSettle();
+
+      expect(repository.loadCalls, 1);
+      expect(repository.generateCalls, 0);
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+      expect(find.text('Recovered document action'), findsWidgets);
+      expect(find.text(aiManualFallbackMessage), findsNothing);
     },
   );
 }
@@ -252,8 +294,61 @@ final class _ReviewPatientsRepository implements PatientsRepository {
       throw UnimplementedError();
 }
 
+final class _StoredAiActionsRepository implements AiActionsRepository {
+  int loadCalls = 0;
+  int generateCalls = 0;
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async {
+    loadCalls += 1;
+    return const AiActionReviewSeed(
+      attachmentId: 'attachment-1',
+      result: AiActionGenerationResult(
+        requestId: 'stored-request-1',
+        status: AiActionGenerationStatus.generated,
+        actions: [
+          SuggestedPlanAction(
+            index: 0,
+            type: 'other',
+            title: 'Recovered document action',
+            instruction: 'Review this stored action.',
+            frequency: null,
+            sourceEvidence: 'Stored source evidence',
+            confidence: 0,
+            needsReview: true,
+            ambiguities: ['Recovered after page reload.'],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Future<AiActionGenerationResult> generateActions({
+    required String prescriptionId,
+    required String carePlanId,
+    required String requestId,
+  }) async {
+    generateCalls += 1;
+    return AiActionGenerationResult(
+      requestId: requestId,
+      status: AiActionGenerationStatus.manualRequired,
+      actions: const [],
+    );
+  }
+}
+
 final class _ManualAiActionsRepository implements AiActionsRepository {
   const _ManualAiActionsRepository();
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async => null;
 
   @override
   Future<AiActionGenerationResult> generateActions({
@@ -269,6 +364,12 @@ final class _ManualAiActionsRepository implements AiActionsRepository {
 
 final class _GeneratedAiActionsRepository implements AiActionsRepository {
   const _GeneratedAiActionsRepository();
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async => null;
 
   @override
   Future<AiActionGenerationResult> generateActions({
@@ -287,6 +388,7 @@ final class _GeneratedAiActionsRepository implements AiActionsRepository {
         frequency: ActionFrequency.daily(),
         timeWindow: 'morning',
         resourceMatchQuery: 'আয়াতুল কুরসি',
+        sourceEvidence: 'সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।',
         confidence: 0.8,
         needsReview: true,
         ambiguities: ['Confirm whether this is also required in the evening.'],
@@ -318,6 +420,7 @@ final class _ReviewCarePlansRepository implements CarePlansRepository {
       titleBn: 'আয়াতুল কুরসি অডিও',
       type: 'audio',
       visibility: 'public',
+      status: 'published',
     ),
   ];
 

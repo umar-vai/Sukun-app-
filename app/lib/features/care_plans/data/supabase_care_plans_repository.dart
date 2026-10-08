@@ -47,13 +47,28 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
   Future<List<ContentResourceOption>> getAvailableResources() async {
     final response = await _client
         .from('content_items')
-        .select('id,title,title_bn,type,visibility,status')
-        .eq('status', 'published')
+        .select(
+          'id,title,title_bn,type,visibility,status,category_id,'
+          'content_categories(id,name,name_bn,slug,sort_order)',
+        )
         .order('title');
-    return response
-        .where((row) => row['visibility'] != 'staff_only')
+    final resources = response
         .map(ContentResourceOption.fromJson)
         .toList(growable: false);
+    resources.sort((left, right) {
+      final categoryOrder = left.categorySortOrder.compareTo(
+        right.categorySortOrder,
+      );
+      if (categoryOrder != 0) return categoryOrder;
+      final categoryName = left.categoryLabel.toLowerCase().compareTo(
+        right.categoryLabel.toLowerCase(),
+      );
+      if (categoryName != 0) return categoryName;
+      return left.displayTitle.toLowerCase().compareTo(
+        right.displayTitle.toLowerCase(),
+      );
+    });
+    return resources;
   }
 
   @override
@@ -72,32 +87,42 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
   @override
   Future<PlanAction> saveAction(SavePlanActionInput input) async {
     try {
-      final response = await _client.rpc(
-        'save_plan_action',
-        params: {
-          'p_care_plan_id': input.carePlanId,
-          'p_type': input.type.trim(),
-          'p_title': input.title.trim(),
-          'p_frequency_rule': input.frequency.toJson(),
-          'p_start_date': _dateOnly(input.startDate),
-          'p_action_id': input.actionId,
-          'p_instruction': _trimmedOrNull(input.instruction),
-          'p_count_target': input.countTarget,
-          'p_duration_minutes': input.durationMinutes,
-          'p_time_window': input.timeWindow,
-          'p_exact_time': input.exactTime == null
-              ? null
-              : _timeOnly(input.exactTime!),
-          'p_end_date': input.endDate == null
-              ? null
-              : _dateOnly(input.endDate!),
-          'p_review_status': input.reviewStatus.databaseValue,
-          'p_reminder_enabled': input.reminderEnabled,
-          'p_content_item_id': input.contentItemId,
-          'p_resource_usage_note': _trimmedOrNull(input.resourceUsageNote),
-          'p_request_id': input.requestId,
-        },
-      );
+      final common = <String, dynamic>{
+        'p_care_plan_id': input.carePlanId,
+        'p_type': input.type.trim(),
+        'p_title': input.title.trim(),
+        'p_frequency_rule': input.frequency.toJson(),
+        'p_start_date': _dateOnly(input.startDate),
+        'p_action_id': input.actionId,
+        'p_instruction': _trimmedOrNull(input.instruction),
+        'p_count_target': input.countTarget,
+        'p_duration_minutes': input.durationMinutes,
+        'p_time_window': input.timeWindow,
+        'p_exact_time': input.exactTime == null
+            ? null
+            : _timeOnly(input.exactTime!),
+        'p_end_date': input.endDate == null ? null : _dateOnly(input.endDate!),
+        'p_review_status': input.reviewStatus.databaseValue,
+        'p_reminder_enabled': input.reminderEnabled,
+        'p_content_item_id': input.contentItemId,
+        'p_resource_usage_note': _trimmedOrNull(input.resourceUsageNote),
+        'p_request_id': input.requestId,
+      };
+
+      final response = input.isAiSuggestion
+          ? await _client.rpc(
+              'save_ai_plan_action',
+              params: {
+                ...common,
+                'p_source_evidence': input.sourceEvidence!.trim(),
+                'p_ai_request_id': input.aiRequestId,
+                'p_attachment_id': input.attachmentId,
+                'p_confidence': input.aiConfidence,
+                'p_ambiguities': input.aiAmbiguities,
+                'p_human_edited': input.humanEdited,
+              },
+            )
+          : await _client.rpc('save_plan_action', params: common);
       return PlanAction.fromJson(response as Map<String, dynamic>);
     } on PostgrestException catch (error) {
       throw CarePlanWorkflowException(error.message);

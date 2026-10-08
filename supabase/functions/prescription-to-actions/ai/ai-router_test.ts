@@ -19,6 +19,7 @@ const slots: GeminiKeySlot[] = [1, 2, 3, 4].map((id) => ({
 }));
 
 const fixture: SuggestedActions = {
+  source_text: null,
   actions: [{
     type: "amal",
     title: "Ayatul Kursi",
@@ -29,6 +30,7 @@ const fixture: SuggestedActions = {
     time_window: "morning",
     exact_time: null,
     resource_match_query: "Ayatul Kursi",
+    source_evidence: "৩ বার পড়বেন",
     confidence: 0.95,
     needs_review: false,
     ambiguities: [],
@@ -90,6 +92,29 @@ Deno.test("timeout retries once then falls through", async () => {
   });
   await router(client).generate("source", "request-timeout");
   assertEquals(client.calls, ["secret-key-1", "secret-key-1", "secret-key-2"]);
+});
+
+Deno.test("provider outage does not poison a key for the next request", async () => {
+  const health = new InMemorySlotHealthStore();
+  const client = new FakeGeminiClient({
+    "secret-key-1": [
+      new GeminiProviderError(503, "UNAVAILABLE", null),
+      new GeminiProviderError(503, "UNAVAILABLE", null),
+      fixture,
+    ],
+    "secret-key-2": [fixture],
+  });
+  const aiRouter = router(client, health);
+
+  await aiRouter.generate("source", "request-provider-outage-1");
+  await aiRouter.generate("source", "request-provider-outage-2");
+
+  assertEquals(client.calls, [
+    "secret-key-1",
+    "secret-key-1",
+    "secret-key-2",
+    "secret-key-1",
+  ]);
 });
 
 Deno.test("cooling slot is skipped", async () => {

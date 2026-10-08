@@ -36,11 +36,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Morning action'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Done').first);
+    await tester.tap(find.widgetWithText(FilledButton, 'করেছি').first);
     await tester.pumpAndSettle();
 
     expect(repository.recordedStatus, PatientTaskStatus.completed);
-    expect(find.text('1 of 1 completed'), findsWidgets);
+    expect(find.text('1টির মধ্যে 1টি করেছেন'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

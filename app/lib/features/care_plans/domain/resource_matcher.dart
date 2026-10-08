@@ -17,6 +17,7 @@ List<ResourceMatch> matchResources(
   final queryTokens = _tokens(normalizedQuery);
   final matches = <ResourceMatch>[];
   for (final resource in resources) {
+    if (!resource.isLinkable) continue;
     final labels = [
       resource.title,
       if (resource.titleBn != null) resource.titleBn!,

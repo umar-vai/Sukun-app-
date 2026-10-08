@@ -3,7 +3,7 @@ import {
   type FailureType,
   GeminiProviderError,
 } from "./error-classifier.ts";
-import type { GeminiClient } from "./gemini-client.ts";
+import type { GeminiClient, GeminiDocument } from "./gemini-client.ts";
 import type { SuggestedActions } from "./output-schema.ts";
 
 export type GeminiKeySlot = {
@@ -25,7 +25,11 @@ export interface SlotHealthStore {
 }
 
 export type AiRouterResult =
-  | { status: "generated"; actions: SuggestedActions["actions"] }
+  | {
+    status: "generated";
+    actions: SuggestedActions["actions"];
+    source_text: string | null;
+  }
   | { status: "manual_required"; actions: []; message: string };
 
 export type AiRouterOptions = {
@@ -48,6 +52,7 @@ export class AiRouter {
   async generate(
     prescriptionText: string,
     requestId: string,
+    document?: GeminiDocument,
   ): Promise<AiRouterResult> {
     const now = this.options.now ?? (() => new Date());
     for (
@@ -73,6 +78,7 @@ export class AiRouter {
             apiKey: slot.apiKey,
             model: this.options.model,
             prescriptionText,
+            document,
             timeoutMs: this.options.timeoutMs,
           });
           await this.health.markHealthy(slot.id, now());
@@ -83,9 +89,19 @@ export class AiRouter {
             fallback_count: slot.id - 1,
             latency_ms: Date.now() - startedAt,
           });
-          return { status: "generated", actions: result.actions };
+          return {
+            status: "generated",
+            actions: result.actions,
+            source_text: result.source_text,
+          };
         } catch (error) {
           const decision = classifyFailure(error);
+          const providerDiagnostics = error instanceof GeminiProviderError
+            ? {
+              http_status: error.status,
+              provider_status: error.providerStatus,
+            }
+            : {};
           this.log({
             event: "ai_slot_failed",
             request_id: requestId,
@@ -93,35 +109,43 @@ export class AiRouter {
             failure_type: decision.type,
             attempt,
             latency_ms: Date.now() - startedAt,
+            ...providerDiagnostics,
           });
           if (!decision.failover) throw error;
           if (decision.retrySameSlot && attempt < this.options.maxRetryPerKey) {
             continue;
           }
 
-          const retryAfterMs = error instanceof GeminiProviderError
-            ? error.retryAfterMs
-            : null;
-          const cooldownMs = Math.max(
-            this.options.cooldownMs,
-            retryAfterMs ?? 0,
-          );
-          const retryAt = decision.disableSlot
-            ? null
-            : new Date(now().getTime() + cooldownMs);
-          const affectedSlots =
-            decision.type === "quota" || decision.type === "rate_limit"
-              ? this.slots
-                .filter((candidate) => candidate.quotaScope === slot.quotaScope)
-                .map((candidate) => candidate.id)
-              : [slot.id];
-          await this.health.markFailure(
-            affectedSlots,
-            decision.type,
-            retryAt,
-            decision.disableSlot,
-            now(),
-          );
+          const shouldPersistSlotFailure = decision.type === "quota" ||
+            decision.type === "rate_limit" ||
+            decision.type === "invalid_credential";
+          if (shouldPersistSlotFailure) {
+            const retryAfterMs = error instanceof GeminiProviderError
+              ? error.retryAfterMs
+              : null;
+            const cooldownMs = Math.max(
+              this.options.cooldownMs,
+              retryAfterMs ?? 0,
+            );
+            const retryAt = decision.disableSlot
+              ? null
+              : new Date(now().getTime() + cooldownMs);
+            const affectedSlots =
+              decision.type === "quota" || decision.type === "rate_limit"
+                ? this.slots
+                  .filter((candidate) =>
+                    candidate.quotaScope === slot.quotaScope
+                  )
+                  .map((candidate) => candidate.id)
+                : [slot.id];
+            await this.health.markFailure(
+              affectedSlots,
+              decision.type,
+              retryAt,
+              decision.disableSlot,
+              now(),
+            );
+          }
           break;
         }
       }

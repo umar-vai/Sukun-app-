@@ -23,14 +23,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('50% completed'), findsOneWidget);
-      expect(find.text('1  Done'), findsOneWidget);
+      expect(find.text('50% কাজ করেছেন'), findsOneWidget);
+      expect(find.text('1  করেছি'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.textContaining('not a clinical assessment'),
+        find.textContaining('চিকিৎসার ফলাফল নয়'),
         300,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.textContaining('not a clinical assessment'), findsOneWidget);
+      expect(find.textContaining('চিকিৎসার ফলাফল নয়'), findsOneWidget);
     },
   );
 }

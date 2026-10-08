@@ -37,16 +37,16 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Audio player')),
+      appBar: AppBar(title: const Text('অডিও শুনুন')),
       body: FutureBuilder<void>(
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing audio');
+            return const AppLoadingState(label: 'অডিও চালু হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _retry,
             );
           }
@@ -92,7 +92,7 @@ class _PlayerBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: 18),
                 const SukunStatusPill(
-                  label: 'BACKGROUND AUDIO',
+                  label: 'পেছনেও চলবে',
                   tone: SukunStatusTone.brand,
                   icon: Icons.headphones_rounded,
                 ),
@@ -164,7 +164,7 @@ class _PlayerBody extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton.filledTonal(
-                      tooltip: 'Back 10 seconds',
+                      tooltip: '১০ সেকেন্ড পেছনে যান',
                       onPressed: () => _runPlaybackAction(
                         context,
                         () => controller.seek(
@@ -190,7 +190,7 @@ class _PlayerBody extends ConsumerWidget {
                         final playing = state?.playing == true;
                         return IconButton.filled(
                           iconSize: 38,
-                          tooltip: playing ? 'Pause' : 'Play',
+                          tooltip: playing ? 'থামান' : 'চালু করুন',
                           onPressed: () => _runPlaybackAction(
                             context,
                             playing ? controller.pause : controller.play,
@@ -205,7 +205,7 @@ class _PlayerBody extends ConsumerWidget {
                     ),
                     const SizedBox(width: 18),
                     IconButton.filledTonal(
-                      tooltip: 'Forward 10 seconds',
+                      tooltip: '১০ সেকেন্ড সামনে যান',
                       onPressed: () => _runPlaybackAction(
                         context,
                         () => controller.seek(
@@ -224,8 +224,8 @@ class _PlayerBody extends ConsumerWidget {
             stream: player.speedStream,
             initialData: player.speed,
             builder: (context, snapshot) => SukunChoiceField<double>(
-              label: 'Playback speed',
-              placeholder: 'Choose speed',
+              label: 'অডিওর গতি',
+              placeholder: 'গতি বেছে নিন',
               value: snapshot.data ?? 1.0,
               options: [
                 for (final speed in const [0.75, 1.0, 1.25, 1.5, 2.0])
@@ -233,10 +233,10 @@ class _PlayerBody extends ConsumerWidget {
                     value: speed,
                     title: '${speed}x',
                     description: speed == 1.0
-                        ? 'Original recording speed'
+                        ? 'স্বাভাবিক গতি'
                         : speed < 1
-                        ? 'Slower, more deliberate playback'
-                        : 'Faster playback',
+                        ? 'ধীরে শুনুন'
+                        : 'দ্রুত শুনুন',
                     icon: Icons.speed_rounded,
                   ),
               ],
@@ -253,7 +253,7 @@ class _PlayerBody extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Rights & source',
+                    'উৎস ও ব্যবহারের অনুমতি',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 6),
@@ -264,7 +264,7 @@ class _PlayerBody extends ConsumerWidget {
           ],
           const SizedBox(height: 18),
           Text(
-            'Playback continues in the background. Use the lock-screen controls to pause, resume, or seek.',
+            'অন্য অ্যাপ খুললেও অডিও চলতে পারে। ফোনের লকস্ক্রিন থেকে চালু বা বন্ধ করতে পারবেন।',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -280,14 +280,17 @@ Future<void> _runPlaybackAction(
 ) async {
   try {
     await action();
-  } on AudioPlaybackException catch (error) {
+  } on AudioPlaybackException {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(error.message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('অডিও চালু করা যাচ্ছে না। আবার চেষ্টা করুন।')),
+    );
   } on Exception {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Playback could not be updated.')),
+      const SnackBar(
+        content: Text('অডিওর অবস্থাটি বদলানো যায়নি। আবার চেষ্টা করুন।'),
+      ),
     );
   }
 }
