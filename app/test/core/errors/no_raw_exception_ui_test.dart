@@ -8,15 +8,13 @@ void main() {
     final root = Directory('lib');
     expect(root.existsSync(), isTrue);
 
-    final files = root
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((file) {
-          final path = file.path.replaceAll('\\', '/');
-          return path.endsWith('.dart') &&
-              (path.contains('/presentation/') ||
-                  path.contains('/app/router/'));
-        });
+    final files = root.listSync(recursive: true).whereType<File>().where((
+      file,
+    ) {
+      final path = file.path.replaceAll('\\', '/');
+      return path.endsWith('.dart') &&
+          (path.contains('/presentation/') || path.contains('/app/router/'));
+    });
 
     final rawException = RegExp(
       r'(?:snapshot\.error|state\.error|\berror)\?*\.toString\(\)',
