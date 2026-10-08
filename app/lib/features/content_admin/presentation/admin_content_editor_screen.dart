@@ -9,9 +9,14 @@ import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
 
 class AdminContentEditorScreen extends ConsumerStatefulWidget {
-  const AdminContentEditorScreen({super.key, this.contentItemId});
+  const AdminContentEditorScreen({
+    super.key,
+    this.contentItemId,
+    this.initialKind,
+  });
 
   final String? contentItemId;
+  final AdminResourceKind? initialKind;
 
   @override
   ConsumerState<AdminContentEditorScreen> createState() =>
@@ -40,6 +45,7 @@ class _AdminContentEditorScreenState
   void initState() {
     super.initState();
     _savedContentId = widget.contentItemId;
+    if (_savedContentId == null) _kind = widget.initialKind;
     _data = _load();
   }
 
@@ -71,7 +77,20 @@ class _AdminContentEditorScreenState
   void _populate(AdminContentItem? item, List<ContentCategory> categories) {
     if (_populated) return;
     _populated = true;
-    if (item == null) return;
+    if (item == null) {
+      _categoryId = switch (_kind) {
+        AdminResourceKind.ruqyahAudio => _categoryIdForSlug(
+          categories,
+          'ruqyah-audio',
+        ),
+        AdminResourceKind.duaAzkar => _categoryIdForSlug(
+          categories,
+          'dua-azkar',
+        ),
+        _ => null,
+      };
+      return;
+    }
     ContentCategory? category;
     for (final candidate in categories) {
       if (candidate.id == item.categoryId) category = candidate;
@@ -229,20 +248,20 @@ class _AdminContentEditorScreenState
 
   String? _simpleValidationError() {
     final kind = _kind;
-    if (kind == null) return 'Choose what you want to add.';
+    if (kind == null) return 'আগে উপকরণের ধরন বেছে নিন।';
     if (kind.requiresApprovedSource && _nullable('sourceType') == null) {
-      return 'Choose the approved source used for this resource.';
+      return 'অনুমোদিত উৎসটি বেছে নিন।';
     }
     if (kind.requiresApprovedSource &&
         (_nullable('sourceReference') == null ||
             _nullable('sourceEdition') == null)) {
-      return 'Complete the approved source name and edition or version.';
+      return 'উৎসের নাম ও সংস্করণের তথ্য দিন।';
     }
     if (kind == AdminResourceKind.duaAzkar) {
       final repeatCount = _nullable('repeatCount');
       if (repeatCount != null &&
           (int.tryParse(repeatCount) == null || int.parse(repeatCount) < 1)) {
-        return 'Repeat count must be a positive whole number from the source.';
+        return 'উৎস অনুযায়ী ১ বা তার বেশি একটি সংখ্যা দিন।';
       }
     }
     return null;
@@ -346,35 +365,36 @@ class _AdminContentEditorScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SukunPageIntro(
-                eyebrow: 'Source check',
-                title: 'Approved source',
-                subtitle: 'Record where the text came from so a reviewer can check it confidently.',
+                eyebrow: 'উৎস যাচাই',
+                title: 'অনুমোদিত উৎস',
+                subtitle:
+                    'লেখাটি কোথা থেকে নেওয়া, তা লিখুন যাতে যাচাই করা যায়।',
               ),
               const SizedBox(height: 20),
               ValueListenableBuilder<String>(
                 valueListenable: sourceType,
                 builder: (context, value, _) => SukunChoiceField<String>(
-                  label: 'Source format',
-                  placeholder: 'Choose the source format',
+                  label: 'উৎসের ধরন',
+                  placeholder: 'উৎসের ধরন বেছে নিন',
                   value: value,
                   options: const [
                     SukunChoiceOption(
                       value: 'official_dataset',
-                      title: 'Official or verified dataset',
+                      title: 'সরকারি বা যাচাই করা ডিজিটাল উৎস',
                       description:
                           'A trusted API or checked digital text source.',
                       icon: Icons.dataset_outlined,
                     ),
                     SukunChoiceOption(
                       value: 'licensed_publication',
-                      title: 'Licensed publication',
+                      title: 'অনুমতি-প্রাপ্ত প্রকাশনা',
                       description:
                           'A printed or digital edition Sukun Life may use.',
                       icon: Icons.menu_book_outlined,
                     ),
                     SukunChoiceOption(
                       value: 'sukun_approved_reference',
-                      title: 'Sukun Life approved reference',
+                      title: 'সুকুন লাইফ অনুমোদিত উৎস',
                       description:
                           'A source already checked by the Sukun Life team.',
                       icon: Icons.verified_outlined,
@@ -386,23 +406,23 @@ class _AdminContentEditorScreenState
               const SizedBox(height: 12),
               _SourceTextField(
                 controller: reference,
-                label: 'Source name or reference *',
+                label: 'উৎসের নাম বা তথ্যসূত্র *',
                 helper: 'Example: publication title, collection reference, or dataset name.',
               ),
               _SourceTextField(
                 controller: edition,
-                label: 'Edition or version *',
+                label: 'প্রকাশনা বা সংস্করণ *',
                 helper: 'Enter the edition, revision, or dataset version shown by the source.',
               ),
               if (_nullable('banglaText') != null)
                 _SourceTextField(
                   controller: translation,
-                  label: 'Bangla translation source *',
+                  label: 'বাংলা অনুবাদের উৎস *',
                   helper: 'Name the approved Bangla translator or publication.',
                 ),
               _SourceTextField(
                 controller: sourceUrl,
-                label: 'Source link (optional)',
+                label: 'উৎসের লিংক (ঐচ্ছিক)',
                 helper: 'Paste an HTTPS link when the source is online.',
               ),
               const SizedBox(height: 20),
@@ -425,7 +445,7 @@ class _AdminContentEditorScreenState
                     }
                     Navigator.pop(sheetContext, true);
                   },
-                  child: const Text('Use this source'),
+                  child: const Text('এই উৎস ব্যবহার করুন'),
                 ),
               ),
             ],
@@ -453,14 +473,14 @@ class _AdminContentEditorScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _savedContentId == null ? 'Add a resource' : 'Edit resource',
+          _savedContentId == null ? 'নতুন উপকরণ যোগ করুন' : 'উপকরণ সংশোধন করুন',
         ),
       ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing resource form');
+            return const AppLoadingState(label: 'ফর্ম তৈরি হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -472,8 +492,9 @@ class _AdminContentEditorScreenState
           _populate(data.item, data.categories);
           if (_savedContentId != null && data.item == null) {
             return const AppEmptyState(
-              title: 'Resource not found',
-              message: 'This resource may have been archived or removed.',
+              title: 'উপকরণটি পাওয়া যায়নি',
+              message:
+                  'উপকরণটি সংরক্ষণাগারে রাখা বা সরিয়ে দেওয়া হয়ে থাকতে পারে।',
               icon: Icons.search_off_rounded,
             );
           }
@@ -488,9 +509,9 @@ class _AdminContentEditorScreenState
     padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
     children: [
       const SukunPageIntro(
-        eyebrow: 'Step 1 of 2',
-        title: 'What do you want to add?',
-        subtitle: 'Choose a resource type. The next screen will show only the information you need.',
+        eyebrow: 'প্রথম ধাপ',
+        title: 'কোন উপকরণ যোগ করবেন?',
+        subtitle: 'উপকরণের ধরন বেছে নিন। পরের ধাপে শুধু প্রয়োজনীয় তথ্য চাইবে।',
         trailing: SukunIconBadge(icon: Icons.add_box_outlined, size: 54),
       ),
       const SizedBox(height: 22),
@@ -527,7 +548,7 @@ class _AdminContentEditorScreenState
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
           SukunPageIntro(
-            eyebrow: 'Step 2 of 2',
+            eyebrow: 'উপকরণের তথ্য দিন',
             title: _kindTitle(kind),
             subtitle: _kindInstruction(kind),
             trailing: SukunIconBadge(icon: _kindIcon(kind), size: 54),
@@ -539,7 +560,7 @@ class _AdminContentEditorScreenState
               child: TextButton.icon(
                 onPressed: () => setState(() => _kind = null),
                 icon: const Icon(Icons.swap_horiz_rounded),
-                label: const Text('Choose a different type'),
+                label: const Text('অন্য বিভাগ বেছে নিন'),
               ),
             ),
           ],
@@ -555,7 +576,7 @@ class _AdminContentEditorScreenState
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Copy the text exactly from an approved source. It will be checked before publishing.',
+                      'অনুমোদিত উৎস থেকে লেখাটি হুবহু দিন। প্রকাশের আগে যাচাই করা হবে।',
                     ),
                   ),
                 ],
@@ -570,7 +591,7 @@ class _AdminContentEditorScreenState
           OutlinedButton.icon(
             onPressed: _saving ? null : () => _save(_SaveAction.preview),
             icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Preview resource'),
+            label: const Text('আগে দেখে নিন'),
           ),
           const SizedBox(height: 10),
           Row(
@@ -578,7 +599,7 @@ class _AdminContentEditorScreenState
               Expanded(
                 child: OutlinedButton(
                   onPressed: _saving ? null : () => _save(_SaveAction.draft),
-                  child: const Text('Save Draft'),
+                  child: const Text('খসড়া সংরক্ষণ করুন'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -586,7 +607,7 @@ class _AdminContentEditorScreenState
                 child: FilledButton.icon(
                   onPressed: _saving ? null : () => _save(_SaveAction.submit),
                   icon: const Icon(Icons.fact_check_outlined),
-                  label: const Text('Submit for Review'),
+                  label: const Text('যাচাইয়ের জন্য পাঠান'),
                 ),
               ),
             ],
@@ -596,172 +617,169 @@ class _AdminContentEditorScreenState
     );
   }
 
-  List<Widget> _fieldsFor(
-    AdminResourceKind kind,
-    _EditorData data,
-  ) => switch (kind) {
-    AdminResourceKind.quranAyah => [
-      _section('Ayah text'),
-      _field(
-        'arabicText',
-        'Arabic text *',
-        helper: 'Copy the Arabic exactly from the approved source.',
-        lines: 7,
-        required: true,
-        rtl: true,
-      ),
-      _field(
-        'banglaText',
-        'Bangla translation *',
-        helper: 'Copy the approved Bangla translation without rewriting it.',
-        lines: 6,
-        required: true,
-      ),
-      _surahField(required: true),
-      _ayahFields(required: true),
-      _approvedSourceField(),
-    ],
-    AdminResourceKind.hadith => [
-      _section('Hadith text'),
-      _field(
-        'arabicText',
-        'Arabic text *',
-        helper: 'Copy the Arabic exactly as it appears in the approved source.',
-        lines: 7,
-        required: true,
-        rtl: true,
-      ),
-      _field(
-        'banglaText',
-        'Bangla translation *',
-        helper: 'Copy the approved Bangla translation without rewriting it.',
-        lines: 6,
-        required: true,
-      ),
-      _field(
-        'collectionName',
-        'Kitab / collection *',
-        helper: 'Enter the collection and book name used by the source.',
-        required: true,
-      ),
-      _field(
-        'hadithNumber',
-        'Hadith number *',
-        helper: 'Enter the number exactly as shown by the source.',
-        required: true,
-      ),
-      _approvedSourceField(),
-      _field(
-        'grade',
-        'Grade (optional)',
-        helper: 'Only enter a grade when the approved source provides one.',
-      ),
-    ],
-    AdminResourceKind.quranAudio => [
-      _section('Audio details'),
-      _titleField(),
-      _surahField(required: true),
-      _ayahFields(required: false),
-      _field(
-        'mediaUrl',
-        'Audio link *',
-        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
-        required: true,
-        url: true,
-      ),
-      _field(
-        'author',
-        'Reciter or source (optional)',
-        helper: 'Enter the reciter or organization when known.',
-      ),
-      _rightsField(),
-    ],
-    AdminResourceKind.ruqyahAudio => [
-      _section('Ruqyah audio'),
-      _titleField(),
-      _categoryField(data, prefix: 'ruqyah-', required: true),
-      _field(
-        'mediaUrl',
-        'Audio link *',
-        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
-        required: true,
-        url: true,
-      ),
-      _rightsField(),
-    ],
-    AdminResourceKind.bookPdf => [
-      _section('Book or PDF'),
-      _titleField(),
-      _field(
-        'author',
-        'Author (optional)',
-        helper: 'Enter the author exactly as credited by the publication.',
-      ),
-      _field(
-        'mediaUrl',
-        'PDF link *',
-        helper: 'Paste the external PDF link. The file will not be uploaded to Sukun Life.',
-        required: true,
-        url: true,
-      ),
-      _rightsField(),
-    ],
-    AdminResourceKind.video => [
-      _section('Video details'),
-      _titleField(),
-      _field(
-        'mediaUrl',
-        'YouTube or video link *',
-        helper: 'Paste the YouTube or direct video link. The video remains externally hosted.',
-        required: true,
-        url: true,
-      ),
-      _rightsField(),
-    ],
-    AdminResourceKind.duaAzkar => [
-      _section('Dua or Azkar'),
-      _field(
-        'arabicText',
-        'Arabic *',
-        helper: 'Copy the Arabic exactly from the approved source.',
-        lines: 6,
-        required: true,
-        rtl: true,
-      ),
-      _field(
-        'banglaText',
-        'Bangla *',
-        helper: 'Enter the approved Bangla meaning or translation.',
-        lines: 5,
-        required: true,
-      ),
-      _categoryField(data, prefix: 'dua-azkar', required: true),
-      _approvedSourceField(),
-      _field(
-        'repeatCount',
-        'Repeat count (optional)',
-        helper:
-            'Only enter a count when the approved source explicitly states it.',
-        numeric: true,
-      ),
-    ],
-    AdminResourceKind.articleGuide => [
-      _section('Article or guide'),
-      _titleField(),
-      _field(
-        'body',
-        'Article body *',
-        helper: 'Write the complete reader-facing article or guide.',
-        lines: 12,
-        required: true,
-      ),
-      _field(
-        'author',
-        'Author or source (optional)',
-        helper: 'Credit the author or source when applicable.',
-      ),
-    ],
-  };
+  List<Widget> _fieldsFor(AdminResourceKind kind, _EditorData data) =>
+      switch (kind) {
+        AdminResourceKind.quranAyah => [
+          _section('আয়াতের লেখা'),
+          _field(
+            'arabicText',
+            'আরবি লেখা *',
+            helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+            lines: 7,
+            required: true,
+            rtl: true,
+          ),
+          _field(
+            'banglaText',
+            'বাংলা অনুবাদ *',
+            helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+            lines: 6,
+            required: true,
+          ),
+          _surahField(required: true),
+          _ayahFields(required: true),
+          _approvedSourceField(),
+        ],
+        AdminResourceKind.hadith => [
+          _section('হাদিসের লেখা'),
+          _field(
+            'arabicText',
+            'আরবি লেখা *',
+            helper: 'অনুমোদিত উৎসের আরবি হুবহু লিখুন।',
+            lines: 7,
+            required: true,
+            rtl: true,
+          ),
+          _field(
+            'banglaText',
+            'বাংলা অনুবাদ *',
+            helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+            lines: 6,
+            required: true,
+          ),
+          _field(
+            'collectionName',
+            'হাদিসের কিতাব *',
+            helper: 'হাদিসগ্রন্থ ও কিতাবের নাম লিখুন।',
+            required: true,
+          ),
+          _field(
+            'hadithNumber',
+            'হাদিস নম্বর *',
+            helper: 'উৎসে থাকা হাদিস নম্বরটি দিন।',
+            required: true,
+          ),
+          _approvedSourceField(),
+          _field(
+            'grade',
+            'হাদিসের মান (ঐচ্ছিক)',
+            helper: 'উৎসে মান উল্লেখ থাকলে তবেই লিখুন।',
+          ),
+        ],
+        AdminResourceKind.quranAudio => [
+          _section('অডিওর তথ্য'),
+          _titleField(),
+          _surahField(required: true),
+          _ayahFields(required: false),
+          _field(
+            'mediaUrl',
+            'অডিও লিংক *',
+            helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+            required: true,
+            url: true,
+          ),
+          _field(
+            'author',
+            'কারীর নাম বা উৎস (ঐচ্ছিক)',
+            helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
+          ),
+          _rightsField(),
+        ],
+        AdminResourceKind.ruqyahAudio => [
+          _section('রুকইয়াহ অডিও'),
+          _titleField(),
+          _categoryField(data, prefix: 'ruqyah-', required: true),
+          _field(
+            'mediaUrl',
+            'অডিও লিংক *',
+            helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+            required: true,
+            url: true,
+          ),
+          _rightsField(),
+        ],
+        AdminResourceKind.bookPdf => [
+          _section('বই বা পিডিএফ'),
+          _titleField(),
+          _field(
+            'author',
+            'লেখক (ঐচ্ছিক)',
+            helper: 'প্রকাশনায় যে লেখকের নাম আছে, সেটি লিখুন।',
+          ),
+          _field(
+            'mediaUrl',
+            'পিডিএফ লিংক *',
+            helper: 'পিডিএফের HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+            required: true,
+            url: true,
+          ),
+          _rightsField(),
+        ],
+        AdminResourceKind.video => [
+          _section('ভিডিওর তথ্য'),
+          _titleField(),
+          _field(
+            'mediaUrl',
+            'ভিডিও লিংক *',
+            helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের উৎসেই থাকবে।',
+            required: true,
+            url: true,
+          ),
+          _rightsField(),
+        ],
+        AdminResourceKind.duaAzkar => [
+          _section('দোয়া বা যিকর'),
+          _field(
+            'arabicText',
+            'আরবি *',
+            helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+            lines: 6,
+            required: true,
+            rtl: true,
+          ),
+          _field(
+            'banglaText',
+            'বাংলা *',
+            helper: 'অনুমোদিত বাংলা অর্থ বা অনুবাদ লিখুন।',
+            lines: 5,
+            required: true,
+          ),
+          _categoryField(data, prefix: 'dua-azkar', required: true),
+          _approvedSourceField(),
+          _field(
+            'repeatCount',
+            'পাঠের সংখ্যা (ঐচ্ছিক)',
+            helper: 'অনুমোদিত উৎসে সংখ্যা থাকলেই সেটি লিখুন।',
+            numeric: true,
+          ),
+        ],
+        AdminResourceKind.articleGuide => [
+          _section('লেখা বা নির্দেশিকা'),
+          _titleField(),
+          _field(
+            'body',
+            'সম্পূর্ণ লেখা *',
+            helper: 'পাঠকের জন্য পুরো লেখাটি লিখুন।',
+            lines: 12,
+            required: true,
+          ),
+          _field(
+            'author',
+            'লেখক বা উৎস (ঐচ্ছিক)',
+            helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা উৎস উল্লেখ করুন।',
+          ),
+        ],
+      };
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.only(top: 22, bottom: 2),
@@ -770,15 +788,15 @@ class _AdminContentEditorScreenState
 
   Widget _titleField() => _field(
     'title',
-    'Title *',
-    helper: 'Use a short, clear title that readers will understand.',
+    'শিরোনাম *',
+    helper: 'সংক্ষিপ্ত ও পরিষ্কার একটি নাম লিখুন।',
     required: true,
   );
 
   Widget _rightsField() => _field(
     'rightsNote',
-    'Source / rights acknowledgement *',
-    helper: 'State who owns the resource or why Sukun Life is allowed to link to it.',
+    'উৎস ও ব্যবহারের অনুমতি *',
+    helper: 'উপকরণের উৎস ও ব্যবহারের অনুমতির তথ্য লিখুন।',
     lines: 3,
     required: true,
   );
@@ -786,16 +804,16 @@ class _AdminContentEditorScreenState
   Widget _surahField({required bool required}) => Padding(
     padding: const EdgeInsets.only(top: 12),
     child: SukunChoiceField<String>(
-      label: 'Surah${required ? ' *' : ''}',
-      placeholder: 'Choose the Surah',
-      helperText: 'Choose the Surah this resource belongs to.',
+      label: 'সূরা${required ? ' *' : ''}',
+      placeholder: 'সূরা বেছে নিন',
+      helperText: 'এই উপকরণটি কোন সূরার, তা বেছে নিন।',
       value: _nullable('surahNumber'),
       options: [
         for (var number = 1; number <= 114; number++)
           SukunChoiceOption(
             value: '$number',
-            title: 'Surah $number',
-            description: 'Qur’an Surah number $number',
+            title: 'সূরা $number',
+            description: 'কুরআনের $number নম্বর সূরা',
           ),
       ],
       onChanged: (value) =>
@@ -809,10 +827,10 @@ class _AdminContentEditorScreenState
       Expanded(
         child: _field(
           'ayahNumber',
-          required ? 'Ayah number *' : 'Start Ayah (optional)',
+          required ? 'আয়াত নম্বর *' : 'শুরুর আয়াত (ঐচ্ছিক)',
           helper: required
-              ? 'Enter the Ayah number, e.g. 255.'
-              : 'Use this only when the audio covers selected Ayat.',
+              ? 'আয়াত নম্বর লিখুন, যেমন ২৫৫।'
+              : 'অডিওতে নির্দিষ্ট আয়াত থাকলে নম্বর দিন।',
           required: required,
           numeric: true,
         ),
@@ -821,8 +839,8 @@ class _AdminContentEditorScreenState
       Expanded(
         child: _field(
           'ayahEndNumber',
-          'End Ayah (optional)',
-          helper: 'For a range, enter the final Ayah number.',
+          'শেষ আয়াত (ঐচ্ছিক)',
+          helper: 'একাধিক আয়াত হলে শেষ আয়াত নম্বর দিন।',
           numeric: true,
         ),
       ),
@@ -842,9 +860,9 @@ class _AdminContentEditorScreenState
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: SukunChoiceField<String>(
-        label: 'Category${required ? ' *' : ''}',
+        label: 'বিভাগ${required ? ' *' : ''}',
         placeholder: 'Choose the most suitable category',
-        helperText: 'This helps readers find the resource easily.',
+        helperText: 'এতে পাঠক সহজে উপকরণটি খুঁজে পাবেন।',
         value: _categoryId,
         options: [
           for (final category in options)
@@ -883,12 +901,12 @@ class _AdminContentEditorScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Approved source *',
+                    'অনুমোদিত উৎস *',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    selected ?? 'Tap to choose and record the checked source.',
+                    selected ?? 'উৎসের তথ্য যোগ করতে চাপ দিন।',
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
@@ -908,37 +926,38 @@ class _AdminContentEditorScreenState
       shape: const Border(),
       collapsedShape: const Border(),
       leading: const Icon(Icons.tune_rounded, color: SukunColors.deepTide),
-      title: const Text('Advanced settings'),
-      subtitle: const Text('Optional audience and presentation choices'),
+      title: const Text('অতিরিক্ত সেটিংস'),
+      subtitle: const Text('কে দেখতে পারবেন এবং অন্যান্য তথ্য'),
       childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
       children: [
         SukunChoiceField<String>(
-          label: 'Who can see this?',
-          placeholder: 'Choose the audience',
+          label: 'কারা দেখতে পারবেন?',
+          placeholder: 'দর্শক বেছে নিন',
           value: _visibility,
           options: const [
             SukunChoiceOption(
               value: 'public',
-              title: 'Everyone',
-              description: 'Guests and signed-in users can see it.',
+              title: 'সবাই',
+              description: 'অতিথি ও লগইন করা ব্যবহারকারী দেখতে পারবেন।',
               icon: Icons.public_rounded,
             ),
             SukunChoiceOption(
               value: 'patient_only',
-              title: 'Signed-in patients',
-              description: 'Only authenticated Sukun Life patients can see it.',
+              title: 'লগইন করা রোগীরা',
+              description: 'শুধু সুকুন লাইফের লগইন করা রোগীরা দেখতে পারবেন।',
               icon: Icons.person_outline_rounded,
             ),
             SukunChoiceOption(
               value: 'assigned_only',
-              title: 'Assigned patients only',
-              description: 'Only patients with this resource in a care plan.',
+              title: 'শুধু নির্ধারিত রোগীরা',
+              description:
+                  'পরিকল্পনায় যাদের জন্য দেওয়া আছে শুধু তাঁরা দেখতে পারবেন।',
               icon: Icons.assignment_ind_outlined,
             ),
             SukunChoiceOption(
               value: 'staff_only',
-              title: 'Sukun Life staff only',
-              description: 'Keep this resource inside the admin workspace.',
+              title: 'শুধু সুকুন লাইফের কর্মীরা',
+              description: 'এই উপকরণটি শুধু অ্যাডমিন প্যানেলে থাকবে।',
               icon: Icons.admin_panel_settings_outlined,
             ),
           ],
@@ -946,14 +965,14 @@ class _AdminContentEditorScreenState
         ),
         _field(
           'summary',
-          'Short description (optional)',
-          helper: 'Add one or two sentences to help readers understand it.',
+          'সংক্ষিপ্ত বিবরণ (ঐচ্ছিক)',
+          helper: 'উপকরণটি কী, এক-দুই লাইনে লিখুন।',
           lines: 3,
         ),
         _field(
           'thumbnailUrl',
-          'Cover image link (optional)',
-          helper: 'Paste an HTTPS image link if a cover is available.',
+          'প্রচ্ছদের ছবির লিংক (ঐচ্ছিক)',
+          helper: 'প্রচ্ছদ থাকলে তার HTTPS ছবির লিংক দিন।',
           url: true,
         ),
       ],
@@ -989,9 +1008,9 @@ class _AdminContentEditorScreenState
       ),
       validator: (value) {
         final text = value?.trim() ?? '';
-        if (required && text.isEmpty) return 'Please complete this field.';
+        if (required && text.isEmpty) return 'এই তথ্যটি লিখুন।';
         if (url && text.isNotEmpty && !text.startsWith('https://')) {
-          return 'Please paste a secure HTTPS link.';
+          return 'নিরাপদ HTTPS লিংক দিন।';
         }
         return null;
       },
@@ -1074,44 +1093,37 @@ class _EditorData {
 }
 
 String _kindTitle(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => "Qur'an Ayah",
-  AdminResourceKind.hadith => 'Hadith',
-  AdminResourceKind.quranAudio => "Qur'an / Surah Audio",
-  AdminResourceKind.ruqyahAudio => 'Ruqyah Audio',
-  AdminResourceKind.bookPdf => 'Book / PDF',
-  AdminResourceKind.video => 'Video',
-  AdminResourceKind.duaAzkar => 'Dua / Azkar',
-  AdminResourceKind.articleGuide => 'Article / Guide',
+  AdminResourceKind.quranAyah => "কুরআনের আয়াত",
+  AdminResourceKind.hadith => 'হাদিস',
+  AdminResourceKind.quranAudio => "কুরআন অডিও",
+  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও',
+  AdminResourceKind.bookPdf => 'বই ও পিডিএফ',
+  AdminResourceKind.video => 'ভিডিও',
+  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
+  AdminResourceKind.articleGuide => 'লেখা ও নির্দেশিকা',
 };
 
 String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'Arabic Ayah and approved Bangla translation',
-  AdminResourceKind.hadith => 'Sourced Hadith text and reference',
-  AdminResourceKind.quranAudio => 'External Surah or selected-Ayah recitation',
-  AdminResourceKind.ruqyahAudio => 'External approved Ruqyah recording',
-  AdminResourceKind.bookPdf => 'Externally hosted book or PDF',
-  AdminResourceKind.video => 'YouTube or direct external video',
-  AdminResourceKind.duaAzkar => 'Approved Dua or daily Azkar',
-  AdminResourceKind.articleGuide => 'Reader-friendly article or guide',
+  AdminResourceKind.quranAyah => 'আরবি আয়াত ও অনুমোদিত বাংলা অনুবাদ',
+  AdminResourceKind.hadith => 'হাদিসের লেখা ও নির্ভরযোগ্য সূত্র',
+  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও',
+  AdminResourceKind.ruqyahAudio => 'অনুমোদিত রুকইয়াহ অডিও',
+  AdminResourceKind.bookPdf => 'বই বা পিডিএফের লিংক',
+  AdminResourceKind.video => 'ইউটিউব বা ভিডিওর লিংক',
+  AdminResourceKind.duaAzkar => 'অনুমোদিত দোয়া ও যিকর',
+  AdminResourceKind.articleGuide => 'পাঠযোগ্য লেখা ও নির্দেশিকা',
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah =>
-    'Enter the Ayah exactly as it appears in an approved source.',
-  AdminResourceKind.hadith =>
-    'Record the text and reference exactly from an approved collection.',
+  AdminResourceKind.quranAyah => 'অনুমোদিত উৎস থেকে আয়াতটি হুবহু লিখুন।',
+  AdminResourceKind.hadith => 'বিশ্বস্ত হাদিসগ্রন্থ থেকে লেখা ও সূত্র দিন।',
   AdminResourceKind.quranAudio =>
-    'Link to an externally hosted recitation. No file will be uploaded.',
-  AdminResourceKind.ruqyahAudio =>
-    'Add an approved external recording and choose its Ruqyah category.',
-  AdminResourceKind.bookPdf =>
-    'Link to an externally hosted PDF and confirm permission to use it.',
-  AdminResourceKind.video =>
-    'Add a YouTube or direct video link without uploading the file.',
-  AdminResourceKind.duaAzkar =>
-    'Enter only sourced wording and repetition guidance.',
-  AdminResourceKind.articleGuide =>
-    'Write a clear reader-facing article with attribution where needed.',
+    'অডিওর সরাসরি লিংক দিন; ফাইল এখানে আপলোড হবে না।',
+  AdminResourceKind.ruqyahAudio => 'অনুমোদিত অডিও লিংক ও রুকইয়াহর বিভাগ দিন।',
+  AdminResourceKind.bookPdf => 'পিডিএফ লিংক ও ব্যবহারের অনুমতির তথ্য দিন।',
+  AdminResourceKind.video => 'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
+  AdminResourceKind.duaAzkar => 'শুধু উৎসে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
+  AdminResourceKind.articleGuide => 'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় উৎস দিন।',
 };
 
 IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
