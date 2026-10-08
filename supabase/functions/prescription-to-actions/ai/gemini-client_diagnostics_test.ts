@@ -8,7 +8,21 @@ for (
     [{ output_text: "private prescription" }, "output_json_invalid"],
     [{
       output_text: JSON.stringify({
-        actions: [{ title: "private prescription", frequency: "daily" }],
+        actions: [{
+          type: "amal",
+          title: "private prescription",
+          instruction: null,
+          count_target: null,
+          duration_minutes: null,
+          frequency: "daily",
+          time_window: null,
+          exact_time: null,
+          resource_match_query: null,
+          source_evidence: "private prescription",
+          confidence: 2,
+          needs_review: false,
+          ambiguities: [],
+        }],
       }),
     }, "action_schema_invalid"],
   ] as const
