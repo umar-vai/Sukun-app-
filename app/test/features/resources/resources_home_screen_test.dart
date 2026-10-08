@@ -40,7 +40,7 @@ void main() {
     expect(find.text('Published resource'), findsOneWidget);
   });
 
-  testWidgets('section and search controls update the repository filter', (
+  testWidgets('hub stays compact and search remains on the hub', (
     tester,
   ) async {
     final repository = _FakeResourcesRepository();
@@ -52,25 +52,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('অডিও').first,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(find.text('অডিও').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('অডিও').first);
-    await tester.pumpAndSettle();
-    expect(repository.lastTypes, {'audio'});
+    final grid = tester.widget<GridView>(find.byType(GridView));
+    final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+    expect(delegate.mainAxisExtent, lessThanOrEqualTo(112));
+    expect(delegate.crossAxisCount, 2);
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, 900));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি Ayatul Kursi');
-    // Search should refresh without needing to press the keyboard's Done key.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');
+    expect(repository.lastTypes, isEmpty);
   });
+
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {

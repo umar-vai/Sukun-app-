@@ -28,14 +28,12 @@ class ResourcesHomeScreen extends ConsumerStatefulWidget {
 
 class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   final _searchController = TextEditingController();
-  ResourceSection? _selectedSection;
   late Future<List<ContentResource>> _resources;
   Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
-    _selectedSection = resourceSectionBySlug(widget.initialSectionSlug);
     _resources = _load();
   }
 
@@ -51,8 +49,6 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
         .read(resourcesRepositoryProvider)
         .browseResources(
           query: _searchController.text,
-          types: _selectedSection?.types ?? const {},
-          categoryPrefixes: _selectedSection?.categoryPrefixes ?? const {},
         );
   }
 
@@ -77,24 +73,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     });
   }
 
-  void _selectSection(ResourceSection? section) {
-    final dedicatedPath = switch (section?.slug) {
-      'quran' => '/resources/quran',
-      'hadith' => '/resources/hadith',
-      'dua-azkar' => '/resources/dua-azkar',
-      'ruqyah' => '/resources/ruqyah',
-      _ => null,
-    };
-    if (dedicatedPath != null) {
-      _searchDebounce?.cancel();
-      context.push(dedicatedPath);
-      return;
-    }
+  void _selectSection(ResourceSection section) {
     _searchDebounce?.cancel();
-    setState(() {
-      _selectedSection = section;
-      _resources = _load();
-    });
+    context.push('/resources/${section.slug}');
   }
 
   @override
@@ -131,12 +112,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 SukunSectionHeader(
                   title: 'বিষয় অনুযায়ী দেখুন',
                   subtitle: 'আপনার পছন্দের বিভাগ বেছে নিন',
-                  action: _selectedSection == null
-                      ? null
-                      : TextButton(
-                          onPressed: () => _selectSection(null),
-                          child: const Text('সব দেখুন'),
-                        ),
+
                 ),
                 const SizedBox(height: 10),
                 LayoutBuilder(
@@ -149,14 +125,13 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: columns == 4 ? 1.08 : 0.86,
+                        mainAxisExtent: columns == 4 ? 104 : 112,
                       ),
                       itemCount: resourceSections.length,
                       itemBuilder: (context, index) {
                         final section = resourceSections[index];
                         return _SectionCard(
                           section: section,
-                          selected: section.slug == _selectedSection?.slug,
                           onTap: () => _selectSection(section),
                         );
                       },
@@ -165,10 +140,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 const SizedBox(height: 24),
                 SukunSectionHeader(
-                  title: _selectedSection?.titleBn ?? 'সাম্প্রতিক উপকরণ',
-                  subtitle: _selectedSection == null
-                      ? 'নতুন যুক্ত হওয়া উপকরণ'
-                      : 'এই বিভাগের উপকরণ',
+                  title: 'সাম্প্রতিক উপকরণ',
+                  subtitle: 'নতুন যুক্ত হওয়া উপকরণ',
                 ),
                 const SizedBox(height: 10),
               ],
@@ -202,9 +175,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     title: 'কোনো উপকরণ পাওয়া যায়নি',
                     message: _searchController.text.trim().isNotEmpty
                         ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
-                        : _selectedSection == null
-                        ? 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।'
-                        : 'এই বিভাগে এখনো কোনো উপকরণ দেওয়া হয়নি।',
+                        : 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।',
                   ),
                 );
               }
@@ -214,7 +185,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   itemCount: resources.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 10),
-                  itemBuilder: (context, index) => _ResourceCard(
+                  itemBuilder: (context, index) => ResourceCard(
                     resource: resources[index],
                     onTap: () => context.push(
                       widget.embedded
@@ -240,28 +211,28 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.section,
-    required this.selected,
     required this.onTap,
   });
 
   final ResourceSection section;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return SukunSurface(
-      tone: selected ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
-      padding: const EdgeInsets.all(14),
+      tone: SukunSurfaceTone.white,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SukunIconBadge(icon: section.icon, size: 46),
-          const SizedBox(height: 10),
+          SukunIconBadge(icon: section.icon, size: 40),
+          const SizedBox(height: 8),
           Text(
             section.titleBn,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: SukunTypography.banglaBody(
               textStyle: Theme.of(context).textTheme.titleSmall,
             ),
@@ -272,8 +243,8 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _ResourceCard extends StatelessWidget {
-  const _ResourceCard({required this.resource, required this.onTap});
+class ResourceCard extends StatelessWidget {
+  const ResourceCard({super.key, required this.resource, required this.onTap});
 
   final ContentResource resource;
   final VoidCallback onTap;

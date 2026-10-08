@@ -34,6 +34,8 @@ import 'package:sukun_life/features/patients/presentation/create_prescription_sc
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
+import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
@@ -93,6 +95,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
       GoRoute(
         path: '/resources',
+        redirect: (context, state) {
+          final slug = state.uri.queryParameters['section'];
+          return resourceSectionBySlug(slug) == null
+              ? null
+              : '/resources/$slug';
+        },
         builder: (context, state) => ResourcesHomeScreen(
           initialSectionSlug: state.uri.queryParameters['section'],
         ),
@@ -135,6 +143,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
           ),
+          for (final slug in const [
+            'books-pdfs',
+            'articles-guides',
+            'audio',
+            'video',
+          ])
+            GoRoute(
+              path: slug,
+              builder: (context, state) => ResourceCategoryScreen(
+                section: resourceSectionBySlug(slug)!,
+              ),
+            ),
           GoRoute(
             path: ':resourceId',
             builder: (context, state) => ResourceDetailScreen(
