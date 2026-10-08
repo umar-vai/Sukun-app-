@@ -21,7 +21,17 @@ class PatientScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: actions),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          ...?actions,
+          IconButton(
+            tooltip: 'আমার বার্তা',
+            onPressed: () => context.push('/patient/notifications'),
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
+        ],
+      ),
       body: body,
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: selectedIndex,
