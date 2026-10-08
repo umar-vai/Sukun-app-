@@ -179,7 +179,11 @@ Deno.serve(async (request) => {
       ? "gemini-3.5-flash-lite"
       : configuredDocumentModel;
     const healthStore = new SupabaseSlotHealthStore(adminClient);
-    const geminiClient = new RestGeminiClient();
+    const geminiClient = new RestGeminiClient(
+      fetch,
+      (event) =>
+        console.log(JSON.stringify({ ...event, request_id: input.requestId })),
+    );
     const timeoutMs = positiveInteger("AI_DOCUMENT_TIMEOUT_MS", 35000);
     const cooldownMs = positiveInteger("AI_KEY_COOLDOWN_SECONDS", 3600) * 1000;
     const document = {

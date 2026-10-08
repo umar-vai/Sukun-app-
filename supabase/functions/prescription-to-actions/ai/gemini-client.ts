@@ -30,7 +30,10 @@ export interface GeminiClient {
 }
 
 export class RestGeminiClient implements GeminiClient {
-  constructor(private readonly fetcher: typeof fetch = fetch) {}
+  constructor(
+    private readonly fetcher: typeof fetch = fetch,
+    private readonly diagnostic?: (event: Record<string, unknown>) => void,
+  ) {}
 
   async generate(request: GeminiRequest): Promise<SuggestedActions> {
     if (request.document) {
@@ -70,10 +73,76 @@ export class RestGeminiClient implements GeminiClient {
 
       const body = await response.json();
       const text = interactionOutputText(body);
-      if (!text) throw new GeminiMalformedOutputError();
+      const report = (category: string, extra = {}) =>
+        this.diagnostic?.({
+          event: "ai_response_diagnostic",
+          endpoint: "/v1beta/interactions",
+          model: request.model,
+          http_status: response.status,
+          response_fields: [
+            "output_text",
+            "steps",
+            "outputs",
+            "candidates",
+            "status",
+            "error",
+          ]
+            .filter((key) => body && Object.hasOwn(body, key)),
+          validation_category: category,
+          ...extra,
+        });
+      if (!text) {
+        report("output_text_missing");
+        throw new GeminiMalformedOutputError();
+      }
+      let parsed: unknown;
       try {
-        return parseSuggestedActions(parseJsonObject(text));
+        parsed = parseJsonObject(text);
       } catch {
+        report("output_json_invalid");
+        throw new GeminiMalformedOutputError();
+      }
+      try {
+        const result = parseSuggestedActions(parsed);
+        report("valid");
+        return result;
+      } catch {
+        // Only fixed field names/types; never serialize provider text or errors.
+        const actions = parsed && typeof parsed === "object"
+          ? (parsed as Record<string, unknown>).actions
+          : null;
+        const fields = [
+          "type",
+          "title",
+          "instruction",
+          "count_target",
+          "duration_minutes",
+          "frequency",
+          "time_window",
+          "exact_time",
+          "resource_match_query",
+          "source_evidence",
+          "confidence",
+          "needs_review",
+          "ambiguities",
+        ];
+        report("action_schema_invalid", {
+          actions_array: Array.isArray(actions),
+          missing_action_fields: fields.filter((field) =>
+            Array.isArray(actions) &&
+            actions.some((action) =>
+              !action || typeof action !== "object" ||
+              !Object.hasOwn(action, field)
+            )
+          ),
+          frequency_shapes: Array.isArray(actions)
+            ? [
+              ...new Set(actions.map((action) =>
+                action?.frequency === null ? "null" : typeof action?.frequency
+              )),
+            ]
+            : [],
+        });
         throw new GeminiMalformedOutputError();
       }
     } catch (error) {

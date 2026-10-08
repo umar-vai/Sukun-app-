@@ -111,6 +111,18 @@ Use this as the execution checklist after reading `AGENTS.md`, `CODEX_START_HERE
 - [x] Test all four unavailable → no quota error reaches Flutter, manual fallback remains usable
 - [x] Test key secrets never appear in logs/API responses
 
+## Phase 4B — Prescription PDF/Image AI Extraction
+
+- [x] Inspect production document v14 / typed v10 and existing migrations without resetting production
+- [x] Add tested, content-free response-shape diagnostics (document v15)
+- [ ] Prove the exact post-transcription failure from a live diagnostic response
+- [ ] Add the proven failure regression and smallest robust fix
+- [ ] Verify PDF/image → validated actions → draft finalization → Flutter AI Review live
+- [ ] Verify typed prescription AI in production, not just mocked tests
+- [ ] Verify explicit human approval and physical-device acceptance
+
+See `docs/PRESCRIPTION_AI_DIAGNOSTIC_2026_10_08.md`. This milestone remains incomplete.
+
 ## Phase 5 — Content CMS + Dedicated Islamic Resources
 
 Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
