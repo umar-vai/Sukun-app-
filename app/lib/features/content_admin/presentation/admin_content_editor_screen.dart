@@ -616,7 +616,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'Copy the Arabic exactly from the approved source.',
+        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -624,7 +624,7 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা অনুবাদ *',
-        helper: 'Copy the approved Bangla translation without rewriting it.',
+        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
         lines: 6,
         required: true,
       ),
@@ -637,7 +637,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'Copy the Arabic exactly as it appears in the approved source.',
+        helper: 'অনুমোদিত উৎসের আরবি হুবহু লিখুন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -645,27 +645,27 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা অনুবাদ *',
-        helper: 'Copy the approved Bangla translation without rewriting it.',
+        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
         lines: 6,
         required: true,
       ),
       _field(
         'collectionName',
         'হাদিসের কিতাব *',
-        helper: 'Enter the collection and book name used by the source.',
+        helper: 'হাদিসগ্রন্থ ও কিতাবের নাম লিখুন।',
         required: true,
       ),
       _field(
         'hadithNumber',
         'হাদিস নম্বর *',
-        helper: 'Enter the number exactly as shown by the source.',
+        helper: 'উৎসে থাকা হাদিস নম্বরটি দিন।',
         required: true,
       ),
       _approvedSourceField(),
       _field(
         'grade',
         'হাদিসের মান (ঐচ্ছিক)',
-        helper: 'Only enter a grade when the approved source provides one.',
+        helper: 'উৎসে মান উল্লেখ থাকলে তবেই লিখুন।',
       ),
     ],
     AdminResourceKind.quranAudio => [
@@ -676,14 +676,14 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
+        helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
         required: true,
         url: true,
       ),
       _field(
         'author',
         'কারীর নাম বা উৎস (ঐচ্ছিক)',
-        helper: 'Enter the reciter or organization when known.',
+        helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
       ),
       _rightsField(),
     ],
@@ -694,7 +694,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'Paste the direct online audio link. The file will not be uploaded to Sukun Life.',
+        helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
         required: true,
         url: true,
       ),
@@ -706,12 +706,12 @@ class _AdminContentEditorScreenState
       _field(
         'author',
         'লেখক (ঐচ্ছিক)',
-        helper: 'Enter the author exactly as credited by the publication.',
+        helper: 'প্রকাশনায় যে লেখকের নাম আছে, সেটি লিখুন।',
       ),
       _field(
         'mediaUrl',
         'পিডিএফ লিংক *',
-        helper: 'Paste the external PDF link. The file will not be uploaded to Sukun Life.',
+        helper: 'পিডিএফের HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
         required: true,
         url: true,
       ),
@@ -723,7 +723,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'ভিডিও লিংক *',
-        helper: 'Paste the YouTube or direct video link. The video remains externally hosted.',
+        helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের উৎসেই থাকবে।',
         required: true,
         url: true,
       ),
@@ -734,7 +734,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি *',
-        helper: 'Copy the Arabic exactly from the approved source.',
+        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
         lines: 6,
         required: true,
         rtl: true,
@@ -742,7 +742,7 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা *',
-        helper: 'Enter the approved Bangla meaning or translation.',
+        helper: 'অনুমোদিত বাংলা অর্থ বা অনুবাদ লিখুন।',
         lines: 5,
         required: true,
       ),
@@ -752,7 +752,7 @@ class _AdminContentEditorScreenState
         'repeatCount',
         'পাঠের সংখ্যা (ঐচ্ছিক)',
         helper:
-            'Only enter a count when the approved source explicitly states it.',
+            'অনুমোদিত উৎসে সংখ্যা থাকলেই সেটি লিখুন।',
         numeric: true,
       ),
     ],
@@ -762,14 +762,14 @@ class _AdminContentEditorScreenState
       _field(
         'body',
         'সম্পূর্ণ লেখা *',
-        helper: 'Write the complete reader-facing article or guide.',
+        helper: 'পাঠকের জন্য পুরো লেখাটি লিখুন।',
         lines: 12,
         required: true,
       ),
       _field(
         'author',
         'লেখক বা উৎস (ঐচ্ছিক)',
-        helper: 'Credit the author or source when applicable.',
+        helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা উৎস উল্লেখ করুন।',
       ),
     ],
   };
@@ -782,14 +782,14 @@ class _AdminContentEditorScreenState
   Widget _titleField() => _field(
     'title',
     'শিরোনাম *',
-    helper: 'Use a short, clear title that readers will understand.',
+    helper: 'সংক্ষিপ্ত ও পরিষ্কার একটি নাম লিখুন।',
     required: true,
   );
 
   Widget _rightsField() => _field(
     'rightsNote',
     'উৎস ও ব্যবহারের অনুমতি *',
-    helper: 'State who owns the resource or why Sukun Life is allowed to link to it.',
+    helper: 'উপকরণের উৎস ও ব্যবহারের অনুমতির তথ্য লিখুন।',
     lines: 3,
     required: true,
   );
@@ -798,15 +798,15 @@ class _AdminContentEditorScreenState
     padding: const EdgeInsets.only(top: 12),
     child: SukunChoiceField<String>(
       label: 'সূরা${required ? ' *' : ''}',
-      placeholder: 'Choose the Surah',
+      placeholder: 'সূরা বেছে নিন',
       helperText: 'এই উপকরণটি কোন সূরার, তা বেছে নিন।',
       value: _nullable('surahNumber'),
       options: [
         for (var number = 1; number <= 114; number++)
           SukunChoiceOption(
             value: '$number',
-            title: 'Surah $number',
-            description: 'Qur’an Surah number $number',
+            title: 'সূরা $number',
+            description: 'কুরআনের $number নম্বর সূরা',
           ),
       ],
       onChanged: (value) =>
@@ -820,10 +820,10 @@ class _AdminContentEditorScreenState
       Expanded(
         child: _field(
           'ayahNumber',
-          required ? 'Ayah number *' : 'Start Ayah (optional)',
+          required ? 'আয়াত নম্বর *' : 'শুরুর আয়াত (ঐচ্ছিক)',
           helper: required
-              ? 'Enter the Ayah number, e.g. 255.'
-              : 'Use this only when the audio covers selected Ayat.',
+              ? 'আয়াত নম্বর লিখুন, যেমন ২৫৫।'
+              : 'অডিওতে নির্দিষ্ট আয়াত থাকলে নম্বর দিন।',
           required: required,
           numeric: true,
         ),
@@ -832,8 +832,8 @@ class _AdminContentEditorScreenState
       Expanded(
         child: _field(
           'ayahEndNumber',
-          'End Ayah (optional)',
-          helper: 'For a range, enter the final Ayah number.',
+          'শেষ আয়াত (ঐচ্ছিক)',
+          helper: 'একাধিক আয়াত হলে শেষ আয়াত নম্বর দিন।',
           numeric: true,
         ),
       ),
@@ -894,12 +894,12 @@ class _AdminContentEditorScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Approved source *',
+                    'অনুমোদিত উৎস *',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    selected ?? 'Tap to choose and record the checked source.',
+                    selected ?? 'উৎসের তথ্য যোগ করতে চাপ দিন।',
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
@@ -931,25 +931,25 @@ class _AdminContentEditorScreenState
             SukunChoiceOption(
               value: 'public',
               title: 'সবাই',
-              description: 'Guests and signed-in users can see it.',
+              description: 'অতিথি ও লগইন করা ব্যবহারকারী দেখতে পারবেন।',
               icon: Icons.public_rounded,
             ),
             SukunChoiceOption(
               value: 'patient_only',
               title: 'লগইন করা রোগীরা',
-              description: 'Only authenticated Sukun Life patients can see it.',
+              description: 'শুধু সুকুন লাইফের লগইন করা রোগীরা দেখতে পারবেন।',
               icon: Icons.person_outline_rounded,
             ),
             SukunChoiceOption(
               value: 'assigned_only',
               title: 'শুধু নির্ধারিত রোগীরা',
-              description: 'Only patients with this resource in a care plan.',
+              description: 'পরিকল্পনায় যাদের জন্য দেওয়া আছে শুধু তাঁরা দেখতে পারবেন।',
               icon: Icons.assignment_ind_outlined,
             ),
             SukunChoiceOption(
               value: 'staff_only',
               title: 'শুধু সুকুন লাইফের কর্মীরা',
-              description: 'Keep this resource inside the admin workspace.',
+              description: 'এই উপকরণটি শুধু অ্যাডমিন প্যানেলে থাকবে।',
               icon: Icons.admin_panel_settings_outlined,
             ),
           ],
@@ -958,13 +958,13 @@ class _AdminContentEditorScreenState
         _field(
           'summary',
           'সংক্ষিপ্ত বিবরণ (ঐচ্ছিক)',
-          helper: 'Add one or two sentences to help readers understand it.',
+          helper: 'উপকরণটি কী, এক-দুই লাইনে লিখুন।',
           lines: 3,
         ),
         _field(
           'thumbnailUrl',
           'প্রচ্ছদের ছবির লিংক (ঐচ্ছিক)',
-          helper: 'Paste an HTTPS image link if a cover is available.',
+          helper: 'প্রচ্ছদ থাকলে তার HTTPS ছবির লিংক দিন।',
           url: true,
         ),
       ],
