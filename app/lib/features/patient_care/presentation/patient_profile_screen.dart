@@ -220,6 +220,12 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
             },
           ),
           const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/patient/notifications'),
+            icon: const Icon(Icons.mark_email_unread_outlined),
+            label: const Text('আমার বার্তাগুলো দেখুন'),
+          ),
+          const SizedBox(height: 16),
           SukunSurface(
             padding: const EdgeInsets.all(18),
             child: Column(
