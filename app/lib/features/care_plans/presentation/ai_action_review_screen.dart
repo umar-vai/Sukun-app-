@@ -45,6 +45,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   List<_EditableSuggestion>? _drafts;
   bool _importing = false;
   bool _forceFreshGeneration = false;
+  _ReviewFilter _reviewFilter = _ReviewFilter.all;
 
   @override
   void initState() {
@@ -270,6 +271,17 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
           final selectedCount = _drafts!
               .where((draft) => draft.selected && !draft.imported)
               .length;
+          final readyCount = _drafts!
+              .where((draft) => draft.isReady && !draft.imported)
+              .length;
+          final reviewCount = _drafts!
+              .where((draft) => !draft.isReady && !draft.imported)
+              .length;
+          final visibleDrafts = <({int index, _EditableSuggestion draft})>[
+            for (var index = 0; index < _drafts!.length; index++)
+              if (_reviewFilter.matches(_drafts![index]))
+                (index: index, draft: _drafts![index]),
+          ];
           return Form(
             key: _formKey,
             child: Stack(
@@ -287,34 +299,43 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                     const SizedBox(height: 16),
                     _SourcePrescription(prescription: data.prescription),
                     const SizedBox(height: 16),
-                    SukunSectionHeader(
-                      title: '${_drafts!.length} suggestions',
-                      subtitle: 'Expand each suggestion to verify and edit',
-                      action: TextButton(
-                        onPressed: _importing
-                            ? null
-                            : () => setState(() {
-                                final select = _drafts!.any(
-                                  (draft) => !draft.imported && !draft.selected,
-                                );
-                                for (final draft in _drafts!) {
-                                  if (!draft.imported) draft.selected = select;
-                                }
-                              }),
-                        child: const Text('Select all'),
-                      ),
+                    _ReviewSummary(
+                      totalCount: _drafts!.length,
+                      readyCount: readyCount,
+                      reviewCount: reviewCount,
+                      selectedCount: selectedCount,
+                      filter: _reviewFilter,
+                      enabled: !_importing,
+                      onFilterChanged: (filter) =>
+                          setState(() => _reviewFilter = filter),
+                      onSelectionAction: () => setState(() {
+                        if (selectedCount > 0) {
+                          for (final draft in _drafts!) {
+                            if (!draft.imported) draft.selected = false;
+                          }
+                          return;
+                        }
+                        for (final draft in _drafts!) {
+                          if (!draft.imported && draft.isReady) {
+                            draft.selected = true;
+                          }
+                        }
+                      }),
                     ),
-                    const SizedBox(height: 8),
-                    for (var index = 0; index < _drafts!.length; index++) ...[
-                      _SuggestedActionCard(
-                        number: index + 1,
-                        draft: _drafts![index],
-                        resources: data.resources,
-                        enabled: !_importing,
-                        onChanged: () => setState(() {}),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                    const SizedBox(height: 12),
+                    if (visibleDrafts.isEmpty)
+                      const _NoSuggestionsForFilter()
+                    else
+                      for (final entry in visibleDrafts) ...[
+                        _SuggestedActionCard(
+                          number: entry.index + 1,
+                          draft: entry.draft,
+                          resources: data.resources,
+                          enabled: !_importing,
+                          onChanged: () => setState(() {}),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: _importing ? null : _openManualBuilder,
@@ -346,6 +367,140 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       ),
     );
   }
+}
+
+enum _ReviewFilter { all, ready, needsReview }
+
+extension on _ReviewFilter {
+  bool matches(_EditableSuggestion draft) => switch (this) {
+    _ReviewFilter.all => true,
+    _ReviewFilter.ready => draft.isReady,
+    _ReviewFilter.needsReview => !draft.isReady,
+  };
+}
+
+class _ReviewSummary extends StatelessWidget {
+  const _ReviewSummary({
+    required this.totalCount,
+    required this.readyCount,
+    required this.reviewCount,
+    required this.selectedCount,
+    required this.filter,
+    required this.enabled,
+    required this.onFilterChanged,
+    required this.onSelectionAction,
+  });
+
+  final int totalCount;
+  final int readyCount;
+  final int reviewCount;
+  final int selectedCount;
+  final _ReviewFilter filter;
+  final bool enabled;
+  final ValueChanged<_ReviewFilter> onFilterChanged;
+  final VoidCallback onSelectionAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return SukunSurface(
+      tone: SukunSurfaceTone.soft,
+      showBorder: false,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$totalCount suggestions',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: enabled ? onSelectionAction : null,
+                child: Text(
+                  selectedCount > 0 ? 'Clear selection' : 'Select ready',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$readyCount ready · $reviewCount need review',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: SukunColors.muted),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ReviewFilterChip(
+                label: 'All',
+                count: totalCount,
+                selected: filter == _ReviewFilter.all,
+                onTap: () => onFilterChanged(_ReviewFilter.all),
+              ),
+              _ReviewFilterChip(
+                label: 'Ready',
+                count: readyCount,
+                selected: filter == _ReviewFilter.ready,
+                onTap: () => onFilterChanged(_ReviewFilter.ready),
+              ),
+              _ReviewFilterChip(
+                label: 'Needs review',
+                count: reviewCount,
+                selected: filter == _ReviewFilter.needsReview,
+                onTap: () => onFilterChanged(_ReviewFilter.needsReview),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewFilterChip extends StatelessWidget {
+  const _ReviewFilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+    selected: selected,
+    onSelected: (_) => onTap(),
+    label: Text('$label · $count'),
+  );
+}
+
+class _NoSuggestionsForFilter extends StatelessWidget {
+  const _NoSuggestionsForFilter();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 28),
+    child: Center(
+      child: Text(
+        'No suggestions in this filter.',
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: SukunColors.muted),
+      ),
+    ),
+  );
 }
 
 class _ImportDock extends StatelessWidget {
@@ -450,7 +605,7 @@ class _EditableSuggestion {
     SuggestedPlanAction source, {
     required List<ResourceMatch> resourceMatches,
   }) {
-    return _EditableSuggestion(
+    final draft = _EditableSuggestion(
       source: source,
       type: source.type,
       title: source.title,
@@ -464,6 +619,8 @@ class _EditableSuggestion {
       exactTime: source.exactTime,
       resourceMatches: resourceMatches,
     );
+    draft.selected = draft.isReady;
+    return draft;
   }
 
   final SuggestedPlanAction source;
@@ -480,8 +637,17 @@ class _EditableSuggestion {
   String timeWindow;
   DateTime? exactTime;
   String contentItemId = '';
-  bool selected = true;
+  bool selected = false;
   bool imported = false;
+
+  bool get hasIncompleteMetadata => source.ambiguities.any(
+    (item) => item.startsWith('AI omitted metadata fields:'),
+  );
+
+  bool get isReady =>
+      !source.needsReview &&
+      !hasIncompleteMetadata &&
+      source.confidence >= 0.8;
 
   bool get wasEdited {
     if (type.trim() != source.type ||
@@ -580,7 +746,14 @@ class _SuggestedActionCard extends StatelessWidget {
           spacing: 8,
           runSpacing: 4,
           children: [
-            Text('${(draft.source.confidence * 100).round()}% confidence'),
+            Text(
+              draft.hasIncompleteMetadata
+                  ? 'Metadata incomplete'
+                  : '${(draft.source.confidence * 100).round()}% confidence',
+              style: draft.hasIncompleteMetadata
+                  ? const TextStyle(color: SukunColors.deepTide)
+                  : null,
+            ),
             if (draft.source.needsReview)
               const Text(
                 'Needs review',
