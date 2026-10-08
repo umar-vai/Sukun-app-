@@ -12,10 +12,8 @@ Future<String?> showResourcePickerSheet({
     useSafeArea: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => _ResourcePickerSheet(
-      resources: resources,
-      selectedId: selectedId,
-    ),
+    builder: (context) =>
+        _ResourcePickerSheet(resources: resources, selectedId: selectedId),
   );
 }
 
@@ -95,9 +93,8 @@ class ResourcePickerField extends StatelessWidget {
                     children: [
                       Text(
                         'Linked resource (optional)',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: SukunColors.muted,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall
+                            ?.copyWith(color: SukunColors.muted),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -114,9 +111,8 @@ class ResourcePickerField extends StatelessWidget {
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: SukunColors.muted,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: SukunColors.muted),
                       ),
                     ],
                   ),
@@ -312,23 +308,25 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
 
   List<ContentResourceOption> _filteredResources() {
     final query = _searchController.text.trim().toLowerCase();
-    return widget.resources.where((resource) {
-      final categoryMatch = _categoryId == null
-          ? true
-          : _categoryId == '__uncategorized__'
-          ? resource.categoryId == null
-          : resource.categoryId == _categoryId;
-      if (!categoryMatch) return false;
-      if (query.isEmpty) return true;
-      return [
-        resource.title,
-        resource.titleBn ?? '',
-        resource.type,
-        resource.categoryLabel,
-        resource.status,
-        resource.visibility,
-      ].any((value) => value.toLowerCase().contains(query));
-    }).toList(growable: false);
+    return widget.resources
+        .where((resource) {
+          final categoryMatch = _categoryId == null
+              ? true
+              : _categoryId == '__uncategorized__'
+              ? resource.categoryId == null
+              : resource.categoryId == _categoryId;
+          if (!categoryMatch) return false;
+          if (query.isEmpty) return true;
+          return [
+            resource.title,
+            resource.titleBn ?? '',
+            resource.type,
+            resource.categoryLabel,
+            resource.status,
+            resource.visibility,
+          ].any((value) => value.toLowerCase().contains(query));
+        })
+        .toList(growable: false);
   }
 
   Map<String, List<ContentResourceOption>> _groupByCategory(
@@ -438,9 +436,8 @@ class _CategoryHeader extends StatelessWidget {
         ),
         Text(
           '$count resource${count == 1 ? '' : 's'}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: SukunColors.muted),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: SukunColors.muted),
         ),
       ],
     ),
@@ -561,18 +558,16 @@ class _PickerCard extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: SukunColors.muted,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: SukunColors.muted),
                       ),
                       if (meta.isNotEmpty) ...[
                         const SizedBox(height: 9),
@@ -676,9 +671,10 @@ String _displayType(String value) => switch (value) {
   'quran' => 'Qur’an',
   'book_chapter' => 'Book chapter',
   'external_link' => 'External link',
-  _ => value.isEmpty
-      ? 'Resource'
-      : '${value[0].toUpperCase()}${value.substring(1)}',
+  _ =>
+    value.isEmpty
+        ? 'Resource'
+        : '${value[0].toUpperCase()}${value.substring(1)}',
 };
 
 String _displayStatus(String value) => switch (value) {
