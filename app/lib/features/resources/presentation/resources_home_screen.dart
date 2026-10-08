@@ -152,54 +152,54 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
           if (hasSearch)
             FutureBuilder<List<ContentResource>>(
               future: _resources,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 160,
-                    child: AppLoadingState(label: 'উপকরণ আনা হচ্ছে…'),
-                  ),
-                );
-              }
-              if (snapshot.hasError) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: AppErrorState(
-                    message: 'উপকরণ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
-                    onRetry: _refresh,
-                  ),
-                );
-              }
-              final resources = snapshot.data!;
-              if (resources.isEmpty) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: AppEmptyState(
-                    title: 'কোনো উপকরণ পাওয়া যায়নি',
-                    message: _searchController.text.trim().isNotEmpty
-                        ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
-                        : 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।',
-                  ),
-                );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                sliver: SliverList.separated(
-                  itemCount: resources.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
-                  itemBuilder: (context, index) => ResourceCard(
-                    resource: resources[index],
-                    onTap: () => context.push(
-                      widget.embedded
-                          ? '/patient/resources/${resources[index].id}'
-                          : '/resources/${resources[index].id}',
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 160,
+                      child: AppLoadingState(label: 'উপকরণ আনা হচ্ছে…'),
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: AppErrorState(
+                      message: 'উপকরণ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+                      onRetry: _refresh,
+                    ),
+                  );
+                }
+                final resources = snapshot.data!;
+                if (resources.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: AppEmptyState(
+                      title: 'কোনো উপকরণ পাওয়া যায়নি',
+                      message: _searchController.text.trim().isNotEmpty
+                          ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
+                          : 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।',
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  sliver: SliverList.separated(
+                    itemCount: resources.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) => ResourceCard(
+                      resource: resources[index],
+                      onTap: () => context.push(
+                        widget.embedded
+                            ? '/patient/resources/${resources[index].id}'
+                            : '/resources/${resources[index].id}',
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
         ],
       ),
     );
