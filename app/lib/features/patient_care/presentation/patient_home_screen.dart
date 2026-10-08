@@ -85,7 +85,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('কাজটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text('কাজটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _updatingTaskId = null);
@@ -291,15 +293,15 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                       )
                     else
                       for (final task in remainingTasks) ...[
-                      _TaskCard(
-                        task: task,
-                        busy: _updatingTaskId == task.id,
-                        onDone: () =>
-                            _record(task, PatientTaskStatus.completed),
-                        onSnooze: () => _snooze(task),
-                        onSkip: () => _skip(task),
-                        onOpenResource: () => _openResource(task),
-                      ),
+                        _TaskCard(
+                          task: task,
+                          busy: _updatingTaskId == task.id,
+                          onDone: () =>
+                              _record(task, PatientTaskStatus.completed),
+                          onSnooze: () => _snooze(task),
+                          onSkip: () => _skip(task),
+                          onOpenResource: () => _openResource(task),
+                        ),
                         const SizedBox(height: 10),
                       ],
                   ],
