@@ -104,7 +104,7 @@ class _CreatePrescriptionScreenState
             ),
           );
       if (mounted) context.pop(true);
-    } catch (error) {
+    } catch (_) {
       if (mounted) _showMessage('প্রেসক্রিপশন সংরক্ষণ করা যায়নি।');
     } finally {
       if (mounted) setState(() => _submitting = false);
