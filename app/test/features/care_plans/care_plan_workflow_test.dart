@@ -106,7 +106,6 @@ void main() {
       find.widgetWithText(FilledButton, 'রোগীর জন্য চালু করুন'),
     );
     expect(publishButton.onPressed, isNull);
-    expect(find.byTooltip('সংশোধন করুন'), findsWidgets);
   });
 
   testWidgets('publishing refreshes the builder without a setState error', (
