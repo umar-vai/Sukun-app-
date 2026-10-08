@@ -10,9 +10,7 @@ void main() {
     const internal = 'PostgrestException: SQLSTATE 42501 token=secret';
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: AppErrorState(message: internal),
-        ),
+        home: Scaffold(body: AppErrorState(message: internal)),
       ),
     );
     expect(find.textContaining('SQLSTATE'), findsNothing);
@@ -27,10 +25,12 @@ void main() {
     late String message;
     await tester.pumpWidget(
       MaterialApp(
-        home: Builder(builder: (context) {
-          message = FriendlyFailures.signIn(context);
-          return const SizedBox.shrink();
-        }),
+        home: Builder(
+          builder: (context) {
+            message = FriendlyFailures.signIn(context);
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
     expect(message, contains('প্রবেশ করা যায়নি'));
