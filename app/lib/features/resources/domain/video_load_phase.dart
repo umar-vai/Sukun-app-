@@ -11,6 +11,7 @@ VideoLoadPhase videoLoadPhase(
 }) {
   if (value.hasError) return VideoLoadPhase.failed;
   return switch (value.playerState) {
+    PlayerState.unStarted ||
     PlayerState.cued ||
     PlayerState.playing ||
     PlayerState.paused ||
