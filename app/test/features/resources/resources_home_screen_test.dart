@@ -55,6 +55,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(repository.browseCalls, 0);
     final grid = tester.widget<GridView>(find.byType(GridView));
     final delegate =
         grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
