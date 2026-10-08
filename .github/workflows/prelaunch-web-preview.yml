@@ -75,6 +75,7 @@ jobs:
           flutter build web --release
           --base-href /Sukun-app-/prelaunch/
           --dart-define=APP_ENVIRONMENT=development
+          --dart-define=PRELAUNCH_VISUAL_DEMO=true
 
       - name: Build staging-connected web preview
         if: steps.config.outputs.connected == 'true'
