@@ -34,6 +34,7 @@ class _PlanActionEditorScreenState
   final _instructionController = TextEditingController();
   final _countController = TextEditingController();
   final _durationController = TextEditingController();
+  final _dailyIntervalController = TextEditingController(text: '1');
   final _usageNoteController = TextEditingController();
   final _requestId = const Uuid().v4();
 
@@ -90,6 +91,7 @@ class _PlanActionEditorScreenState
     _countController.text = action.countTarget?.toString() ?? '';
     _durationController.text = action.durationMinutes?.toString() ?? '';
     _frequencyType = action.frequency.type;
+    _dailyIntervalController.text = action.frequency.interval.toString();
     _weekdays = {...action.frequency.weekdays};
     _timeWindow = action.timeWindow ?? '';
     _exactTime = action.exactTime;
@@ -106,6 +108,7 @@ class _PlanActionEditorScreenState
     _instructionController.dispose();
     _countController.dispose();
     _durationController.dispose();
+    _dailyIntervalController.dispose();
     _usageNoteController.dispose();
     super.dispose();
   }
@@ -154,7 +157,9 @@ class _PlanActionEditorScreenState
     setState(() => _submitting = true);
     try {
       final frequency = _frequencyType == ActionFrequencyType.daily
-          ? const ActionFrequency.daily()
+          ? ActionFrequency.daily(
+              interval: int.parse(_dailyIntervalController.text.trim()),
+            )
           : ActionFrequency.weekly(_weekdays);
       await ref
           .read(carePlansRepositoryProvider)
@@ -182,8 +187,9 @@ class _PlanActionEditorScreenState
       if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -201,7 +207,9 @@ class _PlanActionEditorScreenState
             return const AppLoadingState(label: 'Loading action editor');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: snapshot.error.toString());
+            return AppErrorState(
+              message: 'করণীয়টি আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final data = snapshot.data!;
           return SingleChildScrollView(
@@ -320,6 +328,25 @@ class _PlanActionEditorScreenState
                         onSelectionChanged: (value) =>
                             setState(() => _frequencyType = value.single),
                       ),
+                      if (_frequencyType == ActionFrequencyType.daily) ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          key: const Key('daily-interval-field'),
+                          controller: _dailyIntervalController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'কত দিন পরপর করবেন?',
+                            helperText: '১ = প্রতিদিন, ২ = এক দিন পরপর',
+                          ),
+                          validator: (value) {
+                            final interval = int.tryParse(value?.trim() ?? '');
+                            if (interval == null || interval < 1) {
+                              return '১ বা তার বেশি একটি সংখ্যা লিখুন।';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                       if (_frequencyType == ActionFrequencyType.weekly) ...[
                         const SizedBox(height: 12),
                         Wrap(

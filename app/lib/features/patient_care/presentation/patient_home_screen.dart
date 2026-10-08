@@ -77,15 +77,18 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Saved securely on this device. It will sync automatically.',
+              'কাজটি ফোনে রাখা আছে। ইন্টারনেট পেলে নিজে থেকেই জমা হবে।',
             ),
           ),
         );
       }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('কাজটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _updatingTaskId = null);
     }
@@ -110,9 +113,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SukunPageIntro(
-              eyebrow: 'Reminder',
-              title: 'Snooze this action',
-              subtitle: 'Choose when you want to see it again.',
+              eyebrow: 'মনে করিয়ে দেওয়া',
+              title: 'পরে মনে করিয়ে দিন',
+              subtitle: 'কতক্ষণ পরে মনে করিয়ে দেব?',
             ),
             const SizedBox(height: 18),
             SukunSurface(
@@ -123,7 +126,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 children: [
                   SukunIconBadge(icon: Icons.timer_outlined, size: 42),
                   SizedBox(width: 12),
-                  Expanded(child: Text('In 15 minutes')),
+                  Expanded(child: Text('১৫ মিনিট পরে')),
                   Icon(Icons.chevron_right_rounded),
                 ],
               ),
@@ -137,7 +140,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 children: [
                   SukunIconBadge(icon: Icons.schedule_rounded, size: 42),
                   SizedBox(width: 12),
-                  Expanded(child: Text('In 1 hour')),
+                  Expanded(child: Text('১ ঘণ্টা পরে')),
                   Icon(Icons.chevron_right_rounded),
                 ],
               ),
@@ -171,22 +174,22 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Skip this action today?',
+                'আজ এই কাজটি করবেন না?',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               const Text(
-                'This will be recorded in your progress. It does not change the prescribed care plan.',
+                'এটি আজকের অগ্রগতিতে লেখা থাকবে। আপনার নির্ধারিত পরিকল্পনা বদলাবে না।',
               ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Skip today'),
+                child: const Text('আজ করব না'),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep action'),
+                child: const Text('কাজটি রাখুন'),
               ),
             ],
           ),
@@ -201,21 +204,22 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return PatientScaffold(
-      title: 'Today',
+      title: 'আজকের কাজ',
       selectedIndex: 0,
       body: FutureBuilder<PatientDay>(
         future: _day,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing today’s plan');
+            return const AppLoadingState(label: 'আজকের কাজগুলো আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'আজকের কাজগুলো আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
           final day = snapshot.data!;
+          final remainingTasks = day.remainingTasks;
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
@@ -232,7 +236,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   eyebrow: _longDate(DateTime.now()),
                   title:
                       'Assalamu Alaikum${widget.displayName == null ? '' : ', ${widget.displayName}'}',
-                  subtitle: 'Here is your care plan for today.',
+                  subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),
                 if (day.activePlan == null)
@@ -245,7 +249,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                         SizedBox(width: 14),
                         Expanded(
                           child: Text(
-                            'Your practitioner has not published an active care plan yet.',
+                            'আপনার জন্য এখনো কোনো পরিকল্পনা চালু করা হয়নি।',
                           ),
                         ),
                       ],
@@ -256,8 +260,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   const SizedBox(height: 18),
                   if (day.nextTask != null) ...[
                     const SukunSectionHeader(
-                      title: 'Next action',
-                      subtitle: 'Your most immediate pending task',
+                      title: 'এখন যে কাজটি করবেন',
+                      subtitle: 'এই কাজটি দিয়ে শুরু করুন',
                     ),
                     const SizedBox(height: 10),
                     _TaskCard(
@@ -272,31 +276,35 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                     ),
                     const SizedBox(height: 22),
                   ],
-                  SukunSectionHeader(
-                    title: "Today's plan",
-                    subtitle:
-                        '${day.completedCount} of ${day.tasks.length} completed',
-                  ),
-                  const SizedBox(height: 10),
-                  if (day.tasks.isEmpty)
-                    const SukunSurface(
-                      tone: SukunSurfaceTone.soft,
-                      showBorder: false,
-                      child: Text('There are no actions scheduled for today.'),
-                    )
-                  else
-                    for (final task in day.tasks) ...[
-                      _TaskCard(
-                        task: task,
-                        busy: _updatingTaskId == task.id,
-                        onDone: () =>
-                            _record(task, PatientTaskStatus.completed),
-                        onSnooze: () => _snooze(task),
-                        onSkip: () => _skip(task),
-                        onOpenResource: () => _openResource(task),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
+                  if (day.nextTask == null || remainingTasks.isNotEmpty) ...[
+                    SukunSectionHeader(
+                      title: day.nextTask == null
+                          ? 'আজকের সব কাজ'
+                          : 'আজকের অন্য কাজ',
+                      subtitle:
+                          '${day.tasks.length}টির মধ্যে ${day.completedCount}টি করেছেন',
+                    ),
+                    const SizedBox(height: 10),
+                    if (day.tasks.isEmpty)
+                      const SukunSurface(
+                        tone: SukunSurfaceTone.soft,
+                        showBorder: false,
+                        child: Text('আজ আপনার জন্য কোনো কাজ নির্ধারিত নেই।'),
+                      )
+                    else
+                      for (final task in remainingTasks) ...[
+                        _TaskCard(
+                          task: task,
+                          busy: _updatingTaskId == task.id,
+                          onDone: () =>
+                              _record(task, PatientTaskStatus.completed),
+                          onSnooze: () => _snooze(task),
+                          onSkip: () => _skip(task),
+                          onOpenResource: () => _openResource(task),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                  ],
                 ],
               ],
             ),
@@ -344,7 +352,7 @@ class _DayProgress extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${day.completedCount} of ${day.tasks.length} completed',
+            '${day.tasks.length}টির মধ্যে ${day.completedCount}টি করেছেন',
             style: const TextStyle(color: Colors.white70),
           ),
         ],
@@ -413,7 +421,7 @@ class _TaskCard extends StatelessWidget {
                 ),
               ),
               SukunStatusPill(
-                label: task.status.label,
+                label: _taskStatusInBangla(task.status),
                 tone: task.status == PatientTaskStatus.completed
                     ? SukunStatusTone.success
                     : task.status == PatientTaskStatus.skipped
@@ -433,9 +441,9 @@ class _TaskCard extends StatelessWidget {
               spacing: 8,
               children: [
                 if (task.action.countTarget != null)
-                  Chip(label: Text('${task.action.countTarget} repetitions')),
+                  Chip(label: Text('${task.action.countTarget} বার')),
                 if (task.action.durationMinutes != null)
-                  Chip(label: Text('${task.action.durationMinutes} minutes')),
+                  Chip(label: Text('${task.action.durationMinutes} মিনিট')),
               ],
             ),
           ],
@@ -444,7 +452,7 @@ class _TaskCard extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onOpenResource,
               icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: Text('Open ${task.action.resource!.title}'),
+              label: Text('উপকরণ দেখুন: ${task.action.resource!.title}'),
             ),
           ],
           if (task.isPendingSync) ...[
@@ -453,7 +461,7 @@ class _TaskCard extends StatelessWidget {
               children: [
                 Icon(Icons.cloud_upload_outlined, size: 18),
                 SizedBox(width: 7),
-                Expanded(child: Text('Waiting to sync securely')),
+                Expanded(child: Text('অনলাইনে জমা বাকি')),
               ],
             ),
           ],
@@ -461,7 +469,7 @@ class _TaskCard extends StatelessWidget {
               task.snoozedUntil != null) ...[
             const SizedBox(height: 8),
             Text(
-              'Snoozed until ${TimeOfDay.fromDateTime(task.snoozedUntil!).format(context)}',
+              'মনে করাবে: ${TimeOfDay.fromDateTime(task.snoozedUntil!).format(context)}',
             ),
           ],
           if (task.status.canUpdate) ...[
@@ -473,15 +481,15 @@ class _TaskCard extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: canUpdate ? onDone : null,
                   icon: const Icon(Icons.check),
-                  label: const Text('Done'),
+                  label: const Text('করেছি'),
                 ),
                 OutlinedButton(
                   onPressed: canUpdate ? onSnooze : null,
-                  child: const Text('Snooze'),
+                  child: const Text('পরে মনে করান'),
                 ),
                 TextButton(
                   onPressed: canUpdate ? onSkip : null,
-                  child: const Text('Skip'),
+                  child: const Text('আজ করব না'),
                 ),
               ],
             ),
@@ -498,24 +506,40 @@ String _timing(PatientTask task) {
     return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
   final window = task.action.timeWindow;
-  if (window == null || window.isEmpty) return 'Any time today';
-  return window[0].toUpperCase() + window.substring(1);
+  if (window == null || window.isEmpty) return 'আজ সুবিধামতো সময়ে';
+  return switch (window.toLowerCase()) {
+    'morning' => 'সকালে',
+    'afternoon' => 'দুপুরের পরে',
+    'evening' => 'সন্ধ্যায়',
+    'night' => 'রাতে',
+    'anytime' => 'আজ সুবিধামতো সময়ে',
+    _ => 'নির্ধারিত সময়ে',
+  };
 }
+
+String _taskStatusInBangla(PatientTaskStatus status) => switch (status) {
+  PatientTaskStatus.pending => 'বাকি',
+  PatientTaskStatus.completed => 'করেছি',
+  PatientTaskStatus.snoozed => 'পরে করব',
+  PatientTaskStatus.skipped => 'আজ করা হয়নি',
+  PatientTaskStatus.missed => 'সময় পেরিয়েছে',
+  PatientTaskStatus.cancelled => 'বাতিল',
+};
 
 String _longDate(DateTime date) {
   const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    'জানুয়ারি',
+    'ফেব্রুয়ারি',
+    'মার্চ',
+    'এপ্রিল',
+    'মে',
+    'জুন',
+    'জুলাই',
+    'আগস্ট',
+    'সেপ্টেম্বর',
+    'অক্টোবর',
+    'নভেম্বর',
+    'ডিসেম্বর',
   ];
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  return '${date.day} ${months[date.month - 1]} ${date.year}';
 }
