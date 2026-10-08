@@ -1085,44 +1085,44 @@ class _EditorData {
 }
 
 String _kindTitle(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => "Qur'an Ayah",
-  AdminResourceKind.hadith => 'Hadith',
-  AdminResourceKind.quranAudio => "Qur'an / Surah Audio",
-  AdminResourceKind.ruqyahAudio => 'Ruqyah Audio',
-  AdminResourceKind.bookPdf => 'Book / PDF',
-  AdminResourceKind.video => 'Video',
-  AdminResourceKind.duaAzkar => 'Dua / Azkar',
-  AdminResourceKind.articleGuide => 'Article / Guide',
+  AdminResourceKind.quranAyah => "কুরআনের আয়াত",
+  AdminResourceKind.hadith => 'হাদিস',
+  AdminResourceKind.quranAudio => "কুরআন অডিও",
+  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও',
+  AdminResourceKind.bookPdf => 'বই ও পিডিএফ',
+  AdminResourceKind.video => 'ভিডিও',
+  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
+  AdminResourceKind.articleGuide => 'লেখা ও নির্দেশিকা',
 };
 
 String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'Arabic Ayah and approved Bangla translation',
-  AdminResourceKind.hadith => 'Sourced Hadith text and reference',
-  AdminResourceKind.quranAudio => 'External Surah or selected-Ayah recitation',
-  AdminResourceKind.ruqyahAudio => 'External approved Ruqyah recording',
-  AdminResourceKind.bookPdf => 'Externally hosted book or PDF',
-  AdminResourceKind.video => 'YouTube or direct external video',
-  AdminResourceKind.duaAzkar => 'Approved Dua or daily Azkar',
-  AdminResourceKind.articleGuide => 'Reader-friendly article or guide',
+  AdminResourceKind.quranAyah => 'আরবি আয়াত ও অনুমোদিত বাংলা অনুবাদ',
+  AdminResourceKind.hadith => 'হাদিসের লেখা ও নির্ভরযোগ্য সূত্র',
+  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও',
+  AdminResourceKind.ruqyahAudio => 'অনুমোদিত রুকইয়াহ অডিও',
+  AdminResourceKind.bookPdf => 'বই বা পিডিএফের লিংক',
+  AdminResourceKind.video => 'ইউটিউব বা ভিডিওর লিংক',
+  AdminResourceKind.duaAzkar => 'অনুমোদিত দোয়া ও যিকর',
+  AdminResourceKind.articleGuide => 'পাঠযোগ্য লেখা ও নির্দেশিকা',
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.quranAyah =>
-    'Enter the Ayah exactly as it appears in an approved source.',
+    'অনুমোদিত উৎস থেকে আয়াতটি হুবহু লিখুন।',
   AdminResourceKind.hadith =>
-    'Record the text and reference exactly from an approved collection.',
+    'বিশ্বস্ত হাদিসগ্রন্থ থেকে লেখা ও সূত্র দিন।',
   AdminResourceKind.quranAudio =>
-    'Link to an externally hosted recitation. No file will be uploaded.',
+    'অডিওর সরাসরি লিংক দিন; ফাইল এখানে আপলোড হবে না।',
   AdminResourceKind.ruqyahAudio =>
-    'Add an approved external recording and choose its Ruqyah category.',
+    'অনুমোদিত অডিও লিংক ও রুকইয়াহর বিভাগ দিন।',
   AdminResourceKind.bookPdf =>
-    'Link to an externally hosted PDF and confirm permission to use it.',
+    'পিডিএফ লিংক ও ব্যবহারের অনুমতির তথ্য দিন।',
   AdminResourceKind.video =>
-    'Add a YouTube or direct video link without uploading the file.',
+    'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
   AdminResourceKind.duaAzkar =>
-    'Enter only sourced wording and repetition guidance.',
+    'শুধু উৎসে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
   AdminResourceKind.articleGuide =>
-    'Write a clear reader-facing article with attribution where needed.',
+    'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় উৎস দিন।',
 };
 
 IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
