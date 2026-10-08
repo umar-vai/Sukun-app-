@@ -219,7 +219,9 @@ void main() {
       expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
-      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.text('No actions selected'), findsOneWidget);
+      expect(find.text('0 ready · 1 need review'), findsOneWidget);
+      expect(find.text('Needs review · 1'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
     },
   );
