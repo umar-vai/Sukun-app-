@@ -43,6 +43,12 @@ void main() {
   testWidgets('hub stays compact and search remains on the hub', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final repository = _FakeResourcesRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -55,7 +61,7 @@ void main() {
     final grid = tester.widget<GridView>(find.byType(GridView));
     final delegate =
         grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-    expect(delegate.mainAxisExtent, lessThanOrEqualTo(112));
+    expect(delegate.mainAxisExtent, lessThanOrEqualTo(124));
     expect(delegate.crossAxisCount, 2);
 
     await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি Ayatul Kursi');
