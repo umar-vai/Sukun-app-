@@ -96,9 +96,7 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                         SukunIconBadge(icon: Icons.insights_outlined),
                         SizedBox(width: 14),
                         Expanded(
-                          child: Text(
-                            'এই সময়ে কোনো কাজের হিসাব পাওয়া যায়নি।',
-                          ),
+                          child: Text('এই সময়ে কোনো কাজের হিসাব পাওয়া যায়নি।'),
                         ),
                       ],
                     ),
@@ -291,8 +289,15 @@ class _ProgressDayTile extends StatelessWidget {
   }
 }
 
-String _weekday(DateTime date) =>
-    const ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'][date.weekday - 1];
+String _weekday(DateTime date) => const [
+  'সোম',
+  'মঙ্গল',
+  'বুধ',
+  'বৃহস্পতি',
+  'শুক্র',
+  'শনি',
+  'রবি',
+][date.weekday - 1];
 
 String _shortDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
