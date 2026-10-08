@@ -227,9 +227,8 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       final prefix = imported == 0
           ? 'Could not import the selected action.'
           : '$imported action${imported == 1 ? '' : 's'} imported.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$prefix ${error.message}')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$prefix ${error.message}')));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
