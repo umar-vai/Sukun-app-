@@ -117,12 +117,14 @@ void main() {
         titleBn: 'আয়াতুল কুরসি অডিও',
         type: 'audio',
         visibility: 'public',
+        status: 'published',
       ),
       ContentResourceOption(
         id: 'resource-2',
         title: 'Sleep Guide',
         type: 'article',
         visibility: 'patient_only',
+        status: 'published',
       ),
     ];
 
@@ -321,6 +323,7 @@ final class _ReviewCarePlansRepository implements CarePlansRepository {
       titleBn: 'আয়াতুল কুরসি অডিও',
       type: 'audio',
       visibility: 'public',
+      status: 'published',
     ),
   ];
 
