@@ -210,6 +210,12 @@ void main() {
       expect(find.text('Original prescription'), findsOneWidget);
       expect(
         find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
+        findsNothing,
+      );
+      await tester.tap(find.text('Original prescription'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
         findsOneWidget,
       );
       expect(find.text('আয়াতুল কুরসি'), findsWidgets);
