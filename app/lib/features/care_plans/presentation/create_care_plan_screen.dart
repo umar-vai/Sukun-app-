@@ -97,7 +97,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text('পরিকল্পনা তৈরি করা যায়নি। তথ্যগুলো দেখে আবার চেষ্টা করুন।')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
