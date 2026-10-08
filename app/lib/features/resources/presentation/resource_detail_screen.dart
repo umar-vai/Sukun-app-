@@ -42,7 +42,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   Future<void> _openMedia(ContentResource resource) async {
     final target = resolveResourceMedia(resource.linkedResource);
     if (target == null) {
-      _showError('This resource does not have a valid secure media link.');
+      _showError('এই উপকরণের লিংকটি এখন কাজ করছে না।');
       return;
     }
     if (target.kind == ResourceMediaKind.audio) {
@@ -79,12 +79,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Islamic Resource')),
+      appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
       body: FutureBuilder<ContentResource?>(
         future: _resource,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Opening resource');
+            return const AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -95,8 +95,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           final resource = snapshot.data;
           if (resource == null) {
             return const AppEmptyState(
-              title: 'Resource unavailable',
-              message: 'This resource is not published or is not assigned to your account.',
+              title: 'উপকরণটি পাওয়া যায়নি',
+              message: 'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
             );
           }
           return ListView(
@@ -112,7 +112,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   if (resource.referenceText?.isNotEmpty == true ||
                       resource.sourceReference?.isNotEmpty == true)
                     const SukunStatusPill(
-                      label: 'SOURCE REFERENCED',
+                      label: 'তথ্যসূত্র দেওয়া আছে',
                       tone: SukunStatusTone.success,
                       icon: Icons.verified_outlined,
                     ),
@@ -130,34 +130,34 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               if (resource.titleBn?.isNotEmpty == true)
                 const SizedBox(height: 4),
               _Section(
-                label: 'Summary',
+                label: 'সংক্ষেপে',
                 value: resource.titleBn?.isNotEmpty == true
                     ? resource.summary
                     : null,
               ),
               _Section(
-                label: 'Arabic',
+                label: 'আরবি',
                 value: resource.arabicText,
                 textAlign: TextAlign.right,
                 canonical: true,
               ),
               _Section(
-                label: 'Bangla',
+                label: 'বাংলা',
                 value: resource.banglaText,
                 bangla: true,
               ),
               _Section(
-                label: 'Transliteration',
+                label: 'উচ্চারণ',
                 value: resource.transliteration,
               ),
-              _Section(label: 'Translation', value: resource.translation),
-              _Section(label: 'Guide', value: resource.body),
+              _Section(label: 'অনুবাদ', value: resource.translation),
+              _Section(label: 'নির্দেশনা', value: resource.body),
               _Section(
-                label: 'Reference',
+                label: 'তথ্যসূত্র',
                 value: resource.referenceText ?? resource.sourceReference,
               ),
-              _Section(label: 'Rights & licensing', value: resource.rightsNote),
-              if (resource.linkedResource.canOpen) ...[
+              _Section(label: 'উৎস ও ব্যবহারের অনুমতি', value: resource.rightsNote),
+              if (resolveResourceMedia(resource.linkedResource) != null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
                   tone: SukunSurfaceTone.navy,
@@ -165,7 +165,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
-                        'Continue with this resource',
+                        'উপকরণটি খুলুন',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 12),
@@ -245,20 +245,25 @@ class _Section extends StatelessWidget {
   }
 }
 
-String _typeLabel(String type) => type
-    .split('_')
-    .map(
-      (part) =>
-          part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}',
-    )
-    .join(' ');
+String _typeLabel(String type) => switch (type) {
+  'quran' => 'কুরআন',
+  'hadith' => 'হাদিস',
+  'dua' => 'দোয়া',
+  'amal' => 'আমল',
+  'audio' => 'অডিও',
+  'video' => 'ভিডিও',
+  'book' || 'book_chapter' => 'বই',
+  'pdf' => 'পিডিএফ',
+  'article' => 'লেখা',
+  _ => 'উপকরণ',
+};
 
 String _openLabel(String? mediaType) => switch (mediaType) {
-  'direct_audio_url' => 'Play audio',
-  'youtube' => 'Play video',
-  'direct_video_url' => 'Open video in device player',
-  'external_pdf' => 'Open PDF in device viewer',
-  _ => 'Open external resource',
+  'direct_audio_url' => 'অডিও শুনুন',
+  'youtube' => 'ভিডিও দেখুন',
+  'direct_video_url' => 'ভিডিও চালু করুন',
+  'external_pdf' => 'পিডিএফ খুলুন',
+  _ => 'উপকরণ খুলুন',
 };
 
 IconData _openIcon(String? mediaType) => switch (mediaType) {
