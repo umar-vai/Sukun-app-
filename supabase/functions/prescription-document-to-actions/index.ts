@@ -171,6 +171,15 @@ Deno.serve(async (request) => {
     const bytes = new Uint8Array(await file.arrayBuffer());
     validateDocumentBytes(bytes, attachment.mime_type, attachment.byte_size);
 
+    const reused = await reuseExactSuccessfulExtraction({
+      client: adminClient,
+      attachment,
+      bytes,
+      actorUserId: user.id,
+      requestId: input.requestId,
+    });
+    if (reused) return jsonResponse(reused);
+
     const slots = configuredSlots();
     const configuredDocumentModel = Deno.env.get("GEMINI_DOCUMENT_MODEL")
       ?.trim();
@@ -326,6 +335,136 @@ Deno.serve(async (request) => {
     });
   }
 });
+
+async function reuseExactSuccessfulExtraction(args: {
+  client: SupabaseClient;
+  attachment: {
+    id: string;
+    patient_id: string;
+    storage_path: string;
+    original_filename: string;
+    mime_type: string;
+    byte_size: number;
+  };
+  bytes: Uint8Array;
+  actorUserId: string;
+  requestId: string;
+}): Promise<Record<string, unknown> | null> {
+  const { data: candidates, error } = await args.client
+    .from("prescription_attachments")
+    .select(
+      "id,storage_path,prescription_id,care_plan_id,normalized_result,provider_model,processed_at",
+    )
+    .eq("patient_id", args.attachment.patient_id)
+    .eq("original_filename", args.attachment.original_filename)
+    .eq("mime_type", args.attachment.mime_type)
+    .eq("byte_size", args.attachment.byte_size)
+    .eq("extraction_status", "succeeded")
+    .neq("id", args.attachment.id)
+    .not("prescription_id", "is", null)
+    .not("care_plan_id", "is", null)
+    .order("processed_at", { ascending: false })
+    .limit(3);
+
+  if (error || !candidates?.length) return null;
+
+  const currentHash = await sha256Hex(args.bytes);
+  for (const candidate of candidates) {
+    const { data: plan } = await args.client
+      .from("care_plans")
+      .select("id,status")
+      .eq("id", candidate.care_plan_id)
+      .maybeSingle();
+    if (!plan || plan.status !== "draft") continue;
+
+    const { data: previousFile, error: previousDownloadError } =
+      await args.client.storage.from(bucketId).download(candidate.storage_path);
+    if (previousDownloadError || !previousFile) continue;
+
+    const previousBytes = new Uint8Array(await previousFile.arrayBuffer());
+    if (previousBytes.length !== args.bytes.length) continue;
+    if (await sha256Hex(previousBytes) !== currentHash) continue;
+
+    const priorResult = candidate.normalized_result;
+    if (
+      !priorResult || typeof priorResult !== "object" ||
+      Array.isArray(priorResult)
+    ) {
+      continue;
+    }
+
+    const normalizedResult = {
+      ...(priorResult as Record<string, unknown>),
+      request_id: args.requestId,
+    };
+    const now = new Date().toISOString();
+
+    const { error: requestError } = await args.client
+      .from("ai_generation_requests")
+      .upsert({
+        request_id: args.requestId,
+        care_plan_id: candidate.care_plan_id,
+        prescription_id: candidate.prescription_id,
+        requested_by: args.actorUserId,
+        status: "succeeded",
+        normalized_result: normalizedResult,
+        attachment_id: args.attachment.id,
+        updated_at: now,
+      }, { onConflict: "request_id" });
+    if (requestError) continue;
+
+    const { error: attachmentError } = await args.client
+      .from("prescription_attachments")
+      .update({
+        prescription_id: candidate.prescription_id,
+        care_plan_id: candidate.care_plan_id,
+        extraction_status: "succeeded",
+        normalized_result: normalizedResult,
+        provider_model: candidate.provider_model,
+        processed_at: now,
+        updated_at: now,
+      })
+      .eq("id", args.attachment.id);
+    if (attachmentError) continue;
+
+    await args.client.from("admin_audit_logs").insert({
+      actor_user_id: args.actorUserId,
+      action: "prescription_attachment.extraction_reused",
+      entity_type: "prescription_attachment",
+      entity_id: args.attachment.id,
+      patient_id: args.attachment.patient_id,
+      request_id: args.requestId,
+      metadata: {
+        reused_attachment_id: candidate.id,
+        care_plan_id: candidate.care_plan_id,
+        prescription_id: candidate.prescription_id,
+      },
+    });
+
+    console.log(JSON.stringify({
+      event: "prescription_document_reused",
+      request_id: args.requestId,
+      attachment_id: args.attachment.id,
+      reused_attachment_id: candidate.id,
+    }));
+
+    return {
+      ...normalizedResult,
+      attachment_id: args.attachment.id,
+      prescription_id: candidate.prescription_id,
+      care_plan_id: candidate.care_plan_id,
+    };
+  }
+
+  return null;
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const buffer = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(buffer)]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 async function transcribeDocumentWithFailover(args: {
   slots: GeminiKeySlot[];
