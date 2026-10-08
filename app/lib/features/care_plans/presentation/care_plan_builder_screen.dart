@@ -126,13 +126,11 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
         .where((action) => action.reviewStatus == ActionReviewStatus.approved)
         .length;
     final unresolved = data.actions.length - approved;
+    if (approved == 0 || unresolved > 0 || _working) return;
     final confirmed = await showSukunDecisionDialog(
       context: context,
       title: 'রোগীর জন্য পরিকল্পনাটি চালু করবেন?',
-      message:
-          'This will make version ${data.plan.version} the patient’s active plan. '
-          'It contains $approved approved action${approved == 1 ? '' : 's'}.'
-          '${unresolved == 0 ? '' : ' $unresolved action${unresolved == 1 ? '' : 's'} still require review and publishing will be refused.'}',
+      message: 'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। $approvedটি করণীয় অনুমোদিত হয়েছে।',
       confirmLabel: 'চালু করুন',
       cancelLabel: 'আরও সংশোধন করব',
       icon: Icons.publish_outlined,
@@ -517,14 +515,20 @@ class _ActionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (editable)
+          if (editable) ...[
+            IconButton(
+              onPressed: onEdit,
+              tooltip: 'সংশোধন করুন',
+              icon: const Icon(Icons.edit_outlined),
+            ),
             PopupMenuButton<String>(
-              onSelected: (value) => value == 'edit' ? onEdit() : onReject(),
+              tooltip: 'আরও কাজ',
+              onSelected: (_) => onReject(),
               itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('সংশোধন করুন')),
                 PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
               ],
             ),
+          ],
         ],
       ),
     );
