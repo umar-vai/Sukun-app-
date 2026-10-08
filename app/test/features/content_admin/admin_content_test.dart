@@ -367,18 +367,18 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Submit for Review'),
+      find.text('যাচাইয়ের জন্য পাঠান'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    expect(find.text('Publish'), findsNothing);
-    expect(find.text('Verify Source'), findsNothing);
-    await tester.tap(find.text('Submit for Review'));
+    expect(find.text('প্রকাশ করুন'), findsNothing);
+    expect(find.text('উৎস অনুমোদন করুন'), findsNothing);
+    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
     await tester.pumpAndSettle();
-    expect(find.text('Submit for Review resource?'), findsOneWidget);
+    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsOneWidget);
     await tester.tap(
-      find.widgetWithText(FilledButton, 'Submit for Review').last,
+      find.widgetWithText(FilledButton, 'যাচাইয়ের জন্য পাঠান').last,
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -403,17 +403,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Submit for Review'),
+      find.text('যাচাইয়ের জন্য পাঠান'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    await tester.tap(find.text('Submit for Review'));
+    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
     await tester.pump();
 
     expect(find.textContaining('approved source format'), findsOneWidget);
     expect(find.textContaining('choose Qur’an / Surah Audio'), findsOneWidget);
-    expect(find.text('Submit for Review resource?'), findsNothing);
+    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsNothing);
   });
 }
 
