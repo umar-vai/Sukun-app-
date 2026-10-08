@@ -282,12 +282,15 @@ Future<void> _runPlaybackAction(
     await action();
   } on AudioPlaybackException {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('অডিও চালু করা যাচ্ছে না। আবার চেষ্টা করুন।')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('অডিও চালু করা যাচ্ছে না। আবার চেষ্টা করুন।')),
+    );
   } on Exception {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('অডিওর অবস্থাটি বদলানো যায়নি। আবার চেষ্টা করুন।')),
+      const SnackBar(
+        content: Text('অডিওর অবস্থাটি বদলানো যায়নি। আবার চেষ্টা করুন।'),
+      ),
     );
   }
 }
