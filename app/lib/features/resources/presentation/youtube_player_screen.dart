@@ -22,7 +22,9 @@ class SukunYoutubePlayerScreen extends StatelessWidget {
         ? resource.titleBn!
         : resource.title;
     return Scaffold(
-      appBar: AppBar(title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 16, 12, 28),
@@ -104,10 +106,7 @@ class _SukunYoutubePlayerState extends State<SukunYoutubePlayer> {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: YoutubePlayer(
-        controller: controller,
-        aspectRatio: 16 / 9,
-      ),
+      child: YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
     );
   }
 }
