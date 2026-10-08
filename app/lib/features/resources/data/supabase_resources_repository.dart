@@ -42,7 +42,9 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
               .range(from, to);
         },
       );
-      var resources = rows.map(ContentResource.fromJson).toList(growable: false);
+      var resources = rows
+          .map(ContentResource.fromJson)
+          .toList(growable: false);
       if (categoryPrefixes.isNotEmpty) {
         resources = resources
             .where(
