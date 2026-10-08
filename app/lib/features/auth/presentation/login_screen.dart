@@ -42,9 +42,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(FriendlyFailures.signIn(context))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(FriendlyFailures.signIn(context))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -77,8 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   SukunPageIntro(
                     eyebrow: copy?.signInEyebrow ?? 'ব্যক্তিগত অ্যাকাউন্ট',
                     title: copy?.signInWelcome ?? 'স্বাগতম',
-                    subtitle: copy?.signInSubtitle ??
-                        'আপনার পরিকল্পনা দেখতে বা অ্যাডমিনের কাজ করতে প্রবেশ করুন।',
+                    subtitle: copy?.signInSubtitle ?? 'আপনার পরিকল্পনা দেখতে বা অ্যাডমিনের কাজ করতে প্রবেশ করুন।',
                   ),
                   const SizedBox(height: 24),
                   SukunSurface(
@@ -94,8 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            copy?.signInIdentifierHelp ??
-                                'রোগী নম্বর, ফোন নম্বর বা অ্যাডমিনের ইমেইল দিন।',
+                            copy?.signInIdentifierHelp ?? 'রোগী নম্বর, ফোন নম্বর বা অ্যাডমিনের ইমেইল দিন।',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: SukunColors.muted),
                           ),
@@ -105,14 +103,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
                             decoration: InputDecoration(
-                              labelText: copy?.signInIdentifier ?? 'রোগী নম্বর, ফোন বা ইমেইল',
-                              prefixIcon: const Icon(Icons.person_outline_rounded),
+                              labelText:
+                                  copy?.signInIdentifier ??
+                                  'রোগী নম্বর, ফোন বা ইমেইল',
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
                             ),
                             validator: (value) =>
                                 validateSignInIdentifier(value) == null
                                 ? null
                                 : (copy?.signInIdentifierError ??
-                                    'রোগী নম্বর, ফোন নম্বর বা ইমেইল ঠিকভাবে লিখুন।'),
+                                      'রোগী নম্বর, ফোন নম্বর বা ইমেইল ঠিকভাবে লিখুন।'),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -142,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 validateAccountPassword(value) == null
                                 ? null
                                 : (copy?.passwordError ??
-                                    'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
+                                      'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
@@ -169,8 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
                             Text(
-                              copy?.signInNotConfigured ??
-                                  'এখন অ্যাকাউন্টে প্রবেশ করা যাচ্ছে না। সহায়তার জন্য যোগাযোগ করুন।',
+                              copy?.signInNotConfigured ?? 'এখন অ্যাকাউন্টে প্রবেশ করা যাচ্ছে না। সহায়তার জন্য যোগাযোগ করুন।',
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -190,7 +191,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(width: 7),
                       Flexible(
                         child: Text(
-                          copy?.patientDataPrivate ?? 'আপনার ব্যক্তিগত তথ্য সুরক্ষিত রাখা হয়।',
+                          copy?.patientDataPrivate ??
+                              'আপনার ব্যক্তিগত তথ্য সুরক্ষিত রাখা হয়।',
                           textAlign: TextAlign.center,
                         ),
                       ),
