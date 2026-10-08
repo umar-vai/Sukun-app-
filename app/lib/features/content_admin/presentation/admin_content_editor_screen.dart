@@ -464,7 +464,7 @@ class _AdminContentEditorScreenState
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: () => setState(() => _data = _load()),
             );
           }
