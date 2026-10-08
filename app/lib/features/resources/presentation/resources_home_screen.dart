@@ -45,9 +45,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   }
 
   Future<List<ContentResource>> _load() {
-    return ref
-        .read(resourcesRepositoryProvider)
-        .browseResources(query: _searchController.text);
+    final query = _searchController.text.trim();
+    // The hub is category navigation only; never load the entire catalog.
+    // Matching items appear only after the user actively searches.
+    if (query.isEmpty) return Future.value(const <ContentResource>[]);
+    return ref.read(resourcesRepositoryProvider).browseResources(query: query);
   }
 
   Future<void> _refresh() async {
@@ -78,6 +80,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasSearch = _searchController.text.trim().isNotEmpty;
     final content = RefreshIndicator(
       onRefresh: _refresh,
       child: CustomScrollView(
@@ -135,17 +138,20 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                SukunSectionHeader(
-                  title: 'সাম্প্রতিক উপকরণ',
-                  subtitle: 'নতুন যুক্ত হওয়া উপকরণ',
-                ),
-                const SizedBox(height: 10),
+                if (hasSearch) ...[
+                  const SizedBox(height: 24),
+                  const SukunSectionHeader(
+                    title: 'অনুসন্ধানের ফলাফল',
+                    subtitle: 'আপনার অনুসন্ধানে পাওয়া উপকরণ',
+                  ),
+                  const SizedBox(height: 10),
+                ],
               ],
             ),
           ),
-          FutureBuilder<List<ContentResource>>(
-            future: _resources,
+          if (hasSearch)
+            FutureBuilder<List<ContentResource>>(
+              future: _resources,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverToBoxAdapter(
