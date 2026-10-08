@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +30,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   final _searchController = TextEditingController();
   ResourceSection? _selectedSection;
   late Future<List<ContentResource>> _resources;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -52,9 +56,24 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
         );
   }
 
-  void _refresh() {
+  Future<void> _refresh() async {
+    _searchDebounce?.cancel();
+    final future = _load();
     setState(() {
-      _resources = _load();
+      _resources = future;
+    });
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder already presents the friendly retry state.
+    }
+  }
+
+  void _scheduleSearch(String _) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      _refresh();
     });
   }
 
@@ -67,9 +86,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
       _ => null,
     };
     if (dedicatedPath != null) {
+      _searchDebounce?.cancel();
       context.push(dedicatedPath);
       return;
     }
+    _searchDebounce?.cancel();
     setState(() {
       _selectedSection = section;
       _resources = _load();
@@ -79,7 +100,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final content = RefreshIndicator(
-      onRefresh: () async => _refresh(),
+      onRefresh: _refresh,
       child: CustomScrollView(
         slivers: [
           SliverPadding(
@@ -87,8 +108,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
             sliver: SliverList.list(
               children: [
                 SukunPageIntro(
-                  eyebrow: 'Published library',
-                  title: 'Islamic Resources',
+                  eyebrow: 'বিশ্বস্ত উপকরণের সংগ্রহ',
+                  title: 'ইসলামিক পাঠ ও অডিও',
                   subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
                   trailing: const SukunIconBadge(
                     icon: Icons.auto_stories_outlined,
@@ -98,8 +119,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 const SizedBox(height: 20),
                 SukunSearchField(
                   controller: _searchController,
-                  hintText: 'Search title, topic or reference',
-                  onChanged: (_) => setState(() {}),
+                  hintText: 'নাম বা বিষয় লিখে খুঁজুন',
+                  onChanged: _scheduleSearch,
                   onSubmitted: (_) => _refresh(),
                   onClear: () {
                     _searchController.clear();
@@ -108,13 +129,13 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 const SizedBox(height: 22),
                 SukunSectionHeader(
-                  title: 'Browse the library',
-                  subtitle: 'Eight curated collections',
+                  title: 'বিষয় অনুযায়ী দেখুন',
+                  subtitle: 'আপনার পছন্দের বিভাগ বেছে নিন',
                   action: _selectedSection == null
                       ? null
                       : TextButton(
                           onPressed: () => _selectSection(null),
-                          child: const Text('Show all'),
+                          child: const Text('সব দেখুন'),
                         ),
                 ),
                 const SizedBox(height: 10),
@@ -144,10 +165,10 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 const SizedBox(height: 24),
                 SukunSectionHeader(
-                  title: _selectedSection?.title ?? 'Recently published',
+                  title: _selectedSection?.titleBn ?? 'সাম্প্রতিক উপকরণ',
                   subtitle: _selectedSection == null
-                      ? 'Latest published additions'
-                      : 'Published items in this section',
+                      ? 'নতুন যুক্ত হওয়া উপকরণ'
+                      : 'এই বিভাগের উপকরণ',
                 ),
                 const SizedBox(height: 10),
               ],
@@ -160,7 +181,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 return const SliverToBoxAdapter(
                   child: SizedBox(
                     height: 160,
-                    child: AppLoadingState(label: 'Loading resources'),
+                    child: AppLoadingState(label: 'উপকরণ আনা হচ্ছে…'),
                   ),
                 );
               }
@@ -168,7 +189,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: AppErrorState(
-                    message: snapshot.error.toString(),
+                    message: 'উপকরণ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
                     onRetry: _refresh,
                   ),
                 );
@@ -178,10 +199,12 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: AppEmptyState(
-                    title: 'No published resources found',
-                    message: _selectedSection == null
-                        ? 'Try another search. Only resources you are permitted to read appear here.'
-                        : 'No permitted resources are published in this section yet.',
+                    title: 'কোনো উপকরণ পাওয়া যায়নি',
+                    message: _searchController.text.trim().isNotEmpty
+                        ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
+                        : _selectedSection == null
+                        ? 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।'
+                        : 'এই বিভাগে এখনো কোনো উপকরণ দেওয়া হয়নি।',
                   ),
                 );
               }
@@ -193,8 +216,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                       const SizedBox(height: 10),
                   itemBuilder: (context, index) => _ResourceCard(
                     resource: resources[index],
-                    onTap: () =>
-                        context.push('/resources/${resources[index].id}'),
+                    onTap: () => context.push(
+                      widget.embedded
+                          ? '/patient/resources/${resources[index].id}'
+                          : '/resources/${resources[index].id}',
+                    ),
                   ),
                 ),
               );
@@ -205,7 +231,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     );
     if (widget.embedded) return content;
     return Scaffold(
-      appBar: AppBar(title: const Text('Islamic Resources')),
+      appBar: AppBar(title: const Text('ইসলামিক পাঠ ও অডিও')),
       body: content,
     );
   }
@@ -234,17 +260,11 @@ class _SectionCard extends StatelessWidget {
           SukunIconBadge(icon: section.icon, size: 46),
           const SizedBox(height: 10),
           Text(
-            section.title,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 2),
-          Text(
             section.titleBn,
             textAlign: TextAlign.center,
             style: SukunTypography.banglaBody(
-              textStyle: Theme.of(context).textTheme.bodySmall,
-            ).copyWith(color: SukunColors.muted),
+              textStyle: Theme.of(context).textTheme.titleSmall,
+            ),
           ),
         ],
       ),
@@ -324,10 +344,15 @@ IconData _resourceIcon(String type) => switch (type) {
   _ => Icons.article_outlined,
 };
 
-String _typeLabel(String type) => type
-    .split('_')
-    .map(
-      (part) =>
-          part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}',
-    )
-    .join(' ');
+String _typeLabel(String type) => switch (type) {
+  'quran' => 'কুরআন',
+  'hadith' => 'হাদিস',
+  'dua' => 'দোয়া',
+  'amal' => 'আমল',
+  'audio' => 'অডিও',
+  'video' => 'ভিডিও',
+  'pdf' => 'পিডিএফ',
+  'book' || 'book_chapter' => 'বই',
+  'article' => 'লেখা',
+  _ => 'উপকরণ',
+};
