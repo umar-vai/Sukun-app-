@@ -34,5 +34,7 @@
   "findPatient": "Find a patient",
   "manageResources": "Manage resources",
   "adminWelcome": "Welcome to your workspace",
-  "adminWelcomeSubtitle": "Manage patient care and resources from one place."
+  "adminWelcomeSubtitle": "Manage patient care and resources from one place.",
+  "signInIdentifierError": "Enter your Patient ID, phone number, or admin email.",
+  "passwordError": "Use between 8 and 72 characters."
 }
