@@ -44,6 +44,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   late AiActionReviewSeed? _reviewSeed;
   List<_EditableSuggestion>? _drafts;
   bool _importing = false;
+  bool _forceFreshGeneration = false;
 
   @override
   void initState() {
@@ -55,20 +56,11 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
 
   Future<_ReviewData> _load() async {
     final carePlans = ref.read(carePlansRepositoryProvider);
-    final generation = _reviewSeed?.result;
     final results = await Future.wait<Object?>([
       carePlans.getPlan(widget.planId),
       carePlans.getAvailableResources(),
       ref.read(patientsRepositoryProvider).getPrescriptions(widget.patientId),
-      generation != null
-          ? Future<AiActionGenerationResult>.value(generation)
-          : ref
-                .read(aiActionsRepositoryProvider)
-                .generateActions(
-                  prescriptionId: widget.prescriptionId,
-                  carePlanId: widget.planId,
-                  requestId: _generationRequestId,
-                ),
+      _resolveGeneration(),
     ]);
     final plan = results[0] as CarePlan?;
     if (plan == null ||
@@ -109,6 +101,33 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
     );
   }
 
+  Future<AiActionGenerationResult> _resolveGeneration() async {
+    final seed = _reviewSeed;
+    if (seed != null && !_forceFreshGeneration) {
+      return seed.result;
+    }
+
+    final repository = ref.read(aiActionsRepositoryProvider);
+    if (!_forceFreshGeneration) {
+      final stored = await repository.loadStoredActions(
+        prescriptionId: widget.prescriptionId,
+        carePlanId: widget.planId,
+      );
+      if (stored != null) {
+        _reviewSeed = stored;
+        _generationRequestId = stored.result.requestId;
+        return stored.result;
+      }
+    }
+
+    _forceFreshGeneration = false;
+    return repository.generateActions(
+      prescriptionId: widget.prescriptionId,
+      carePlanId: widget.planId,
+      requestId: _generationRequestId,
+    );
+  }
+
   void _retry() {
     setState(() {
       _data = _load();
@@ -120,6 +139,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       _reviewSeed = null;
       _generationRequestId = const Uuid().v4();
       _drafts = null;
+      _forceFreshGeneration = true;
       _data = _load();
     });
   }
