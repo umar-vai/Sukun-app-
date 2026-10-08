@@ -116,7 +116,9 @@ class _AdminContentListScreenState
           .installStandardResourceTaxonomy(requestId: const Uuid().v4());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('অনুমোদিত উপকরণের বিভাগগুলো প্রস্তুত হয়েছে।')),
+        const SnackBar(
+          content: Text('অনুমোদিত উপকরণের বিভাগগুলো প্রস্তুত হয়েছে।'),
+        ),
       );
       await _refresh();
     } catch (_) {
@@ -209,8 +211,7 @@ class _AdminContentListScreenState
       LayoutBuilder(
         builder: (context, constraints) {
           final columns = constraints.maxWidth >= 310 ? 2 : 1;
-          final width =
-              (constraints.maxWidth - (columns - 1) * 12) / columns;
+          final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
           return Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -223,8 +224,9 @@ class _AdminContentListScreenState
                     count: data == null
                         ? null
                         : items
-                              .where((item) =>
-                                  _kindFor(item, categories) == kind)
+                              .where(
+                                (item) => _kindFor(item, categories) == kind,
+                              )
                               .length,
                     onTap: () => _openCategory(kind),
                   ),
@@ -277,8 +279,7 @@ class _AdminContentListScreenState
     final categories = data?.categories ?? const <ContentCategory>[];
     final items = (data?.items ?? const <AdminContentItem>[])
         .where((item) {
-          if (!_allDrafts &&
-              _kindFor(item, categories) != _selectedKind) {
+          if (!_allDrafts && _kindFor(item, categories) != _selectedKind) {
             return false;
           }
           if (_status == 'review') {
@@ -371,10 +372,7 @@ class _AdminContentListScreenState
         )
       else
         for (final item in items) ...[
-          _ContentCard(
-            item: item,
-            onTap: () => _openItem(item),
-          ),
+          _ContentCard(item: item, onTap: () => _openItem(item)),
           const SizedBox(height: 10),
         ],
       const SizedBox(height: 40),
@@ -383,10 +381,7 @@ class _AdminContentListScreenState
 }
 
 class _ContentDashboardData {
-  const _ContentDashboardData({
-    required this.items,
-    required this.categories,
-  });
+  const _ContentDashboardData({required this.items, required this.categories});
 
   final List<AdminContentItem> items;
   final List<ContentCategory> categories;
@@ -427,10 +422,7 @@ class _KindCard extends StatelessWidget {
       children: [
         SukunIconBadge(icon: _kindIcon(kind), size: 42),
         const SizedBox(height: 12),
-        Text(
-          _kindLabel(kind),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text(_kindLabel(kind), style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 4),
         Text(
           count == null ? 'উপকরণ খুলুন' : '$countটি উপকরণ',
