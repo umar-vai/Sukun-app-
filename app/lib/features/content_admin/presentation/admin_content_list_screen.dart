@@ -145,6 +145,11 @@ class _AdminContentListScreenState
             onRefresh: _refresh,
             child: LayoutBuilder(
               builder: (context, constraints) => ListView(
+                // Switching category or status must always show the heading
+                // and primary Add action, not reuse the old list's scroll.
+                key: ValueKey(
+                  '${_onDashboard ? 'dashboard' : _allDrafts ? 'drafts' : _selectedKind!.name}-$_status',
+                ),
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
                 children: [
