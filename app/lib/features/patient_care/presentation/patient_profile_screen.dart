@@ -44,7 +44,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          enabled ? 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।' : 'অনুমতি পাওয়া যায়নি। ফোনের সেটিংস থেকে চালু করতে পারেন।',
+          enabled
+              ? 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।'
+              : 'অনুমতি পাওয়া যায়নি। ফোনের সেটিংস থেকে চালু করতে পারেন।',
         ),
       ),
     );
@@ -108,7 +110,8 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
           const SukunPageIntro(
             eyebrow: 'অ্যাকাউন্ট ও সেটিংস',
             title: 'আমার তথ্য',
-            subtitle: 'মনে করিয়ে দেওয়া, প্রয়োজনীয় সুবিধা ও অ্যাকাউন্টের সেটিংস।',
+            subtitle:
+                'মনে করিয়ে দেওয়া, প্রয়োজনীয় সুবিধা ও অ্যাকাউন্টের সেটিংস।',
           ),
           const SizedBox(height: 20),
           SukunSurface(
