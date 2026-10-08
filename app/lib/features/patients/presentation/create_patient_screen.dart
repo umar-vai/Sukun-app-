@@ -55,7 +55,11 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('রোগীর অ্যাকাউন্ট তৈরি করা যায়নি। তথ্যগুলো দেখে আবার চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text(
+            'রোগীর অ্যাকাউন্ট তৈরি করা যায়নি। তথ্যগুলো দেখে আবার চেষ্টা করুন।',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -110,7 +114,8 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                             labelText: 'রোগীর পুরো নাম',
                             prefixIcon: Icon(Icons.person_outline_rounded),
                           ),
-                          validator: (value) => validatePatientName(value) == null
+                          validator: (value) =>
+                              validatePatientName(value) == null
                               ? null
                               : 'রোগীর পুরো নাম লিখুন।',
                         ),
@@ -122,10 +127,10 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                           decoration: const InputDecoration(
                             labelText: 'ফোন নম্বর',
                             prefixIcon: Icon(Icons.phone_outlined),
-                            helperText:
-                                'যেমন: +8801712345678',
+                            helperText: 'যেমন: +8801712345678',
                           ),
-                          validator: (value) => validateInternationalPhone(value) == null
+                          validator: (value) =>
+                              validateInternationalPhone(value) == null
                               ? null
                               : 'দেশের কোডসহ সঠিক ফোন নম্বর লিখুন।',
                         ),
@@ -139,7 +144,8 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                             helperText:
                                 'ফাঁকা রাখলে নিজে থেকেই নতুন নম্বর তৈরি হবে।',
                           ),
-                          validator: (value) => validatePatientCode(value) == null
+                          validator: (value) =>
+                              validatePatientCode(value) == null
                               ? null
                               : 'রোগী নম্বরটি সঠিকভাবে লিখুন অথবা ফাঁকা রাখুন।',
                         ),
@@ -166,9 +172,8 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                               ),
                             ),
                           ),
-                          validator: (value) => validateTemporaryPassword(value) == null
-                              ? null
-                              : 'কমপক্ষে ৮ অক্ষরের একটি অস্থায়ী পাসওয়ার্ড লিখুন।',
+                          validator: (value) =>
+                              validateTemporaryPassword(value) == null ? null : 'কমপক্ষে ৮ অক্ষরের একটি অস্থায়ী পাসওয়ার্ড লিখুন।',
                         ),
                         const SizedBox(height: 22),
                         FilledButton.icon(
