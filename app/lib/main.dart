@@ -8,7 +8,7 @@ import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:sukun_life/core/platform/platform_startup.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -32,11 +32,7 @@ void main() {
 }
 
 Future<void> _initializeServices() async {
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.sukunlife.app.audio',
-    androidNotificationChannelName: 'Sukun Life audio playback',
-    androidNotificationOngoing: true,
-  );
+  await initializePlatformServices();
   await AppEnvironment.initialize();
   if (AppEnvironment.isFirebaseConfigured) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

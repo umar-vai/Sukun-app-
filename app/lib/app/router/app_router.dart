@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/app/preview/prelaunch_visual_preview_screen.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
@@ -41,11 +43,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final session = sessionState.value;
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: AppEnvironment.isBrowserVisualDemo ? '/preview' : '/',
     redirect: (context, state) {
       if (session == null) return null;
 
       final path = state.uri.path;
+      if (AppEnvironment.isBrowserVisualDemo) {
+        // The demo has no Supabase connection and no patient data.
+        return null;
+      }
+      if (path == '/preview') return '/';
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
@@ -73,6 +80,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/preview',
+        builder: (context, state) =>
+            const PrelaunchVisualPreviewScreen(),
+      ),
       GoRoute(
         path: '/',
         builder: (context, state) =>

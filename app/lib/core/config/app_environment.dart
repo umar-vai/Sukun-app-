@@ -42,6 +42,14 @@ abstract final class AppEnvironment {
 
   static bool get isProduction => name == 'production';
 
+  /// Development-only, disconnected browser role previews. This never runs
+  /// with a real Supabase connection, on mobile or in a production build.
+  static bool get isBrowserVisualDemo =>
+      kIsWeb &&
+      const bool.fromEnvironment('PRELAUNCH_VISUAL_DEMO') &&
+      name == 'development' &&
+      !isSupabaseConfigured;
+
   static bool get isFirebaseConfigured {
     final platformValues = switch (defaultTargetPlatform) {
       TargetPlatform.android => [firebaseAndroidApiKey, firebaseAndroidAppId],

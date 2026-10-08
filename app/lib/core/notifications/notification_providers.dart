@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
@@ -9,6 +9,11 @@ import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/supabase_notification_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+String get _notificationPlatform {
+  if (kIsWeb) return 'web';
+  return defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+}
 
 final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
   ref,
@@ -23,7 +28,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
       isAvailable: AppEnvironment.isFirebaseConfigured,
     ),
     const SharedPreferencesNotificationStateStore(),
-    platform: Platform.isIOS ? 'ios' : 'android',
+    platform: _notificationPlatform,
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;
