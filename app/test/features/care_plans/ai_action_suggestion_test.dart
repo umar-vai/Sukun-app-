@@ -223,6 +223,39 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'reload recovers stored document suggestions without a fresh AI call',
+    (tester) async {
+      final repository = _StoredAiActionsRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            aiActionsRepositoryProvider.overrideWithValue(repository),
+            carePlansRepositoryProvider.overrideWithValue(
+              _ReviewCarePlansRepository(),
+            ),
+            patientsRepositoryProvider.overrideWithValue(
+              const _ReviewPatientsRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: AiActionReviewScreen(
+              patientId: 'patient-1',
+              planId: 'plan-1',
+              prescriptionId: 'prescription-1',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.loadCalls, 1);
+      expect(repository.generateCalls, 0);
+      expect(find.text('Recovered document action'), findsWidgets);
+      expect(find.text(aiManualFallbackMessage), findsNothing);
+    },
+  );
 }
 
 final class _ReviewPatientsRepository implements PatientsRepository {
@@ -255,8 +288,61 @@ final class _ReviewPatientsRepository implements PatientsRepository {
       throw UnimplementedError();
 }
 
+final class _StoredAiActionsRepository implements AiActionsRepository {
+  int loadCalls = 0;
+  int generateCalls = 0;
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async {
+    loadCalls += 1;
+    return const AiActionReviewSeed(
+      attachmentId: 'attachment-1',
+      result: AiActionGenerationResult(
+        requestId: 'stored-request-1',
+        status: AiActionGenerationStatus.generated,
+        actions: [
+          SuggestedPlanAction(
+            index: 0,
+            type: 'other',
+            title: 'Recovered document action',
+            instruction: 'Review this stored action.',
+            frequency: null,
+            sourceEvidence: 'Stored source evidence',
+            confidence: 0,
+            needsReview: true,
+            ambiguities: ['Recovered after page reload.'],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Future<AiActionGenerationResult> generateActions({
+    required String prescriptionId,
+    required String carePlanId,
+    required String requestId,
+  }) async {
+    generateCalls += 1;
+    return AiActionGenerationResult(
+      requestId: requestId,
+      status: AiActionGenerationStatus.manualRequired,
+      actions: const [],
+    );
+  }
+}
+
 final class _ManualAiActionsRepository implements AiActionsRepository {
   const _ManualAiActionsRepository();
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async => null;
 
   @override
   Future<AiActionGenerationResult> generateActions({
@@ -272,6 +358,12 @@ final class _ManualAiActionsRepository implements AiActionsRepository {
 
 final class _GeneratedAiActionsRepository implements AiActionsRepository {
   const _GeneratedAiActionsRepository();
+
+  @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async => null;
 
   @override
   Future<AiActionGenerationResult> generateActions({
