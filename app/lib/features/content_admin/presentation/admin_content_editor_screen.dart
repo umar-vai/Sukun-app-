@@ -9,9 +9,10 @@ import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
 
 class AdminContentEditorScreen extends ConsumerStatefulWidget {
-  const AdminContentEditorScreen({super.key, this.contentItemId});
+  const AdminContentEditorScreen({super.key, this.contentItemId, this.initialKind});
 
   final String? contentItemId;
+  final AdminResourceKind? initialKind;
 
   @override
   ConsumerState<AdminContentEditorScreen> createState() =>
@@ -40,6 +41,7 @@ class _AdminContentEditorScreenState
   void initState() {
     super.initState();
     _savedContentId = widget.contentItemId;
+    if (_savedContentId == null) _kind = widget.initialKind;
     _data = _load();
   }
 
@@ -71,7 +73,16 @@ class _AdminContentEditorScreenState
   void _populate(AdminContentItem? item, List<ContentCategory> categories) {
     if (_populated) return;
     _populated = true;
-    if (item == null) return;
+    if (item == null) {
+      _categoryId = switch (_kind) {
+        AdminResourceKind.ruqyahAudio =>
+          _categoryIdForSlug(categories, 'ruqyah-audio'),
+        AdminResourceKind.duaAzkar =>
+          _categoryIdForSlug(categories, 'dua-azkar'),
+        _ => null,
+      };
+      return;
+    }
     ContentCategory? category;
     for (final candidate in categories) {
       if (candidate.id == item.categoryId) category = candidate;
@@ -453,7 +464,7 @@ class _AdminContentEditorScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _savedContentId == null ? 'Add a resource' : 'Edit resource',
+          _savedContentId == null ? 'নতুন উপকরণ যোগ করুন' : 'উপকরণ সংশোধন করুন',
         ),
       ),
       body: FutureBuilder<_EditorData>(
