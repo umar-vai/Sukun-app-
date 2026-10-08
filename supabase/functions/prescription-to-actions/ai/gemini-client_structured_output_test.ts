@@ -29,6 +29,11 @@ Deno.test("text action parsing uses Interactions API", async () => {
     "https://generativelanguage.googleapis.com/v1beta/interactions",
   );
   assertEquals(result.actions.length, 1);
-  assertEquals(body.response_format, undefined);
+  const format = body.response_format as Record<string, unknown>;
+  assertEquals(format.type, "text");
+  assertEquals(format.mime_type, "application/json");
+  if (!format.schema) {
+    throw new Error("Interactions request must include the action schema.");
+  }
   assertEquals(typeof body.input, "string");
 });
