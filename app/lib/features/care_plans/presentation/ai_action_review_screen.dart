@@ -153,7 +153,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   }
 
   Future<void> _import(_ReviewData data) async {
-    if (_importing || !_formKey.currentState!.validate()) return;
+    if (_importing) return;
     final selected = _drafts!
         .where((draft) => draft.selected && !draft.imported)
         .toList(growable: false);
@@ -163,17 +163,18 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       );
       return;
     }
-    final invalidWeekly = selected.any(
-      (draft) =>
-          draft.frequencyType == ActionFrequencyType.weekly &&
-          draft.weekdays.isEmpty,
-    );
-    if (invalidWeekly) {
+    if (selected.any((draft) => !draft.canImport)) {
+      setState(() => _reviewFilter = _ReviewFilter.needsReview);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one weekday.')),
+        const SnackBar(
+          content: Text(
+            'Complete the required fields for every selected action before importing.',
+          ),
+        ),
       );
       return;
     }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _importing = true);
     var imported = 0;
@@ -188,11 +189,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             instruction: draft.instruction.trim(),
             countTarget: int.tryParse(draft.count.trim()),
             durationMinutes: int.tryParse(draft.duration.trim()),
-            frequency: draft.frequencyType == ActionFrequencyType.daily
-                ? ActionFrequency.daily(
-                    interval: int.parse(draft.dailyInterval.trim()),
-                  )
-                : ActionFrequency.weekly(draft.weekdays),
+            frequency: draft.importFrequency!,
             timeWindow: draft.timeWindow.isEmpty ? null : draft.timeWindow,
             exactTime: draft.exactTime,
             startDate: data.plan.startDate,
@@ -225,14 +222,22 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
         ),
       );
       context.pop(true);
+    } on CarePlanWorkflowException catch (error) {
+      if (!mounted) return;
+      final prefix = imported == 0
+          ? 'Could not import the selected action.'
+          : '$imported action${imported == 1 ? '' : 's'} imported.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$prefix ${error.message}')),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             imported == 0
-                ? 'The selected actions could not be imported. Your suggestions are still here; please retry.'
-                : '$imported action${imported == 1 ? '' : 's'} imported. The remaining suggestions are still here; retry to continue.',
+                ? 'The selected actions could not be imported. Your suggestions are still here.'
+                : '$imported action${imported == 1 ? '' : 's'} imported. The remaining suggestions are still here.',
           ),
         ),
       );
@@ -644,6 +649,23 @@ class _EditableSuggestion {
   bool get isReady =>
       !source.needsReview && !hasIncompleteMetadata && source.confidence >= 0.8;
 
+  ActionFrequency? get importFrequency {
+    if (frequencyType == ActionFrequencyType.daily) {
+      final interval = int.tryParse(dailyInterval.trim());
+      if (interval == null || interval < 1) return null;
+      return ActionFrequency.daily(interval: interval);
+    }
+    if (frequencyType == ActionFrequencyType.weekly && weekdays.isNotEmpty) {
+      return ActionFrequency.weekly(weekdays);
+    }
+    return null;
+  }
+
+  bool get canImport =>
+      type.trim().isNotEmpty &&
+      title.trim().isNotEmpty &&
+      importFrequency != null;
+
   bool get wasEdited {
     if (type.trim() != source.type ||
         title.trim() != source.title ||
@@ -729,7 +751,7 @@ class _SuggestedActionCard extends StatelessWidget {
         initiallyExpanded: number == 1 && !draft.hasIncompleteMetadata,
         leading: Checkbox(
           value: draft.selected,
-          onChanged: !enabled || draft.imported
+          onChanged: !enabled || draft.imported || !draft.canImport
               ? null
               : (value) {
                   draft.selected = value ?? false;
@@ -753,7 +775,12 @@ class _SuggestedActionCard extends StatelessWidget {
                   ? const TextStyle(color: SukunColors.deepTide)
                   : null,
             ),
-            if (draft.source.needsReview)
+            if (!draft.canImport)
+              const Text(
+                'Frequency required',
+                style: TextStyle(color: SukunColors.deepTide),
+              )
+            else if (draft.source.needsReview)
               const Text(
                 'Needs review',
                 style: TextStyle(color: SukunColors.deepTide),
