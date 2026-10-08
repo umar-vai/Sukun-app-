@@ -79,9 +79,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
             widget.displayName == null
                 ? 'আসসালামু আলাইকুম'
                 : 'আসসালামু আলাইকুম, ${widget.displayName}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: SukunColors.muted,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: SukunColors.muted),
           ),
           const SizedBox(height: 4),
           Text(
@@ -100,8 +99,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   detail: FutureBuilder<_PrayerSummary?>(
                     future: _prayer,
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Text('হিসাব করা হচ্ছে…');
                       }
                       final info = snapshot.data;
@@ -265,10 +263,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
 }
 
 class _PrayerSummary {
-  const _PrayerSummary({
-    required this.nextPrayer,
-    required this.locationName,
-  });
+  const _PrayerSummary({required this.nextPrayer, required this.locationName});
 
   final PrayerTimeEntry nextPrayer;
   final String locationName;
@@ -299,16 +294,14 @@ class _HomeUtilityTile extends StatelessWidget {
             Icon(icon, color: SukunColors.deepTide, size: 20),
             const SizedBox(width: 7),
             Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              child: Text(title, style: Theme.of(context).textTheme.titleSmall),
             ),
           ],
         ),
         const SizedBox(height: 10),
         DefaultTextStyle(
-          style: Theme.of(context).textTheme.bodySmall ??
+          style:
+              Theme.of(context).textTheme.bodySmall ??
               const TextStyle(fontSize: 12),
           child: detail,
         ),
