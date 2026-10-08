@@ -414,9 +414,8 @@ class _ReviewSummary extends StatelessWidget {
               Expanded(
                 child: Text(
                   '$totalCount suggestions',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               TextButton(
@@ -430,9 +429,8 @@ class _ReviewSummary extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '$readyCount ready · $reviewCount need review',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: SukunColors.muted),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: SukunColors.muted),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -495,9 +493,8 @@ class _NoSuggestionsForFilter extends StatelessWidget {
     child: Center(
       child: Text(
         'No suggestions in this filter.',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: SukunColors.muted),
+        style: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: SukunColors.muted),
       ),
     ),
   );
@@ -645,9 +642,7 @@ class _EditableSuggestion {
   );
 
   bool get isReady =>
-      !source.needsReview &&
-      !hasIncompleteMetadata &&
-      source.confidence >= 0.8;
+      !source.needsReview && !hasIncompleteMetadata && source.confidence >= 0.8;
 
   bool get wasEdited {
     if (type.trim() != source.type ||
