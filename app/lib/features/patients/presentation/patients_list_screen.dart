@@ -57,9 +57,9 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
     final created = await context.push<Patient>('/admin/patients/new');
     if (!mounted || created == null) return;
     _reload();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('${created.fullName}-এর অ্যাকাউন্ট তৈরি হয়েছে।')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${created.fullName}-এর অ্যাকাউন্ট তৈরি হয়েছে।')),
+    );
   }
 
   @override
@@ -101,7 +101,9 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
               future: _patients,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoadingState(label: 'রোগীদের তথ্য আনা হচ্ছে…');
+                  return const AppLoadingState(
+                    label: 'রোগীদের তথ্য আনা হচ্ছে…',
+                  );
                 }
                 if (snapshot.hasError) {
                   return AppErrorState(
