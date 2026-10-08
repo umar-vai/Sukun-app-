@@ -168,6 +168,8 @@ void main() {
     expect(find.text('Ayatul Kursi'), findsNothing);
     expect(find.text('New resource'), findsNothing);
 
+    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('কুরআনের আয়াত'));
     await tester.pumpAndSettle();
     expect(find.text('নতুন কুরআনের আয়াত যোগ করুন'), findsOneWidget);
@@ -223,6 +225,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('হাদিস'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('নতুন হাদিস যোগ করুন'));
