@@ -47,13 +47,28 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
   Future<List<ContentResourceOption>> getAvailableResources() async {
     final response = await _client
         .from('content_items')
-        .select('id,title,title_bn,type,visibility,status')
-        .eq('status', 'published')
+        .select(
+          'id,title,title_bn,type,visibility,status,category_id,'
+          'content_categories(id,name,name_bn,slug,sort_order)',
+        )
         .order('title');
-    return response
-        .where((row) => row['visibility'] != 'staff_only')
+    final resources = response
         .map(ContentResourceOption.fromJson)
         .toList(growable: false);
+    resources.sort((left, right) {
+      final categoryOrder = left.categorySortOrder.compareTo(
+        right.categorySortOrder,
+      );
+      if (categoryOrder != 0) return categoryOrder;
+      final categoryName = left.categoryLabel.toLowerCase().compareTo(
+        right.categoryLabel.toLowerCase(),
+      );
+      if (categoryName != 0) return categoryName;
+      return left.displayTitle.toLowerCase().compareTo(
+        right.displayTitle.toLowerCase(),
+      );
+    });
+    return resources;
   }
 
   @override
