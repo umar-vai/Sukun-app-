@@ -24,6 +24,13 @@ void main() {
       ),
       VideoLoadPhase.ready,
     );
+    expect(
+      videoLoadPhase(
+        YoutubePlayerValue(playerState: PlayerState.unStarted),
+        hasLoaded: false,
+      ),
+      VideoLoadPhase.ready,
+    );
   });
 
   test('handles buffering after readiness, then playback and pause', () {
