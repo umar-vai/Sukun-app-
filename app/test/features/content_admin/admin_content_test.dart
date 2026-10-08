@@ -205,14 +205,14 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final label in const [
-      "Qur'an Ayah",
-      'Hadith',
-      "Qur'an / Surah Audio",
-      'Ruqyah Audio',
-      'Book / PDF',
-      'Video',
-      'Dua / Azkar',
-      'Article / Guide',
+      "কুরআনের আয়াত",
+      'হাদিস',
+      "কুরআন অডিও",
+      'রুকইয়াহ অডিও",
+      'বই ও পিডিএফ",
+      'ভিডিও",
+      'দোয়া ও যিকর",
+      'লেখা ও নির্দেশিকা",
     ]) {
       expect(find.text(label), findsOneWidget);
     }
@@ -222,14 +222,14 @@ void main() {
   });
 
   for (final scenario in const <(String, String)>[
-    ("Qur'an Ayah", 'Arabic text *'),
-    ('Hadith', 'Kitab / collection *'),
-    ("Qur'an / Surah Audio", 'Audio link *'),
-    ('Ruqyah Audio', 'Audio link *'),
-    ('Book / PDF', 'PDF link *'),
-    ('Video', 'YouTube or video link *'),
-    ('Dua / Azkar', 'Arabic *'),
-    ('Article / Guide', 'Article body *'),
+    ("কুরআনের আয়াত", 'আরবি লেখা *'),
+    ('হাদিস', 'হাদিসের কিতাব *'),
+    ("কুরআন অডিও", 'অডিও লিংক *'),
+    ('রুকইয়াহ অডিও", 'অডিও লিংক *'),
+    ('বই ও পিডিএফ", 'পিডিএফ লিংক *'),
+    ('ভিডিও", 'ভিডিও লিংক *'),
+    ('দোয়া ও যিকর", 'আরবি *'),
+    ('লেখা ও নির্দেশিকা", 'সম্পূর্ণ লেখা *'),
   ]) {
     testWidgets('${scenario.$1} opens its tailored form', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
@@ -281,26 +281,26 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text("Qur'an Ayah"));
+    await tester.tap(find.text("কুরআনের আয়াত"));
     await tester.pumpAndSettle();
 
-    expect(find.text('Arabic text *'), findsOneWidget);
+    expect(find.text('আরবি লেখা *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Bangla translation *'), findsOneWidget);
+    expect(find.text('বাংলা অনুবাদ *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Surah *'), findsOneWidget);
+    expect(find.text('সূরা *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Approved source *'), findsOneWidget);
+    expect(find.text('অনুমোদিত উৎস *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Advanced settings'), findsOneWidget);
+    expect(find.text('অতিরিক্ত সেটিংস'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Save Draft'), findsOneWidget);
-    expect(find.text('Submit for Review'), findsOneWidget);
+    expect(find.text('খসড়া সংরক্ষণ করুন'), findsOneWidget);
+    expect(find.text('যাচাইয়ের জন্য পাঠান'), findsOneWidget);
     expect(find.text('Slug'), findsNothing);
     expect(find.text('Request ID'), findsNothing);
     expect(find.text('Media type'), findsNothing);
