@@ -11,7 +11,7 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
-import 'package:sukun_life/core/media/resource_media.dart';
+import 'package:sukun_life/features/resources/domain/video_navigation.dart';
 
 /// A separate destination for a published-resource category, not an inline
 /// filter below the hub's grid. The same surface works for guests and patients.
@@ -66,9 +66,7 @@ class _ResourceCategoryScreenState
   void _openResource(ContentResource resource) {
     // A video tile is itself the playback action. Do not route through an
     // intermediate resource detail page that requires a second tap.
-    if (resource.type == 'video' &&
-        resolveResourceMedia(resource.linkedResource)?.kind ==
-            ResourceMediaKind.youtube) {
+    if (opensYoutubePlayerDirectly(resource)) {
       Navigator.of(context).push<void>(
         MaterialPageRoute(
           builder: (_) => SukunYoutubePlayerScreen(
