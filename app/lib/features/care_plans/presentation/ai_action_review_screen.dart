@@ -327,12 +327,12 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                   ),
               ],
             ),
-          );        },
+          );
+        },
       ),
     );
   }
 }
-
 
 class _ImportDock extends StatelessWidget {
   const _ImportDock({
