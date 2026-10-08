@@ -25,7 +25,9 @@ class QuranBrowserScreen extends ConsumerWidget {
             return const AppLoadingState(label: 'Loading Surahs');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final surahs = snapshot.data ?? const <QuranSurahSummary>[];
           return ListView(
@@ -176,7 +178,9 @@ class QuranCollectionsScreen extends ConsumerWidget {
             return const AppLoadingState(label: 'Loading collections');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final collections = snapshot.data ?? const <ContentCollection>[];
           if (collections.isEmpty) {
@@ -252,7 +256,9 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
             return const AppLoadingState(label: 'Loading collection');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final details = snapshot.data;
           if (details == null) {
@@ -312,7 +318,9 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
             return const AppLoadingState(label: 'Loading Hadith topics');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final data = snapshot.data!;
           return ListView(
@@ -416,7 +424,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             return const AppLoadingState(label: 'Loading resources');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final resources = snapshot.data ?? const <ContentResource>[];
           return ListView(
