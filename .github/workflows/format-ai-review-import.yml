@@ -1,0 +1,48 @@
+name: Format AI Review Import
+
+on:
+  push:
+    branches: [web-preview]
+    paths:
+      - 'app/lib/features/care_plans/presentation/ai_action_review_screen.dart'
+      - '.github/workflows/format-ai-review-import.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout web-preview
+        uses: actions/checkout@v5
+        with:
+          ref: web-preview
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Format review screen
+        working-directory: app
+        run: dart format lib/features/care_plans/presentation/ai_action_review_screen.dart
+
+      - name: Commit formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/features/care_plans/presentation/ai_action_review_screen.dart
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "style: format AI review import guard"
+          git push origin HEAD:web-preview
