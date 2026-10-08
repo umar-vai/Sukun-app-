@@ -247,72 +247,158 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
               onManual: _openManualBuilder,
             );
           }
+          final selectedCount = _drafts!
+              .where((draft) => draft.selected && !draft.imported)
+              .length;
           return Form(
             key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            child: Stack(
               children: [
-                const SukunPageIntro(
-                  eyebrow: 'AI-assisted parsing',
-                  title: 'Review suggested actions',
-                  subtitle: 'Compare every field with the human-authored prescription before importing it as draft work.',
+                ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 150),
+                  children: [
+                    const SukunPageIntro(
+                      eyebrow: 'AI-assisted parsing',
+                      title: 'Review suggested actions',
+                      subtitle:
+                          'Compare every field with the human-authored prescription before importing it as draft work.',
+                    ),
+                    const SizedBox(height: 20),
+                    const _SafetyNotice(),
+                    const SizedBox(height: 16),
+                    _SourcePrescription(prescription: data.prescription),
+                    const SizedBox(height: 16),
+                    SukunSectionHeader(
+                      title: '${_drafts!.length} suggestions',
+                      subtitle: 'Expand each suggestion to verify and edit',
+                      action: TextButton(
+                        onPressed: _importing
+                            ? null
+                            : () => setState(() {
+                                final select = _drafts!.any(
+                                  (draft) =>
+                                      !draft.imported && !draft.selected,
+                                );
+                                for (final draft in _drafts!) {
+                                  if (!draft.imported) draft.selected = select;
+                                }
+                              }),
+                        child: const Text('Select all'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (
+                      var index = 0;
+                      index < _drafts!.length;
+                      index++
+                    ) ...[
+                      _SuggestedActionCard(
+                        number: index + 1,
+                        draft: _drafts![index],
+                        resources: data.resources,
+                        enabled: !_importing,
+                        onChanged: () => setState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _importing ? null : _openManualBuilder,
+                      icon: const Icon(Icons.edit_note_outlined),
+                      label: const Text('Use Manual Action Builder'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                const _SafetyNotice(),
-                const SizedBox(height: 16),
-                _SourcePrescription(prescription: data.prescription),
-                const SizedBox(height: 16),
-                SukunSectionHeader(
-                  title: '${_drafts!.length} suggestions',
-                  subtitle: 'Expand each suggestion to verify and edit',
-                  action: TextButton(
-                    onPressed: _importing
-                        ? null
-                        : () => setState(() {
-                            final select = _drafts!.any(
-                              (draft) => !draft.imported && !draft.selected,
-                            );
-                            for (final draft in _drafts!) {
-                              if (!draft.imported) draft.selected = select;
-                            }
-                          }),
-                    child: const Text('Select all'),
+                if (MediaQuery.viewInsetsOf(context).bottom == 0)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                    child: SafeArea(
+                      top: false,
+                      child: _ImportDock(
+                        selectedCount: selectedCount,
+                        importing: _importing,
+                        onImport: selectedCount == 0 || _importing
+                            ? null
+                            : () => _import(data),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                for (var index = 0; index < _drafts!.length; index++) ...[
-                  _SuggestedActionCard(
-                    number: index + 1,
-                    draft: _drafts![index],
-                    resources: data.resources,
-                    enabled: !_importing,
-                    onChanged: () => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: _importing ? null : () => _import(data),
-                  icon: _importing
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.playlist_add_check),
-                  label: Text(
-                    _importing ? 'Importing…' : 'Import selected as drafts',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _importing ? null : _openManualBuilder,
-                  icon: const Icon(Icons.edit_note_outlined),
-                  label: const Text('Use Manual Action Builder'),
-                ),
               ],
             ),
-          );
-        },
+          );        },
+      ),
+    );
+  }
+}
+
+
+class _ImportDock extends StatelessWidget {
+  const _ImportDock({
+    required this.selectedCount,
+    required this.importing,
+    required this.onImport,
+  });
+
+  final int selectedCount;
+  final bool importing;
+  final VoidCallback? onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: .12),
+      borderRadius: BorderRadius.circular(20),
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: SukunColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      selectedCount == 0
+                          ? 'No actions selected'
+                          : '$selectedCount selected',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Imported items stay as draft work.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: SukunColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: importing
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.playlist_add_check_rounded),
+              label: Text(importing ? 'Importing…' : 'Import'),
+            ),
+          ],
+        ),
       ),
     );
   }
