@@ -22,7 +22,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('এটি শুধু ডিজাইন দেখার'), findsOneWidget);
+    expect(find.textContaining('লগইন পরীক্ষা করতে'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'প্রবেশ করুন'),
     );
