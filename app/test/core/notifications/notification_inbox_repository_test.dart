@@ -18,7 +18,7 @@ void main() {
   });
 
   test('plan changes navigate only within the patient app', () {
-    const message = PatientInboxMessage(
+    final message = PatientInboxMessage(
       id: 'event-2',
       type: 'plan_updated',
       scheduledAt: DateTime.utc(2026, 10, 8),
@@ -30,7 +30,7 @@ void main() {
   });
 
   test('unknown event types never become arbitrary deep links', () {
-    const message = PatientInboxMessage(
+    final message = PatientInboxMessage(
       id: 'event-3',
       type: 'https://attacker.example/internal?token=abc',
       scheduledAt: DateTime.utc(2026, 10, 8),
