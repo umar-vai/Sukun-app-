@@ -1,0 +1,48 @@
+name: Format AI Review Test
+
+on:
+  push:
+    branches: [web-preview]
+    paths:
+      - 'app/test/features/care_plans/ai_action_suggestion_test.dart'
+      - '.github/workflows/format-ai-review-test.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout web-preview
+        uses: actions/checkout@v5
+        with:
+          ref: web-preview
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Format AI review test
+        working-directory: app
+        run: dart format test/features/care_plans/ai_action_suggestion_test.dart
+
+      - name: Commit formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/test/features/care_plans/ai_action_suggestion_test.dart
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "style: format AI review tests"
+          git push origin HEAD:web-preview
