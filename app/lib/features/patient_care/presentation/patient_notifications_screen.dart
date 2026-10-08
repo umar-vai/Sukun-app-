@@ -47,7 +47,9 @@ class _PatientNotificationsScreenState
     setState(() => _openingId = message.id);
     try {
       if (!message.opened) {
-        await ref.read(notificationInboxRepositoryProvider).markOpened(message.id);
+        await ref
+            .read(notificationInboxRepositoryProvider)
+            .markOpened(message.id);
       }
       if (!mounted) return;
       final current = await _messages;
