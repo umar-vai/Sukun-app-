@@ -377,8 +377,8 @@ async function reuseExactSuccessfulExtraction(args: {
       .maybeSingle();
     if (!plan || plan.status !== "draft") continue;
 
-    const { data: previousFile, error: previousDownloadError } =
-      await args.client.storage.from(bucketId).download(candidate.storage_path);
+    const { data: previousFile, error: previousDownloadError } = await args
+      .client.storage.from(bucketId).download(candidate.storage_path);
     if (previousDownloadError || !previousFile) continue;
 
     const previousBytes = new Uint8Array(await previousFile.arrayBuffer());
