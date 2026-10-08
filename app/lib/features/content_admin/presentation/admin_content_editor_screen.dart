@@ -165,7 +165,7 @@ class _AdminContentEditorScreenState
         Navigator.of(context).pop(item);
       }
     } catch (error) {
-      if (mounted) _show(error.toString());
+      if (mounted) _show('উপকরণটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
