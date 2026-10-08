@@ -61,6 +61,11 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         missing.push("title");
       }
 
+      const sourceEvidence = typeof action.source_evidence === "string" &&
+          action.source_evidence.trim()
+        ? action.source_evidence
+        : "[verify against original prescription]";
+
       const normalized = {
         ...action,
         type,
@@ -74,7 +79,20 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         duration_minutes: Object.hasOwn(action, "duration_minutes")
           ? action.duration_minutes
           : null,
-        confidence: Object.hasOwn(action, "confidence")
+        frequency: Object.hasOwn(action, "frequency")
+          ? action.frequency
+          : null,
+        time_window: Object.hasOwn(action, "time_window")
+          ? action.time_window
+          : null,
+        exact_time: Object.hasOwn(action, "exact_time")
+          ? action.exact_time
+          : null,
+        resource_match_query: Object.hasOwn(action, "resource_match_query")
+          ? action.resource_match_query
+          : null,
+        source_evidence: sourceEvidence,
+        confidence: typeof action.confidence === "number"
           ? action.confidence
           : 0,
         needs_review: action.needs_review === true || missing.length > 0,
@@ -87,7 +105,14 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         "instruction",
         "count_target",
         "duration_minutes",
+        "frequency",
+        "time_window",
+        "exact_time",
+        "resource_match_query",
+        "source_evidence",
         "confidence",
+        "needs_review",
+        "ambiguities",
       ]) {
         if (!Object.hasOwn(action, key)) missing.push(key);
       }
