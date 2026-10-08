@@ -8,11 +8,12 @@ Safety rules:
 - Split distinct morning/evening instructions into separate actions.
 - exact_time is HH:mm only when the source contains that exact clock time.
 - time_window may be morning, afternoon, evening, night, anytime, or null.
-- frequency may be daily, weekly with explicit ISO weekdays 1-7, or null.
+- frequency is null when unspecified; otherwise an object: {"type":"daily","interval":1} for explicitly daily instructions, or {"type":"weekly","weekdays":[1]} for explicitly stated ISO weekdays (1=Monday, 7=Sunday). Never infer daily from a time window alone.
 - resource_match_query is only a search phrase, never a fabricated resource ID.
 - source_evidence must be a short exact quotation from the prescription that supports this action.
 - If needs_review=true, ambiguities must contain a plain-language reason.
-- Output JSON only and follow the supplied schema.
+- Output one JSON object with an actions array, following the supplied response schema. Never return a bare array or a different wrapper.
+- Include every required action field; use null for unknown optional values, not omitted fields. source_text may be null; the original prescription is already preserved separately.
 
 PRESCRIPTION START
 ${prescriptionText}
