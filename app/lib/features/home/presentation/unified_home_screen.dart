@@ -6,7 +6,6 @@ import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
-import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
