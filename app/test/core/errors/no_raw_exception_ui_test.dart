@@ -19,7 +19,7 @@ void main() {
         });
 
     final rawException = RegExp(
-      r'(?:snapshot\\.error|state\\.error|\\berror)\\?*\\.toString\\(\\)',
+      r'(?:snapshot\.error|state\.error|\berror)\?*\.toString\(\)',
     );
 
     for (final file in files) {
