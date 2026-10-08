@@ -84,6 +84,31 @@ void main() {
     expect(find.textContaining('Preview only'), findsOneWidget);
   });
 
+  testWidgets('publish is disabled when an action has not been approved', (
+    tester,
+  ) async {
+    final repository = _FakeCarePlansRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(
+          home: CarePlanBuilderScreen(
+            patientId: 'patient-1',
+            planId: 'plan-1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1টি করণীয় যাচাই ও অনুমোদন বাকি।'), findsOneWidget);
+    final publishButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'রোগীর জন্য চালু করুন'),
+    );
+    expect(publishButton.onPressed, isNull);
+    expect(find.byTooltip('সংশোধন করুন'), findsWidgets);
+  });
+
   testWidgets('publishing refreshes the builder without a setState error', (
     tester,
   ) async {
@@ -108,14 +133,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Publish plan'));
+    await tester.tap(find.text('রোগীর জন্য চালু করুন'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Publish'));
+    await tester.tap(find.widgetWithText(FilledButton, 'চালু করুন'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(repository.published, isTrue);
-    expect(find.text('ACTIVE'), findsOneWidget);
+    expect(find.text('চালু'), findsOneWidget);
   });
 }
 
