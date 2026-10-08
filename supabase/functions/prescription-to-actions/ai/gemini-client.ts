@@ -4,6 +4,7 @@ import {
   GeminiTimeoutError,
 } from "./error-classifier.ts";
 import {
+  geminiResponseSchema,
   parseSuggestedActions,
   type SuggestedActions,
 } from "./output-schema.ts";
@@ -58,6 +59,11 @@ export class RestGeminiClient implements GeminiClient {
             model: request.model,
             store: false,
             input: prescriptionParserPrompt(request.prescriptionText),
+            response_format: {
+              type: "text",
+              mime_type: "application/json",
+              schema: geminiResponseSchema,
+            },
           }),
         },
       );
