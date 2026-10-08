@@ -328,6 +328,7 @@ class _PlanActionEditorScreenState
                       if (_frequencyType == ActionFrequencyType.daily) ...[
                         const SizedBox(height: 12),
                         TextFormField(
+                          key: const Key('daily-interval-field'),
                           controller: _dailyIntervalController,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
