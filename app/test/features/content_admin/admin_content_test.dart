@@ -146,7 +146,7 @@ void main() {
     expect(generatedResourceSlug('দুআ', 'ABCDEF12-more'), 'resource-abcdef12');
   });
 
-  testWidgets('admin CMS lists canonical state, visibility, and status', (
+  testWidgets('category-first CMS keeps saved drafts in their own tab', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -161,15 +161,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('সংরক্ষিত খসড়া'), findsOneWidget);
+    expect(find.text('যাচাইয়ের অপেক্ষায়'), findsOneWidget);
+    expect(find.text('কুরআনের আয়াত'), findsOneWidget);
+    expect(find.text('Ayatul Kursi'), findsNothing);
+    expect(find.text('New resource'), findsNothing);
+
+    await tester.tap(find.text('কুরআনের আয়াত'));
+    await tester.pumpAndSettle();
+    expect(find.text('নতুন কুরআনের আয়াত যোগ করুন'), findsOneWidget);
     expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('Quran'), findsOneWidget);
-    expect(find.text('Draft'), findsWidgets);
-    expect(find.text('Public'), findsOneWidget);
-    expect(find.text('Pending'), findsNothing);
-    expect(
-      find.widgetWithText(FloatingActionButton, 'New resource'),
-      findsOneWidget,
-    );
+    expect(find.text('খসড়া'), findsWidgets);
+
+    await tester.tap(find.text('প্রকাশিত'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ayatul Kursi'), findsNothing);
+
+    await tester.tap(find.text('খসড়া').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
+
+    await tester.tap(find.text('সব বিভাগে ফিরে যান'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সংরক্ষিত খসড়া'));
+    await tester.pumpAndSettle();
+    expect(find.text('সব বিভাগের খসড়া'), findsOneWidget);
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
   });
 
   testWidgets('resource editor starts with eight plain-language choices', (
