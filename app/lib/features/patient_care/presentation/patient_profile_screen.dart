@@ -81,6 +81,17 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     );
   }
 
+  Future<void> _retryNotifications() async {
+    if (_updatingNotifications) return;
+    setState(() => _updatingNotifications = true);
+    await ref.read(notificationCoordinatorProvider).syncIfEnabled();
+    if (!mounted) return;
+    setState(() {
+      _updatingNotifications = false;
+      _refreshNotificationStatus();
+    });
+  }
+
   Future<void> _signOut() async {
     await ref.read(notificationCoordinatorProvider).disable();
     await ref.read(authRepositoryProvider).signOut();
@@ -187,6 +198,18 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
                     ),
                     const SizedBox(height: 14),
+                    if (enabled && status?.lastSyncSucceeded == false) ...[
+                      const Text(
+                        'মনে করিয়ে দেওয়ার অনুমতি আছে, তবে সময় ঠিক করা যায়নি। আবার চেষ্টা করুন।',
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _retryNotifications,
+                        icon: const Icon(Icons.refresh_outlined),
+                        label: const Text('আবার সময় ঠিক করুন'),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (snapshot.connectionState == ConnectionState.waiting ||
                         _updatingNotifications)
                       const Center(child: CircularProgressIndicator())
