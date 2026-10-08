@@ -136,7 +136,8 @@ class _AdminContentPreviewScreenState
               SukunPageIntro(
                 eyebrow: 'উপকরণ যাচাই',
                 title: item.title,
-                subtitle: 'প্রকাশের আগে উপকরণটি যাচাই করুন ও প্রয়োজনীয় অনুমোদন দিন।',
+                subtitle:
+                    'প্রকাশের আগে উপকরণটি যাচাই করুন ও প্রয়োজনীয় অনুমোদন দিন।',
                 trailing: SukunIconBadge(
                   icon: item.isCanonical
                       ? Icons.verified_outlined
@@ -192,10 +193,7 @@ class _AdminContentPreviewScreenState
                   ),
                 ),
               if (item.transliteration != null)
-                _PreviewSection(
-                  title: 'উচ্চারণ',
-                  body: item.transliteration!,
-                ),
+                _PreviewSection(title: 'উচ্চারণ', body: item.transliteration!),
               if (item.translation != null)
                 _PreviewSection(title: 'অনুবাদ', body: item.translation!),
               if (item.body != null)
@@ -210,8 +208,7 @@ class _AdminContentPreviewScreenState
               const SizedBox(height: 24),
               const SukunSectionHeader(
                 title: 'যাচাই ও প্রকাশ',
-                subtitle:
-                    'প্রকাশ ও পরিবর্তনের সব তথ্য নিরাপদে সংরক্ষিত হয়।',
+                subtitle: 'প্রকাশ ও পরিবর্তনের সব তথ্য নিরাপদে সংরক্ষিত হয়।',
               ),
               const SizedBox(height: 10),
               if (_working) const LinearProgressIndicator(),
@@ -444,12 +441,11 @@ String _label(String value) => value
 String _transitionExplanation(String transition) => switch (transition) {
   'submit' => 'উপকরণটি যাচাইয়ের জন্য পাঠান। কুরআন ও হাদিসের উৎস অনুমোদিত না হলে প্রকাশ করা যাবে না।',
   'verify' => 'আসল লেখা ও উৎস অনুমোদিত তথ্যসূত্রের সঙ্গে মিলিয়ে নিশ্চিত করুন।',
-  'reject' =>
-    'লেখা বা ইতিহাস না মুছে সংশোধনের জন্য ফেরত দিন।',
-  'publish' =>
-    'যাচাই করা উপকরণটি নির্ধারিত পাঠকদের জন্য প্রকাশ করুন।',
+  'reject' => 'লেখা বা ইতিহাস না মুছে সংশোধনের জন্য ফেরত দিন।',
+  'publish' => 'যাচাই করা উপকরণটি নির্ধারিত পাঠকদের জন্য প্রকাশ করুন।',
   'unpublish' => 'আগের তথ্য রেখে উপকরণটি পাঠকদের তালিকা থেকে সরান।',
-  'archive' => 'উপকরণটি ইতিহাসসহ সংরক্ষণাগারে রাখুন। রোগীরা এটি দেখতে পাবেন না।',
+  'archive' =>
+    'উপকরণটি ইতিহাসসহ সংরক্ষণাগারে রাখুন। রোগীরা এটি দেখতে পাবেন না।',
   _ => 'পরিবর্তনটি নিশ্চিত করুন।',
 };
 
