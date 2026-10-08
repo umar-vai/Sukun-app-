@@ -92,10 +92,7 @@ void main() {
       ProviderScope(
         overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
         child: const MaterialApp(
-          home: CarePlanBuilderScreen(
-            patientId: 'patient-1',
-            planId: 'plan-1',
-          ),
+          home: CarePlanBuilderScreen(patientId: 'patient-1', planId: 'plan-1'),
         ),
       ),
     );
