@@ -46,9 +46,11 @@ export class RestGeminiClient implements GeminiClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
     try {
-      const response = await this.fetcher(
-        "https://generativelanguage.googleapis.com/v1beta/interactions",
-        {
+      const endpoint =
+        "https://generativelanguage.googleapis.com/v1beta/interactions";
+      const prompt = prescriptionParserPrompt(request.prescriptionText);
+      const send = (withSchema: boolean) =>
+        this.fetcher(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,15 +60,29 @@ export class RestGeminiClient implements GeminiClient {
           body: JSON.stringify({
             model: request.model,
             store: false,
-            input: prescriptionParserPrompt(request.prescriptionText),
-            response_format: {
-              type: "text",
-              mime_type: "application/json",
-              schema: geminiResponseSchema,
-            },
+            input: prompt,
+            ...(withSchema
+              ? {
+                response_format: {
+                  type: "text",
+                  mime_type: "application/json",
+                  schema: geminiResponseSchema,
+                },
+              }
+              : {}),
           }),
-        },
-      );
+        });
+
+      let response = await send(true);
+      if (response.status === 400) {
+        this.diagnostic?.({
+          event: "ai_structured_output_fallback",
+          endpoint: "/v1beta/interactions",
+          model: request.model,
+          http_status: response.status,
+        });
+        response = await send(false);
+      }
 
       if (!response.ok) {
         const body = await safeJson(response);
