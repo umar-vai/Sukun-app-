@@ -55,9 +55,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
       body: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: Alignment.topCenter,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
@@ -71,9 +72,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       tooltip: copy?.goBack ?? 'ফিরে যান',
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  const Center(child: SukunLifeLogo(height: 96)),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 4),
+                  const Center(child: SukunLifeLogo(height: 78)),
+                  const SizedBox(height: 18),
                   SukunPageIntro(
                     eyebrow: copy?.signInEyebrow ?? 'ব্যক্তিগত অ্যাকাউন্ট',
                     title: copy?.signInWelcome ?? 'স্বাগতম',
@@ -171,7 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
                             Text(
-                              copy?.signInNotConfigured ?? 'এখন অ্যাকাউন্টে প্রবেশ করা যাচ্ছে না। সহায়তার জন্য যোগাযোগ করুন।',
+                              copy?.signInNotConfigured ?? 'এটি শুধু অ্যাপের ডিজাইন দেখার সংস্করণ। লগইন পরীক্ষা করতে সংযুক্ত পরীক্ষামূলক অ্যাপ প্রয়োজন।',
                               textAlign: TextAlign.center,
                             ),
                           ],
