@@ -130,7 +130,8 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     final confirmed = await showSukunDecisionDialog(
       context: context,
       title: 'রোগীর জন্য পরিকল্পনাটি চালু করবেন?',
-      message: 'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। ${approved}টি করণীয় অনুমোদিত হয়েছে।',
+      message:
+          'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। ${approved}টি করণীয় অনুমোদিত হয়েছে।',
       confirmLabel: 'চালু করুন',
       cancelLabel: 'আরও সংশোধন করব',
       icon: Icons.publish_outlined,
@@ -152,11 +153,15 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       icon: Icons.archive_outlined,
     );
     if (confirmed != true || _working) return;
-    await _runMutation(() async {
-      await ref
-          .read(carePlansRepositoryProvider)
-          .archivePlan(plan.id, const Uuid().v4());
-    }, successMessage: 'আগের তথ্য অক্ষত রেখে পরিকল্পনাটি সংরক্ষণাগারে রাখা হয়েছে।');
+    await _runMutation(
+      () async {
+        await ref
+            .read(carePlansRepositoryProvider)
+            .archivePlan(plan.id, const Uuid().v4());
+      },
+      successMessage:
+          'আগের তথ্য অক্ষত রেখে পরিকল্পনাটি সংরক্ষণাগারে রাখা হয়েছে।',
+    );
   }
 
   Future<void> _createVersion(CarePlan plan) async {
@@ -190,7 +195,9 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
 
   void _showError(Object error) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('কাজটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।')),
+      const SnackBar(
+        content: Text('কাজটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।'),
+      ),
     );
   }
 
@@ -231,7 +238,13 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         plan: data.plan,
                         working: _working,
                         actionCount: data.actions.length,
-                        unresolvedCount: data.actions.where((action) => action.reviewStatus != ActionReviewStatus.approved).length,
+                        unresolvedCount: data.actions
+                            .where(
+                              (action) =>
+                                  action.reviewStatus !=
+                                  ActionReviewStatus.approved,
+                            )
+                            .length,
                         onPreview: () => context.push(
                           '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
                         ),
@@ -499,7 +512,9 @@ class _ActionCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text('${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}'),
+                Text(
+                  '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                ),
                 if (action.countTarget != null)
                   Text('কতবার: ${action.countTarget}'),
                 if (action.durationMinutes != null)
@@ -510,7 +525,9 @@ class _ActionCard extends StatelessWidget {
                 ],
                 if (action.resource != null) ...[
                   const SizedBox(height: 8),
-                  Text('সহায়ক উপকরণ: ${action.resource!.titleBn ?? action.resource!.title}'),
+                  Text(
+                    'সহায়ক উপকরণ: ${action.resource!.titleBn ?? action.resource!.title}',
+                  ),
                 ],
               ],
             ),
