@@ -43,8 +43,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            Localizations.of<AppLocalizations>(context, AppLocalizations)
-                    ?.passwordChanged ??
+            Localizations.of<AppLocalizations>(
+                  context,
+                  AppLocalizations,
+                )?.passwordChanged ??
                 'আপনার পাসওয়ার্ড পরিবর্তন হয়েছে।',
           ),
         ),
@@ -54,8 +56,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            Localizations.of<AppLocalizations>(context, AppLocalizations)
-                    ?.passwordChangeFailed ??
+            Localizations.of<AppLocalizations>(
+                  context,
+                  AppLocalizations,
+                )?.passwordChangeFailed ??
                 'পাসওয়ার্ড বদলানো যায়নি। দেওয়া তথ্য ঠিক আছে কি না দেখে আবার চেষ্টা করুন।',
           ),
         ),
@@ -98,9 +102,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   const SizedBox(height: 18),
                   SukunPageIntro(
                     eyebrow: copy?.firstSignIn ?? 'প্রথমবার প্রবেশ',
-                    title: copy?.createPrivatePassword ?? 'নিজের পাসওয়ার্ড তৈরি করুন',
-                    subtitle: copy?.passwordResetSubtitle ??
-                        'রোগীর ব্যক্তিগত তথ্য দেখার আগে অস্থায়ী পাসওয়ার্ড বদলে নিন।',
+                    title:
+                        copy?.createPrivatePassword ??
+                        'নিজের পাসওয়ার্ড তৈরি করুন',
+                    subtitle: copy?.passwordResetSubtitle ?? 'রোগীর ব্যক্তিগত তথ্য দেখার আগে অস্থায়ী পাসওয়ার্ড বদলে নিন।',
                   ),
                   const SizedBox(height: 24),
                   SukunSurface(
@@ -112,14 +117,15 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                           controller: _currentController,
                           obscureText: true,
                           decoration: InputDecoration(
-                            labelText: copy?.temporaryPassword ?? 'অস্থায়ী পাসওয়ার্ড',
+                            labelText:
+                                copy?.temporaryPassword ?? 'অস্থায়ী পাসওয়ার্ড',
                             prefixIcon: const Icon(Icons.key_outlined),
                           ),
                           validator: (value) =>
                               validateAccountPassword(value) == null
                               ? null
                               : (copy?.passwordError ??
-                                  'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
+                                    'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -134,7 +140,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                               validateAccountPassword(value) == null
                               ? null
                               : (copy?.passwordError ??
-                                  'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
+                                    'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -142,11 +148,16 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                           obscureText: true,
                           autofillHints: const [AutofillHints.newPassword],
                           decoration: InputDecoration(
-                            labelText: copy?.confirmNewPassword ?? 'নতুন পাসওয়ার্ড আবার লিখুন',
-                            prefixIcon: const Icon(Icons.verified_user_outlined),
+                            labelText:
+                                copy?.confirmNewPassword ??
+                                'নতুন পাসওয়ার্ড আবার লিখুন',
+                            prefixIcon: const Icon(
+                              Icons.verified_user_outlined,
+                            ),
                           ),
                           validator: (value) {
-                            if (validateAccountPassword(_newController.text) != null) {
+                            if (validateAccountPassword(_newController.text) !=
+                                null) {
                               return copy?.passwordError ??
                                   'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।';
                             }
@@ -171,8 +182,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                               : const Icon(Icons.shield_outlined),
                           label: Text(
                             _submitting
-                                ? (copy?.updatingPassword ?? 'পাসওয়ার্ড বদলানো হচ্ছে…')
-                                : (copy?.secureMyAccount ?? 'নতুন পাসওয়ার্ড সংরক্ষণ করুন'),
+                                ? (copy?.updatingPassword ??
+                                      'পাসওয়ার্ড বদলানো হচ্ছে…')
+                                : (copy?.secureMyAccount ??
+                                      'নতুন পাসওয়ার্ড সংরক্ষণ করুন'),
                           ),
                         ),
                       ],
@@ -186,12 +199,14 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     padding: EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: SukunColors.deepTide),
+                        const Icon(
+                          Icons.info_outline,
+                          color: SukunColors.deepTide,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            copy?.passwordSafetyHint ??
-                                'অন্তত ৮ অক্ষরের পাসওয়ার্ড দিন। অস্থায়ী পাসওয়ার্ডটি আবার ব্যবহার করবেন না।',
+                            copy?.passwordSafetyHint ?? 'অন্তত ৮ অক্ষরের পাসওয়ার্ড দিন। অস্থায়ী পাসওয়ার্ডটি আবার ব্যবহার করবেন না।',
                           ),
                         ),
                       ],
