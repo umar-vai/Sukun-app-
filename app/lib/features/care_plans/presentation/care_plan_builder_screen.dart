@@ -232,6 +232,8 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       _PlanActions(
                         plan: data.plan,
                         working: _working,
+                        actionCount: data.actions.length,
+                        unresolvedCount: data.actions.where((action) => action.reviewStatus != ActionReviewStatus.approved).length,
                         onPreview: () => context.push(
                           '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
                         ),
@@ -372,6 +374,8 @@ class _PlanActions extends StatelessWidget {
   const _PlanActions({
     required this.plan,
     required this.working,
+    required this.actionCount,
+    required this.unresolvedCount,
     required this.onPreview,
     required this.onGenerate,
     required this.onAdd,
@@ -382,6 +386,8 @@ class _PlanActions extends StatelessWidget {
 
   final CarePlan plan;
   final bool working;
+  final int actionCount;
+  final int unresolvedCount;
   final VoidCallback onPreview;
   final VoidCallback onGenerate;
   final VoidCallback onAdd;
@@ -407,16 +413,24 @@ class _PlanActions extends StatelessWidget {
               icon: const Icon(Icons.auto_awesome_outlined),
               label: const Text('প্রেসক্রিপশন থেকে করণীয় সাজান'),
             ),
-          OutlinedButton.icon(
+          FilledButton.icon(
             onPressed: working ? null : onAdd,
             icon: const Icon(Icons.add),
             label: const Text('নতুন করণীয় যোগ করুন'),
           ),
-          FilledButton.icon(
-            onPressed: working ? null : onPublish,
+          FilledButton.tonalIcon(
+            onPressed: working || actionCount == 0 || unresolvedCount > 0
+                ? null
+                : onPublish,
             icon: const Icon(Icons.publish_outlined),
             label: const Text('রোগীর জন্য চালু করুন'),
           ),
+          if (actionCount == 0 || unresolvedCount > 0)
+            Text(
+              actionCount == 0
+                  ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
+                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
+            ),
         ] else ...[
           FilledButton.tonalIcon(
             onPressed: working ? null : onCreateVersion,
