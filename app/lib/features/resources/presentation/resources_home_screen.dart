@@ -59,7 +59,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   Future<void> _refresh() async {
     _searchDebounce?.cancel();
     final future = _load();
-    setState(() => _resources = future);
+    setState(() {
+      _resources = future;
+    });
     try {
       await future;
     } catch (_) {
