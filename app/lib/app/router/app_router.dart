@@ -20,6 +20,7 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_col
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
@@ -164,6 +165,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/patient/home',
+        builder: (context, state) => UnifiedHomeScreen(
+          isPatient: true,
+          displayName: _patientSession(session)?.displayName,
+        ),
+      ),
+      GoRoute(
+        path: '/patient/today',
         builder: (context, state) => PatientHomeScreen(
           displayName: _patientSession(session)?.displayName,
         ),

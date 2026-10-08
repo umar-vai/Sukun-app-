@@ -41,7 +41,7 @@ void main() {
     );
     expect(find.text('Islamic Resources'), findsOneWidget);
     expect(find.text('Resource content'), findsOneWidget);
-    expect(find.text('আজকের কাজ'), findsOneWidget);
+    expect(find.text('হোম'), findsOneWidget);
     expect(find.text('আমার পরিকল্পনা'), findsOneWidget);
     expect(find.text('পাঠ ও অডিও'), findsOneWidget);
     expect(find.text('অগ্রগতি'), findsOneWidget);

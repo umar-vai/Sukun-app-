@@ -49,7 +49,7 @@ class PatientScaffold extends StatelessWidget {
           SukunNavDestination(
             icon: Icons.home_outlined,
             selectedIcon: Icons.home,
-            label: copy?.today ?? 'আজকের কাজ',
+            label: 'হোম',
           ),
           SukunNavDestination(
             icon: Icons.checklist_outlined,
