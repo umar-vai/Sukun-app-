@@ -60,7 +60,7 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
             return const AppLoadingState(label: 'Preparing patient preview');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: snapshot.error.toString());
+            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
           }
           final (plan, actions) = snapshot.data!;
           return ListView(
