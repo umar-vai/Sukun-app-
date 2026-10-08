@@ -529,3 +529,28 @@ String _timingLabel(PlanAction action) {
 String _formatDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _planStatusLabel(CarePlanStatus status) => switch (status) {
+  CarePlanStatus.draft => 'খসড়া',
+  CarePlanStatus.active => 'চালু',
+  CarePlanStatus.inactive => 'বন্ধ',
+  CarePlanStatus.archived => 'সংরক্ষিত',
+};
+
+String _reviewStatusLabel(ActionReviewStatus status) => switch (status) {
+  ActionReviewStatus.draft => 'খসড়া',
+  ActionReviewStatus.needsReview => 'যাচাই বাকি',
+  ActionReviewStatus.approved => 'অনুমোদিত',
+  ActionReviewStatus.rejected => 'বাদ দেওয়া',
+};
+
+String _frequencyLabel(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.daily) {
+    return frequency.interval == 1
+        ? 'প্রতিদিন'
+        : 'প্রতি ${frequency.interval} দিন পর';
+  }
+  const days = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'];
+  final selected = frequency.weekdays.toList()..sort();
+  return selected.map((day) => days[day - 1]).join(', ');
+}
