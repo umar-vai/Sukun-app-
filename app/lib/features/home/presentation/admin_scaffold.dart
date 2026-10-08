@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class AdminScaffold extends StatelessWidget {
   const AdminScaffold({
@@ -20,6 +21,7 @@ class AdminScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       body: body,
@@ -34,21 +36,21 @@ class AdminScaffold extends StatelessWidget {
             _ => '/admin/content',
           });
         },
-        destinations: const [
+        destinations: [
           SukunNavDestination(
             icon: Icons.dashboard_outlined,
             selectedIcon: Icons.dashboard,
-            label: 'Dashboard',
+            label: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
           ),
           SukunNavDestination(
             icon: Icons.people_outline,
             selectedIcon: Icons.people,
-            label: 'Patients',
+            label: copy?.adminPatients ?? 'রোগীরা',
           ),
           SukunNavDestination(
             icon: Icons.library_books_outlined,
             selectedIcon: Icons.library_books,
-            label: 'Content',
+            label: copy?.adminContent ?? 'উপকরণ',
           ),
         ],
       ),
