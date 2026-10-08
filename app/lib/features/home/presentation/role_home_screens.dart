@@ -174,7 +174,8 @@ class AdminHomeScreen extends StatelessWidget {
             title: displayName == null
                 ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
                 : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
-            subtitle: copy?.adminWelcomeSubtitle ??
+            subtitle:
+                copy?.adminWelcomeSubtitle ??
                 'রোগীর পরিকল্পনা ও উপকরণ এক জায়গা থেকে পরিচালনা করুন.',
             trailing: const SukunIconBadge(
               icon: Icons.admin_panel_settings_outlined,
@@ -215,7 +216,9 @@ class AdminHomeScreen extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () => context.go('/admin/content'),
                       icon: const Icon(Icons.library_books_outlined),
-                      label: Text(copy?.manageResources ?? 'উপকরণ পরিচালনা করুন'),
+                      label: Text(
+                        copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
+                      ),
                     ),
                   ],
                 ),
