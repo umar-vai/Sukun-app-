@@ -1,0 +1,125 @@
+name: Prelaunch Browser Preview
+
+on:
+  push:
+    branches: [feat/prelaunch-browser-preview-20261008]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prelaunch-gh-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    name: Build and publish prelaunch preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    env:
+      QA_URL: ${{ secrets.SUKUN_QA_SUPABASE_URL }}
+      QA_KEY: ${{ secrets.SUKUN_QA_SUPABASE_PUBLISHABLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Validate optional staging-only configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${QA_URL:-}" && -z "${QA_KEY:-}" ]]; then
+            echo "connected=false" >> "$GITHUB_OUTPUT"
+            echo "Prelaunch browser preview: UI-only, no authentication." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ -z "${QA_URL:-}" || -z "${QA_KEY:-}" ]]; then
+            echo "::error::Both QA_URL and QA_KEY are required together."
+            exit 1
+          fi
+          if [[ "$QA_URL" != https://*.supabase.co ]]; then
+            echo "::error::The staging URL must use HTTPS and a Supabase hostname."
+            exit 1
+          fi
+          if [[ "$QA_URL" == "https://vydfafumxptanpkmtrpr.supabase.co" ]]; then
+            echo "::error::Public GitHub Pages preview cannot connect to production patient data."
+            exit 1
+          fi
+          echo "connected=true" >> "$GITHUB_OUTPUT"
+          echo "Prelaunch browser preview: connected to test-only staging Supabase." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build UI-only web preview
+        if: steps.config.outputs.connected == 'false'
+        run: >
+          flutter build web --release
+          --base-href /Sukun-app-/prelaunch/
+          --dart-define=APP_ENVIRONMENT=development
+
+      - name: Build staging-connected web preview
+        if: steps.config.outputs.connected == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build web --release \
+            --base-href /Sukun-app-/prelaunch/ \
+            --dart-define=APP_ENVIRONMENT=staging \
+            --dart-define="SUPABASE_URL=$QA_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY"
+
+      - name: Publish in separate prelaunch subdirectory
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sukun-prelaunch-build
+          mkdir -p /tmp/sukun-prelaunch-build
+          cp -R app/build/web/. /tmp/sukun-prelaunch-build/
+          touch /tmp/sukun-prelaunch-build/.nojekyll
+          printf 'User-agent: *\nDisallow: /\n' > /tmp/sukun-prelaunch-build/robots.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard
+          git clean -fdx
+
+          git fetch origin gh-pages
+          git switch --force-create gh-pages origin/gh-pages
+          mkdir -p prelaunch
+          rm -rf prelaunch/*
+          cp -R /tmp/sukun-prelaunch-build/. prelaunch/
+          git add -A prelaunch
+          if git diff --staged --quiet; then
+            echo "No preview change to publish."
+          else
+            git commit -m "chore: publish prelaunch Flutter web UI preview"
+            git push origin gh-pages
+          fi
+
+      - name: Preview link
+        working-directory: .
+        shell: bash
+        run: |
+          echo "### Preview URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://umar-vai.github.io/Sukun-app-/prelaunch/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Public test preview only. No real patient data or production login." >> "$GITHUB_STEP_SUMMARY"
