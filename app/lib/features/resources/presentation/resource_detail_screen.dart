@@ -96,7 +96,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           if (resource == null) {
             return const AppEmptyState(
               title: 'উপকরণটি পাওয়া যায়নি',
-              message: 'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
+              message:
+                  'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
             );
           }
           return ListView(
@@ -146,17 +147,17 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 value: resource.banglaText,
                 bangla: true,
               ),
-              _Section(
-                label: 'উচ্চারণ',
-                value: resource.transliteration,
-              ),
+              _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
               _Section(label: 'নির্দেশনা', value: resource.body),
               _Section(
                 label: 'তথ্যসূত্র',
                 value: resource.referenceText ?? resource.sourceReference,
               ),
-              _Section(label: 'উৎস ও ব্যবহারের অনুমতি', value: resource.rightsNote),
+              _Section(
+                label: 'উৎস ও ব্যবহারের অনুমতি',
+                value: resource.rightsNote,
+              ),
               if (resolveResourceMedia(resource.linkedResource) != null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
