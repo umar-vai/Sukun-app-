@@ -64,7 +64,7 @@ class _CreatePrescriptionScreenState
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text('প্রেসক্রিপশন সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
