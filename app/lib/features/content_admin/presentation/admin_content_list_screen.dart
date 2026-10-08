@@ -326,6 +326,7 @@ class _AdminContentListScreenState
       SukunSearchField(
         controller: _searchController,
         hintText: 'নাম বা বিষয় লিখে খুঁজুন',
+        onChanged: (value) => setState(() => _search = value),
         onSubmitted: (value) => setState(() => _search = value),
         onClear: () {
           _searchController.clear();
