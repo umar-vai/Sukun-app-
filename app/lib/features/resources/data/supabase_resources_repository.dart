@@ -1,3 +1,4 @@
+import 'package:sukun_life/features/resources/data/resource_paging.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -11,6 +12,11 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
   static const _selection =
       'id,type,category_id,title,title_bn,summary,body,arabic_text,bangla_text,transliteration,translation,reference_text,source_reference,source_url,rights_note,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,content_categories(slug,name,name_bn)';
 
+  // Browse cards need metadata only. Read the full body, Arabic text and media
+  // content only on the detail screen, not for every search result.
+  static const _browseSelection =
+      'id,type,category_id,title,title_bn,summary,reference_text,source_reference,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,rights_note,content_categories(slug,name,name_bn)';
+
   @override
   Future<List<ContentResource>> browseResources({
     String query = '',
@@ -18,19 +24,25 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
     Set<String> categoryPrefixes = const {},
   }) async {
     try {
-      var request = _client
-          .from('content_items')
-          .select(_selection)
-          .eq('status', 'published');
-      if (types.isNotEmpty) {
-        request = request.inFilter('type', types.toList(growable: false));
-      }
-      final response = await request
-          .order('published_at', ascending: false)
-          .limit(1000);
-      var resources = response
-          .map(ContentResource.fromJson)
-          .toList(growable: false);
+      // Filter the entire authorized result set, rather than just the newest
+      // 1,000 rows. Stable ID ordering prevents missing/duplicate records at
+      // equal publication timestamps. RLS still governs every page.
+      final rows = await fetchAllResourcePages<Map<String, dynamic>>(
+        loadPage: (from, to) async {
+          var request = _client
+              .from('content_items')
+              .select(_browseSelection)
+              .eq('status', 'published');
+          if (types.isNotEmpty) {
+            request = request.inFilter('type', types.toList(growable: false));
+          }
+          return request
+              .order('published_at', ascending: false)
+              .order('id')
+              .range(from, to);
+        },
+      );
+      var resources = rows.map(ContentResource.fromJson).toList(growable: false);
       if (categoryPrefixes.isNotEmpty) {
         resources = resources
             .where(
