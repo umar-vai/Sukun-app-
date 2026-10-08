@@ -82,6 +82,12 @@ void main() {
 }
 
 Future<void> _openEditor(WidgetTester tester, _EditorRepository repo) async {
+  // This suite asserts save semantics, not short-viewport scroll behavior.
+  // Keep the full form visible so test taps are genuine hits.
+  tester.view.physicalSize = const Size(1000, 2200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final router = GoRouter(
     routes: [
       GoRoute(
@@ -116,11 +122,7 @@ Future<void> _openEditor(WidgetTester tester, _EditorRepository repo) async {
 
 Future<void> _save(WidgetTester tester) async {
   final button = find.text('Save action');
-  await tester.scrollUntilVisible(
-    button,
-    240,
-    scrollable: find.byType(Scrollable).first,
-  );
+  await tester.ensureVisible(button);
   await tester.pumpAndSettle();
   await tester.tap(button);
   await tester.pumpAndSettle();
