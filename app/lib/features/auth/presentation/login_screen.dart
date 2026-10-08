@@ -104,9 +104,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             controller: _identifierController,
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: copy?.signInIdentifier ?? 'রোগী নম্বর, ফোন বা ইমেইল',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
+                              prefixIcon: const Icon(Icons.person_outline_rounded),
                             ),
                             validator: validateSignInIdentifier,
                           ),
