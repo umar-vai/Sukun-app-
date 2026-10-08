@@ -94,8 +94,11 @@ class _AdminContentPreviewScreenState
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('উপকরণটির পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('উপকরণটির পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _working = false);
