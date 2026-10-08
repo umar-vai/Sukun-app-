@@ -217,9 +217,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             );
           }
           final day = snapshot.data!;
-          final remainingTasks = day.tasks
-              .where((task) => task.id != day.nextTask?.id)
-              .toList(growable: false);
+          final remainingTasks = day.remainingTasks;
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
