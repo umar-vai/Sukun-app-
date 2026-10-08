@@ -460,7 +460,9 @@ async function reuseExactSuccessfulExtraction(args: {
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const buffer = await crypto.subtle.digest("SHA-256", bytes);
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const buffer = await crypto.subtle.digest("SHA-256", copy.buffer);
   return [...new Uint8Array(buffer)]
     .map((value) => value.toString(16).padStart(2, "0"))
     .join("");
