@@ -45,17 +45,17 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
   @override
   Widget build(BuildContext context) {
     return PatientScaffold(
-      title: 'Progress',
+      title: 'অগ্রগতি',
       selectedIndex: 3,
       body: FutureBuilder<AdherenceSummary>(
         future: _summary,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading your progress');
+            return const AppLoadingState(label: 'অগ্রগতি আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'অগ্রগতির তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
@@ -73,9 +73,9 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
                 const SukunPageIntro(
-                  eyebrow: 'Care activity',
-                  title: 'Your progress',
-                  subtitle: 'A gentle overview of completed care-plan actions—not a clinical assessment.',
+                  eyebrow: 'করণীয় কাজের হিসাব',
+                  title: 'আমার অগ্রগতি',
+                  subtitle: 'কোন কাজগুলো করেছেন, তার একটি সহজ হিসাব। এটি স্বাস্থ্য পরীক্ষার ফল নয়।',
                 ),
                 const SizedBox(height: 20),
                 _RangeToggle(value: _days, onChanged: _setRange),
@@ -83,8 +83,8 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                 _ProgressOverview(summary: summary),
                 const SizedBox(height: 24),
                 const SukunSectionHeader(
-                  title: 'Daily activity',
-                  subtitle: 'Completion by day',
+                  title: 'প্রতিদিনের কাজ',
+                  subtitle: 'দিন অনুযায়ী হিসাব',
                 ),
                 const SizedBox(height: 10),
                 if (summary.total == 0)
@@ -97,7 +97,7 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                         SizedBox(width: 14),
                         Expanded(
                           child: Text(
-                            'No task activity has been tracked in this period yet.',
+                            'এই সময়ে কোনো কাজের হিসাব পাওয়া যায়নি।',
                           ),
                         ),
                       ],
@@ -110,7 +110,7 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                   ],
                 const SizedBox(height: 8),
                 Text(
-                  'Progress reflects task activity only and is not a clinical assessment.',
+                  'এখানে শুধু কাজ করার হিসাব দেখানো হয়, চিকিৎসার ফলাফল নয়।',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -160,7 +160,7 @@ class _RangeToggle extends StatelessWidget {
                       : null,
                 ),
                 child: Text(
-                  '$days days',
+                  '$days দিন',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: value == days
@@ -191,13 +191,13 @@ class _ProgressOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$percentage% completed',
+            '$percentage% কাজ করেছেন',
             style: Theme.of(context).textTheme.headlineMedium
                 ?.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 4),
           const Text(
-            'Actions completed in this period',
+            'নির্বাচিত সময়ের সম্পন্ন কাজের হিসাব',
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 12),
@@ -212,10 +212,10 @@ class _ProgressOverview extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _MetricChip(label: 'Done', value: summary.completed),
-              _MetricChip(label: 'Remaining', value: summary.remaining),
-              _MetricChip(label: 'Skipped', value: summary.skipped),
-              _MetricChip(label: 'Missed', value: summary.missed),
+              _MetricChip(label: 'করেছি', value: summary.completed),
+              _MetricChip(label: 'বাকি', value: summary.remaining),
+              _MetricChip(label: 'আজ করা হয়নি', value: summary.skipped),
+              _MetricChip(label: 'সময় পেরিয়েছে', value: summary.missed),
             ],
           ),
         ],
@@ -279,8 +279,8 @@ class _ProgressDayTile extends StatelessWidget {
                 const SizedBox(height: 7),
                 Text(
                   day.total == 0
-                      ? 'No tracked tasks'
-                      : '${day.completed} of ${day.total} completed',
+                      ? 'কোনো কাজের হিসাব নেই'
+                      : '${day.total}টির মধ্যে ${day.completed}টি করেছেন',
                 ),
               ],
             ),
@@ -292,7 +292,7 @@ class _ProgressDayTile extends StatelessWidget {
 }
 
 String _weekday(DateTime date) =>
-    const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
+    const ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'][date.weekday - 1];
 
 String _shortDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
