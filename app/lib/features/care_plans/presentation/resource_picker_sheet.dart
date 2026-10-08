@@ -19,6 +19,122 @@ Future<String?> showResourcePickerSheet({
   );
 }
 
+class ResourcePickerField extends StatelessWidget {
+  const ResourcePickerField({
+    super.key,
+    required this.resources,
+    required this.selectedId,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final List<ContentResourceOption> resources;
+  final String selectedId;
+  final bool enabled;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = resources
+        .where((resource) => resource.id == selectedId)
+        .firstOrNull;
+    final title = selected?.displayTitle ?? 'No linked resource';
+    final subtitle = selected == null
+        ? 'Browse all resources by category'
+        : '${selected.categoryLabel} · ${_displayType(selected.type)}';
+
+    return Semantics(
+      button: true,
+      label: 'Linked resource, $title',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: !enabled
+            ? null
+            : () async {
+                final result = await showResourcePickerSheet(
+                  context: context,
+                  resources: resources,
+                  selectedId: selectedId,
+                );
+                if (result != null) onChanged(result);
+              },
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: enabled ? 1 : .55,
+          child: Ink(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: selected == null ? Colors.white : SukunColors.mist,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selected == null
+                    ? SukunColors.border
+                    : SukunColors.sukunBlue.withValues(alpha: .45),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: SukunColors.mist,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    selected == null
+                        ? Icons.link_off_rounded
+                        : _iconForType(selected.type),
+                    color: SukunColors.deepTide,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Linked resource (optional)',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: SukunColors.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: SukunColors.nightNavy,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: SukunColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: SukunColors.deepTide,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ResourcePickerSheet extends StatefulWidget {
   const _ResourcePickerSheet({
     required this.resources,
