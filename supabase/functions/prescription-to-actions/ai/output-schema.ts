@@ -31,6 +31,83 @@ const timeWindows = new Set([
   "anytime",
 ]);
 
+export function normalizeSuggestedActions(value: unknown): unknown {
+  if (!isObject(value) || !Array.isArray(value.actions)) return value;
+
+  return {
+    ...value,
+    source_text: value.source_text === undefined ? null : value.source_text,
+    actions: value.actions.map((action) => {
+      if (!isObject(action)) return action;
+
+      const missing: string[] = [];
+      const get = (key: string) => action[key];
+
+      let type = get("type");
+      if (typeof type !== "string" || !type.trim()) {
+        type = "other";
+        missing.push("type");
+      }
+
+      let title = get("title");
+      if (typeof title !== "string" || !title.trim()) {
+        const evidence = get("source_evidence");
+        const instruction = get("instruction");
+        title = typeof evidence === "string" && evidence.trim()
+          ? evidence.trim().slice(0, 160)
+          : typeof instruction === "string" && instruction.trim()
+          ? instruction.trim().slice(0, 160)
+          : "Review prescription instruction";
+        missing.push("title");
+      }
+
+      const normalized = {
+        ...action,
+        type,
+        title,
+        instruction: Object.hasOwn(action, "instruction")
+          ? action.instruction
+          : null,
+        count_target: Object.hasOwn(action, "count_target")
+          ? action.count_target
+          : null,
+        duration_minutes: Object.hasOwn(action, "duration_minutes")
+          ? action.duration_minutes
+          : null,
+        confidence: Object.hasOwn(action, "confidence")
+          ? action.confidence
+          : 0,
+        needs_review: action.needs_review === true || missing.length > 0,
+        ambiguities: Array.isArray(action.ambiguities)
+          ? [...action.ambiguities]
+          : [],
+      } as Record<string, unknown>;
+
+      for (const key of [
+        "instruction",
+        "count_target",
+        "duration_minutes",
+        "confidence",
+      ]) {
+        if (!Object.hasOwn(action, key)) missing.push(key);
+      }
+
+      if (missing.length > 0) {
+        normalized.needs_review = true;
+        const ambiguities = Array.isArray(normalized.ambiguities)
+          ? normalized.ambiguities.filter((item) => typeof item === "string")
+          : [];
+        ambiguities.push(
+          `AI omitted metadata fields: ${[...new Set(missing)].join(", ")}. Verify against the original prescription.`,
+        );
+        normalized.ambiguities = ambiguities;
+      }
+
+      return normalized;
+    }),
+  };
+}
+
 export function parseSuggestedActions(value: unknown): SuggestedActions {
   if (!isObject(value) || !Array.isArray(value.actions)) {
     throw new Error("AI output must contain an actions array.");
