@@ -82,20 +82,23 @@ void main() {
     expect(local.scheduled.single.scheduledAt, snoozeTime);
   });
 
-  test('failed scheduling is reported for patient retry without blocking care', () async {
-    repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
-    local.failScheduling = true;
+  test(
+    'failed scheduling is reported for patient retry without blocking care',
+    () async {
+      repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
+      local.failScheduling = true;
 
-    expect(await coordinator.enable(), isTrue);
-    final status = await coordinator.status();
+      expect(await coordinator.enable(), isTrue);
+      final status = await coordinator.status();
 
-    expect(status.permissionGranted, isTrue);
-    expect(status.lastSyncSucceeded, isFalse);
+      expect(status.permissionGranted, isTrue);
+      expect(status.lastSyncSucceeded, isFalse);
 
-    local.failScheduling = false;
-    await coordinator.syncIfEnabled();
-    expect((await coordinator.status()).lastSyncSucceeded, isTrue);
-  });
+      local.failScheduling = false;
+      await coordinator.syncIfEnabled();
+      expect((await coordinator.status()).lastSyncSucceeded, isTrue);
+    },
+  );
 
   test('disable cancels reminders and removes the registered device', () async {
     store.enabled = true;
