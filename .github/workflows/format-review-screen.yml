@@ -1,5 +1,7 @@
 name: Format Review Screen
 
+# One-shot formatter for the review screen.
+
 on:
   push:
     branches: [web-preview]
