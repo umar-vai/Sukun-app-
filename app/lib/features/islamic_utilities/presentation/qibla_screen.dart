@@ -46,7 +46,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
             return const AppLoadingState(label: 'Preparing Qibla direction');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: snapshot.error.toString());
+            return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
           }
           final settings = snapshot.data!;
           if (!settings.isComplete) {
