@@ -726,7 +726,7 @@ class _SuggestedActionCard extends StatelessWidget {
     return SukunSurface(
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        initiallyExpanded: number == 1,
+        initiallyExpanded: number == 1 && !draft.hasIncompleteMetadata,
         leading: Checkbox(
           value: draft.selected,
           onChanged: !enabled || draft.imported
@@ -736,7 +736,11 @@ class _SuggestedActionCard extends StatelessWidget {
                   onChanged();
                 },
         ),
-        title: Text(draft.title.isEmpty ? 'Suggestion $number' : draft.title),
+        title: Text(
+          draft.title.isEmpty ? 'Suggestion $number' : draft.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Wrap(
           spacing: 8,
           runSpacing: 4,
