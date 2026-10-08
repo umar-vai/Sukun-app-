@@ -66,7 +66,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     try {
       await ref.read(resourceLauncherProvider).open(resource.linkedResource);
     } catch (error) {
-      _showError(error.toString());
+      _showError('উপকরণটি খোলা যাচ্ছে না। আবার চেষ্টা করুন।');
     }
   }
 
@@ -88,7 +88,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
