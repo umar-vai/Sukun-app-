@@ -25,7 +25,7 @@
   "hidePassword": "Hide password",
   "signingIn": "Signing in…",
   "continueSecurely": "Continue securely",
-  "signInNotConfigured": "Sign in is temporarily unavailable. Please contact support.",
+  "signInNotConfigured": "This is an offline UI preview. Install a backend-connected QA build to test sign-in.",
   "signInFailed": "Couldn't sign in. Check your details and try again.",
   "patientDataPrivate": "Your patient information stays protected.",
   "adminQuickActions": "Start a task",
