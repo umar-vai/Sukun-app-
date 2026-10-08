@@ -36,5 +36,19 @@
   "adminWelcome": "Welcome to your workspace",
   "adminWelcomeSubtitle": "Manage patient care and resources from one place.",
   "signInIdentifierError": "Enter your Patient ID, phone number, or admin email.",
-  "passwordError": "Use between 8 and 72 characters."
+  "passwordError": "Use between 8 and 72 characters.",
+  "passwordTitle": "Secure your account",
+  "signOut": "Sign out",
+  "firstSignIn": "First sign in",
+  "createPrivatePassword": "Create your private password",
+  "passwordResetSubtitle": "Replace your temporary password before opening patient information.",
+  "temporaryPassword": "Temporary password",
+  "newPassword": "New password",
+  "confirmNewPassword": "Confirm new password",
+  "updatingPassword": "Updating…",
+  "secureMyAccount": "Save new password",
+  "passwordChanged": "Your password has been updated.",
+  "passwordChangeFailed": "Couldn't change your password. Check your details and try again.",
+  "passwordNotMatch": "The two passwords do not match.",
+  "passwordSafetyHint": "Use at least 8 characters and avoid reusing your temporary password."
 }
