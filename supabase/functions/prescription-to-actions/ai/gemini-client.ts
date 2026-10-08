@@ -5,6 +5,7 @@ import {
 } from "./error-classifier.ts";
 import {
   geminiResponseSchema,
+  normalizeSuggestedActions,
   parseSuggestedActions,
   type SuggestedActions,
 } from "./output-schema.ts";
@@ -125,7 +126,8 @@ export class RestGeminiClient implements GeminiClient {
         throw new GeminiMalformedOutputError();
       }
       try {
-        const result = parseSuggestedActions(parsed);
+        const normalized = normalizeSuggestedActions(parsed);
+        const result = parseSuggestedActions(normalized);
         report("valid");
         return result;
       } catch {
