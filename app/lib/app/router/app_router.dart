@@ -23,6 +23,7 @@ import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_
 import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_notifications_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_profile_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_progress_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
@@ -164,6 +165,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             embedded: true,
           ),
         ),
+      ),
+      GoRoute(
+        path: '/patient/notifications',
+        builder: (context, state) => const PatientNotificationsScreen(),
       ),
       GoRoute(
         path: '/patient/progress',
