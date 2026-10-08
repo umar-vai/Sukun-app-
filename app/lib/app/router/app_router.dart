@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
@@ -22,6 +23,7 @@ import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_
 import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_notifications_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_profile_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_progress_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
@@ -156,13 +158,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patient/resources',
         builder: (context, state) => PatientScaffold(
-          title: 'Islamic Resources',
+          title: 'ইসলামিক পাঠ ও অডিও',
           selectedIndex: 2,
           body: ResourcesHomeScreen(
             initialSectionSlug: state.uri.queryParameters['section'],
             embedded: true,
           ),
         ),
+      ),
+      GoRoute(
+        path: '/patient/notifications',
+        builder: (context, state) => const PatientNotificationsScreen(),
       ),
       GoRoute(
         path: '/patient/progress',
@@ -285,9 +291,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('Page unavailable')),
-      body: AppErrorState(
-        message: state.error?.toString() ?? 'Page not found.',
-      ),
+      body: AppErrorState(message: FriendlyFailures.generic(context)),
     ),
   );
 });

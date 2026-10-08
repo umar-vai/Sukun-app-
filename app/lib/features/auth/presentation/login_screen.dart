@@ -6,6 +6,8 @@ import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
+import 'package:sukun_life/core/errors/friendly_failures.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -40,8 +42,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(FriendlyFailures.signIn(context))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -49,6 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -64,16 +68,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: IconButton.filledTonal(
                       onPressed: () => Navigator.maybePop(context),
                       icon: const Icon(Icons.arrow_back_rounded),
-                      tooltip: 'Back',
+                      tooltip: copy?.goBack ?? 'ফিরে যান',
                     ),
                   ),
                   const SizedBox(height: 10),
                   const Center(child: SukunLifeLogo(height: 96)),
                   const SizedBox(height: 24),
-                  const SukunPageIntro(
-                    eyebrow: 'Private care access',
-                    title: 'Welcome back',
-                    subtitle: 'Sign in securely to continue to your personal care plan or Super Admin workspace.',
+                  SukunPageIntro(
+                    eyebrow: copy?.signInEyebrow ?? 'ব্যক্তিগত অ্যাকাউন্ট',
+                    title: copy?.signInWelcome ?? 'স্বাগতম',
+                    subtitle: copy?.signInSubtitle ?? 'আপনার পরিকল্পনা দেখতে বা অ্যাডমিনের কাজ করতে প্রবেশ করুন।',
                   ),
                   const SizedBox(height: 24),
                   SukunSurface(
@@ -84,12 +88,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Sign in details',
+                            copy?.signInDetails ?? 'অ্যাকাউন্টে প্রবেশ',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Use your Patient ID, phone number, or administrator email.',
+                            copy?.signInIdentifierHelp ?? 'রোগী নম্বর, ফোন নম্বর বা অ্যাডমিনের ইমেইল দিন।',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: SukunColors.muted),
                           ),
@@ -98,11 +102,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             controller: _identifierController,
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Patient ID, phone, or email',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
+                            decoration: InputDecoration(
+                              labelText:
+                                  copy?.signInIdentifier ??
+                                  'রোগী নম্বর, ফোন বা ইমেইল',
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
                             ),
-                            validator: validateSignInIdentifier,
+                            validator: (value) =>
+                                validateSignInIdentifier(value) == null
+                                ? null
+                                : (copy?.signInIdentifierError ??
+                                      'রোগী নম্বর, ফোন নম্বর বা ইমেইল ঠিকভাবে লিখুন।'),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -111,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
-                              labelText: 'Password',
+                              labelText: copy?.password ?? 'পাসওয়ার্ড',
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
                               ),
@@ -119,8 +131,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 onPressed: () =>
                                     setState(() => _obscure = !_obscure),
                                 tooltip: _obscure
-                                    ? 'Show password'
-                                    : 'Hide password',
+                                    ? (copy?.showPassword ?? 'পাসওয়ার্ড দেখুন')
+                                    : (copy?.hidePassword ?? 'পাসওয়ার্ড লুকান'),
                                 icon: Icon(
                                   _obscure
                                       ? Icons.visibility_outlined
@@ -128,7 +140,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                             ),
-                            validator: validateAccountPassword,
+                            validator: (value) =>
+                                validateAccountPassword(value) == null
+                                ? null
+                                : (copy?.passwordError ??
+                                      'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
@@ -147,13 +163,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   )
                                 : const Icon(Icons.arrow_forward_rounded),
                             label: Text(
-                              _submitting ? 'Signing in…' : 'Continue securely',
+                              _submitting
+                                  ? (copy?.signingIn ?? 'প্রবেশ করা হচ্ছে…')
+                                  : (copy?.continueSecurely ?? 'প্রবেশ করুন'),
                             ),
                           ),
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
-                            const Text(
-                              'Supabase client configuration is required for sign in.',
+                            Text(
+                              copy?.signInNotConfigured ?? 'এখন অ্যাকাউন্টে প্রবেশ করা যাচ্ছে না। সহায়তার জন্য যোগাযোগ করুন।',
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -162,18 +180,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.shield_outlined,
                         size: 17,
                         color: SukunColors.deepTide,
                       ),
-                      SizedBox(width: 7),
+                      const SizedBox(width: 7),
                       Flexible(
                         child: Text(
-                          'Your patient information stays protected.',
+                          copy?.patientDataPrivate ??
+                              'আপনার ব্যক্তিগত তথ্য সুরক্ষিত রাখা হয়।',
                           textAlign: TextAlign.center,
                         ),
                       ),
