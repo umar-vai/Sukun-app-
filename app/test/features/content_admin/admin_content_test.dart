@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
@@ -187,6 +188,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('সব বিভাগের খসড়া'), findsOneWidget);
     expect(find.text('Ayatul Kursi'), findsOneWidget);
+  });
+
+  testWidgets('category card opens matching preselected editor form', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/admin/content',
+      routes: [
+        GoRoute(
+          path: '/admin/content',
+          builder: (context, state) => const AdminContentListScreen(),
+          routes: [
+            GoRoute(
+              path: 'new',
+              builder: (context, state) => AdminContentEditorScreen(
+                initialKind: state.extra as AdminResourceKind?,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('হাদিস'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('নতুন হাদিস যোগ করুন'));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/admin/content/new');
+    expect(find.text('কোন উপকরণ যোগ করবেন?'), findsNothing);
+    expect(find.text('হাদিসের লেখা'), findsOneWidget);
   });
 
   testWidgets('resource editor starts with eight plain-language choices', (
