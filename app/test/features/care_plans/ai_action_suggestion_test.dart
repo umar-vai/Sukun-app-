@@ -215,10 +215,7 @@ void main() {
         find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
         findsOneWidget,
       );
-      await tester.drag(
-        find.byType(ListView).first,
-        const Offset(0, -500),
-      );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.text('আয়াতুল কুরসি'), findsWidgets);
       expect(find.textContaining('Source evidence:'), findsOneWidget);
@@ -259,10 +256,7 @@ void main() {
 
       expect(repository.loadCalls, 1);
       expect(repository.generateCalls, 0);
-      await tester.drag(
-        find.byType(ListView).first,
-        const Offset(0, -500),
-      );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.text('Recovered document action'), findsWidgets);
       expect(find.text(aiManualFallbackMessage), findsNothing);
