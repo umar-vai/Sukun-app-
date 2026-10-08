@@ -13,6 +13,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
 import 'package:uuid/uuid.dart';
@@ -466,7 +467,7 @@ class _SuggestedActionCard extends StatelessWidget {
     return SukunSurface(
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        initiallyExpanded: draft.source.needsReview,
+        initiallyExpanded: number == 1,
         leading: Checkbox(
           value: draft.selected,
           onChanged: !enabled || draft.imported
@@ -774,7 +775,7 @@ class _SuggestedActionCard extends StatelessWidget {
               children: [
                 for (final match in draft.resourceMatches)
                   ActionChip(
-                    label: Text(match.resource.title),
+                    label: Text(match.resource.displayTitle),
                     onPressed: !enabled || draft.imported
                         ? null
                         : () {
@@ -786,28 +787,11 @@ class _SuggestedActionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-          SukunChoiceField<String>(
+          ResourcePickerField(
             key: ValueKey(draft.contentItemId),
-            value: draft.contentItemId,
-            label: 'Linked resource (optional)',
-            placeholder: 'Choose a canonical resource',
-            helperText: 'A match is linked only after you select it.',
+            resources: resources,
+            selectedId: draft.contentItemId,
             enabled: enabled && !draft.imported,
-            options: [
-              const SukunChoiceOption(
-                value: '',
-                title: 'No linked resource',
-                description: 'Keep this action text-only.',
-                icon: Icons.link_off_rounded,
-              ),
-              for (final resource in resources)
-                SukunChoiceOption(
-                  value: resource.id,
-                  title: resource.title,
-                  description: resource.titleBn,
-                  icon: Icons.library_books_outlined,
-                ),
-            ],
             onChanged: (value) {
               draft.contentItemId = value;
               onChanged();
@@ -831,7 +815,7 @@ class _SourcePrescription extends StatelessWidget {
       showBorder: false,
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        initiallyExpanded: true,
+        initiallyExpanded: false,
         leading: const Icon(Icons.description_outlined),
         title: const Text('Original prescription'),
         subtitle: const Text('Use this as the source of truth.'),
