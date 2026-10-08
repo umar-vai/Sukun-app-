@@ -286,9 +286,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('Page unavailable')),
-      body: AppErrorState(
-        message: FriendlyFailures.generic(context),
-      ),
+      body: AppErrorState(message: FriendlyFailures.generic(context)),
     ),
   );
 });
