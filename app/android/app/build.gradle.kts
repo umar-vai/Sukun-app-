@@ -4,9 +4,31 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The Play upload key belongs to the account owner, NOT this repo.
+// A release will fail unless every required signing variable is supplied.
+val uploadStoreFile = System.getenv("SUKUN_UPLOAD_KEYSTORE_PATH")
+val uploadStorePassword = System.getenv("SUKUN_UPLOAD_STORE_PASSWORD")
+val uploadKeyAlias = System.getenv("SUKUN_UPLOAD_KEY_ALIAS")
+val uploadKeyPassword = System.getenv("SUKUN_UPLOAD_KEY_PASSWORD")
+val uploadSigningConfigured = listOf(
+    uploadStoreFile,
+    uploadStorePassword,
+    uploadKeyAlias,
+    uploadKeyPassword,
+).all { !it.isNullOrBlank() }
+
+val releaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true) || it.contains("bundle", ignoreCase = true)
+}
+if (releaseTaskRequested && !uploadSigningConfigured) {
+    throw GradleException(
+        "Android release requires approved Play upload-key signing variables; debug or unsigned releases are forbidden.",
+    )
+}
+
 android {
     namespace = "com.sukunlife.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,7 +44,7 @@ android {
         // flutter_secure_storage 11 uses Android Keystore ciphers that require
         // Android 6.0 (API 23) or newer.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
@@ -31,11 +53,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (uploadSigningConfigured) {
+            create("release") {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword!!
+                keyAlias = uploadKeyAlias!!
+                keyPassword = uploadKeyPassword!!
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (uploadSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }
