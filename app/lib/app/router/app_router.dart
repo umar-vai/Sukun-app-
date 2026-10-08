@@ -14,6 +14,7 @@ import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_sc
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_collections_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
@@ -272,7 +273,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'new',
-            builder: (context, state) => const AdminContentEditorScreen(),
+            builder: (context, state) => AdminContentEditorScreen(
+              initialKind: state.extra is AdminResourceKind
+                  ? state.extra! as AdminResourceKind
+                  : null,
+            ),
           ),
           GoRoute(
             path: ':contentItemId/preview',
