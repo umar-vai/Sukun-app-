@@ -1,35 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
-import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class SukunYoutubePlayerScreen extends StatefulWidget {
-  const SukunYoutubePlayerScreen({required this.resource, super.key});
+/// The video list opens this player directly, with no intermediate
+/// "ভিডিও দেখুন" button. The official YouTube embed remains intact.
+class SukunYoutubePlayerScreen extends StatelessWidget {
+  const SukunYoutubePlayerScreen({
+    required this.resource,
+    this.autoPlay = false,
+    super.key,
+  });
 
   final LinkedResource resource;
+  final bool autoPlay;
 
   @override
-  State<SukunYoutubePlayerScreen> createState() =>
-      _SukunYoutubePlayerScreenState();
+  Widget build(BuildContext context) {
+    final title = resource.titleBn?.trim().isNotEmpty == true
+        ? resource.titleBn!
+        : resource.title;
+    return Scaffold(
+      appBar: AppBar(title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 28),
+          children: [
+            SukunYoutubePlayer(resource: resource, autoPlay: autoPlay),
+            if (resource.rightsNote?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  resource.rightsNote!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _SukunYoutubePlayerScreenState extends State<SukunYoutubePlayerScreen> {
+/// Reusable inline official YouTube player, also used when the user arrives at
+/// a resource via a care plan or deep link rather than from the video library.
+///
+/// YouTube attribution, ads and player-provided links are never obscured.
+class SukunYoutubePlayer extends StatefulWidget {
+  const SukunYoutubePlayer({
+    required this.resource,
+    this.autoPlay = false,
+    super.key,
+  });
+
+  final LinkedResource resource;
+  final bool autoPlay;
+
+  @override
+  State<SukunYoutubePlayer> createState() => _SukunYoutubePlayerState();
+}
+
+class _SukunYoutubePlayerState extends State<SukunYoutubePlayer> {
   YoutubePlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
     final target = resolveResourceMedia(widget.resource);
-    final videoId = target?.youtubeVideoId;
-    if (target?.kind == ResourceMediaKind.youtube && videoId != null) {
+    if (target?.kind == ResourceMediaKind.youtube &&
+        target?.youtubeVideoId != null) {
       _controller = YoutubePlayerController.fromVideoId(
-        videoId: videoId,
-        autoPlay: false,
+        videoId: target!.youtubeVideoId!,
+        autoPlay: widget.autoPlay,
         params: const YoutubePlayerParams(
           mute: false,
+          showControls: true,
+          showFullscreenButton: true,
+          playsInline: true,
           strictRelatedVideos: true,
         ),
       );
@@ -46,81 +96,17 @@ class _SukunYoutubePlayerScreenState extends State<SukunYoutubePlayerScreen> {
   Widget build(BuildContext context) {
     final controller = _controller;
     if (controller == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Video')),
-        body: const AppEmptyState(
-          icon: Icons.videocam_off_outlined,
-          title: 'Video unavailable',
-          message: 'This resource does not have a valid YouTube video ID.',
-        ),
+      return const AppEmptyState(
+        icon: Icons.videocam_off_outlined,
+        title: 'ভিডিও পাওয়া যায়নি',
+        message: 'এই উপকরণের বৈধ ইউটিউব ভিডিও আইডি নেই।',
       );
     }
-    return Scaffold(
-      appBar: AppBar(title: const Text('Video')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: [
-          SukunPageIntro(
-            eyebrow: 'External video',
-            title: widget.resource.titleBn?.trim().isNotEmpty == true
-                ? widget.resource.titleBn!
-                : widget.resource.title,
-            subtitle: widget.resource.titleBn?.trim().isNotEmpty == true
-                ? widget.resource.title
-                : 'Played through the official YouTube player.',
-            trailing: const SukunIconBadge(
-              icon: Icons.play_circle_outline_rounded,
-              size: 54,
-            ),
-          ),
-          const SizedBox(height: 22),
-          SukunSurface(
-            tone: SukunSurfaceTone.navy,
-            showBorder: false,
-            padding: const EdgeInsets.all(8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(17),
-              child: YoutubePlayer(controller: controller),
-            ),
-          ),
-          if (widget.resource.rightsNote?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 22),
-            SukunSurface(
-              tone: SukunSurfaceTone.soft,
-              showBorder: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Rights & source',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(widget.resource.rightsNote!),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 18),
-          SukunSurface(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.info_outline_rounded,
-                  color: SukunColors.deepTide,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'YouTube playback uses the official IFrame Player API. Sukun Life does not extract or redistribute the audio track.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: YoutubePlayer(
+        controller: controller,
+        aspectRatio: 16 / 9,
       ),
     );
   }

@@ -10,6 +10,8 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
+import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
 
 class ResourcesHomeScreen extends ConsumerStatefulWidget {
   const ResourcesHomeScreen({
@@ -76,6 +78,27 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   void _selectSection(ResourceSection section) {
     _searchDebounce?.cancel();
     context.push('/resources/${section.slug}');
+  }
+
+  void _openSearchResult(ContentResource resource) {
+    if (resource.type == 'video' &&
+        resolveResourceMedia(resource.linkedResource)?.kind ==
+            ResourceMediaKind.youtube) {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => SukunYoutubePlayerScreen(
+            resource: resource.linkedResource,
+            autoPlay: true,
+          ),
+        ),
+      );
+      return;
+    }
+    context.push(
+      widget.embedded
+          ? '/patient/resources/${resource.id}'
+          : '/resources/${resource.id}',
+    );
   }
 
   @override
@@ -190,11 +213,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         const SizedBox(height: 10),
                     itemBuilder: (context, index) => ResourceCard(
                       resource: resources[index],
-                      onTap: () => context.push(
-                        widget.embedded
-                            ? '/patient/resources/${resources[index].id}'
-                            : '/resources/${resources[index].id}',
-                      ),
+                      onTap: () => _openSearchResult(resources[index]),
                     ),
                   ),
                 );

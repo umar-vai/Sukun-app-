@@ -54,15 +54,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       );
       return;
     }
-    if (target.kind == ResourceMediaKind.youtube) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (context) =>
-              SukunYoutubePlayerScreen(resource: resource.linkedResource),
-        ),
-      );
-      return;
-    }
     try {
       await ref.read(resourceLauncherProvider).open(resource.linkedResource);
     } catch (error) {
@@ -158,7 +149,15 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 label: 'উৎস ও ব্যবহারের অনুমতি',
                 value: resource.rightsNote,
               ),
-              if (resolveResourceMedia(resource.linkedResource) != null) ...[
+              if (resolveResourceMedia(resource.linkedResource)?.kind ==
+                  ResourceMediaKind.youtube) ...[
+                const SizedBox(height: 20),
+                SukunYoutubePlayer(
+                  resource: resource.linkedResource,
+                  autoPlay: false,
+                ),
+              ] else if (resolveResourceMedia(resource.linkedResource) !=
+                  null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
                   tone: SukunSurfaceTone.navy,
