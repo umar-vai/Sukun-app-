@@ -124,12 +124,10 @@ class _SukunYoutubePlayerState extends State<SukunYoutubePlayer> {
       (value) {
         if (!mounted || generation != _generation) return;
         final next = videoLoadPhase(value, hasLoaded: _hasLoaded);
-        if (_phase == VideoLoadPhase.failed &&
-            next == VideoLoadPhase.loading) {
+        if (_phase == VideoLoadPhase.failed && next == VideoLoadPhase.loading) {
           return;
         }
-        if (next == VideoLoadPhase.ready ||
-            next == VideoLoadPhase.buffering) {
+        if (next == VideoLoadPhase.ready || next == VideoLoadPhase.buffering) {
           _hasLoaded = true;
           _loadTimeout?.cancel();
         } else if (next == VideoLoadPhase.failed) {
@@ -199,9 +197,7 @@ class _SukunYoutubePlayerState extends State<SukunYoutubePlayer> {
               const Positioned(
                 top: 8,
                 right: 8,
-                child: IgnorePointer(
-                  child: _SukunVideoBufferingBadge(),
-                ),
+                child: IgnorePointer(child: _SukunVideoBufferingBadge()),
               ),
           ],
         ),
@@ -249,9 +245,8 @@ class SukunVideoLoadingOverlay extends StatelessWidget {
                   Text(
                     'অনুগ্রহ করে একটু অপেক্ষা করুন',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: SukunColors.mist,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: SukunColors.mist),
                   ),
                 ],
               ),
@@ -296,10 +291,7 @@ class _SukunVideoBufferingBadge extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8),
-          Text(
-            'বাফারিং…',
-            style: TextStyle(color: Colors.white, fontSize: 11),
-          ),
+          Text('বাফারিং…', style: TextStyle(color: Colors.white, fontSize: 11)),
         ],
       ),
     ),
@@ -337,10 +329,7 @@ class _SukunVideoErrorOverlay extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               'সংযোগ পরীক্ষা করে আবার চেষ্টা করুন',
-              style: TextStyle(
-                color: SukunColors.mist,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: SukunColors.mist, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),

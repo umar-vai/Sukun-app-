@@ -40,10 +40,7 @@ void main() {
       PlayerState.ended,
     ]) {
       expect(
-        videoLoadPhase(
-          YoutubePlayerValue(playerState: state),
-          hasLoaded: true,
-        ),
+        videoLoadPhase(YoutubePlayerValue(playerState: state), hasLoaded: true),
         VideoLoadPhase.ready,
       );
     }
