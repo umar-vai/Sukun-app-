@@ -60,7 +60,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     _searchDebounce?.cancel();
     final future = _load();
     setState(() => _resources = future);
-    await future;
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder already presents the friendly retry state.
+    }
   }
 
   void _scheduleSearch(String _) {
