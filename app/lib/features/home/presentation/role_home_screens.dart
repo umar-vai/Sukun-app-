@@ -4,6 +4,7 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class GuestHomeScreen extends StatelessWidget {
   const GuestHomeScreen({super.key});
@@ -161,22 +162,67 @@ class AdminHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return AdminScaffold(
-      title: 'Dashboard',
+      title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
       selectedIndex: 0,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
           SukunPageIntro(
-            eyebrow: 'Super Admin workspace',
-            title: 'Welcome${displayName == null ? '' : ', $displayName'}',
-            subtitle: 'Manage the patient-care workflow and verified content from one secure workspace.',
+            eyebrow: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+            title: displayName == null
+                ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
+                : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
+            subtitle: copy?.adminWelcomeSubtitle ??
+                'রোগীর পরিকল্পনা ও উপকরণ এক জায়গা থেকে পরিচালনা করুন.',
             trailing: const SukunIconBadge(
               icon: Icons.admin_panel_settings_outlined,
               size: 54,
             ),
           ),
           const SizedBox(height: 24),
+          SukunSurface(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  copy?.adminQuickActionsHelp ??
+                      'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => context.go('/admin/patients/new'),
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/patients'),
+                      icon: const Icon(Icons.search_rounded),
+                      label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/content'),
+                      icon: const Icon(Icons.library_books_outlined),
+                      label: Text(copy?.manageResources ?? 'উপকরণ পরিচালনা করুন'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           SukunSurface(
             tone: SukunSurfaceTone.navy,
             padding: const EdgeInsets.all(22),
