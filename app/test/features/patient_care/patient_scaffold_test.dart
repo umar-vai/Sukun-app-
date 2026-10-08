@@ -32,7 +32,7 @@ void main() {
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Resources'));
+    await tester.tap(find.text('পাঠ ও অডিও'));
     await tester.pumpAndSettle();
 
     expect(
@@ -41,10 +41,10 @@ void main() {
     );
     expect(find.text('Islamic Resources'), findsOneWidget);
     expect(find.text('Resource content'), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('My Plan'), findsOneWidget);
-    expect(find.text('Resources'), findsOneWidget);
-    expect(find.text('Progress'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('হোম'), findsOneWidget);
+    expect(find.text('আমার পরিকল্পনা'), findsOneWidget);
+    expect(find.text('পাঠ ও অডিও'), findsOneWidget);
+    expect(find.text('অগ্রগতি'), findsOneWidget);
+    expect(find.text('আমার তথ্য'), findsOneWidget);
   });
 }

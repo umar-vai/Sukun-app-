@@ -8,6 +8,43 @@ final class SupabaseAiActionsRepository implements AiActionsRepository {
   final SupabaseClient _client;
 
   @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async {
+    try {
+      final row = await _client
+          .from('prescription_attachments')
+          .select('id,normalized_result,processed_at')
+          .eq('prescription_id', prescriptionId)
+          .eq('care_plan_id', carePlanId)
+          .eq('extraction_status', 'succeeded')
+          .order('processed_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (row == null) return null;
+      final normalized = row['normalized_result'];
+      if (normalized is! Map) return null;
+      final json = Map<String, dynamic>.from(normalized);
+      final requestId = json['request_id'];
+      if (requestId is! String || requestId.isEmpty) return null;
+
+      return AiActionReviewSeed(
+        result: AiActionGenerationResult.fromJson(
+          json,
+          expectedRequestId: requestId,
+        ),
+        attachmentId: row['id'] as String?,
+      );
+    } on AiActionSchemaException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Future<AiActionGenerationResult> generateActions({
     required String prescriptionId,
     required String carePlanId,

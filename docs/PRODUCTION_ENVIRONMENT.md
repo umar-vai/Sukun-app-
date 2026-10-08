@@ -13,6 +13,20 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-10-08 prescription AI diagnostic update
+
+- Confirmed existing migrations `20261007114242` (document extraction) and
+  `20261007114314` (attachment FK indexes). Neither was reapplied.
+- Confirmed the private `prescription-private` bucket and Admin-only attachment/
+  Storage policies. No database, Storage, credential or RLS changes made.
+- Inspected document function v14 and typed function v10. Deployed
+  `prescription-document-to-actions` **v15** with content-free diagnostics only.
+  Typed function remains v10; model and parsing behavior are unchanged.
+- Transcription succeeds; action generation remains unverified. Awaiting an
+  authenticated retry to identify the exact response/validation failure.
+  Phase 4B is not complete. See
+  [investigation evidence](PRESCRIPTION_AI_DIAGNOSTIC_2026_10_08.md).
+
 As of 2026-10-03:
 
 - Repository database schema/migrations have been deployed to the production Supabase project.

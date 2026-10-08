@@ -40,7 +40,7 @@ void main() {
     await tester.enterText(fields.at(1), '+8801712345678');
     await tester.enterText(fields.at(2), 'SL-TEST-02');
     await tester.enterText(fields.at(3), 'Temporary-123');
-    final submit = find.widgetWithText(FilledButton, 'Create patient');
+    final submit = find.widgetWithText(FilledButton, 'রোগী যোগ করুন');
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pump();
@@ -48,7 +48,7 @@ void main() {
 
     expect(repository.createdPatientInput?.fullName, 'Amina Rahman');
     expect(repository.createdPatientInput?.temporaryPassword, 'Temporary-123');
-    expect(find.text('Patient created'), findsOneWidget);
+    expect(find.text('রোগীর অ্যাকাউন্ট তৈরি হয়েছে'), findsOneWidget);
     expect(find.textContaining('SL-TEST-01'), findsOneWidget);
   });
 }

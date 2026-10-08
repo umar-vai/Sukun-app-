@@ -1,123 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
-import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
+import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class GuestHomeScreen extends StatelessWidget {
   const GuestHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const SukunLifeLogo(height: 38),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: TextButton.icon(
-              onPressed: () => context.go('/login'),
-              icon: const Icon(Icons.lock_outline_rounded, size: 18),
-              label: const Text('Sign in'),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 40),
-        children: [
-          SukunSurface(
-            tone: SukunSurfaceTone.navy,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SukunStatusPill(
-                  label: 'FAITH · CARE · WELLBEING',
-                  tone: SukunStatusTone.brand,
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  'A calmer place for faith and care.',
-                  style: Theme.of(context).textTheme.headlineLarge
-                      ?.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Explore verified Islamic resources, daily utilities, and private Sukun Life patient support.',
-                  style: TextStyle(color: Colors.white70, height: 1.55),
-                ),
-                const SizedBox(height: 22),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: SukunColors.nightNavy,
-                  ),
-                  onPressed: () => context.go('/resources'),
-                  icon: const Icon(Icons.auto_stories_outlined),
-                  label: const Text('Explore Islamic Resources'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-          const SukunSectionHeader(
-            title: 'Daily essentials',
-            subtitle: 'Quiet tools for your everyday practice',
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _UtilityCard(
-                  icon: Icons.schedule_rounded,
-                  label: 'Prayer times',
-                  caption: 'Your local timetable',
-                  onTap: () => context.push('/prayer-times'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _UtilityCard(
-                  icon: Icons.explore_rounded,
-                  label: 'Qibla',
-                  caption: 'Find the direction',
-                  onTap: () => context.push('/qibla'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          SukunSurface(
-            tone: SukunSurfaceTone.soft,
-            showBorder: false,
-            onTap: () => context.go('/login'),
-            child: const Row(
-              children: [
-                SukunIconBadge(icon: Icons.health_and_safety_outlined),
-                SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Already a Sukun Life patient?',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(height: 4),
-                      Text('Sign in to see today’s private care plan.'),
-                    ],
-                  ),
-                ),
-                Icon(Icons.arrow_forward_rounded, color: SukunColors.deepTide),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const UnifiedHomeScreen(isPatient: false);
 }
 
 class _UtilityCard extends StatelessWidget {
@@ -161,22 +55,70 @@ class AdminHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return AdminScaffold(
-      title: 'Dashboard',
+      title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
       selectedIndex: 0,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
           SukunPageIntro(
-            eyebrow: 'Super Admin workspace',
-            title: 'Welcome${displayName == null ? '' : ', $displayName'}',
-            subtitle: 'Manage the patient-care workflow and verified content from one secure workspace.',
+            eyebrow: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+            title: displayName == null
+                ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
+                : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
+            subtitle:
+                copy?.adminWelcomeSubtitle ??
+                'রোগীর পরিকল্পনা ও উপকরণ এক জায়গা থেকে পরিচালনা করুন.',
             trailing: const SukunIconBadge(
               icon: Icons.admin_panel_settings_outlined,
               size: 54,
             ),
           ),
           const SizedBox(height: 24),
+          SukunSurface(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  copy?.adminQuickActionsHelp ??
+                      'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => context.go('/admin/patients/new'),
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/patients'),
+                      icon: const Icon(Icons.search_rounded),
+                      label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/content'),
+                      icon: const Icon(Icons.library_books_outlined),
+                      label: Text(
+                        copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           SukunSurface(
             tone: SukunSurfaceTone.navy,
             padding: const EdgeInsets.all(22),

@@ -30,3 +30,14 @@ flutter build apk --debug
 
 Offline completion events use Android Keystore/iOS Keychain-backed secure
 storage. Android's minimum supported version is Android 6.0 (API 23).
+
+
+## Web preview
+
+The `web-preview` branch is the browser-based development review target.
+Each push runs analyze/tests, builds Flutter Web, and publishes the generated
+static site to the `gh-pages` branch.
+
+The web preview intentionally preserves the Android/iOS product architecture.
+Mobile-only background audio, exact local reminder behavior, device compass,
+and other OS-specific integrations still require native-device QA.

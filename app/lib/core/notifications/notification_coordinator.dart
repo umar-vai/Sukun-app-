@@ -12,11 +12,15 @@ class CareNotificationStatus {
     required this.enabled,
     required this.permissionGranted,
     required this.preciseTimingAvailable,
+    this.lastSyncSucceeded = true,
   });
 
   final bool enabled;
   final bool permissionGranted;
   final bool preciseTimingAvailable;
+
+  /// Whether the most recent schedule refresh completed without an error.
+  final bool lastSyncSucceeded;
 }
 
 final class NotificationCoordinator {
@@ -41,6 +45,7 @@ final class NotificationCoordinator {
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
+  bool _lastSyncSucceeded = true;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -62,6 +67,7 @@ final class NotificationCoordinator {
       enabled: await _store.isEnabled(),
       permissionGranted: await _local.isPermissionGranted(),
       preciseTimingAvailable: await _local.canSchedulePrecisely(),
+      lastSyncSucceeded: _lastSyncSucceeded,
     );
   }
 
@@ -127,8 +133,11 @@ final class NotificationCoordinator {
       }
       await _store.setScheduledNotificationIds(scheduledIds);
       await _registerCurrentToken(timezone);
+      _lastSyncSucceeded = true;
     } on Object {
-      // Reminder refresh is best effort and must not block patient care actions.
+      _lastSyncSucceeded = false;
+      // Scheduling must not block care tasks; the profile can now explain
+      // the failure and offer a retry instead of silently showing success.
     }
   }
 
@@ -209,7 +218,12 @@ final class NotificationCoordinator {
 
   Future<void> _handleForegroundMessage(RemotePushMessage message) async {
     try {
-      await _local.showRemote(title: message.title, body: message.body);
+      // Do not trust provider-supplied push copy on an unlocked or locked
+      // device: it could accidentally contain patient/prescription details.
+      await _local.showRemote(
+        title: 'সুকুন লাইফ',
+        body: 'আপনার জন্য নতুন একটি বার্তা এসেছে।',
+      );
       if (message.type == 'plan_updated') await syncIfEnabled();
     } on Object {
       // Foreground display and refresh are best effort.

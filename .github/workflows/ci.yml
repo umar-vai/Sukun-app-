@@ -45,6 +45,40 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
+  web-preview-build:
+    name: Flutter / Web Preview Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: flutter-quality
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build web preview
+        run: >
+          flutter build web --release
+          --base-href /Sukun-app-/
+          --dart-define=APP_ENVIRONMENT=development
+          --dart-define=SUPABASE_URL=https://vydfafumxptanpkmtrpr.supabase.co
+          --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+
+
   android-debug-build:
     name: Flutter / Android Debug Build
     runs-on: ubuntu-latest

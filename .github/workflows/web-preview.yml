@@ -1,0 +1,96 @@
+name: Web Preview
+
+on:
+  push:
+    branches: [web-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-preview
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build Flutter web preview
+        run: >
+          flutter build web --release
+          --base-href /Sukun-app-/
+          --dart-define=APP_ENVIRONMENT=development
+          --dart-define=SUPABASE_URL=https://vydfafumxptanpkmtrpr.supabase.co
+          --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+
+      - name: Publish preview branch
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/sukun-web-preview
+          mkdir -p /tmp/sukun-web-preview
+          cp -R app/build/web/. /tmp/sukun-web-preview/
+          touch /tmp/sukun-web-preview/.nojekyll
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Flutter tooling may normalize analysis_options.yaml during analyze.
+          # The built site is already copied to /tmp, so discard generated
+          # worktree changes before switching to the publish branch.
+          git reset --hard
+          git clean -fdx
+
+          git fetch origin gh-pages || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git switch --force-create gh-pages origin/gh-pages
+          else
+            git switch --orphan gh-pages
+          fi
+
+          # Preserve the independent /prelaunch/ preview while updating the
+          # actual app at the site root. Never force-push Pages history.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name prelaunch -exec rm -rf {} +
+          cp -R /tmp/sukun-web-preview/. .
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to actual app preview.'
+            exit 0
+          fi
+          git commit -m "chore: publish actual Sukun app web preview"
+          for attempt in 1 2 3; do
+            if git push origin gh-pages; then
+              echo 'Published actual app preview.'
+              exit 0
+            fi
+            git fetch origin gh-pages
+            git rebase origin/gh-pages
+          done
+          echo 'Failed to publish Pages after retries.' >&2
+          exit 1

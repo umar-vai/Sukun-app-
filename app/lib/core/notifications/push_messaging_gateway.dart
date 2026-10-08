@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class RemotePushMessage {
   const RemotePushMessage({
@@ -42,7 +41,11 @@ final class FirebasePushMessagingGateway implements PushMessagingGateway {
   @override
   Future<String?> getToken() async {
     if (!isAvailable) return null;
-    if (Platform.isIOS && await _messaging.getAPNSToken() == null) return null;
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        await _messaging.getAPNSToken() == null) {
+      return null;
+    }
     return _messaging.getToken();
   }
 
