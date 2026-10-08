@@ -37,10 +37,20 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
         .searchPatients(query: _searchController.text);
   }
 
-  void _reload() {
+  Future<void> _refresh() async {
+    final future = _search();
     setState(() {
-      _patients = _search();
+      _patients = future;
     });
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder displays the retry state.
+    }
+  }
+
+  void _reload() {
+    _refresh();
   }
 
   Future<void> _createPatient() async {
@@ -49,18 +59,18 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
     _reload();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('${created.fullName} was created.')));
+    ).showSnackBar(SnackBar(content: Text('${created.fullName}-এর অ্যাকাউন্ট তৈরি হয়েছে।')));
   }
 
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Patients',
+      title: 'রোগীদের তালিকা',
       selectedIndex: 1,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createPatient,
         icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add patient'),
+        label: const Text('নতুন রোগী যোগ করুন'),
       ),
       body: Column(
         children: [
@@ -69,14 +79,14 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
             child: Column(
               children: [
                 const SukunPageIntro(
-                  eyebrow: 'Patient care',
-                  title: 'Patients',
-                  subtitle: 'Find a patient, review their history, or start a new care workflow.',
+                  eyebrow: 'রোগীর তথ্য',
+                  title: 'রোগী খুঁজুন',
+                  subtitle: 'রোগী খুঁজে তথ্য দেখুন অথবা নতুন রোগী যোগ করুন।',
                 ),
                 const SizedBox(height: 18),
                 SukunSearchField(
                   controller: _searchController,
-                  hintText: 'Search name, phone, or patient ID',
+                  hintText: 'নাম, ফোন বা রোগী নম্বর লিখুন',
                   onSubmitted: (_) => _reload(),
                   onClear: () {
                     _searchController.clear();
@@ -91,11 +101,11 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
               future: _patients,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoadingState(label: 'Loading patients');
+                  return const AppLoadingState(label: 'রোগীদের তথ্য আনা হচ্ছে…');
                 }
                 if (snapshot.hasError) {
                   return AppErrorState(
-                    message: snapshot.error.toString(),
+                    message: 'রোগীদের তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
                     onRetry: _reload,
                   );
                 }
@@ -103,12 +113,12 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
                 if (patients.isEmpty) {
                   return const AppEmptyState(
                     icon: Icons.people_outline,
-                    title: 'No patients found',
-                    message: 'Add a patient or try a different search.',
+                    title: 'কোনো রোগী পাওয়া যায়নি',
+                    message: 'অন্য নাম বা নম্বর দিয়ে খুঁজুন, অথবা নতুন রোগী যোগ করুন।',
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => _reload(),
+                  onRefresh: _refresh,
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
                     itemCount: patients.length,
@@ -155,7 +165,7 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
                               ),
                             ),
                             const SukunStatusPill(
-                              label: 'ACTIVE',
+                              label: 'চালু',
                               tone: SukunStatusTone.success,
                             ),
                             const SizedBox(width: 5),
