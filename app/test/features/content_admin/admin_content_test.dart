@@ -228,7 +228,10 @@ void main() {
     await tester.tap(find.text('নতুন হাদিস যোগ করুন'));
     await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/admin/content/new');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/admin/content/new',
+    );
     expect(find.text('কোন উপকরণ যোগ করবেন?'), findsNothing);
     expect(find.text('হাদিসের লেখা'), findsOneWidget);
   });
