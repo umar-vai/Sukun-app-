@@ -61,6 +61,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Flutter tooling may normalize analysis_options.yaml during analyze.
+          # The built site is already copied to /tmp, so discard generated
+          # worktree changes before switching to the publish branch.
+          git reset --hard
+          git clean -fd
+
           git fetch origin gh-pages || true
           if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
             git switch --force-create gh-pages origin/gh-pages
