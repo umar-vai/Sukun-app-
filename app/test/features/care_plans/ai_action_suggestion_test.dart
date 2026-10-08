@@ -215,6 +215,11 @@ void main() {
         find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.text('আয়াতুল কুরসি'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('আয়াতুল কুরসি'), findsWidgets);
       expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
@@ -254,6 +259,11 @@ void main() {
 
       expect(repository.loadCalls, 1);
       expect(repository.generateCalls, 0);
+      await tester.scrollUntilVisible(
+        find.text('Recovered document action'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Recovered document action'), findsWidgets);
       expect(find.text(aiManualFallbackMessage), findsNothing);
     },
