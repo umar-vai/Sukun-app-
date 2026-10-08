@@ -172,8 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
                             Text(
-                              copy?.signInNotConfigured ??
-                                  'এটি শুধু অ্যাপের ডিজাইন দেখার সংস্করণ। লগইন পরীক্ষা করতে সংযুক্ত পরীক্ষামূলক অ্যাপ প্রয়োজন।',
+                              copy?.signInNotConfigured ?? 'এটি শুধু অ্যাপের ডিজাইন দেখার সংস্করণ। লগইন পরীক্ষা করতে সংযুক্ত পরীক্ষামূলক অ্যাপ প্রয়োজন।',
                               textAlign: TextAlign.center,
                             ),
                           ],
