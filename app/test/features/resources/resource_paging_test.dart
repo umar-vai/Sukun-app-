@@ -47,18 +47,21 @@ void main() {
     expect(calls, 1);
   });
 
-  test('backend failure is surfaced instead of returning partial results', () async {
-    expect(
-      () => fetchAllResourcePages<int>(
-        pageSize: 500,
-        loadPage: (from, to) async {
-          if (from >= 500) throw StateError('Network failure');
-          return List<int>.generate(500, (index) => index);
-        },
-      ),
-      throwsStateError,
-    );
-  });
+  test(
+    'backend failure is surfaced instead of returning partial results',
+    () async {
+      expect(
+        () => fetchAllResourcePages<int>(
+          pageSize: 500,
+          loadPage: (from, to) async {
+            if (from >= 500) throw StateError('Network failure');
+            return List<int>.generate(500, (index) => index);
+          },
+        ),
+        throwsStateError,
+      );
+    },
+  );
 
   test('a backend cannot return more than the requested page', () async {
     expect(
