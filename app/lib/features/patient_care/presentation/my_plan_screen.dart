@@ -43,10 +43,20 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
     );
   }
 
-  void _reload() {
+  Future<void> _refresh() async {
+    final future = _load();
     setState(() {
-      _data = _load();
+      _data = future;
     });
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder renders the retry state.
+    }
+  }
+
+  void _reload() {
+    _refresh();
   }
 
   Future<void> _openResource(LinkedResource resource) async {
@@ -58,44 +68,44 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
   @override
   Widget build(BuildContext context) {
     return PatientScaffold(
-      title: 'My Plan',
+      title: 'আমার পরিকল্পনা',
       selectedIndex: 1,
       body: FutureBuilder<_MyPlanData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading your care plan');
+            return const AppLoadingState(label: 'পরিকল্পনা আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'পরিকল্পনাটি এখন দেখা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
           final data = snapshot.data!;
           if (data.plan == null) {
             return const AppEmptyState(
-              title: 'No active plan',
-              message: 'Your practitioner has not published a care plan yet.',
+              title: 'এখনো কোনো পরিকল্পনা চালু নেই',
+              message: 'আপনার জন্য এখনো কোনো পরিকল্পনা চালু করা হয়নি।',
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => _reload(),
+            onRefresh: _refresh,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
                 const SukunPageIntro(
-                  eyebrow: 'Personal care',
-                  title: 'Your current plan',
-                  subtitle: 'Practitioner-approved actions and instructions in one clear view.',
+                  eyebrow: 'আমার সেবা',
+                  title: 'চলমান পরিকল্পনা',
+                  subtitle:
+                      'আপনার জন্য যাচাই করা করণীয় ও নির্দেশনা এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 20),
                 _PlanHeader(plan: data.plan!),
                 const SizedBox(height: 24),
                 SukunSectionHeader(
-                  title: 'Plan actions',
-                  subtitle:
-                      '${data.actions.length} approved action${data.actions.length == 1 ? '' : 's'}',
+                  title: 'আমার করণীয়',
+                  subtitle: 'অনুমোদিত ${data.actions.length}টি করণীয়',
                 ),
                 const SizedBox(height: 10),
                 for (final action in data.actions) ...[
@@ -109,8 +119,8 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                 ],
                 const SizedBox(height: 14),
                 const SukunSectionHeader(
-                  title: 'Prescription',
-                  subtitle: 'Original patient-visible instruction',
+                  title: 'প্রেসক্রিপশন',
+                  subtitle: 'আপনাকে দেওয়া মূল নির্দেশনা',
                 ),
                 const SizedBox(height: 10),
                 if (data.prescriptions.isEmpty)
@@ -118,7 +128,7 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                     tone: SukunSurfaceTone.soft,
                     showBorder: false,
                     child: Text(
-                      'No patient-visible prescription is available.',
+                      'আপনার জন্য এখনো কোনো প্রেসক্রিপশন দেখানোর অনুমতি দেওয়া হয়নি।',
                     ),
                   )
                 else
@@ -135,7 +145,7 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                           Text(prescription.rawText),
                           const SizedBox(height: 8),
                           Text(
-                            'Recorded ${_date(prescription.createdAt)}',
+                            'সংরক্ষিত: ${_date(prescription.createdAt)}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -192,16 +202,13 @@ class _PlanHeader extends StatelessWidget {
                       ?.copyWith(color: Colors.white),
                 ),
               ),
-              const SukunStatusPill(
-                label: 'ACTIVE',
-                tone: SukunStatusTone.brand,
-              ),
+              const SukunStatusPill(label: 'চালু', tone: SukunStatusTone.brand),
             ],
           ),
           const SizedBox(height: 18),
           Text(
-            'Version ${plan.version}  ·  ${_date(plan.startDate)} – '
-            '${plan.endDate == null ? 'ongoing' : _date(plan.endDate!)}',
+            'সংস্করণ ${plan.version}  ·  ${_date(plan.startDate)} – '
+            '${plan.endDate == null ? 'চলমান' : _date(plan.endDate!)}',
             style: const TextStyle(color: Colors.white70),
           ),
         ],
@@ -238,7 +245,7 @@ class _PlanActionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${action.frequency.label} · ${_timeLabel(action)}',
+                      '${_frequencyInBangla(action.frequency)} · ${_timeLabel(action)}',
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: SukunColors.muted),
                     ),
@@ -256,7 +263,7 @@ class _PlanActionCard extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onOpenResource,
               icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: Text('Open ${action.resource!.title}'),
+              label: Text('উপকরণ দেখুন: ${action.resource!.title}'),
             ),
           ],
         ],
@@ -270,9 +277,27 @@ String _timeLabel(PlanAction action) {
     return '${action.exactTime!.hour.toString().padLeft(2, '0')}:'
         '${action.exactTime!.minute.toString().padLeft(2, '0')}';
   }
-  return action.timeWindow ?? 'Any time';
+  return switch (action.timeWindow) {
+    'morning' => 'সকালে',
+    'afternoon' => 'দুপুরের পরে',
+    'evening' => 'সন্ধ্যায়',
+    'night' => 'রাতে',
+    null => 'সুবিধামতো সময়ে',
+    _ => 'নির্ধারিত সময়ে',
+  };
 }
 
 String _date(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _frequencyInBangla(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.daily) {
+    return frequency.interval == 1
+        ? 'প্রতিদিন'
+        : 'প্রতি ${frequency.interval} দিন পর';
+  }
+  const labels = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'];
+  final days = frequency.weekdays.toList()..sort();
+  return days.map((day) => labels[day - 1]).join(', ');
+}

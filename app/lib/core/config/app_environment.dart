@@ -145,7 +145,7 @@ void validateSupabaseRuntimeConfiguration({
     );
   }
   if (!hasUrl) {
-    if (environment == 'production') {
+    if (environment == 'staging' || environment == 'production') {
       throw StateError(
         'Production Supabase runtime configuration is required.',
       );

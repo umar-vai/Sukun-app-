@@ -1,4 +1,5 @@
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
+import 'package:sukun_life/features/resources/data/resource_paging.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,12 +11,17 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
   @override
   Future<List<AdminContentItem>> listContent({String query = ''}) async {
     try {
-      final response = await _client
-          .from('content_items')
-          .select()
-          .order('updated_at', ascending: false)
-          .limit(200);
-      final items = response.map(AdminContentItem.fromJson);
+      // Full authorized catalog, not just the latest 200 rows: otherwise
+      // older draft work disappears from the content workspace.
+      final rows = await fetchAllResourcePages<Map<String, dynamic>>(
+        loadPage: (from, to) => _client
+            .from('content_items')
+            .select()
+            .order('updated_at', ascending: false)
+            .order('id')
+            .range(from, to),
+      );
+      final items = rows.map(AdminContentItem.fromJson);
       final term = query.trim().toLowerCase();
       return items
           .where(

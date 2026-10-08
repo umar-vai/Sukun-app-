@@ -31,15 +31,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('ARABIC'), findsOneWidget);
-    expect(find.text('REFERENCE'), findsOneWidget);
+    expect(find.text('আরবি'), findsOneWidget);
+    expect(find.text('তথ্যসূত্র'), findsOneWidget);
     expect(find.text('Surah Al-Baqarah 2:255'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('invalid media URLs never offer a misleading play button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            const _FakeResourcesRepository(invalidMedia: true),
+          ),
+        ],
+        child: const MaterialApp(
+          home: ResourceDetailScreen(resourceId: 'resource-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('উপকরণটি খুলুন'), findsNothing);
+    expect(find.text('অডিও শুনুন'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
-  const _FakeResourcesRepository();
+  const _FakeResourcesRepository({this.invalidMedia = false});
+
+  final bool invalidMedia;
 
   @override
   Future<List<ContentResource>> browseResources({
@@ -50,9 +74,11 @@ final class _FakeResourcesRepository implements ResourcesRepository {
 
   @override
   Future<ContentResource?> getResource(String resourceId) async =>
-      const ContentResource(
+      ContentResource(
         id: 'resource-1',
         type: 'quran',
+        mediaSourceType: invalidMedia ? 'direct_audio_url' : null,
+        mediaUrl: invalidMedia ? 'http://unsafe.example/file.mp3' : null,
         title: 'Ayatul Kursi',
         arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
         referenceText: 'Surah Al-Baqarah 2:255',

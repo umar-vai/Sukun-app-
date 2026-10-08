@@ -78,8 +78,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Dashboard'), findsWidgets);
-    expect(find.text('Welcome, Admin'), findsOneWidget);
+    expect(find.text('কাজের সারসংক্ষেপ'), findsWidgets);
+    expect(find.text('আপনার কাজের জায়গায় স্বাগতম, Admin'), findsOneWidget);
   });
 
   testWidgets('patient with temporary credentials is forced to reset them', (
@@ -104,7 +104,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Create your private password'), findsOneWidget);
+    expect(find.text('নিজের পাসওয়ার্ড তৈরি করুন'), findsOneWidget);
     expect(find.text('Today'), findsNothing);
   });
 }

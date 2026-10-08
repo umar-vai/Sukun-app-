@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class PatientScaffold extends StatelessWidget {
   const PatientScaffold({
@@ -18,8 +19,19 @@ class PatientScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: actions),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          ...?actions,
+          IconButton(
+            tooltip: 'আমার বার্তা',
+            onPressed: () => context.push('/patient/notifications'),
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
+        ],
+      ),
       body: body,
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: selectedIndex,
@@ -33,31 +45,31 @@ class PatientScaffold extends StatelessWidget {
           };
           context.go(route);
         },
-        destinations: const [
+        destinations: [
           SukunNavDestination(
             icon: Icons.home_outlined,
             selectedIcon: Icons.home,
-            label: 'Today',
+            label: copy?.today ?? 'আজকের কাজ',
           ),
           SukunNavDestination(
             icon: Icons.checklist_outlined,
             selectedIcon: Icons.checklist,
-            label: 'My Plan',
+            label: copy?.myPlan ?? 'আমার পরিকল্পনা',
           ),
           SukunNavDestination(
             icon: Icons.menu_book_outlined,
             selectedIcon: Icons.menu_book,
-            label: 'Resources',
+            label: copy?.resources ?? 'পাঠ ও অডিও',
           ),
           SukunNavDestination(
             icon: Icons.insights_outlined,
             selectedIcon: Icons.insights,
-            label: 'Progress',
+            label: copy?.progress ?? 'অগ্রগতি',
           ),
           SukunNavDestination(
             icon: Icons.person_outline,
             selectedIcon: Icons.person,
-            label: 'Profile',
+            label: copy?.profile ?? 'আমার তথ্য',
           ),
         ],
       ),

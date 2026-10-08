@@ -44,7 +44,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          enabled ? 'Care reminders are enabled on this device.' : 'Notification permission was not granted. You can enable it in device settings.',
+          enabled
+              ? 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।'
+              : 'অনুমতি পাওয়া যায়নি। ফোনের সেটিংস থেকে চালু করতে পারেন।',
         ),
       ),
     );
@@ -75,10 +77,21 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          granted ? 'Precise reminder timing is enabled.' : 'Precise timing was not enabled. Android may deliver reminders within a time window.',
+          granted ? 'নির্দিষ্ট সময়ে মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।' : 'নির্দিষ্ট সময়ের অনুমতি পাওয়া যায়নি। ফোন কিছুটা দেরিতে জানাতে পারে।',
         ),
       ),
     );
+  }
+
+  Future<void> _retryNotifications() async {
+    if (_updatingNotifications) return;
+    setState(() => _updatingNotifications = true);
+    await ref.read(notificationCoordinatorProvider).syncIfEnabled();
+    if (!mounted) return;
+    setState(() {
+      _updatingNotifications = false;
+      _refreshNotificationStatus();
+    });
   }
 
   Future<void> _signOut() async {
@@ -89,15 +102,16 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return PatientScaffold(
-      title: 'Profile',
+      title: 'আমার তথ্য',
       selectedIndex: 4,
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           const SukunPageIntro(
-            eyebrow: 'Account & preferences',
-            title: 'Your profile',
-            subtitle: 'Manage reminders, utilities, and secure access.',
+            eyebrow: 'অ্যাকাউন্ট ও সেটিংস',
+            title: 'আমার তথ্য',
+            subtitle:
+                'মনে করিয়ে দেওয়া, প্রয়োজনীয় সুবিধা ও অ্যাকাউন্টের সেটিংস।',
           ),
           const SizedBox(height: 20),
           SukunSurface(
@@ -123,13 +137,13 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.displayName ?? 'Patient',
+                        widget.displayName ?? 'রোগী',
                         style: Theme.of(context).textTheme.titleLarge
                             ?.copyWith(color: Colors.white),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Sukun Life patient account',
+                        'সুকুন লাইফ রোগীর অ্যাকাউন্ট',
                         style: TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -168,7 +182,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
-                            'Care reminders',
+                            'কাজের কথা মনে করিয়ে দেওয়া',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -178,15 +192,27 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     Text(
                       enabled
                           ? status!.preciseTimingAvailable
-                                ? 'Enabled with precise timing for approved actions that have an exact reminder time.'
-                                : 'Enabled for approved actions. Android may deliver reminders within a time window until precise timing is allowed.'
-                          : 'Get reminders only for actions and times approved in your care plan.',
+                                ? 'নির্ধারিত সময় দেওয়া ও অনুমোদিত কাজের জন্য মনে করিয়ে দেওয়ার অনুমতি আছে।'
+                                : 'মনে করিয়ে দেওয়া চালু আছে। নির্দিষ্ট সময়ের অনুমতি না থাকলে ফোন কিছুটা দেরিতে জানাতে পারে।'
+                          : 'শুধু আপনার অনুমোদিত পরিকল্পনার নির্ধারিত কাজের সময় মনে করিয়ে দেওয়া হবে।',
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Snooze times you choose are also scheduled. Reminders never override Do Not Disturb.',
+                      'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
                     ),
                     const SizedBox(height: 14),
+                    if (enabled && status?.lastSyncSucceeded == false) ...[
+                      const Text(
+                        'মনে করিয়ে দেওয়ার অনুমতি আছে, তবে সময় ঠিক করা যায়নি। আবার চেষ্টা করুন।',
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _retryNotifications,
+                        icon: const Icon(Icons.refresh_outlined),
+                        label: const Text('আবার সময় ঠিক করুন'),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (snapshot.connectionState == ConnectionState.waiting ||
                         _updatingNotifications)
                       const Center(child: CircularProgressIndicator())
@@ -199,12 +225,12 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                             FilledButton.tonalIcon(
                               onPressed: _enablePreciseTiming,
                               icon: const Icon(Icons.alarm_outlined),
-                              label: const Text('Allow precise timing'),
+                              label: const Text('নির্দিষ্ট সময়ের অনুমতি দিন'),
                             ),
                           OutlinedButton.icon(
                             onPressed: _disableNotifications,
                             icon: const Icon(Icons.notifications_off_outlined),
-                            label: const Text('Turn off reminders'),
+                            label: const Text('মনে করিয়ে দেওয়া বন্ধ করুন'),
                           ),
                         ],
                       )
@@ -212,12 +238,18 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       FilledButton.icon(
                         onPressed: _enableNotifications,
                         icon: const Icon(Icons.notifications_outlined),
-                        label: const Text('Enable reminders'),
+                        label: const Text('মনে করিয়ে দেওয়া চালু করুন'),
                       ),
                   ],
                 ),
               );
             },
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/patient/notifications'),
+            icon: const Icon(Icons.mark_email_unread_outlined),
+            label: const Text('আমার বার্তাগুলো দেখুন'),
           ),
           const SizedBox(height: 16),
           SukunSurface(
@@ -226,7 +258,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Islamic utilities',
+                  'ইসলামিক সুবিধা',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
@@ -236,7 +268,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => context.push('/prayer-times'),
                         icon: const Icon(Icons.schedule_outlined),
-                        label: const Text('Prayer times'),
+                        label: const Text('নামাজের সময়'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -244,7 +276,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => context.push('/qibla'),
                         icon: const Icon(Icons.explore_outlined),
-                        label: const Text('Qibla'),
+                        label: const Text('কিবলার দিক'),
                       ),
                     ),
                   ],
@@ -256,7 +288,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
           OutlinedButton.icon(
             onPressed: _signOut,
             icon: const Icon(Icons.logout),
-            label: const Text('Sign out'),
+            label: const Text('বের হয়ে যান'),
           ),
         ],
       ),

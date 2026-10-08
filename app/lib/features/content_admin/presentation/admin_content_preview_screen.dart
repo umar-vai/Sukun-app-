@@ -64,7 +64,7 @@ class _AdminContentPreviewScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(validation),
-            action: SnackBarAction(label: 'Edit', onPressed: _edit),
+            action: SnackBarAction(label: 'সংশোধন করুন', onPressed: _edit),
           ),
         );
         return;
@@ -72,7 +72,7 @@ class _AdminContentPreviewScreenState
     }
     final confirmed = await showSukunDecisionDialog(
       context: context,
-      title: '${_transitionLabel(transition)} resource?',
+      title: '${_transitionLabel(transition)}?',
       message: _transitionExplanation(transition),
       confirmLabel: _transitionLabel(transition),
       icon: _transitionIcon(transition),
@@ -89,13 +89,16 @@ class _AdminContentPreviewScreenState
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Resource ${_pastTense(transition)}.')),
+        SnackBar(content: Text('উপকরণটি ${_pastTense(transition)}।')),
       );
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('উপকরণটির পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _working = false);
@@ -105,16 +108,16 @@ class _AdminContentPreviewScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Resource preview')),
+      appBar: AppBar(title: const Text('উপকরণ যাচাই')),
       body: FutureBuilder<_PreviewData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading preview');
+            return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message: snapshot.error.toString(),
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
             );
           }
@@ -123,17 +126,18 @@ class _AdminContentPreviewScreenState
           if (item == null) {
             return const AppEmptyState(
               icon: Icons.search_off,
-              title: 'Resource not found',
-              message: 'It may no longer be available.',
+              title: 'উপকরণটি পাওয়া যায়নি',
+              message: 'এটি এখন আর পাওয়া যাচ্ছে না।',
             );
           }
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
             children: [
               SukunPageIntro(
-                eyebrow: 'Resource preview',
+                eyebrow: 'উপকরণ যাচাই',
                 title: item.title,
-                subtitle: 'Review what readers will see, then move the resource through the appropriate publishing step.',
+                subtitle:
+                    'প্রকাশের আগে উপকরণটি যাচাই করুন ও প্রয়োজনীয় অনুমোদন দিন।',
                 trailing: SukunIconBadge(
                   icon: item.isCanonical
                       ? Icons.verified_outlined
@@ -171,7 +175,7 @@ class _AdminContentPreviewScreenState
               ],
               if (item.arabicText != null)
                 _PreviewSection(
-                  title: 'Arabic',
+                  title: 'আরবি',
                   body: item.arabicText!,
                   rtl: true,
                   textStyle: SukunTypography.canonicalReligiousText(
@@ -181,7 +185,7 @@ class _AdminContentPreviewScreenState
                 ),
               if (item.banglaText != null)
                 _PreviewSection(
-                  title: 'Bangla',
+                  title: 'বাংলা',
                   body: item.banglaText!,
                   textStyle: SukunTypography.banglaBody(
                     textStyle: Theme.of(context).textTheme.bodyLarge
@@ -189,26 +193,22 @@ class _AdminContentPreviewScreenState
                   ),
                 ),
               if (item.transliteration != null)
-                _PreviewSection(
-                  title: 'Transliteration',
-                  body: item.transliteration!,
-                ),
+                _PreviewSection(title: 'উচ্চারণ', body: item.transliteration!),
               if (item.translation != null)
-                _PreviewSection(title: 'Translation', body: item.translation!),
+                _PreviewSection(title: 'অনুবাদ', body: item.translation!),
               if (item.body != null)
-                _PreviewSection(title: 'Content', body: item.body!),
+                _PreviewSection(title: 'বিস্তারিত লেখা', body: item.body!),
               const SizedBox(height: 26),
               const SukunSectionHeader(
-                title: 'Source and reference',
-                subtitle: 'The human-readable details used to check and credit this resource.',
+                title: 'উৎস ও তথ্যসূত্র',
+                subtitle: 'উপকরণটির উৎস যাচাইয়ের জন্য প্রয়োজনীয় তথ্য।',
               ),
               const SizedBox(height: 8),
               _Metadata(item: item),
               const SizedBox(height: 24),
               const SukunSectionHeader(
-                title: 'Publishing controls',
-                subtitle:
-                    'Every publish, unpublish, and archive action is audited.',
+                title: 'যাচাই ও প্রকাশ',
+                subtitle: 'প্রকাশ ও পরিবর্তনের সব তথ্য নিরাপদে সংরক্ষিত হয়।',
               ),
               const SizedBox(height: 10),
               if (_working) const LinearProgressIndicator(),
@@ -221,7 +221,7 @@ class _AdminContentPreviewScreenState
                     OutlinedButton.icon(
                       onPressed: _working ? null : _edit,
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit'),
+                      label: const Text('সংশোধন করুন'),
                     ),
                   if (item.status == 'draft')
                     FilledButton.icon(
@@ -229,62 +229,62 @@ class _AdminContentPreviewScreenState
                           ? null
                           : () => _transition('submit', item: item),
                       icon: const Icon(Icons.fact_check_outlined),
-                      label: const Text('Submit for Review'),
+                      label: const Text('যাচাইয়ের জন্য পাঠান'),
                     ),
                   if (item.isCanonical &&
                       item.status == 'review' &&
-                      item.verificationStatus != 'verified')
+                      item.verificationStatus != 'অনুমোদিত হয়েছে')
                     FilledButton.icon(
                       onPressed: _working
                           ? null
                           : () => _transition('verify', item: item),
                       icon: const Icon(Icons.verified_outlined),
-                      label: const Text('Verify Source'),
+                      label: const Text('উৎস অনুমোদন করুন'),
                     ),
                   if (item.isCanonical &&
                       item.status == 'review' &&
-                      item.verificationStatus != 'verified')
+                      item.verificationStatus != 'অনুমোদিত হয়েছে')
                     OutlinedButton.icon(
                       onPressed: _working ? null : () => _transition('reject'),
                       icon: const Icon(Icons.undo_rounded),
-                      label: const Text('Return for Changes'),
+                      label: const Text('সংশোধনের জন্য ফেরত দিন'),
                     ),
                   if ((!item.isCanonical && item.status == 'review') ||
-                      (item.isCanonical && item.status == 'verified'))
+                      (item.isCanonical && item.status == 'অনুমোদিত হয়েছে'))
                     FilledButton.icon(
                       onPressed: _working
                           ? null
                           : () => _transition('publish', item: item),
                       icon: const Icon(Icons.publish_outlined),
-                      label: const Text('Publish'),
+                      label: const Text('প্রকাশ করুন'),
                     ),
-                  if (item.status == 'published')
+                  if (item.status == 'প্রকাশিত হয়েছে')
                     OutlinedButton.icon(
                       onPressed: _working
                           ? null
                           : () => _transition('unpublish'),
                       icon: const Icon(Icons.visibility_off_outlined),
-                      label: const Text('Unpublish'),
+                      label: const Text('প্রকাশ বন্ধ করুন'),
                     ),
-                  if (item.status != 'archived')
+                  if (item.status != 'সংরক্ষিত হয়েছে')
                     TextButton.icon(
                       onPressed: _working ? null : () => _transition('archive'),
                       icon: const Icon(Icons.archive_outlined),
-                      label: const Text('Archive'),
+                      label: const Text('সংরক্ষণাগারে রাখুন'),
                     ),
                 ],
               ),
               const SizedBox(height: 24),
               const SukunSectionHeader(
-                title: 'Publishing history',
-                subtitle: 'Admin-only lifecycle events retained for audit.',
+                title: 'পরিবর্তনের ইতিহাস',
+                subtitle: 'অ্যাডমিনের অনুমোদন ও প্রকাশের রেকর্ড।',
               ),
               const SizedBox(height: 8),
               if (data.reviews.isEmpty)
                 const SukunSurface(
                   tone: SukunSurfaceTone.soft,
                   showBorder: false,
-                  child: Text('No workflow events yet.'),
+                  child: Text('এখনো কোনো পরিবর্তনের রেকর্ড নেই।'),
                 )
               else
                 SukunSurface(
@@ -299,7 +299,7 @@ class _AdminContentPreviewScreenState
                           ),
                           title: Text(_label(review.decision)),
                           subtitle: Text(
-                            review.notes ?? 'No lifecycle note',
+                            review.notes ?? 'কোনো মন্তব্য নেই',
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -323,7 +323,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SukunStatusPill(
     label: label,
-    tone: label == 'Published' || label == 'Verified'
+    tone: label == 'প্রকাশিত' || label == 'উৎস অনুমোদিত'
         ? SukunStatusTone.success
         : SukunStatusTone.brand,
   );
@@ -439,48 +439,47 @@ String _label(String value) => value
     .join(' ');
 
 String _transitionExplanation(String transition) => switch (transition) {
-  'submit' => 'Send this resource to the review queue. Qur’an and Hadith sources must be verified before publishing.',
-  'verify' => 'Confirm that the canonical text and source details match the approved reference.',
-  'reject' =>
-    'Return this resource for correction without deleting its text or history.',
-  'publish' =>
-    'Make this reviewed resource available to its selected audience.',
-  'unpublish' => 'Remove this resource from browsing while preserving its review and audit history.',
-  'archive' => 'Preserve this resource and its history as archived. It will not be editable or visible to patients.',
-  _ => 'Apply this workflow change.',
+  'submit' => 'উপকরণটি যাচাইয়ের জন্য পাঠান। কুরআন ও হাদিসের উৎস অনুমোদিত না হলে প্রকাশ করা যাবে না।',
+  'verify' => 'আসল লেখা ও উৎস অনুমোদিত তথ্যসূত্রের সঙ্গে মিলিয়ে নিশ্চিত করুন।',
+  'reject' => 'লেখা বা ইতিহাস না মুছে সংশোধনের জন্য ফেরত দিন।',
+  'publish' => 'যাচাই করা উপকরণটি নির্ধারিত পাঠকদের জন্য প্রকাশ করুন।',
+  'unpublish' => 'আগের তথ্য রেখে উপকরণটি পাঠকদের তালিকা থেকে সরান।',
+  'archive' =>
+    'উপকরণটি ইতিহাসসহ সংরক্ষণাগারে রাখুন। রোগীরা এটি দেখতে পাবেন না।',
+  _ => 'পরিবর্তনটি নিশ্চিত করুন।',
 };
 
 String _transitionLabel(String transition) => switch (transition) {
-  'submit' => 'Submit for Review',
-  'verify' => 'Verify Source',
-  'reject' => 'Return for Changes',
-  'publish' => 'Publish',
-  'unpublish' => 'Unpublish',
-  'archive' => 'Archive',
+  'submit' => 'যাচাইয়ের জন্য পাঠান',
+  'verify' => 'উৎস অনুমোদন করুন',
+  'reject' => 'সংশোধনের জন্য ফেরত দিন',
+  'publish' => 'প্রকাশ করুন',
+  'unpublish' => 'প্রকাশ বন্ধ করুন',
+  'archive' => 'সংরক্ষণাগারে রাখুন',
   _ => _label(transition),
 };
 
 String _statusLabel(AdminContentItem item) => switch (item.status) {
-  'draft' => 'Draft',
-  'review' => item.isCanonical ? 'Awaiting source check' : 'Ready to publish',
-  'verified' => 'Source verified',
-  'published' => 'Published',
-  'archived' => 'Archived',
+  'draft' => 'খসড়া',
+  'review' => item.isCanonical ? 'উৎস যাচাই বাকি' : 'প্রকাশের অপেক্ষায়',
+  'অনুমোদিত হয়েছে' => 'উৎস অনুমোদিত',
+  'প্রকাশিত হয়েছে' => 'প্রকাশিত',
+  'সংরক্ষিত হয়েছে' => 'সংরক্ষিত',
   _ => _label(item.status),
 };
 
 String _verificationLabel(String value) => switch (value) {
-  'pending' => 'Source check pending',
-  'verified' => 'Source verified',
-  'rejected' => 'Changes requested',
-  _ => 'Source check not started',
+  'pending' => 'উৎস যাচাই বাকি',
+  'অনুমোদিত হয়েছে' => 'উৎস অনুমোদিত',
+  'সংশোধনের জন্য ফেরত গেছে' => 'সংশোধন প্রয়োজন',
+  _ => 'উৎস যাচাই শুরু হয়নি',
 };
 
 String _audienceLabel(String value) => switch (value) {
-  'public' => 'Everyone',
-  'patient_only' => 'Signed-in patients',
-  'assigned_only' => 'Assigned patients',
-  'staff_only' => 'Staff only',
+  'public' => 'সবাই',
+  'patient_only' => 'লগইন করা রোগীরা',
+  'assigned_only' => 'নির্ধারিত রোগীরা',
+  'staff_only' => 'শুধু কর্মীরা',
   _ => _label(value),
 };
 
@@ -492,13 +491,13 @@ String? _externalLink(AdminContentItem item) {
 }
 
 String _pastTense(String transition) => switch (transition) {
-  'submit' => 'submitted for review',
-  'verify' => 'verified',
-  'reject' => 'rejected',
-  'publish' => 'published',
-  'unpublish' => 'unpublished',
-  'archive' => 'archived',
-  _ => 'updated',
+  'submit' => 'যাচাইয়ের জন্য পাঠানো হয়েছে',
+  'verify' => 'অনুমোদিত হয়েছে',
+  'reject' => 'সংশোধনের জন্য ফেরত গেছে',
+  'publish' => 'প্রকাশিত হয়েছে',
+  'unpublish' => 'প্রকাশ বন্ধ হয়েছে',
+  'archive' => 'সংরক্ষিত হয়েছে',
+  _ => 'পরিবর্তিত হয়েছে',
 };
 
 IconData _transitionIcon(String transition) => switch (transition) {

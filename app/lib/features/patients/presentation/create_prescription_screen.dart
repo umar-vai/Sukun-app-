@@ -63,8 +63,11 @@ class _CreatePrescriptionScreenState
       if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('প্রেসক্রিপশন সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
