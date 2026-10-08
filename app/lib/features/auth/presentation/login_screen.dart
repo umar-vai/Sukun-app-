@@ -108,7 +108,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               labelText: copy?.signInIdentifier ?? 'রোগী নম্বর, ফোন বা ইমেইল',
                               prefixIcon: const Icon(Icons.person_outline_rounded),
                             ),
-                            validator: validateSignInIdentifier,
+                            validator: (value) =>
+                                validateSignInIdentifier(value) == null
+                                ? null
+                                : (copy?.signInIdentifierError ??
+                                    'রোগী নম্বর, ফোন নম্বর বা ইমেইল ঠিকভাবে লিখুন।'),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -134,7 +138,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                             ),
-                            validator: validateAccountPassword,
+                            validator: (value) =>
+                                validateAccountPassword(value) == null
+                                ? null
+                                : (copy?.passwordError ??
+                                    'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
