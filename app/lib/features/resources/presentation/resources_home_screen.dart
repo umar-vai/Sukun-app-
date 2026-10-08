@@ -122,7 +122,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        mainAxisExtent: columns == 4 ? 104 : 112,
+                        mainAxisExtent: columns == 4 ? 118 : 124,
                       ),
                       itemCount: resourceSections.length,
                       itemBuilder: (context, index) {
