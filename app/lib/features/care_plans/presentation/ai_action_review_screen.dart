@@ -260,8 +260,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                     const SukunPageIntro(
                       eyebrow: 'AI-assisted parsing',
                       title: 'Review suggested actions',
-                      subtitle:
-                          'Compare every field with the human-authored prescription before importing it as draft work.',
+                      subtitle: 'Compare every field with the human-authored prescription before importing it as draft work.',
                     ),
                     const SizedBox(height: 20),
                     const _SafetyNotice(),
@@ -276,8 +275,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                             ? null
                             : () => setState(() {
                                 final select = _drafts!.any(
-                                  (draft) =>
-                                      !draft.imported && !draft.selected,
+                                  (draft) => !draft.imported && !draft.selected,
                                 );
                                 for (final draft in _drafts!) {
                                   if (!draft.imported) draft.selected = select;
@@ -287,11 +285,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    for (
-                      var index = 0;
-                      index < _drafts!.length;
-                      index++
-                    ) ...[
+                    for (var index = 0; index < _drafts!.length; index++) ...[
                       _SuggestedActionCard(
                         number: index + 1,
                         draft: _drafts![index],
@@ -371,16 +365,14 @@ class _ImportDock extends StatelessWidget {
                       selectedCount == 0
                           ? 'No actions selected'
                           : '$selectedCount selected',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Imported items stay as draft work.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: SukunColors.muted,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: SukunColors.muted),
                     ),
                   ],
                 ),
