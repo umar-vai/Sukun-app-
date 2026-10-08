@@ -207,7 +207,9 @@ class _PlanActionEditorScreenState
             return const AppLoadingState(label: 'Loading action editor');
           }
           if (snapshot.hasError) {
-            return AppErrorState(message: 'করণীয়টি আনা যাচ্ছে না। আবার চেষ্টা করুন।');
+            return AppErrorState(
+              message: 'করণীয়টি আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            );
           }
           final data = snapshot.data!;
           return SingleChildScrollView(
