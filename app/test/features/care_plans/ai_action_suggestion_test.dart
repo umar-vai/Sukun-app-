@@ -219,12 +219,8 @@ void main() {
       expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Import selected as drafts'),
-        400,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('Import selected as drafts'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
     },
   );
 }
