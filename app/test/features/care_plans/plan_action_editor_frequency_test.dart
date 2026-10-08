@@ -21,7 +21,10 @@ void main() {
     expect(interval, findsOneWidget);
     expect(tester.widget<TextFormField>(interval).controller?.text, '3');
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title'), 'Updated instruction');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Updated instruction',
+    );
     await _save(tester);
 
     expect(repo.saved, isNotNull);
@@ -31,9 +34,7 @@ void main() {
     expect(repo.saved!.reviewStatus, ActionReviewStatus.approved);
   });
 
-  testWidgets('admin can explicitly change the number of days', (
-    tester,
-  ) async {
+  testWidgets('admin can explicitly change the number of days', (tester) async {
     final repo = _EditorRepository(const ActionFrequency.daily(interval: 7));
     await _openEditor(tester, repo);
     await tester.enterText(find.byKey(const Key('daily-interval-field')), '2');
@@ -42,21 +43,25 @@ void main() {
     expect(repo.saved?.frequency.toJson(), {'type': 'daily', 'interval': 2});
   });
 
-  testWidgets('zero or missing recurrence interval cannot silently become daily', (
-    tester,
-  ) async {
-    final repo = _EditorRepository(const ActionFrequency.daily(interval: 2));
-    await _openEditor(tester, repo);
+  testWidgets(
+    'zero or missing recurrence interval cannot silently become daily',
+    (tester) async {
+      final repo = _EditorRepository(const ActionFrequency.daily(interval: 2));
+      await _openEditor(tester, repo);
 
-    await tester.enterText(find.byKey(const Key('daily-interval-field')), '0');
-    await _save(tester);
-    expect(repo.saved, isNull);
-    expect(find.text('১ বা তার বেশি একটি সংখ্যা লিখুন।'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('daily-interval-field')),
+        '0',
+      );
+      await _save(tester);
+      expect(repo.saved, isNull);
+      expect(find.text('১ বা তার বেশি একটি সংখ্যা লিখুন।'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('daily-interval-field')), '');
-    await _save(tester);
-    expect(repo.saved, isNull);
-  });
+      await tester.enterText(find.byKey(const Key('daily-interval-field')), '');
+      await _save(tester);
+      expect(repo.saved, isNull);
+    },
+  );
 
   testWidgets('weekly dates remain unchanged on a title-only edit', (
     tester,
@@ -64,7 +69,10 @@ void main() {
     final repo = _EditorRepository(const ActionFrequency.weekly({2, 4}));
     await _openEditor(tester, repo);
     expect(find.byKey(const Key('daily-interval-field')), findsNothing);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title'), 'Updated weekly action');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Updated weekly action',
+    );
     await _save(tester);
     expect(repo.saved?.frequency.toJson(), {
       'type': 'weekly',
