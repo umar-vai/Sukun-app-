@@ -32,12 +32,9 @@ void main() {
     ]) {
       expect(find.text(label), findsWidgets);
     }
-    await tester.scrollUntilVisible(
-      find.text('Published resource'),
-      400,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Published resource'), findsOneWidget);
+    expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
+    expect(find.text('Published resource'), findsNothing);
+    expect(repository.browseCalls, 0);
   });
 
   testWidgets('hub stays compact and search remains on the hub', (
@@ -69,11 +66,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');
     expect(repository.lastTypes, isEmpty);
+    expect(repository.browseCalls, 1);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
   });
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
   String lastQuery = '';
+  int browseCalls = 0;
   Set<String> lastTypes = const {};
   Set<String> lastCategoryPrefixes = const {};
 
@@ -83,6 +86,7 @@ final class _FakeResourcesRepository implements ResourcesRepository {
     Set<String> types = const {},
     Set<String> categoryPrefixes = const {},
   }) async {
+    browseCalls++;
     lastQuery = query;
     lastTypes = types;
     lastCategoryPrefixes = categoryPrefixes;
