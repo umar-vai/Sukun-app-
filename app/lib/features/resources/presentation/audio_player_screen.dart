@@ -280,7 +280,7 @@ Future<void> _runPlaybackAction(
 ) async {
   try {
     await action();
-  } on AudioPlaybackException catch (error) {
+  } on AudioPlaybackException {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('অডিও চালু করা যাচ্ছে না। আবার চেষ্টা করুন।')));
