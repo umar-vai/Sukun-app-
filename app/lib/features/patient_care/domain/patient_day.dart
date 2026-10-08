@@ -20,6 +20,14 @@ class PatientDay {
     return null;
   }
 
+  /// Show the next action only once: featured at the top, not repeated below.
+  List<PatientTask> get remainingTasks {
+    final featuredId = nextTask?.id;
+    return List<PatientTask>.unmodifiable(
+      tasks.where((task) => task.id != featuredId),
+    );
+  }
+
   PatientDay replaceTask(PatientTask updated) => PatientDay(
     activePlan: activePlan,
     tasks: [for (final task in tasks) task.id == updated.id ? updated : task],
