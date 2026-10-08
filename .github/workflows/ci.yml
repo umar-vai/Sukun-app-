@@ -78,10 +78,15 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      - name: Explain offline UI preview
+        run: |
+          echo "### UI-only APK — login unavailable" >> "$GITHUB_STEP_SUMMARY"
+          echo "This artifact intentionally has no Supabase connection. Install the separate sukunlife-android-connected-qa artifact to test authentication." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload Android QA APK
         uses: actions/upload-artifact@v4
         with:
-          name: sukunlife-android-debug-qa
+          name: sukunlife-offline-ui-preview-no-login
           path: app/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 7
