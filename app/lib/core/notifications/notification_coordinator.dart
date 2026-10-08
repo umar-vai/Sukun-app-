@@ -18,6 +18,7 @@ class CareNotificationStatus {
   final bool enabled;
   final bool permissionGranted;
   final bool preciseTimingAvailable;
+
   /// Whether the most recent schedule refresh completed without an error.
   final bool lastSyncSucceeded;
 }
