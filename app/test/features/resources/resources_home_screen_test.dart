@@ -53,7 +53,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final grid = tester.widget<GridView>(find.byType(GridView));
-    final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+    final delegate =
+        grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
     expect(delegate.mainAxisExtent, lessThanOrEqualTo(112));
     expect(delegate.crossAxisCount, 2);
 
@@ -63,7 +64,6 @@ void main() {
     expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');
     expect(repository.lastTypes, isEmpty);
   });
-
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {

@@ -47,9 +47,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   Future<List<ContentResource>> _load() {
     return ref
         .read(resourcesRepositoryProvider)
-        .browseResources(
-          query: _searchController.text,
-        );
+        .browseResources(query: _searchController.text);
   }
 
   Future<void> _refresh() async {
@@ -112,7 +110,6 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 SukunSectionHeader(
                   title: 'বিষয় অনুযায়ী দেখুন',
                   subtitle: 'আপনার পছন্দের বিভাগ বেছে নিন',
-
                 ),
                 const SizedBox(height: 10),
                 LayoutBuilder(
@@ -209,10 +206,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.section,
-    required this.onTap,
-  });
+  const _SectionCard({required this.section, required this.onTap});
 
   final ResourceSection section;
   final VoidCallback onTap;

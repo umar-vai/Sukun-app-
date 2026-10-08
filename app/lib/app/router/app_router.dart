@@ -151,9 +151,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ])
             GoRoute(
               path: slug,
-              builder: (context, state) => ResourceCategoryScreen(
-                section: resourceSectionBySlug(slug)!,
-              ),
+              builder: (context, state) =>
+                  ResourceCategoryScreen(section: resourceSectionBySlug(slug)!),
             ),
           GoRoute(
             path: ':resourceId',
