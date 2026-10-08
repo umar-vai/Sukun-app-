@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/core/errors/friendly_failures.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class AppLoadingState extends StatelessWidget {
-  const AppLoadingState({super.key, this.label = 'Loading…'});
+  const AppLoadingState({super.key, this.label = 'তথ্য আনা হচ্ছে…'});
 
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    // Callers may still supply internal English progress labels; do not
+    // surface technical loading details to patients or administrators.
+    final displayLabel = RegExp(r'[\u0980-\u09FF]').hasMatch(label)
+        ? label
+        : (copy?.loading ?? 'তথ্য আনা হচ্ছে…');
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 180;
@@ -17,7 +25,7 @@ class AppLoadingState extends StatelessWidget {
             padding: EdgeInsets.all(compact ? 8 : 24),
             child: Semantics(
               liveRegion: true,
-              label: label,
+              label: displayLabel,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 340),
                 child: SukunSurface(
@@ -32,7 +40,7 @@ class AppLoadingState extends StatelessWidget {
                             const SizedBox(width: 10),
                             Flexible(
                               child: Text(
-                                label,
+                                displayLabel,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.labelLarge,
@@ -46,7 +54,7 @@ class AppLoadingState extends StatelessWidget {
                             const _SukunLoadingMark(),
                             const SizedBox(height: 16),
                             Text(
-                              label,
+                              displayLabel,
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
@@ -139,13 +147,15 @@ class AppErrorState extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Something needs attention',
+                  Localizations.of<AppLocalizations>(context, AppLocalizations)
+                          ?.attentionRequired ??
+                      'এই মুহূর্তে কাজটি করা যাচ্ছে না',
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  message,
+                  FriendlyFailures.generic(context),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: SukunColors.muted),
@@ -155,7 +165,11 @@ class AppErrorState extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try again'),
+                    label: Text(
+                      Localizations.of<AppLocalizations>(context, AppLocalizations)
+                              ?.tryAgain ??
+                          'আবার চেষ্টা করুন',
+                    ),
                   ),
                 ],
               ],
