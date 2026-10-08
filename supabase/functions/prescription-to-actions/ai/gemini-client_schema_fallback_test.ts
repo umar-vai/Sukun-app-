@@ -15,7 +15,8 @@ Deno.test("HTTP 400 structured output retries without response schema", async ()
       );
     }
     return Response.json({
-      output_text: "{\"source_text\":null,\"actions\":[{\"type\":\"amal\",\"title\":\"Ayatul Kursi\",\"instruction\":\"৩ বার পড়বেন\",\"count_target\":3,\"duration_minutes\":null,\"frequency\":{\"type\":\"daily\",\"interval\":1},\"time_window\":\"morning\",\"exact_time\":null,\"resource_match_query\":\"Ayatul Kursi\",\"source_evidence\":\"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।\",\"confidence\":0.95,\"needs_review\":false,\"ambiguities\":[]}]}",
+      output_text:
+        '{"source_text":null,"actions":[{"type":"amal","title":"Ayatul Kursi","instruction":"৩ বার পড়বেন","count_target":3,"duration_minutes":null,"frequency":{"type":"daily","interval":1},"time_window":"morning","exact_time":null,"resource_match_query":"Ayatul Kursi","source_evidence":"সকাল আয়াতুল কুরসি ৩ বার পড়বেন।","confidence":0.95,"needs_review":false,"ambiguities":[]}]}',
     });
   };
 
