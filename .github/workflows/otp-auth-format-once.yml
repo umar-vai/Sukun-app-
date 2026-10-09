@@ -1,0 +1,38 @@
+name: One-time public auth Dart formatter
+on:
+  push:
+    branches: [feat/otp-google-auth-gates-20261009]
+    paths: ['.github/workflows/otp-auth-format-once.yml']
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: feat/otp-google-auth-gates-20261009
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Canonical formatter (only files changed in this PR)
+        run: |
+          set -euo pipefail
+          dart format \
+            app/lib/core/config/app_environment.dart \
+            app/lib/app/router/app_router.dart \
+            app/lib/features/auth/presentation/login_screen.dart \
+            app/lib/core/auth/public_signin_gateway.dart \
+            app/lib/features/auth/domain/public_auth_inputs.dart \
+            app/lib/features/auth/presentation/public_otp_signin_screen.dart \
+            app/test/features/auth/public_signin_test.dart
+          git diff --check
+          git add app/lib app/test
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(auth): format new OTP and OAuth Dart files"
+          git push origin HEAD:feat/otp-google-auth-gates-20261009
