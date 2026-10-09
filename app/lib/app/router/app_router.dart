@@ -8,6 +8,8 @@ import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
 import 'package:sukun_life/features/auth/presentation/member_signup_screen.dart';
+import 'package:sukun_life/features/auth/presentation/public_otp_signin_screen.dart';
+import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/ai_action_review_screen.dart';
@@ -55,6 +57,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
+      final isOtpRoute = path == '/login/otp';
       final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated && (isPatientRoute || isAdminRoute)) {
@@ -72,13 +75,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isCredentialRoute && !session.requiresCredentialChange) {
         return '/patient/home';
       }
-      if ((isLoginRoute || isSignupRoute) && session.isPatient) {
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isPatient) {
         return '/patient/home';
       }
-      if ((isLoginRoute || isSignupRoute) && session.isSuperAdmin) {
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isSuperAdmin) {
         return '/admin/dashboard';
       }
-      if ((isLoginRoute || isSignupRoute) && session.isMember) return '/';
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isMember) return '/';
       if (path == '/' && session.isPatient) return '/patient/home';
       if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
       return null;
@@ -93,6 +96,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const MemberSignUpScreen(),
+      ),
+      GoRoute(
+        path: '/login/otp',
+        builder: (context, state) => PublicOtpSignInScreen(
+          channel: state.uri.queryParameters['channel'] == 'phone'
+              ? PublicOtpChannel.phone
+              : PublicOtpChannel.email,
+        ),
       ),
       GoRoute(
         path: '/prayer-times',

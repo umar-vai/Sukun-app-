@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -23,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _submitting = false;
+  bool _googleStarting = false;
 
   @override
   void dispose() {
@@ -48,6 +50,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ).showSnackBar(SnackBar(content: Text(FriendlyFailures.signIn(context))));
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _signInGoogle() async {
+    if (_googleStarting || !AppEnvironment.googleOAuthEnabled) return;
+    setState(() => _googleStarting = true);
+    try {
+      await ref.read(publicSignInGatewayProvider).signInWithGoogle();
+      // Wait for a verified Supabase session in onAuthStateChange.
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google লগইন শুরু করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _googleStarting = false);
     }
   }
 
@@ -181,6 +201,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
+                  if (AppEnvironment.emailOtpEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/login/otp?channel=email'),
+                      icon: const Icon(Icons.mail_outline_rounded),
+                      label: const Text('ইমেইলে কোড দিয়ে লগইন'),
+                    ),
+                  ],
+                  if (AppEnvironment.phoneOtpEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/login/otp?channel=phone'),
+                      icon: const Icon(Icons.sms_outlined),
+                      label: const Text('ফোনে কোড দিয়ে লগইন'),
+                    ),
+                  ],
+                  if (AppEnvironment.googleOAuthEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _googleStarting ? null : _signInGoogle,
+                      icon: const Icon(Icons.login_rounded),
+                      label: Text(_googleStarting
+                          ? 'Google লগইন শুরু হচ্ছে…'
+                          : 'Google দিয়ে লগইন'),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () => context.push('/register'),
