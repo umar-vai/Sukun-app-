@@ -28,7 +28,9 @@ void validateWebPreviewConfiguration({
           emailOtpEnabled ||
           phoneOtpEnabled ||
           googleOAuthEnabled)) {
-    throw StateError('Web authentication feature flags require isolated staging.');
+    throw StateError(
+      'Web authentication feature flags require isolated staging.',
+    );
   }
   if (url.isEmpty) {
     if (environment != 'local') {
