@@ -22,8 +22,7 @@ List<PendingTaskCompletion> stagePendingCompletion(
 ) {
   if (queued.any(
     (item) =>
-        item.userId == next.userId &&
-        item.clientEventId == next.clientEventId,
+        item.userId == next.userId && item.clientEventId == next.clientEventId,
   )) {
     return List<PendingTaskCompletion>.of(queued);
   }
@@ -67,16 +66,13 @@ final class SecureCompletionQueueStore implements CompletionQueueStore {
   });
 
   @override
-  Future<void> remove(String userId, String clientEventId) => _mutate(
-    () async {
-      final events = await _readAll();
-      events.removeWhere(
-        (event) =>
-            event.userId == userId && event.clientEventId == clientEventId,
-      );
-      await _writeAll(events);
-    },
-  );
+  Future<void> remove(String userId, String clientEventId) => _mutate(() async {
+    final events = await _readAll();
+    events.removeWhere(
+      (event) => event.userId == userId && event.clientEventId == clientEventId,
+    );
+    await _writeAll(events);
+  });
 
   Future<List<PendingTaskCompletion>> _readAll() async {
     final encoded = await _storage.read(key: _storageKey);
