@@ -7,6 +7,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
+import 'package:sukun_life/features/auth/presentation/member_signup_screen.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/ai_action_review_screen.dart';
@@ -53,6 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
+      final isSignupRoute = path == '/register';
       final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated && (isPatientRoute || isAdminRoute)) {
@@ -70,8 +72,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isCredentialRoute && !session.requiresCredentialChange) {
         return '/patient/home';
       }
-      if (isLoginRoute && session.isPatient) return '/patient/home';
-      if (isLoginRoute && session.isSuperAdmin) return '/admin/dashboard';
+      if ((isLoginRoute || isSignupRoute) && session.isPatient) {
+        return '/patient/home';
+      }
+      if ((isLoginRoute || isSignupRoute) && session.isSuperAdmin) {
+        return '/admin/dashboard';
+      }
+      if ((isLoginRoute || isSignupRoute) && session.isMember) return '/';
       if (path == '/' && session.isPatient) return '/patient/home';
       if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
       return null;
@@ -83,6 +90,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _SessionLanding(sessionState: sessionState),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const MemberSignUpScreen(),
+      ),
       GoRoute(
         path: '/prayer-times',
         builder: (context, state) => const PrayerTimesScreen(),
@@ -346,7 +357,9 @@ class _SessionLanding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return sessionState.when(
-      data: (_) => const GuestHomeScreen(),
+      data: (session) => session.isMember
+          ? MemberHomeScreen(displayName: session.displayName)
+          : const GuestHomeScreen(),
       loading: () => const SukunLaunchScreen(),
       error: (error, stackTrace) => const Scaffold(
         body: AppErrorState(

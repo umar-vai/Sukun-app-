@@ -20,6 +20,7 @@ class AppSession {
   final bool requiresCredentialChange;
 
   bool get isAuthenticated => userId != null;
+  bool get isMember => isAuthenticated && role == UserRole.member;
   bool get isPatient => role == UserRole.patient;
   bool get isSuperAdmin => role == UserRole.superAdmin;
 }

@@ -1,5 +1,6 @@
 enum UserRole {
   guest('guest'),
+  member('member'),
   patient('patient'),
   superAdmin('super_admin');
 
