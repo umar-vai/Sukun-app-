@@ -62,6 +62,12 @@ jobs:
       - name: Resolve Flutter dependencies
         run: flutter pub get
 
+      - name: Validate full Flutter source and browser-compatible tests
+        run: |
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
         id: pages
