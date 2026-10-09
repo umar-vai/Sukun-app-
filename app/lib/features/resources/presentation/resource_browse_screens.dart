@@ -311,9 +311,9 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
   @override
   void initState() {
     super.initState();
-    _topicsFuture = ref.read(resourcesRepositoryProvider).browseTopics(
-      types: const {'hadith'},
-    );
+    _topicsFuture = ref
+        .read(resourcesRepositoryProvider)
+        .browseTopics(types: const {'hadith'});
     _resultsFuture = _load(null);
   }
 
@@ -327,9 +327,9 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
 
   void _retry() {
     setState(() {
-      _topicsFuture = ref.read(resourcesRepositoryProvider).browseTopics(
-        types: const {'hadith'},
-      );
+      _topicsFuture = ref
+          .read(resourcesRepositoryProvider)
+          .browseTopics(types: const {'hadith'});
       _resultsFuture = _load(_topicSlug);
     });
   }
@@ -447,12 +447,14 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
 
   Future<List<ContentResource>> _load(String? slug) {
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    return ref.read(resourcesRepositoryProvider).browseResources(
-      types: isDua
-          ? const {'dua', 'amal'}
-          : const {'quran', 'amal', 'audio', 'guide'},
-      categoryPrefixes: {slug ?? (isDua ? 'dua-azkar' : 'ruqyah')},
-    );
+    return ref
+        .read(resourcesRepositoryProvider)
+        .browseResources(
+          types: isDua
+              ? const {'dua', 'amal'}
+              : const {'quran', 'amal', 'audio', 'guide'},
+          categoryPrefixes: {slug ?? (isDua ? 'dua-azkar' : 'ruqyah')},
+        );
   }
 
   void _selectCategory(String? slug) {

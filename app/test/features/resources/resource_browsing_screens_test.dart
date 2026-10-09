@@ -82,7 +82,9 @@ void main() {
     },
   );
 
-  testWidgets('Hadith browsing reuses its requests on parent rebuild', (tester) async {
+  testWidgets('Hadith browsing reuses its requests on parent rebuild', (
+    tester,
+  ) async {
     final repository = _TrackingBrowsingRepository();
     await tester.pumpWidget(_testApp(const HadithBrowserScreen(), repository));
     await tester.pumpAndSettle();
@@ -279,10 +281,7 @@ class _TrackingBrowsingRepository extends _BrowsingRepository {
     Set<String> categoryPrefixes = const {},
   }) {
     topicCalls++;
-    return super.browseTopics(
-      types: types,
-      categoryPrefixes: categoryPrefixes,
-    );
+    return super.browseTopics(types: types, categoryPrefixes: categoryPrefixes);
   }
 
   @override
