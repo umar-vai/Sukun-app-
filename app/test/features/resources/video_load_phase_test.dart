@@ -85,6 +85,8 @@ void main() {
     expect(find.text('আবার চেষ্টা করুন'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    await tester.ensureVisible(find.text('আবার চেষ্টা করুন'));
+    await tester.pump();
     await tester.tap(find.text('আবার চেষ্টা করুন'));
     await tester.pump();
     expect(retryCount, 1);
