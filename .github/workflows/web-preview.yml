@@ -1,96 +1,49 @@
-name: Web Preview
+name: Legacy Web Preview Checks (No Deployment)
 
 on:
   push:
     branches: [web-preview]
   workflow_dispatch:
 
+# Deprecated publishing workflow. Only main's green-CI Flutter Web pipeline
+# may write to the existing gh-pages destination. This branch MUST NOT build
+# public assets connected to production Supabase or overwrite gh-pages.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: web-preview
+  group: legacy-web-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-publish:
+  verify-legacy-web:
+    name: Flutter web regression checks (backend-free)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
       run:
         working-directory: app
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.6'
           channel: stable
           cache: true
-
-      - name: Resolve dependencies
+      - name: Resolve packages
         run: flutter pub get
-
-      - name: Analyze
+      - name: Analyze application
         run: flutter analyze
-
-      - name: Run tests
+      - name: Run Flutter tests
         run: flutter test
-
-      - name: Build Flutter web preview
+      - name: Compile guest-safe actual Flutter Web bundle
         run: >
           flutter build web --release
           --base-href /Sukun-app-/
-          --dart-define=APP_ENVIRONMENT=development
-          --dart-define=SUPABASE_URL=https://vydfafumxptanpkmtrpr.supabase.co
-          --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
-
-      - name: Publish preview branch
-        working-directory: .
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/sukun-web-preview
-          mkdir -p /tmp/sukun-web-preview
-          cp -R app/build/web/. /tmp/sukun-web-preview/
-          touch /tmp/sukun-web-preview/.nojekyll
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Flutter tooling may normalize analysis_options.yaml during analyze.
-          # The built site is already copied to /tmp, so discard generated
-          # worktree changes before switching to the publish branch.
-          git reset --hard
-          git clean -fdx
-
-          git fetch origin gh-pages || true
-          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-            git switch --force-create gh-pages origin/gh-pages
-          else
-            git switch --orphan gh-pages
-          fi
-
-          # Preserve the independent /prelaunch/ preview while updating the
-          # actual app at the site root. Never force-push Pages history.
-          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name prelaunch -exec rm -rf {} +
-          cp -R /tmp/sukun-web-preview/. .
-          git add -A
-          if git diff --cached --quiet; then
-            echo 'No changes to actual app preview.'
-            exit 0
-          fi
-          git commit -m "chore: publish actual Sukun app web preview"
-          for attempt in 1 2 3; do
-            if git push origin gh-pages; then
-              echo 'Published actual app preview.'
-              exit 0
-            fi
-            git fetch origin gh-pages
-            git rebase origin/gh-pages
-          done
-          echo 'Failed to publish Pages after retries.' >&2
-          exit 1
+          --dart-define=APP_ENVIRONMENT=local
+      - name: Upload build artifact for regression inspection only
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-legacy-web-ci
+          path: app/build/web/
+          retention-days: 7
