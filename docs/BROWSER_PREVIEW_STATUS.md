@@ -21,7 +21,7 @@ The actual `SukunLifeApp` and `app_router.dart` run from `app/lib/main_web.dart`
 
 1. Pull request: regular CI checks plus this workflow compiles and uploads the actual Flutter Web bundle as an artifact; never deploys PR source.
 2. On approved changes merged/pushed to `main`, `CI` must **pass**. The Web workflow's `workflow_run` only accepts a successful **push** run to main and checks that the tested SHA is still the current main HEAD.
-3. The Web workflow rebuilds the actual Flutter Web entrypoint, uploads its artifact, and then updates the **existing `gh-pages` publishing branch's root** while preserving its separate `/prelaunch/` subtree. No parallel website or publishing repository is created. GitHub Pages must be configured to serve that `gh-pages` branch, and the HTTP smoke check must pass.
+3. The Web workflow rebuilds the actual Flutter Web entrypoint, uploads its artifact, and then uploads an official **GitHub Pages artifact** and deploys it using `actions/deploy-pages@v4` to the **same existing Pages URL**. The artifact retains the `/prelaunch/` subtree from the old `gh-pages` branch; the old branch itself is no longer updated by this new workflow. No parallel website or repository is created. Set Settings → Pages → Build and deployment → Source to **GitHub Actions** once; then the post-deploy HTTP commit smoke check must pass.
 4. HTTP smoke checks request `index.html`, `flutter_bootstrap.js`, and `preview-build.json` from the deployed URL, requiring the **exact commit SHA** in the marker. This is NOT equivalent to browser role testing.
 5. Inspect Actions logs and actual `page_url` before reporting that the preview is live or browser verified. In Settings → Pages, GitHub Actions must be the configured build/deploy source.
 
@@ -61,3 +61,7 @@ Branch `integration/functional-flutter-web-20261009` builds on the *existing* `f
 The integration branch adds the same guarded `main_web.dart` entrypoint, strictly staging-only backend guard, local/negative tests, replacement of inherited production-connected Web/CI pipelines, and a green-CI-gated `gh-pages` deployment that preserves the existing `/prelaunch/` subtree. The parent features are **not merged to main**, their database migrations are **not deployed**, and public member sign-up and OTP/OAuth are **not enabled** until separate QA/release gates pass.
 
 Review this branch as a **dependent PR** rather than shipping the older guest-limited `main` implementation over the feature-rich existing Pages app without reconciling differences.
+
+### One-time GitHub Pages switch needed
+
+GitHub explicitly documents that pushes made using `GITHUB_TOKEN` **do not trigger GitHub Pages builds** when Pages is publishing from a branch. Consequently the new deployment workflow uses the supported `upload-pages-artifact` + `deploy-pages` actions rather than pushing built files to `gh-pages`. A repository administrator must set the existing Sukun-app- repository **Settings → Pages → Source = GitHub Actions** once. This does not create a new site, change its URL, or touch the Sukun landing page. Until that setting and a successful deploy/HTTP verification are confirmed, the latest Web build is **CI-ready, not live**.
