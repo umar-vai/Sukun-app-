@@ -74,9 +74,7 @@ void main() {
             child: SizedBox(
               width: 300,
               height: 175,
-              child: SukunVideoErrorOverlay(
-                onRetry: () => retryCount++,
-              ),
+              child: SukunVideoErrorOverlay(onRetry: () => retryCount++),
             ),
           ),
         ),
