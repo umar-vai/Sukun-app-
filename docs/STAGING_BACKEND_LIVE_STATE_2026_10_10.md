@@ -17,9 +17,35 @@ This operational snapshot updates the *historical* staging setup notes in
 - **Secrets:** production Gemini/Firebase keys have NOT been copied to staging. AI/manual and notification/no-sender fallback must be verified with synthetic users.
 - **Authentication:** no staging Auth users, Super Admin or Patient users have been provisioned. Member Signup / Email OTP / Phone OTP / Google OAuth switches remain **false** unless separately approved and configured.
 
+## Public-only staging bootstrap for the existing Pages site
+
+For the first isolated browser smoke round, the existing Web Actions pipeline now
+includes a **verified staging-only public publishable key** as a fallback when
+**all three** connection variables are absent. This key is intended for
+anonymous browser use, is not a service role / password / Gemini or Firebase
+secret, and would appear in built public Flutter JS in any staging-connected
+configuration. It is deliberately pinned to staging ref
+`qacklgqvxvjjzsimjoip`, never production. The build rejects a key/ref/URL
+mismatch and refuses to deploy when its anonymous patient-data API gate fails.
+
+The fallback keeps **member registration, email OTP, phone OTP and Google OAuth
+all disabled**, regardless of any isolated feature flag attempts. To safely
+enable a provider feature later, configure the complete verified staging
+connection variable triplet below and verify the applicable Auth/E2E gate.
+
+For emergency rollback to backend-free guest-only preview, set repository
+Actions variable `SUKUN_PREVIEW_FORCE_GUEST_ONLY=true`, then run a fresh approved
+main CI-successful deployment. The setting alone does **not** update an
+already-built Flutter JavaScript artifact. Alternatively, revert this
+staging-only bootstrap in a reviewed main PR.
+
+This is an **API-connectivity smoke milestone**, NOT a claim of authenticated
+Patient/Admin/Member end-to-end success; no synthetic users or published audio
+are present yet.
+
 ## Required operator activation (no server secrets in GitHub)
 
-The existing Flutter Web preview workflow reads these **GitHub Actions repository variables** from the *existing* `umar-vai/Sukun-app-` repository. Repository variable administration is not exposed by the connected GitHub integration.
+For explicitly managed provider and auth QA (after bootstrap), the existing Flutter Web preview workflow reads these **GitHub Actions repository variables** from the *existing* `umar-vai/Sukun-app-` repository. Repository variable administration is not exposed by the connected GitHub integration.
 
 | Variable | Value |
 |---|---|
