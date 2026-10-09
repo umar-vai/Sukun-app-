@@ -84,9 +84,18 @@ class _AdminContentListScreenState
         icon: const Icon(Icons.add),
         label: const Text('New resource'),
       ),
-      body: Column(
-        children: [
-          Padding(
+
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final refreshed = _load();
+          setState(() => _items = refreshed);
+          await refreshed;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Column(
               children: [
@@ -108,7 +117,9 @@ class _AdminContentListScreenState
               ],
             ),
           ),
-          Padding(
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
             child: Wrap(
               spacing: 8,
@@ -127,7 +138,9 @@ class _AdminContentListScreenState
               ],
             ),
           ),
-          Padding(
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
             child: FutureBuilder<List<AdminContentItem>>(
               future: _items,
@@ -224,7 +237,9 @@ class _AdminContentListScreenState
               },
             ),
           ),
-          SizedBox(
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
             height: 52,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -249,17 +264,21 @@ class _AdminContentListScreenState
               ],
             ),
           ),
-          Expanded(
-            child: FutureBuilder<List<AdminContentItem>>(
+            ),
+            FutureBuilder<List<AdminContentItem>>(
               future: _items,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoadingState(label: 'Loading content');
+                  return const SliverToBoxAdapter(
+                    child: AppLoadingState(label: 'Loading content'),
+                  );
                 }
                 if (snapshot.hasError) {
-                  return AppErrorState(
-                    message: snapshot.error.toString(),
-                    onRetry: _reload,
+                  return SliverToBoxAdapter(
+                    child: AppErrorState(
+                      message: snapshot.error.toString(),
+                      onRetry: _reload,
+                    ),
                   );
                 }
                 final items = (snapshot.data ?? const <AdminContentItem>[])
@@ -270,16 +289,17 @@ class _AdminContentListScreenState
                     )
                     .toList(growable: false);
                 if (items.isEmpty) {
-                  return const AppEmptyState(
-                    icon: Icons.library_books_outlined,
-                    title: 'No content found',
-                    message: 'Create a resource or change the search filter.',
+                  return const SliverToBoxAdapter(
+                    child: AppEmptyState(
+                      icon: Icons.library_books_outlined,
+                      title: 'No content found',
+                      message: 'Create a resource or change the search filter.',
+                    ),
                   );
                 }
-                return RefreshIndicator(
-                  onRefresh: () async => _reload(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+                  sliver: SliverList.separated(
                     itemCount: items.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) =>
@@ -288,8 +308,8 @@ class _AdminContentListScreenState
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
