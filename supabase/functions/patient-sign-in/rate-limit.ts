@@ -4,15 +4,23 @@ export async function hashedLimiterKey(
   namespace: "ip" | "identity",
   value: string,
 ): Promise<string> {
-  if (secret.length < 32) throw new Error("Rate limiting secret is not configured");
+  if (secret.length < 32) {
+    throw new Error("Rate limiting secret is not configured");
+  }
   const key = await crypto.subtle.importKey(
-    "raw", new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
   );
   const result = await crypto.subtle.sign(
-    "HMAC", key, new TextEncoder().encode(namespace + ":" + value),
+    "HMAC",
+    key,
+    new TextEncoder().encode(namespace + ":" + value),
   );
-  return [...new Uint8Array(result)].map((n) => n.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(result)].map((n) => n.toString(16).padStart(2, "0"))
+    .join("");
 }
 export function trustedClientIp(request: Request): string {
   // Never trust caller-supplied x-forwarded-for without proxy sanitization.
