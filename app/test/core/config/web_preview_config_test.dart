@@ -50,6 +50,53 @@ void main() {
       }
     });
 
+    test('local Pages rejects each enabled authentication feature', () {
+      final attempts = <void Function()>[
+        () => validateWebPreviewConfiguration(
+          environment: 'local',
+          url: '',
+          publishableKey: '',
+          publicMemberSignupEnabled: true,
+        ),
+        () => validateWebPreviewConfiguration(
+          environment: 'local',
+          url: '',
+          publishableKey: '',
+          emailOtpEnabled: true,
+        ),
+        () => validateWebPreviewConfiguration(
+          environment: 'local',
+          url: '',
+          publishableKey: '',
+          phoneOtpEnabled: true,
+        ),
+        () => validateWebPreviewConfiguration(
+          environment: 'local',
+          url: '',
+          publishableKey: '',
+          googleOAuthEnabled: true,
+        ),
+      ];
+      for (final attempt in attempts) {
+        expect(attempt, throwsA(isA<StateError>()));
+      }
+    });
+
+    test('isolated staging accepts explicitly enabled auth feature flags', () {
+      expect(
+        () => validateWebPreviewConfiguration(
+          environment: 'staging',
+          url: 'https://isolated-preview.supabase.co',
+          publishableKey: 'sb_publishable_fixture',
+          publicMemberSignupEnabled: true,
+          emailOtpEnabled: true,
+          phoneOtpEnabled: true,
+          googleOAuthEnabled: true,
+        ),
+        returnsNormally,
+      );
+    });
+
     test('staging cannot silently downgrade to guest', () {
       expect(
         () => validateWebPreviewConfiguration(
