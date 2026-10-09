@@ -1,0 +1,298 @@
+name: Flutter Web Preview
+
+on:
+  pull_request:
+    branches: [main, feat/otp-google-auth-gates-20261009]
+    paths:
+      - 'app/**'
+      - 'supabase/**'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/functional-web-pages.yml'
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-web-preview-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-web:
+    name: Build actual Flutter Web application
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pages: read
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout exact requested revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Refuse stale successful CI runs
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "${{ github.event.workflow_run.head_sha }}"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Reuse existing Web assets or generate missing platform scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f web/index.html ]; then
+            echo 'Using existing Flutter Web platform files.'
+          else
+            default_test_missing=0
+            if [ ! -f test/widget_test.dart ]; then default_test_missing=1; fi
+            flutter create --platforms web --project-name sukun_life .
+            if [ "$default_test_missing" -eq 1 ] &&
+               [ -f test/widget_test.dart ] &&
+               grep -Fq 'MyApp' test/widget_test.dart; then
+              rm test/widget_test.dart
+            fi
+          fi
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Validate full Flutter source and browser-compatible tests
+        run: |
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+
+      - name: Browser-platform role and navigation regressions (Chrome)
+        run: |
+          flutter test --platform chrome \
+            test/core/config/web_preview_config_test.dart \
+            test/app/role_routing_test.dart \
+            test/features/auth/member_signup_screen_test.dart \
+            test/features/patient_care/patient_scaffold_test.dart \
+            test/features/home/admin_quick_actions_test.dart
+
+      - name: Read this repository's REAL Pages URL and base path
+        if: github.event_name == 'workflow_run'
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Configure safely isolated preview build
+        id: preview-config
+        shell: bash
+        env:
+          PREVIEW_URL: ${{ vars.SUKUN_PREVIEW_SUPABASE_URL }}
+          PREVIEW_KEY: ${{ vars.SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
+          PREVIEW_REF: ${{ vars.SUKUN_PREVIEW_SUPABASE_PROJECT_REF }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          environment=local
+          url=
+          key=
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            if [[ -n "$PREVIEW_URL" || -n "$PREVIEW_KEY" || -n "$PREVIEW_REF" ]]; then
+              test -n "$PREVIEW_URL"
+              test -n "$PREVIEW_KEY"
+              test -n "$PREVIEW_REF"
+              [[ "$PREVIEW_REF" =~ ^[a-z0-9]+$ ]]
+              [[ "$PREVIEW_REF" != "vydfafumxptanpkmtrpr" ]]
+              [[ "$PREVIEW_URL" == "https://${PREVIEW_REF}.supabase.co" ]]
+              [[ "$PREVIEW_KEY" == sb_publishable_* ]]
+              environment=staging
+              url="$PREVIEW_URL"
+              key="$PREVIEW_KEY"
+            fi
+          fi
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            base="${PAGES_BASE_PATH}/"
+          else
+            base="/${GITHUB_REPOSITORY#*/}/"
+          fi
+          [[ "$base" == "/" || "$base" == /*/ ]]
+          [[ "$base" != *'..'* ]]
+          echo "APP_ENVIRONMENT=$environment" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$url" >> "$GITHUB_ENV"
+          echo "SUPABASE_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
+          echo "PAGES_BASE_HREF=$base" >> "$GITHUB_ENV"
+          echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
+
+      - name: Build role-aware Flutter Web (staging or guest-safe fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build web --release \
+            --target lib/main_web.dart \
+            --base-href "$PAGES_BASE_HREF" \
+            --dart-define "APP_ENVIRONMENT=$APP_ENVIRONMENT" \
+            --dart-define "SUPABASE_URL=$SUPABASE_URL" \
+            --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+          test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+          test -s build/web/main.dart.js
+          printf '{"commit":"%s","backend_mode":"%s"}\n' \
+            "$(git rev-parse HEAD)" "${{ steps.preview-config.outputs.backend_mode }}" \
+            > build/web/preview-build.json
+
+      - name: Preserve existing /prelaunch content in the SAME Pages site
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v5
+        with:
+          ref: gh-pages
+          path: existing-pages
+
+      - name: Assemble Pages bundle without deleting historical prelaunch
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Checkout paths are workspace-relative; shell steps run in app/.
+          # Preserve the unrelated historical preview exactly as it is.
+          if [ -d "$GITHUB_WORKSPACE/existing-pages/prelaunch" ]; then
+            mkdir -p build/web/prelaunch
+            cp -a "$GITHUB_WORKSPACE/existing-pages/prelaunch/." build/web/prelaunch/
+          fi
+          touch build/web/.nojekyll
+          test -s build/web/preview-build.json
+
+      - name: Upload Flutter Web artifact for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-flutter-web-preview
+          path: app/build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload official Pages artifact after successful main CI
+        if: github.event_name == 'workflow_run'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web/
+
+  deploy-pages:
+    name: Deploy existing Pages URL using supported GitHub Actions
+    needs: build-web
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: sukun-existing-pages-deployment
+      cancel-in-progress: false
+    steps:
+      - name: Deploy approved tested Flutter bundle to SAME Pages URL
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Confirm HTTP serves the exact successful main SHA
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          base="${PAGE_URL%/}"
+          for attempt in {1..12}; do
+            if curl -fsSL "$base/preview-build.json" | grep -Fq "$EXPECTED_SHA" &&
+               curl -fsSL "$base/index.html" >/dev/null &&
+               curl -fsSL "$base/flutter_bootstrap.js" >/dev/null; then
+              echo "GitHub Pages delivered expected Flutter commit $EXPECTED_SHA at $base/"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Pages artifact deployed but expected commit not served by HTTP.' >&2
+          exit 1
+
+  local-backend-security:
+    name: Free local Supabase migrations + RLS isolation
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR code
+        uses: actions/checkout@v5
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start disposable local backend
+        run: supabase start
+      - name: Apply repository migrations to disposable backend
+        run: supabase db reset
+      - name: Test auth/member/patient isolation and database policies
+        run: supabase test db
+      - name: Lint local RLS and SQL
+        run: supabase db lint --local
+      - name: Stop disposable backend without retaining test patients
+        if: always()
+        run: supabase stop --no-backup
+
+  local-edge-security:
+    name: Free local Edge Function checks
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Edge source formatting
+        run: deno fmt --check supabase/functions
+      - name: Check Edge modules and their tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for dir in supabase/functions/*; do
+            [ -f "$dir/index.ts" ] || continue
+            if [ -f "$dir/deno.json" ]; then
+              deno check --allow-import --config "$dir/deno.json" "$dir/index.ts"
+            else
+              deno check --allow-import "$dir/index.ts"
+            fi
+            while IFS= read -r -d '' file; do
+              found=1
+              if [ -f "$dir/deno.json" ]; then
+                deno test --allow-import --config "$dir/deno.json" "$file"
+              else
+                deno test --allow-import "$file"
+              fi
+            done < <(find "$dir" -type f \( -name '*_test.ts' -o -name '*.test.ts' \) -print0)
+          done
+          test "$found" -eq 1

@@ -54,8 +54,13 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
       if (mounted) context.pop(patient);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'রোগীর অ্যাকাউন্ট তৈরি করা যায়নি। তথ্যগুলো দেখে আবার চেষ্টা করুন।',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -66,12 +71,12 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
       context: context,
       barrierDismissible: false,
       showCancel: false,
-      title: 'Patient created',
+      title: 'রোগীর অ্যাকাউন্ট তৈরি হয়েছে',
       message:
-          'Patient ID: ${patient.patientCode}\n\n'
-          'Share the temporary sign-in details securely. The patient will be '
-          'required to change the temporary credential.',
-      confirmLabel: 'Done',
+          'রোগী নম্বর: ${patient.patientCode}\n\n'
+          'অস্থায়ী লগইন তথ্য নিরাপদভাবে রোগীকে দিন। রোগী প্রথমবার প্রবেশের সময় '
+          'নিজের পাসওয়ার্ড তৈরি করবেন।',
+      confirmLabel: 'ঠিক আছে',
       icon: Icons.person_add_alt_1_rounded,
     ).then((_) {});
   }
@@ -79,7 +84,7 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create patient')),
+      appBar: AppBar(title: const Text('নতুন রোগী যোগ করুন')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -91,9 +96,9 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SukunPageIntro(
-                    eyebrow: 'Secure onboarding',
-                    title: 'Create a patient account',
-                    subtitle: 'Create a private login and share the temporary credential through a secure channel.',
+                    eyebrow: 'নতুন অ্যাকাউন্ট',
+                    title: 'নতুন রোগীর তথ্য দিন',
+                    subtitle: 'রোগীর জন্য অ্যাকাউন্ট খুলুন এবং অস্থায়ী পাসওয়ার্ড নিরাপদে জানান।',
                   ),
                   const SizedBox(height: 24),
                   SukunSurface(
@@ -106,10 +111,13 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                           textCapitalization: TextCapitalization.words,
                           autofillHints: const [AutofillHints.name],
                           decoration: const InputDecoration(
-                            labelText: 'Full name',
+                            labelText: 'রোগীর পুরো নাম',
                             prefixIcon: Icon(Icons.person_outline_rounded),
                           ),
-                          validator: validatePatientName,
+                          validator: (value) =>
+                              validatePatientName(value) == null
+                              ? null
+                              : 'রোগীর পুরো নাম লিখুন।',
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -117,24 +125,29 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                           keyboardType: TextInputType.phone,
                           autofillHints: const [AutofillHints.telephoneNumber],
                           decoration: const InputDecoration(
-                            labelText: 'Phone number',
+                            labelText: 'ফোন নম্বর',
                             prefixIcon: Icon(Icons.phone_outlined),
-                            helperText:
-                                'International format, such as +8801712345678',
+                            helperText: 'যেমন: +8801712345678',
                           ),
-                          validator: validateInternationalPhone,
+                          validator: (value) =>
+                              validateInternationalPhone(value) == null
+                              ? null
+                              : 'দেশের কোডসহ সঠিক ফোন নম্বর লিখুন।',
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
                           controller: _patientCodeController,
                           textCapitalization: TextCapitalization.characters,
                           decoration: const InputDecoration(
-                            labelText: 'Patient ID (optional)',
+                            labelText: 'রোগী নম্বর (না দিলেও হবে)',
                             prefixIcon: Icon(Icons.badge_outlined),
                             helperText:
-                                'Leave blank to generate a unique Sukun ID.',
+                                'ফাঁকা রাখলে নিজে থেকেই নতুন নম্বর তৈরি হবে।',
                           ),
-                          validator: validatePatientCode,
+                          validator: (value) =>
+                              validatePatientCode(value) == null
+                              ? null
+                              : 'রোগী নম্বরটি সঠিকভাবে লিখুন অথবা ফাঁকা রাখুন।',
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -142,13 +155,13 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                           obscureText: _obscurePassword,
                           autofillHints: const [AutofillHints.newPassword],
                           decoration: InputDecoration(
-                            labelText: 'Temporary password',
+                            labelText: 'অস্থায়ী পাসওয়ার্ড',
                             prefixIcon: const Icon(Icons.key_outlined),
-                            helperText: 'Use at least 8 characters.',
+                            helperText: 'অন্তত ৮ অক্ষরের পাসওয়ার্ড দিন।',
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword
-                                  ? 'Show password'
-                                  : 'Hide password',
+                                  ? 'পাসওয়ার্ড দেখুন'
+                                  : 'পাসওয়ার্ড লুকান',
                               onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
                               ),
@@ -159,7 +172,8 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                               ),
                             ),
                           ),
-                          validator: validateTemporaryPassword,
+                          validator: (value) =>
+                              validateTemporaryPassword(value) == null ? null : 'কমপক্ষে ৮ অক্ষরের একটি অস্থায়ী পাসওয়ার্ড লিখুন।',
                         ),
                         const SizedBox(height: 22),
                         FilledButton.icon(
@@ -174,8 +188,8 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                               : const Icon(Icons.person_add_alt_1),
                           label: Text(
                             _submitting
-                                ? 'Creating securely…'
-                                : 'Create patient',
+                                ? 'রোগীর অ্যাকাউন্ট তৈরি হচ্ছে…'
+                                : 'রোগী যোগ করুন',
                           ),
                         ),
                       ],
@@ -194,7 +208,7 @@ class _CreatePatientScreenState extends ConsumerState<CreatePatientScreen> {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'The patient must replace the temporary password before private care information opens.',
+                            'ব্যক্তিগত তথ্য দেখার আগে রোগীকে অস্থায়ী পাসওয়ার্ড বদলাতে হবে।',
                           ),
                         ),
                       ],

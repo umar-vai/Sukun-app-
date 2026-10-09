@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
@@ -146,7 +147,7 @@ void main() {
     expect(generatedResourceSlug('দুআ', 'ABCDEF12-more'), 'resource-abcdef12');
   });
 
-  testWidgets('admin CMS lists canonical state, visibility, and status', (
+  testWidgets('category-first CMS keeps saved drafts in their own tab', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -161,24 +162,79 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The CMS header and category grid share one vertical scrollable with
-    // lazily built resource cards; scroll to the item before asserting.
-    await tester.scrollUntilVisible(
-      find.text('Ayatul Kursi'),
-      200,
-      scrollable: find.byType(Scrollable).first,
+    expect(find.text('সংরক্ষিত খসড়া'), findsOneWidget);
+    expect(find.text('যাচাইয়ের অপেক্ষায়'), findsOneWidget);
+    expect(find.text('কুরআনের আয়াত'), findsOneWidget);
+    expect(find.text('Ayatul Kursi'), findsNothing);
+    expect(find.text('New resource'), findsNothing);
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('কুরআনের আয়াত'));
+    await tester.pumpAndSettle();
+    expect(find.text('নতুন কুরআনের আয়াত যোগ করুন'), findsOneWidget);
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
+    expect(find.text('খসড়া'), findsWidgets);
+
+    await tester.tap(find.text('প্রকাশিত'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ayatul Kursi'), findsNothing);
+
+    await tester.tap(find.text('খসড়া').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
+
+    await tester.tap(find.text('সব বিভাগে ফিরে যান'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সংরক্ষিত খসড়া'));
+    await tester.pumpAndSettle();
+    expect(find.text('সব বিভাগের খসড়া'), findsOneWidget);
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
+  });
+
+  testWidgets('category card opens matching preselected editor form', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/admin/content',
+      routes: [
+        GoRoute(
+          path: '/admin/content',
+          builder: (context, state) => const AdminContentListScreen(),
+          routes: [
+            GoRoute(
+              path: 'new',
+              builder: (context, state) => AdminContentEditorScreen(
+                initialKind: state.extra as AdminResourceKind?,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('Quran'), findsOneWidget);
-    expect(find.text('Draft'), findsWidgets);
-    expect(find.text('Public'), findsOneWidget);
-    expect(find.text('Pending'), findsNothing);
-    expect(
-      find.widgetWithText(FloatingActionButton, 'New resource'),
-      findsOneWidget,
-    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('হাদিস'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('নতুন হাদিস যোগ করুন'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('নতুন উপকরণ যোগ করুন'), findsOneWidget);
+    expect(find.text('কোন উপকরণ যোগ করবেন?'), findsNothing);
+    expect(find.text('হাদিসের লেখা'), findsOneWidget);
   });
 
   testWidgets('resource editor starts with eight plain-language choices', (
@@ -197,14 +253,14 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final label in const [
-      "Qur'an Ayah",
-      'Hadith',
-      "Qur'an / Surah Audio",
-      'Ruqyah Audio',
-      'Book / PDF',
-      'Video',
-      'Dua / Azkar',
-      'Article / Guide',
+      "কুরআনের আয়াত",
+      'হাদিস',
+      "কুরআন অডিও",
+      'রুকইয়াহ অডিও',
+      'বই ও পিডিএফ',
+      'ভিডিও',
+      'দোয়া ও যিকর',
+      'লেখা ও নির্দেশিকা',
     ]) {
       expect(find.text(label), findsOneWidget);
     }
@@ -214,14 +270,14 @@ void main() {
   });
 
   for (final scenario in const <(String, String)>[
-    ("Qur'an Ayah", 'Arabic text *'),
-    ('Hadith', 'Kitab / collection *'),
-    ("Qur'an / Surah Audio", 'Audio link *'),
-    ('Ruqyah Audio', 'Audio link *'),
-    ('Book / PDF', 'PDF link *'),
-    ('Video', 'YouTube or video link *'),
-    ('Dua / Azkar', 'Arabic *'),
-    ('Article / Guide', 'Article body *'),
+    ("কুরআনের আয়াত", 'আরবি লেখা *'),
+    ('হাদিস', 'হাদিসের কিতাব *'),
+    ("কুরআন অডিও", 'অডিও লিংক *'),
+    ('রুকইয়াহ অডিও', 'অডিও লিংক *'),
+    ('বই ও পিডিএফ', 'পিডিএফ লিংক *'),
+    ('ভিডিও', 'ভিডিও লিংক *'),
+    ('দোয়া ও যিকর', 'আরবি *'),
+    ('লেখা ও নির্দেশিকা', 'সম্পূর্ণ লেখা *'),
   ]) {
     testWidgets('${scenario.$1} opens its tailored form', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
@@ -273,26 +329,26 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text("Qur'an Ayah"));
+    await tester.tap(find.text("কুরআনের আয়াত"));
     await tester.pumpAndSettle();
 
-    expect(find.text('Arabic text *'), findsOneWidget);
+    expect(find.text('আরবি লেখা *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Bangla translation *'), findsOneWidget);
+    expect(find.text('বাংলা অনুবাদ *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Surah *'), findsOneWidget);
+    expect(find.text('সূরা *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Approved source *'), findsOneWidget);
+    expect(find.text('অনুমোদিত উৎস *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Advanced settings'), findsOneWidget);
+    expect(find.text('অতিরিক্ত সেটিংস'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Save Draft'), findsOneWidget);
-    expect(find.text('Submit for Review'), findsOneWidget);
+    expect(find.text('খসড়া সংরক্ষণ করুন'), findsOneWidget);
+    expect(find.text('যাচাইয়ের জন্য পাঠান'), findsOneWidget);
     expect(find.text('Slug'), findsNothing);
     expect(find.text('Request ID'), findsNothing);
     expect(find.text('Media type'), findsNothing);
@@ -315,18 +371,18 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Submit for Review'),
+      find.text('যাচাইয়ের জন্য পাঠান'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    expect(find.text('Publish'), findsNothing);
-    expect(find.text('Verify Source'), findsNothing);
-    await tester.tap(find.text('Submit for Review'));
+    expect(find.text('প্রকাশ করুন'), findsNothing);
+    expect(find.text('উৎস অনুমোদন করুন'), findsNothing);
+    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
     await tester.pumpAndSettle();
-    expect(find.text('Submit for Review resource?'), findsOneWidget);
+    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsOneWidget);
     await tester.tap(
-      find.widgetWithText(FilledButton, 'Submit for Review').last,
+      find.widgetWithText(FilledButton, 'যাচাইয়ের জন্য পাঠান').last,
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -351,17 +407,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Submit for Review'),
+      find.text('যাচাইয়ের জন্য পাঠান'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    await tester.tap(find.text('Submit for Review'));
+    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
     await tester.pump();
 
     expect(find.textContaining('approved source format'), findsOneWidget);
     expect(find.textContaining('choose Qur’an / Surah Audio'), findsOneWidget);
-    expect(find.text('Submit for Review resource?'), findsNothing);
+    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsNothing);
   });
 }
 

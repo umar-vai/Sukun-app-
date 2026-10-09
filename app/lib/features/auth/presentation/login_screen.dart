@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
+import 'package:sukun_life/core/errors/friendly_failures.dart';
+import 'package:sukun_life/l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _submitting = false;
+  bool _googleStarting = false;
 
   @override
   void dispose() {
@@ -40,20 +45,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(FriendlyFailures.signIn(context))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
+  Future<void> _signInGoogle() async {
+    if (_googleStarting || !AppEnvironment.googleOAuthEnabled) return;
+    setState(() => _googleStarting = true);
+    try {
+      await ref.read(publicSignInGatewayProvider).signInWithGoogle();
+      // Wait for a verified Supabase session in onAuthStateChange.
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google লগইন শুরু করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _googleStarting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     return Scaffold(
       body: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: Alignment.topCenter,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
@@ -64,16 +90,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: IconButton.filledTonal(
                       onPressed: () => Navigator.maybePop(context),
                       icon: const Icon(Icons.arrow_back_rounded),
-                      tooltip: 'Back',
+                      tooltip: copy?.goBack ?? 'ফিরে যান',
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  const Center(child: SukunLifeLogo(height: 96)),
-                  const SizedBox(height: 24),
-                  const SukunPageIntro(
-                    eyebrow: 'Private care access',
-                    title: 'Welcome back',
-                    subtitle: 'Sign in securely to continue to your personal care plan or Super Admin workspace.',
+                  const SizedBox(height: 4),
+                  const Center(child: SukunLifeLogo(height: 78)),
+                  const SizedBox(height: 18),
+                  SukunPageIntro(
+                    eyebrow: copy?.signInEyebrow ?? 'ব্যক্তিগত অ্যাকাউন্ট',
+                    title: copy?.signInWelcome ?? 'স্বাগতম',
+                    subtitle: copy?.signInSubtitle ?? 'আপনার পরিকল্পনা দেখতে বা অ্যাডমিনের কাজ করতে প্রবেশ করুন।',
                   ),
                   const SizedBox(height: 24),
                   SukunSurface(
@@ -84,12 +110,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Sign in details',
+                            copy?.signInDetails ?? 'অ্যাকাউন্টে প্রবেশ',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Use your Patient ID, phone number, or administrator email.',
+                            copy?.signInIdentifierHelp ?? 'রোগী নম্বর, ফোন নম্বর বা অ্যাডমিনের ইমেইল দিন।',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: SukunColors.muted),
                           ),
@@ -98,11 +124,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             controller: _identifierController,
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Patient ID, phone, or email',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
+                            decoration: InputDecoration(
+                              labelText:
+                                  copy?.signInIdentifier ??
+                                  'রোগী নম্বর, ফোন বা ইমেইল',
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
                             ),
-                            validator: validateSignInIdentifier,
+                            validator: (value) =>
+                                validateSignInIdentifier(value) == null
+                                ? null
+                                : (copy?.signInIdentifierError ??
+                                      'রোগী নম্বর, ফোন নম্বর বা ইমেইল ঠিকভাবে লিখুন।'),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -111,7 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
-                              labelText: 'Password',
+                              labelText: copy?.password ?? 'পাসওয়ার্ড',
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
                               ),
@@ -119,8 +153,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 onPressed: () =>
                                     setState(() => _obscure = !_obscure),
                                 tooltip: _obscure
-                                    ? 'Show password'
-                                    : 'Hide password',
+                                    ? (copy?.showPassword ?? 'পাসওয়ার্ড দেখুন')
+                                    : (copy?.hidePassword ?? 'পাসওয়ার্ড লুকান'),
                                 icon: Icon(
                                   _obscure
                                       ? Icons.visibility_outlined
@@ -128,7 +162,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                             ),
-                            validator: validateAccountPassword,
+                            validator: (value) =>
+                                validateAccountPassword(value) == null
+                                ? null
+                                : (copy?.passwordError ??
+                                      'পাসওয়ার্ডে ৮ থেকে ৭২টি অক্ষর থাকতে হবে।'),
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
@@ -147,13 +185,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   )
                                 : const Icon(Icons.arrow_forward_rounded),
                             label: Text(
-                              _submitting ? 'Signing in…' : 'Continue securely',
+                              _submitting
+                                  ? (copy?.signingIn ?? 'প্রবেশ করা হচ্ছে…')
+                                  : (copy?.continueSecurely ?? 'প্রবেশ করুন'),
                             ),
                           ),
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
-                            const Text(
-                              'Supabase client configuration is required for sign in.',
+                            Text(
+                              copy?.signInNotConfigured ?? 'এটি শুধু অ্যাপের ডিজাইন দেখার সংস্করণ। লগইন পরীক্ষা করতে সংযুক্ত পরীক্ষামূলক অ্যাপ প্রয়োজন।',
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -161,19 +201,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
+                  if (AppEnvironment.emailOtpEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/login/otp?channel=email'),
+                      icon: const Icon(Icons.mail_outline_rounded),
+                      label: const Text('ইমেইলে কোড দিয়ে লগইন'),
+                    ),
+                  ],
+                  if (AppEnvironment.phoneOtpEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/login/otp?channel=phone'),
+                      icon: const Icon(Icons.sms_outlined),
+                      label: const Text('ফোনে কোড দিয়ে লগইন'),
+                    ),
+                  ],
+                  if (AppEnvironment.googleOAuthEnabled) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _googleStarting ? null : _signInGoogle,
+                      icon: const Icon(Icons.login_rounded),
+                      label: Text(
+                        _googleStarting
+                            ? 'Google লগইন শুরু হচ্ছে…'
+                            : 'Google দিয়ে লগইন',
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => context.push('/register'),
+                    child: const Text('নতুন অ্যাকাউন্ট তৈরি করুন'),
+                  ),
                   const SizedBox(height: 18),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.shield_outlined,
                         size: 17,
                         color: SukunColors.deepTide,
                       ),
-                      SizedBox(width: 7),
+                      const SizedBox(width: 7),
                       Flexible(
                         child: Text(
-                          'Your patient information stays protected.',
+                          copy?.patientDataPrivate ??
+                              'আপনার ব্যক্তিগত তথ্য সুরক্ষিত রাখা হয়।',
                           textAlign: TextAlign.center,
                         ),
                       ),

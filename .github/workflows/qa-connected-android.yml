@@ -1,0 +1,116 @@
+name: Connected Android QA APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      approve_native_qa_build:
+        description: 'I explicitly authorize this one-time Android QA APK build'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connected-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-connected-qa:
+    name: Backend-connected Android QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Secrets must never be used on pull requests from forks.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_native_qa_build == true }}
+    defaults:
+      run:
+        working-directory: app
+    env:
+      QA_URL: ${{ secrets.SUKUN_QA_SUPABASE_URL }}
+      QA_KEY: ${{ secrets.SUKUN_QA_SUPABASE_PUBLISHABLE_KEY }}
+      QA_TARGET: ${{ vars.SUKUN_QA_APP_ENVIRONMENT }}
+      QA_ALLOW_PRODUCTION: ${{ vars.SUKUN_QA_ALLOW_PRODUCTION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate QA connection without printing credentials
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${QA_URL:-}" || -z "${QA_KEY:-}" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No backend-connected APK: configure SUKUN_QA_SUPABASE_URL and SUKUN_QA_SUPABASE_PUBLISHABLE_KEY under GitHub Actions secrets."
+            echo "### Backend-connected APK not built" >> "$GITHUB_STEP_SUMMARY"
+            echo "Configure both QA connection secrets in repository Settings > Secrets and variables > Actions. The ordinary CI APK is UI-only." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          case "$QA_URL" in
+            https://*.supabase.co) ;;
+            *) echo "::error::QA URL must be an HTTPS Supabase project URL."; exit 1 ;;
+          esac
+
+          environment="${QA_TARGET:-staging}"
+          case "$environment" in
+            staging)
+              if [[ "$QA_URL" == "https://vydfafumxptanpkmtrpr.supabase.co" ]]; then
+                echo "::error::A production backend cannot silently be used as staging."; exit 1
+              fi
+              ;;
+            production)
+              if [[ "$QA_URL" != "https://vydfafumxptanpkmtrpr.supabase.co" || "${QA_ALLOW_PRODUCTION:-}" != "true" ]]; then
+                echo "::error::Production QA requires the approved project and an explicit SUKUN_QA_ALLOW_PRODUCTION=true repository variable."; exit 1
+              fi
+              ;;
+            *)
+              echo "::error::SUKUN_QA_APP_ENVIRONMENT must be staging or production."; exit 1
+              ;;
+          esac
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "environment=$environment" >> "$GITHUB_OUTPUT"
+          echo "### Backend-connected QA build enabled" >> "$GITHUB_STEP_SUMMARY"
+          echo "Target: $environment. Test accounts and patient-safe dummy data only. The client build includes a publishable key, never service-role credentials." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Java
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        if: steps.config.outputs.ready == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        if: steps.config.outputs.ready == 'true'
+        run: flutter pub get
+
+      - name: Build connected debug APK
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --debug \
+            --dart-define="APP_ENVIRONMENT=${{ steps.config.outputs.environment }}" \
+            --dart-define="SUPABASE_URL=$QA_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY"
+
+      - name: Upload connected Android QA APK
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukunlife-android-connected-qa
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 3

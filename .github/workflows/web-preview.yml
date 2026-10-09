@@ -1,0 +1,49 @@
+name: Legacy Web Preview Checks (No Deployment)
+
+on:
+  push:
+    branches: [web-preview]
+  workflow_dispatch:
+
+# Deprecated publishing workflow. Only main's green-CI Flutter Web pipeline
+# may write to the existing gh-pages destination. This branch MUST NOT build
+# public assets connected to production Supabase or overwrite gh-pages.
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-web-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-legacy-web:
+    name: Flutter web regression checks (backend-free)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Analyze application
+        run: flutter analyze
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Compile guest-safe actual Flutter Web bundle
+        run: >
+          flutter build web --release
+          --base-href /Sukun-app-/
+          --dart-define=APP_ENVIRONMENT=local
+      - name: Upload build artifact for regression inspection only
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-legacy-web-ci
+          path: app/build/web/
+          retention-days: 7

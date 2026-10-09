@@ -13,6 +13,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
 import 'package:uuid/uuid.dart';
@@ -23,11 +24,13 @@ class AiActionReviewScreen extends ConsumerStatefulWidget {
     required this.patientId,
     required this.planId,
     required this.prescriptionId,
+    this.initialSeed,
   });
 
   final String patientId;
   final String planId;
   final String prescriptionId;
+  final AiActionReviewSeed? initialSeed;
 
   @override
   ConsumerState<AiActionReviewScreen> createState() =>
@@ -38,13 +41,17 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   final _formKey = GlobalKey<FormState>();
   late String _generationRequestId;
   late Future<_ReviewData> _data;
+  late AiActionReviewSeed? _reviewSeed;
   List<_EditableSuggestion>? _drafts;
   bool _importing = false;
+  bool _forceFreshGeneration = false;
+  _ReviewFilter _reviewFilter = _ReviewFilter.all;
 
   @override
   void initState() {
     super.initState();
-    _generationRequestId = const Uuid().v4();
+    _reviewSeed = widget.initialSeed;
+    _generationRequestId = _reviewSeed?.result.requestId ?? const Uuid().v4();
     _data = _load();
   }
 
@@ -54,13 +61,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       carePlans.getPlan(widget.planId),
       carePlans.getAvailableResources(),
       ref.read(patientsRepositoryProvider).getPrescriptions(widget.patientId),
-      ref
-          .read(aiActionsRepositoryProvider)
-          .generateActions(
-            prescriptionId: widget.prescriptionId,
-            carePlanId: widget.planId,
-            requestId: _generationRequestId,
-          ),
+      _resolveGeneration(),
     ]);
     final plan = results[0] as CarePlan?;
     if (plan == null ||
@@ -101,6 +102,33 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
     );
   }
 
+  Future<AiActionGenerationResult> _resolveGeneration() async {
+    final seed = _reviewSeed;
+    if (seed != null && !_forceFreshGeneration) {
+      return seed.result;
+    }
+
+    final repository = ref.read(aiActionsRepositoryProvider);
+    if (!_forceFreshGeneration) {
+      final stored = await repository.loadStoredActions(
+        prescriptionId: widget.prescriptionId,
+        carePlanId: widget.planId,
+      );
+      if (stored != null) {
+        _reviewSeed = stored;
+        _generationRequestId = stored.result.requestId;
+        return stored.result;
+      }
+    }
+
+    _forceFreshGeneration = false;
+    return repository.generateActions(
+      prescriptionId: widget.prescriptionId,
+      carePlanId: widget.planId,
+      requestId: _generationRequestId,
+    );
+  }
+
   void _retry() {
     setState(() {
       _data = _load();
@@ -109,8 +137,10 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
 
   void _startNewGeneration() {
     setState(() {
+      _reviewSeed = null;
       _generationRequestId = const Uuid().v4();
       _drafts = null;
+      _forceFreshGeneration = true;
       _data = _load();
     });
   }
@@ -123,7 +153,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   }
 
   Future<void> _import(_ReviewData data) async {
-    if (_importing || !_formKey.currentState!.validate()) return;
+    if (_importing) return;
     final selected = _drafts!
         .where((draft) => draft.selected && !draft.imported)
         .toList(growable: false);
@@ -133,17 +163,18 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       );
       return;
     }
-    final invalidWeekly = selected.any(
-      (draft) =>
-          draft.frequencyType == ActionFrequencyType.weekly &&
-          draft.weekdays.isEmpty,
-    );
-    if (invalidWeekly) {
+    if (selected.any((draft) => !draft.canImport)) {
+      setState(() => _reviewFilter = _ReviewFilter.needsReview);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one weekday.')),
+        const SnackBar(
+          content: Text(
+            'Complete the required fields for every selected action before importing.',
+          ),
+        ),
       );
       return;
     }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _importing = true);
     var imported = 0;
@@ -158,11 +189,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             instruction: draft.instruction.trim(),
             countTarget: int.tryParse(draft.count.trim()),
             durationMinutes: int.tryParse(draft.duration.trim()),
-            frequency: draft.frequencyType == ActionFrequencyType.daily
-                ? ActionFrequency.daily(
-                    interval: int.parse(draft.dailyInterval.trim()),
-                  )
-                : ActionFrequency.weekly(draft.weekdays),
+            frequency: draft.importFrequency!,
             timeWindow: draft.timeWindow.isEmpty ? null : draft.timeWindow,
             exactTime: draft.exactTime,
             startDate: data.plan.startDate,
@@ -173,6 +200,12 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                 ? null
                 : draft.contentItemId,
             requestId: draft.importRequestId,
+            aiRequestId: data.result.requestId,
+            attachmentId: _reviewSeed?.attachmentId,
+            sourceEvidence: draft.source.sourceEvidence,
+            aiConfidence: draft.source.confidence,
+            aiAmbiguities: draft.source.ambiguities,
+            humanEdited: draft.wasEdited,
           ),
         );
         draft.imported = true;
@@ -189,14 +222,21 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
         ),
       );
       context.pop(true);
+    } on CarePlanWorkflowException catch (error) {
+      if (!mounted) return;
+      final prefix = imported == 0
+          ? 'Could not import the selected action.'
+          : '$imported action${imported == 1 ? '' : 's'} imported.';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$prefix ${error.message}')));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             imported == 0
-                ? 'The selected actions could not be imported. Your suggestions are still here; please retry.'
-                : '$imported action${imported == 1 ? '' : 's'} imported. The remaining suggestions are still here; retry to continue.',
+                ? 'The selected actions could not be imported. Your suggestions are still here.'
+                : '$imported action${imported == 1 ? '' : 's'} imported. The remaining suggestions are still here.',
           ),
         ),
       );
@@ -232,72 +272,301 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
               onManual: _openManualBuilder,
             );
           }
+          final selectedCount = _drafts!
+              .where((draft) => draft.selected && !draft.imported)
+              .length;
+          final readyCount = _drafts!
+              .where((draft) => draft.isReady && !draft.imported)
+              .length;
+          final reviewCount = _drafts!
+              .where((draft) => !draft.isReady && !draft.imported)
+              .length;
+          final visibleDrafts = <({int index, _EditableSuggestion draft})>[
+            for (var index = 0; index < _drafts!.length; index++)
+              if (_reviewFilter.matches(_drafts![index]))
+                (index: index, draft: _drafts![index]),
+          ];
           return Form(
             key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            child: Stack(
               children: [
-                const SukunPageIntro(
-                  eyebrow: 'AI-assisted parsing',
-                  title: 'Review suggested actions',
-                  subtitle: 'Compare every field with the human-authored prescription before importing it as draft work.',
+                ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 150),
+                  children: [
+                    const SukunPageIntro(
+                      eyebrow: 'AI-assisted parsing',
+                      title: 'Review suggested actions',
+                      subtitle: 'Compare every field with the human-authored prescription before importing it as draft work.',
+                    ),
+                    const SizedBox(height: 20),
+                    const _SafetyNotice(),
+                    const SizedBox(height: 16),
+                    _SourcePrescription(prescription: data.prescription),
+                    const SizedBox(height: 16),
+                    _ReviewSummary(
+                      totalCount: _drafts!.length,
+                      readyCount: readyCount,
+                      reviewCount: reviewCount,
+                      selectedCount: selectedCount,
+                      filter: _reviewFilter,
+                      enabled: !_importing,
+                      onFilterChanged: (filter) =>
+                          setState(() => _reviewFilter = filter),
+                      onSelectionAction: () => setState(() {
+                        if (selectedCount > 0) {
+                          for (final draft in _drafts!) {
+                            if (!draft.imported) draft.selected = false;
+                          }
+                          return;
+                        }
+                        for (final draft in _drafts!) {
+                          if (!draft.imported && draft.isReady) {
+                            draft.selected = true;
+                          }
+                        }
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    if (visibleDrafts.isEmpty)
+                      const _NoSuggestionsForFilter()
+                    else
+                      for (final entry in visibleDrafts) ...[
+                        _SuggestedActionCard(
+                          number: entry.index + 1,
+                          draft: entry.draft,
+                          resources: data.resources,
+                          enabled: !_importing,
+                          onChanged: () => setState(() {}),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _importing ? null : _openManualBuilder,
+                      icon: const Icon(Icons.edit_note_outlined),
+                      label: const Text('Use Manual Action Builder'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                const _SafetyNotice(),
-                const SizedBox(height: 16),
-                _SourcePrescription(prescription: data.prescription),
-                const SizedBox(height: 16),
-                SukunSectionHeader(
-                  title: '${_drafts!.length} suggestions',
-                  subtitle: 'Expand each suggestion to verify and edit',
-                  action: TextButton(
-                    onPressed: _importing
-                        ? null
-                        : () => setState(() {
-                            final select = _drafts!.any(
-                              (draft) => !draft.imported && !draft.selected,
-                            );
-                            for (final draft in _drafts!) {
-                              if (!draft.imported) draft.selected = select;
-                            }
-                          }),
-                    child: const Text('Select all'),
+                if (MediaQuery.viewInsetsOf(context).bottom == 0)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                    child: SafeArea(
+                      top: false,
+                      child: _ImportDock(
+                        selectedCount: selectedCount,
+                        importing: _importing,
+                        onImport: selectedCount == 0 || _importing
+                            ? null
+                            : () => _import(data),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                for (var index = 0; index < _drafts!.length; index++) ...[
-                  _SuggestedActionCard(
-                    number: index + 1,
-                    draft: _drafts![index],
-                    resources: data.resources,
-                    enabled: !_importing,
-                    onChanged: () => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: _importing ? null : () => _import(data),
-                  icon: _importing
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.playlist_add_check),
-                  label: Text(
-                    _importing ? 'Importing…' : 'Import selected as drafts',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _importing ? null : _openManualBuilder,
-                  icon: const Icon(Icons.edit_note_outlined),
-                  label: const Text('Use Manual Action Builder'),
-                ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+enum _ReviewFilter { all, ready, needsReview }
+
+extension on _ReviewFilter {
+  bool matches(_EditableSuggestion draft) => switch (this) {
+    _ReviewFilter.all => true,
+    _ReviewFilter.ready => draft.isReady,
+    _ReviewFilter.needsReview => !draft.isReady,
+  };
+}
+
+class _ReviewSummary extends StatelessWidget {
+  const _ReviewSummary({
+    required this.totalCount,
+    required this.readyCount,
+    required this.reviewCount,
+    required this.selectedCount,
+    required this.filter,
+    required this.enabled,
+    required this.onFilterChanged,
+    required this.onSelectionAction,
+  });
+
+  final int totalCount;
+  final int readyCount;
+  final int reviewCount;
+  final int selectedCount;
+  final _ReviewFilter filter;
+  final bool enabled;
+  final ValueChanged<_ReviewFilter> onFilterChanged;
+  final VoidCallback onSelectionAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return SukunSurface(
+      tone: SukunSurfaceTone.soft,
+      showBorder: false,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$totalCount suggestions',
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              TextButton(
+                onPressed: enabled ? onSelectionAction : null,
+                child: Text(
+                  selectedCount > 0 ? 'Clear selection' : 'Select ready',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$readyCount ready · $reviewCount need review',
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: SukunColors.muted),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ReviewFilterChip(
+                label: 'All',
+                count: totalCount,
+                selected: filter == _ReviewFilter.all,
+                onTap: () => onFilterChanged(_ReviewFilter.all),
+              ),
+              _ReviewFilterChip(
+                label: 'Ready',
+                count: readyCount,
+                selected: filter == _ReviewFilter.ready,
+                onTap: () => onFilterChanged(_ReviewFilter.ready),
+              ),
+              _ReviewFilterChip(
+                label: 'Needs review',
+                count: reviewCount,
+                selected: filter == _ReviewFilter.needsReview,
+                onTap: () => onFilterChanged(_ReviewFilter.needsReview),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewFilterChip extends StatelessWidget {
+  const _ReviewFilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+    selected: selected,
+    onSelected: (_) => onTap(),
+    label: Text('$label · $count'),
+  );
+}
+
+class _NoSuggestionsForFilter extends StatelessWidget {
+  const _NoSuggestionsForFilter();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 28),
+    child: Center(
+      child: Text(
+        'No suggestions in this filter.',
+        style: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: SukunColors.muted),
+      ),
+    ),
+  );
+}
+
+class _ImportDock extends StatelessWidget {
+  const _ImportDock({
+    required this.selectedCount,
+    required this.importing,
+    required this.onImport,
+  });
+
+  final int selectedCount;
+  final bool importing;
+  final VoidCallback? onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: .12),
+      borderRadius: BorderRadius.circular(20),
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: SukunColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      selectedCount == 0
+                          ? 'No actions selected'
+                          : '$selectedCount selected',
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Imported items stay as draft work.',
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: SukunColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: importing
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.playlist_add_check_rounded),
+              label: Text(importing ? 'Importing…' : 'Import'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -337,7 +606,7 @@ class _EditableSuggestion {
     SuggestedPlanAction source, {
     required List<ResourceMatch> resourceMatches,
   }) {
-    return _EditableSuggestion(
+    final draft = _EditableSuggestion(
       source: source,
       type: source.type,
       title: source.title,
@@ -351,6 +620,8 @@ class _EditableSuggestion {
       exactTime: source.exactTime,
       resourceMatches: resourceMatches,
     );
+    draft.selected = draft.isReady;
+    return draft;
   }
 
   final SuggestedPlanAction source;
@@ -367,8 +638,67 @@ class _EditableSuggestion {
   String timeWindow;
   DateTime? exactTime;
   String contentItemId = '';
-  bool selected = true;
+  bool selected = false;
   bool imported = false;
+
+  bool get hasIncompleteMetadata => source.ambiguities.any(
+    (item) => item.startsWith('AI omitted metadata fields:'),
+  );
+
+  bool get isReady =>
+      !source.needsReview && !hasIncompleteMetadata && source.confidence >= 0.8;
+
+  ActionFrequency? get importFrequency {
+    if (frequencyType == ActionFrequencyType.daily) {
+      final interval = int.tryParse(dailyInterval.trim());
+      if (interval == null || interval < 1) return null;
+      return ActionFrequency.daily(interval: interval);
+    }
+    if (frequencyType == ActionFrequencyType.weekly && weekdays.isNotEmpty) {
+      return ActionFrequency.weekly(weekdays);
+    }
+    return null;
+  }
+
+  bool get canImport =>
+      type.trim().isNotEmpty &&
+      title.trim().isNotEmpty &&
+      importFrequency != null;
+
+  bool get wasEdited {
+    if (type.trim() != source.type ||
+        title.trim() != source.title ||
+        instruction.trim() != (source.instruction ?? '') ||
+        int.tryParse(count.trim()) != source.countTarget ||
+        int.tryParse(duration.trim()) != source.durationMinutes ||
+        timeWindow != (source.timeWindow ?? '') ||
+        contentItemId.isNotEmpty) {
+      return true;
+    }
+    final sourceFrequency = source.frequency;
+    if (sourceFrequency?.type != frequencyType) return true;
+    if (frequencyType == ActionFrequencyType.daily &&
+        int.tryParse(dailyInterval.trim()) != sourceFrequency?.interval) {
+      return true;
+    }
+    if (frequencyType == ActionFrequencyType.weekly &&
+        weekdays
+            .difference(sourceFrequency?.weekdays ?? const <int>{})
+            .isNotEmpty) {
+      return true;
+    }
+    if (frequencyType == ActionFrequencyType.weekly &&
+        (sourceFrequency?.weekdays ?? const <int>{})
+            .difference(weekdays)
+            .isNotEmpty) {
+      return true;
+    }
+    final sourceTime = source.exactTime;
+    if (sourceTime == null) return exactTime != null;
+    return exactTime == null ||
+        sourceTime.hour != exactTime!.hour ||
+        sourceTime.minute != exactTime!.minute;
+  }
 }
 
 class _SafetyNotice extends StatelessWidget {
@@ -417,23 +747,39 @@ class _SuggestedActionCard extends StatelessWidget {
     return SukunSurface(
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        initiallyExpanded: draft.source.needsReview,
+        initiallyExpanded: number == 1 && !draft.hasIncompleteMetadata,
         leading: Checkbox(
           value: draft.selected,
-          onChanged: !enabled || draft.imported
+          onChanged: !enabled || draft.imported || !draft.canImport
               ? null
               : (value) {
                   draft.selected = value ?? false;
                   onChanged();
                 },
         ),
-        title: Text(draft.title.isEmpty ? 'Suggestion $number' : draft.title),
+        title: Text(
+          draft.title.isEmpty ? 'Suggestion $number' : draft.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Wrap(
           spacing: 8,
           runSpacing: 4,
           children: [
-            Text('${(draft.source.confidence * 100).round()}% confidence'),
-            if (draft.source.needsReview)
+            Text(
+              draft.hasIncompleteMetadata
+                  ? 'Metadata incomplete'
+                  : '${(draft.source.confidence * 100).round()}% confidence',
+              style: draft.hasIncompleteMetadata
+                  ? const TextStyle(color: SukunColors.deepTide)
+                  : null,
+            ),
+            if (!draft.canImport)
+              const Text(
+                'Frequency required',
+                style: TextStyle(color: SukunColors.deepTide),
+              )
+            else if (draft.source.needsReview)
               const Text(
                 'Needs review',
                 style: TextStyle(color: SukunColors.deepTide),
@@ -443,6 +789,18 @@ class _SuggestedActionCard extends StatelessWidget {
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
         children: [
+          if (draft.source.sourceEvidence != null) ...[
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: SukunColors.mist,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text('Source evidence: “${draft.source.sourceEvidence}”'),
+            ),
+          ],
           if (draft.source.ambiguities.isNotEmpty)
             Container(
               width: double.infinity,
@@ -713,7 +1071,7 @@ class _SuggestedActionCard extends StatelessWidget {
               children: [
                 for (final match in draft.resourceMatches)
                   ActionChip(
-                    label: Text(match.resource.title),
+                    label: Text(match.resource.displayTitle),
                     onPressed: !enabled || draft.imported
                         ? null
                         : () {
@@ -725,28 +1083,11 @@ class _SuggestedActionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-          SukunChoiceField<String>(
+          ResourcePickerField(
             key: ValueKey(draft.contentItemId),
-            value: draft.contentItemId,
-            label: 'Linked resource (optional)',
-            placeholder: 'Choose a canonical resource',
-            helperText: 'A match is linked only after you select it.',
+            resources: resources,
+            selectedId: draft.contentItemId,
             enabled: enabled && !draft.imported,
-            options: [
-              const SukunChoiceOption(
-                value: '',
-                title: 'No linked resource',
-                description: 'Keep this action text-only.',
-                icon: Icons.link_off_rounded,
-              ),
-              for (final resource in resources)
-                SukunChoiceOption(
-                  value: resource.id,
-                  title: resource.title,
-                  description: resource.titleBn,
-                  icon: Icons.library_books_outlined,
-                ),
-            ],
             onChanged: (value) {
               draft.contentItemId = value;
               onChanged();
@@ -770,7 +1111,7 @@ class _SourcePrescription extends StatelessWidget {
       showBorder: false,
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        initiallyExpanded: true,
+        initiallyExpanded: false,
         leading: const Icon(Icons.description_outlined),
         title: const Text('Original prescription'),
         subtitle: const Text('Use this as the source of truth.'),

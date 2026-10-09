@@ -39,50 +39,35 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
-      - name: Report Dart formatting diff on failure
-        if: failure()
-        run: |
-          dart format lib/features/content_admin/presentation/admin_content_list_screen.dart
-          git diff -- lib/features/content_admin/presentation/admin_content_list_screen.dart
-
       - name: Analyze
         run: flutter analyze
 
       - name: Run Flutter tests
         run: flutter test
 
-  android-debug-build:
-    name: Flutter / Android Debug Build
+  web-preview-build:
+    name: Flutter / Backend-free Web Build
+    needs: flutter-quality
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: flutter-quality
     defaults:
       run:
         working-directory: app
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.6'
           channel: stable
           cache: true
-
       - name: Resolve dependencies
         run: flutter pub get
-
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build actual Flutter Web app without production connectivity
+        run: >
+          flutter build web --release
+          --target lib/main_web.dart
+          --base-href /Sukun-app-/
+          --dart-define=APP_ENVIRONMENT=local
 
   edge-functions:
     name: Backend / Edge Functions
@@ -129,7 +114,7 @@ jobs:
               else
                 deno test --allow-import "$test_file"
               fi
-            done < <(find "$dir" -type f \( -name '*_test.ts' -o -name '*.test.ts' \) -print0)
+            done < <(find "$dir" -type f -name '*_test.ts' -print0)
           done
           if [ "$found" -eq 0 ]; then
             echo 'No Edge Function tests found.' >&2

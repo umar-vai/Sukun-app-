@@ -4,24 +4,32 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
 import 'package:sukun_life/features/auth/presentation/login_screen.dart';
+import 'package:sukun_life/features/auth/presentation/member_signup_screen.dart';
+import 'package:sukun_life/features/auth/presentation/public_otp_signin_screen.dart';
+import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/features/auth/presentation/change_password_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/ai_action_review_screen.dart';
+import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/create_care_plan_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
+import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_collections_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
+import 'package:sukun_life/features/patient_care/presentation/patient_notifications_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_profile_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_progress_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
@@ -30,6 +38,8 @@ import 'package:sukun_life/features/patients/presentation/create_prescription_sc
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
+import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
@@ -46,6 +56,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
+      final isSignupRoute = path == '/register';
+      final isOtpRoute = path == '/login/otp';
       final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated && (isPatientRoute || isAdminRoute)) {
@@ -63,8 +75,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isCredentialRoute && !session.requiresCredentialChange) {
         return '/patient/home';
       }
-      if (isLoginRoute && session.isPatient) return '/patient/home';
-      if (isLoginRoute && session.isSuperAdmin) return '/admin/dashboard';
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isPatient) {
+        return '/patient/home';
+      }
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) &&
+          session.isSuperAdmin) {
+        return '/admin/dashboard';
+      }
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isMember) {
+        return '/';
+      }
       if (path == '/' && session.isPatient) return '/patient/home';
       if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
       return null;
@@ -76,6 +96,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _SessionLanding(sessionState: sessionState),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const MemberSignUpScreen(),
+      ),
+      GoRoute(
+        path: '/login/otp',
+        builder: (context, state) => PublicOtpSignInScreen(
+          channel: state.uri.queryParameters['channel'] == 'phone'
+              ? PublicOtpChannel.phone
+              : PublicOtpChannel.email,
+        ),
+      ),
       GoRoute(
         path: '/prayer-times',
         builder: (context, state) => const PrayerTimesScreen(),
@@ -89,6 +121,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
       GoRoute(
         path: '/resources',
+        redirect: (context, state) {
+          final slug = state.uri.queryParameters['section'];
+          return resourceSectionBySlug(slug) == null
+              ? null
+              : '/resources/$slug';
+        },
         builder: (context, state) => ResourcesHomeScreen(
           initialSectionSlug: state.uri.queryParameters['section'],
         ),
@@ -131,6 +169,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
           ),
+          for (final slug in const [
+            'books-pdfs',
+            'articles-guides',
+            'audio',
+            'video',
+          ])
+            GoRoute(
+              path: slug,
+              builder: (context, state) =>
+                  ResourceCategoryScreen(section: resourceSectionBySlug(slug)!),
+            ),
           GoRoute(
             path: ':resourceId',
             builder: (context, state) => ResourceDetailScreen(
@@ -141,6 +190,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/patient/home',
+        builder: (context, state) => UnifiedHomeScreen(
+          isPatient: true,
+          displayName: _patientSession(session)?.displayName,
+        ),
+      ),
+      GoRoute(
+        path: '/patient/today',
         builder: (context, state) => PatientHomeScreen(
           displayName: _patientSession(session)?.displayName,
         ),
@@ -156,13 +212,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patient/resources',
         builder: (context, state) => PatientScaffold(
-          title: 'Islamic Resources',
+          title: 'ইসলামিক পাঠ ও অডিও',
           selectedIndex: 2,
           body: ResourcesHomeScreen(
             initialSectionSlug: state.uri.queryParameters['section'],
             embedded: true,
           ),
         ),
+      ),
+      GoRoute(
+        path: '/patient/notifications',
+        builder: (context, state) => const PatientNotificationsScreen(),
       ),
       GoRoute(
         path: '/patient/progress',
@@ -235,6 +295,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       planId: state.pathParameters['planId']!,
                       prescriptionId:
                           state.uri.queryParameters['prescriptionId'] ?? '',
+                      initialSeed: state.extra is AiActionReviewSeed
+                          ? state.extra! as AiActionReviewSeed
+                          : null,
                     ),
                   ),
                   GoRoute(
@@ -266,7 +329,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'new',
-            builder: (context, state) => const AdminContentEditorScreen(),
+            builder: (context, state) => AdminContentEditorScreen(
+              initialKind: state.extra is AdminResourceKind
+                  ? state.extra! as AdminResourceKind
+                  : null,
+            ),
           ),
           GoRoute(
             path: ':contentItemId/preview',
@@ -285,9 +352,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('Page unavailable')),
-      body: AppErrorState(
-        message: state.error?.toString() ?? 'Page not found.',
-      ),
+      body: AppErrorState(message: FriendlyFailures.generic(context)),
     ),
   );
 });
@@ -306,7 +371,9 @@ class _SessionLanding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return sessionState.when(
-      data: (_) => const GuestHomeScreen(),
+      data: (session) => session.isMember
+          ? MemberHomeScreen(displayName: session.displayName)
+          : const GuestHomeScreen(),
       loading: () => const SukunLaunchScreen(),
       error: (error, stackTrace) => const Scaffold(
         body: AppErrorState(

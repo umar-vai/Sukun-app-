@@ -16,6 +16,12 @@ final class UnavailableAiActionsRepository implements AiActionsRepository {
   const UnavailableAiActionsRepository();
 
   @override
+  Future<AiActionReviewSeed?> loadStoredActions({
+    required String prescriptionId,
+    required String carePlanId,
+  }) async => null;
+
+  @override
   Future<AiActionGenerationResult> generateActions({
     required String prescriptionId,
     required String carePlanId,

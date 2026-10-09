@@ -16,6 +16,28 @@ abstract final class AppEnvironment {
     'SUPABASE_PUBLISHABLE_KEY',
     defaultValue: String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
+  // Off until member-role migrations, email confirmation and abuse protection
+  // are verified in a controlled environment.
+  static const publicMemberSignupEnabled = bool.fromEnvironment(
+    'ENABLE_MEMBER_SIGNUP',
+    defaultValue: false,
+  );
+
+  // Off until OAuth consent, OTP providers, rate limits, and staging QA pass.
+  static const emailOtpEnabled = bool.fromEnvironment(
+    'ENABLE_EMAIL_OTP',
+    defaultValue: false,
+  );
+  static const phoneOtpEnabled = bool.fromEnvironment(
+    'ENABLE_PHONE_OTP',
+    defaultValue: false,
+  );
+  static const googleOAuthEnabled = bool.fromEnvironment(
+    'ENABLE_GOOGLE_OAUTH',
+    defaultValue: false,
+  );
+  static const mobileAuthRedirectUrl = 'com.sukunlife.app://login-callback';
+
   static const firebaseProjectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
   );
@@ -145,7 +167,7 @@ void validateSupabaseRuntimeConfiguration({
     );
   }
   if (!hasUrl) {
-    if (environment == 'production') {
+    if (environment == 'staging' || environment == 'production') {
       throw StateError(
         'Production Supabase runtime configuration is required.',
       );
