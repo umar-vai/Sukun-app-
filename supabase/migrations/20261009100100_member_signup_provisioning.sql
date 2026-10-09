@@ -10,7 +10,9 @@ as $$
 begin
   insert into public.profiles (id, locale, requires_credential_change)
   values (new.id, 'bn', false)
-  on conflict (id) do nothing;
+  on conflict (id) do update
+  set locale = 'bn'
+  where public.profiles.locale = 'en';
 
   insert into public.user_roles (user_id, role, granted_by)
   values (new.id, 'member'::public.app_role, null)
