@@ -25,3 +25,11 @@
   role credentials in Flutter.
 - Test realistic two-raqi, two-support, same-patient revocation scenarios,
   verify backups before any production migration.
+
+## Specific staging acceptance gates
+- One admin adds a Raqi, one Support Staff member and two patient links.
+- Neither staff user can list `public.patients` or `public.prescriptions`.
+- Removing an assignment or its staff role immediately blocks subsequent
+  assignment reads under RLS, regardless of a cached app session.
+- A staff member who has signed in can only use the public home until
+  purpose-built and field-scoped patient APIs are separately approved.
