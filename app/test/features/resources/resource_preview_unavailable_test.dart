@@ -32,7 +32,7 @@ void main() {
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('backend-free resource hub keeps categories and explains search', (
+  testWidgets('guest resource hub explains missing backend', (
     tester,
   ) async {
     await tester.pumpWidget(
