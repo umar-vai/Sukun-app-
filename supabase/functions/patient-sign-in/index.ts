@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { parsePatientSignInInput } from "./validation.ts";
 import { createInternalPatientEmail } from "./auth-identity.ts";
+import { readLimitedJson } from "./request-body.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,8 +33,11 @@ Deno.serve(async (request) => {
 
   let input;
   try {
-    input = parsePatientSignInInput(await request.json());
+    input = parsePatientSignInInput(await readLimitedJson(request));
   } catch (error) {
+    if (error instanceof Error && error.message === "request_too_large") {
+      return response({ code: "request_too_large", message: "Request is too large." }, 413);
+    }
     return response({
       code: "invalid_input",
       message: error instanceof Error ? error.message : "Invalid request.",
