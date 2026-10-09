@@ -50,9 +50,9 @@ class _ResourceCategoryScreenState
       );
 
   Future<void> _refresh() async {
-    if (ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository) {
-      return;
-    }
+    final backendUnavailable =
+        ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    if (backendUnavailable) return;
     _debounce?.cancel();
     final next = _load();
     setState(() => _resources = next);
@@ -99,8 +99,8 @@ class _ResourceCategoryScreenState
   @override
   Widget build(BuildContext context) {
     final section = widget.section;
-    final backendUnavailable =
-        ref.watch(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    final repository = ref.watch(resourcesRepositoryProvider);
+    final backendUnavailable = repository is UnavailableResourcesRepository;
     return Scaffold(
       appBar: AppBar(title: Text(section.titleBn)),
       body: SafeArea(
@@ -146,7 +146,8 @@ class _ResourceCategoryScreenState
                       title: 'এই প্রিভিউতে ${section.titleBn} এখনো উপলব্ধ নয়',
                       message:
                           'এই ওয়েব প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
-                          'নিরাপদ স্টেজিং সার্ভার সংযুক্ত হলে প্রকাশিত উপকরণ দেখা যাবে।',
+                          'নিরাপদ স্টেজিং সার্ভার সংযুক্ত হলে '
+                          'প্রকাশিত উপকরণ দেখা যাবে।',
                     )
                   : FutureBuilder<List<ContentResource>>(
                 future: _resources,
