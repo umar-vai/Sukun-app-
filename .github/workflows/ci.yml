@@ -136,6 +136,48 @@ jobs:
             exit 1
           fi
 
+  staged-auth-limiter:
+    name: Auth / Staged SQL Lockout Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check staged limiter using disposable PostgreSQL
+        shell: bash
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "create role anon nologin;" \
+            -c "create role authenticated nologin;" \
+            -c "create role service_role nologin;"
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f docs/security/patient_sign_in_rate_limit_staging.sql
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f docs/security/patient_sign_in_rate_limit_verify.sql
+
   database-security:
     name: Database / Supabase RLS Tests
     runs-on: ubuntu-latest
