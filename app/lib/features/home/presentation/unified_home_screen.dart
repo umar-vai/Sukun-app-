@@ -264,9 +264,11 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
             label: 'পাঠ ও অডিও',
           ),
           NavigationDestination(
-            icon: Icon(widget.isSignedInMember
-                ? Icons.logout_outlined
-                : Icons.login_outlined),
+            icon: Icon(
+              widget.isSignedInMember
+                  ? Icons.logout_outlined
+                  : Icons.login_outlined,
+            ),
             label: widget.isSignedInMember ? 'লগআউট' : 'লগইন',
           ),
         ],

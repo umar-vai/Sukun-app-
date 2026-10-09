@@ -11,8 +11,7 @@ class MemberSignUpScreen extends ConsumerStatefulWidget {
   const MemberSignUpScreen({super.key});
 
   @override
-  ConsumerState<MemberSignUpScreen> createState() =>
-      _MemberSignUpScreenState();
+  ConsumerState<MemberSignUpScreen> createState() => _MemberSignUpScreenState();
 }
 
 class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
@@ -39,10 +38,12 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await ref.read(memberRegistrationRepositoryProvider).registerWithEmail(
-        email: _email.text.trim(),
-        password: _password.text,
-      );
+      await ref
+          .read(memberRegistrationRepositoryProvider)
+          .registerWithEmail(
+            email: _email.text.trim(),
+            password: _password.text,
+          );
       if (mounted) setState(() => _submitted = true);
     } catch (_) {
       if (!mounted) return;
@@ -129,8 +130,8 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                           ),
                           validator: (value) =>
                               validateAccountPassword(value) == null
-                                  ? null
-                                  : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
+                              ? null
+                              : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -151,7 +152,8 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                         ),
                         const SizedBox(height: 20),
                         FilledButton(
-                          onPressed: !AppEnvironment.isSupabaseConfigured ||
+                          onPressed:
+                              !AppEnvironment.isSupabaseConfigured ||
                                   !AppEnvironment.publicMemberSignupEnabled ||
                                   _submitting
                               ? null
@@ -172,7 +174,9 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: () => context.go('/login'),
-                          child: const Text('আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন'),
+                          child: const Text(
+                            'আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন',
+                          ),
                         ),
                       ],
                     ),
