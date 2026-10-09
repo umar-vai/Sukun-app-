@@ -3,7 +3,7 @@
 ## Deployment target and separation
 
 - Source: `umar-vai/Sukun-app-` (the **existing application repository**, not a new demo repository).
-- This repository reports GitHub Pages support (`has_pages=true`). The actual live Pages URL and hosting source MUST be confirmed through GitHub's Settings → Pages and a successful deployment; never treat a guessed `github.io` address as verified.
+- This repository reports GitHub Pages support (`has_pages=true`). The workflow reads the Pages site's exact `base_path` using `actions/configure-pages@v5`. The live URL and hosting source must still be confirmed through Settings → Pages and a successful deployment; never treat a guessed `github.io` address as verified.
 - `umar-vai/Sukun-landing-` is a separate campaign landing page; do not overwrite it.
 - `sukunlife.com`, the existing dashboard, and `app.sukunlife.com` are NOT deployment targets.
 - There is no automatic Android APK/AAB/IPA build.
@@ -36,7 +36,6 @@ Create *only after a separate, isolated Supabase staging project is approved and
 | `SUKUN_PREVIEW_SUPABASE_PROJECT_REF` | Verified **staging** Supabase project ref, never production |
 | `SUKUN_PREVIEW_SUPABASE_URL` | `https://<staging-ref>.supabase.co` |
 | `SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY` | Public staging `sb_publishable_...` key, **not** service role |
-| `SUKUN_PREVIEW_BASE_HREF` | Optional Pages asset base, e.g. `/Sukun-app-/`, verified against the actual Pages URL |
 
 Do **not** add service-role keys, JWT secrets, Gemini credentials, patient passwords, or production access tokens as Web build variables. The release workflow checks variable completeness and exact ref/URL matching and rejects the known production project ref `vydfafumxptanpkmtrpr`. Never use live patient accounts or data on public Pages.
 
