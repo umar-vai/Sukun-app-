@@ -31,7 +31,10 @@ void main() {
 
     if (kIsWeb) {
       expect(find.text('ব্রাউজারে অডিও'), findsOneWidget);
-      expect(find.textContaining('ব্রাউজারের নিয়মের ওপর নির্ভর করে'), findsOneWidget);
+      expect(
+        find.textContaining('ব্রাউজারের নিয়মের ওপর নির্ভর করে'),
+        findsOneWidget,
+      );
       expect(find.text('পেছনেও চলবে'), findsNothing);
       expect(find.textContaining('ফোনের লকস্ক্রিন'), findsNothing);
     } else {
