@@ -131,7 +131,26 @@ jobs:
             "$(git rev-parse HEAD)" "${{ steps.preview-config.outputs.backend_mode }}" \
             > build/web/preview-build.json
 
-      - name: Upload Web artifact for CI inspection
+      - name: Preserve existing /prelaunch content in the SAME Pages site
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v5
+        with:
+          ref: gh-pages
+          path: existing-pages
+
+      - name: Assemble Pages bundle without deleting historical prelaunch
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d existing-pages/prelaunch ]; then
+            mkdir -p app/build/web/prelaunch
+            cp -a existing-pages/prelaunch/. app/build/web/prelaunch/
+          fi
+          touch app/build/web/.nojekyll
+          test -s app/build/web/preview-build.json
+
+      - name: Upload Flutter Web artifact for review
         uses: actions/upload-artifact@v4
         with:
           name: sukun-flutter-web-preview
@@ -139,9 +158,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Upload official Pages artifact after successful main CI
+        if: github.event_name == 'workflow_run'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web/
 
   deploy-pages:
-    name: Publish to existing gh-pages branch after approved green CI
+    name: Deploy existing Pages URL using supported GitHub Actions
     needs: build-web
     if: >-
       github.event_name == 'workflow_run' &&
@@ -150,85 +174,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions:
-      contents: write
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     concurrency:
-      group: sukun-existing-gh-pages
+      group: sukun-existing-pages-deployment
       cancel-in-progress: false
     steps:
-      - name: Checkout existing Pages publishing branch
-        uses: actions/checkout@v5
-        with:
-          ref: gh-pages
-          fetch-depth: 0
-          persist-credentials: true
+      - name: Deploy approved tested Flutter bundle to SAME Pages URL
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-      - name: Download exact Flutter Web artifact from this workflow
-        uses: actions/download-artifact@v4
-        with:
-          name: sukun-flutter-web-preview
-          path: ${{ runner.temp }}/sukun-tested-web
-
-      - name: Verify commit marker and recheck current main
+      - name: Confirm HTTP serves the exact successful main SHA
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
-          BUILD_DIR: ${{ runner.temp }}/sukun-tested-web
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          test "$(git rev-parse origin/main)" = "$EXPECTED_SHA"
-          test -s "$BUILD_DIR/index.html"
-          test -s "$BUILD_DIR/flutter_bootstrap.js"
-          test -s "$BUILD_DIR/main.dart.js"
-          test -s "$BUILD_DIR/preview-build.json"
-          grep -Fq "$EXPECTED_SHA" "$BUILD_DIR/preview-build.json"
-          # The Flutter application intentionally contains the known production
-          # project reference solely for blocking unsafe configurations. Its
-          # presence as a static comparison is NOT a live backend connection.
-          # The build-time staging-ref checks and the Dart startup guard are
-          # responsible for enforcing isolation.
-
-      - name: Update Pages ROOT only; preserve existing prelaunch subtree
-        shell: bash
-        env:
-          BUILD_DIR: ${{ runner.temp }}/sukun-tested-web
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name prelaunch -exec rm -rf {} +
-          cp -a "$BUILD_DIR/." .
-          touch .nojekyll
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "ci(pages): publish validated Flutter Web $EXPECTED_SHA"
-            git push origin HEAD:gh-pages
-          else
-            echo 'Published artifact already matches Pages branch.'
-          fi
-
-      - name: Smoke-check existing GitHub Pages URL and deployed commit
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
-          PUBLIC_URL: ${{ vars.SUKUN_PREVIEW_PUBLIC_URL }}
-          GH_OWNER: ${{ github.repository_owner }}
-          GH_REPO: ${{ github.event.repository.name }}
-        run: |
-          set -euo pipefail
-          base="${PUBLIC_URL:-https://${GH_OWNER}.github.io/${GH_REPO}/}"
-          base="${base%/}"
+          base="${PAGE_URL%/}"
           for attempt in {1..12}; do
             if curl -fsSL "$base/preview-build.json" | grep -Fq "$EXPECTED_SHA" &&
                curl -fsSL "$base/index.html" >/dev/null &&
                curl -fsSL "$base/flutter_bootstrap.js" >/dev/null; then
-              echo "Pages HTML, bootstrap and exact commit marker verified at $base/"
+              echo "GitHub Pages delivered expected Flutter commit $EXPECTED_SHA at $base/"
               exit 0
             fi
             sleep 10
           done
-          echo 'Pages smoke test FAILED; commit pushed but website not verified.' >&2
+          echo 'Pages artifact deployed but expected commit not served by HTTP.' >&2
           exit 1
