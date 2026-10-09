@@ -31,6 +31,8 @@ void validateWebPreviewConfiguration({
   final host = Uri.parse(url).host;
   if (!host.endsWith('.supabase.co') ||
       host == Uri.parse(AppEnvironment.productionSupabaseUrl).host) {
-    throw StateError('Web preview must use an isolated Supabase staging project.');
+    throw StateError(
+      'Web preview must use an isolated Supabase staging project.',
+    );
   }
 }
