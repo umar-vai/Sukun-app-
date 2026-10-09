@@ -48,6 +48,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   }
 
   Future<List<ContentResource>> _load() {
+    if (ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository) {
+      return Future.value(const <ContentResource>[]);
+    }
     final query = _searchController.text.trim();
     // The hub is category navigation only; never load the entire catalog.
     // Matching items appear only after the user actively searches.
@@ -109,7 +112,10 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasSearch = _searchController.text.trim().isNotEmpty;
+    final backendUnavailable =
+        ref.watch(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    final hasSearch =
+        !backendUnavailable && _searchController.text.trim().isNotEmpty;
     final content = RefreshIndicator(
       onRefresh: _refresh,
       child: CustomScrollView(
@@ -128,16 +134,39 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SukunSearchField(
-                  controller: _searchController,
-                  hintText: 'নাম বা বিষয় লিখে খুঁজুন',
-                  onChanged: _scheduleSearch,
-                  onSubmitted: (_) => _refresh(),
-                  onClear: () {
-                    _searchController.clear();
-                    _refresh();
-                  },
-                ),
+                if (backendUnavailable)
+                  SukunSurface(
+                    tone: SukunSurfaceTone.soft,
+                    showBorder: false,
+                    padding: const EdgeInsets.all(14),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: SukunColors.deepTide,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'এই প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
+                            'নিরাপদ স্টেজিং চালু হলে অডিওসহ প্রকাশিত উপকরণ খুঁজতে পারবেন।',
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  SukunSearchField(
+                    controller: _searchController,
+                    hintText: 'নাম বা বিষয় লিখে খুঁজুন',
+                    onChanged: _scheduleSearch,
+                    onSubmitted: (_) => _refresh(),
+                    onClear: () {
+                      _searchController.clear();
+                      _refresh();
+                    },
+                  ),
                 const SizedBox(height: 22),
                 SukunSectionHeader(
                   title: 'বিষয় অনুযায়ী দেখুন',
