@@ -32,6 +32,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   final _searchController = TextEditingController();
   late Future<List<ContentResource>> _resources;
   Timer? _searchDebounce;
+  bool _searchPending = false;
 
   @override
   void initState() {
@@ -58,6 +59,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     _searchDebounce?.cancel();
     final future = _load();
     setState(() {
+      _searchPending = false;
       _resources = future;
     });
     try {
@@ -69,6 +71,12 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   void _scheduleSearch(String _) {
     _searchDebounce?.cancel();
+    if (_searchController.text.trim().isEmpty) {
+      _refresh();
+      return;
+    }
+    // Do not show results from the previous query while the user is typing.
+    setState(() => _searchPending = true);
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (!mounted) return;
       _refresh();
@@ -170,7 +178,14 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
               ],
             ),
           ),
-          if (hasSearch)
+          if (hasSearch && _searchPending)
+            const SliverToBoxAdapter(
+              child: SizedBox(
+                height: 160,
+                child: AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…'),
+              ),
+            )
+          else if (hasSearch)
             FutureBuilder<List<ContentResource>>(
               future: _resources,
               builder: (context, snapshot) {
