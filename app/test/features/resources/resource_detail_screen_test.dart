@@ -37,6 +37,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Arabic resource text fits a narrow scaled mobile viewport', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            const _FakeResourcesRepository(),
+          ),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: const ResourceDetailScreen(resourceId: 'resource-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ayatul Kursi'), findsOneWidget);
+    expect(find.byType(SelectableText), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('invalid media URLs never offer a misleading play button', (
     tester,
   ) async {

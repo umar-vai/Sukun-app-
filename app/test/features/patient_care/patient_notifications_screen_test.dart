@@ -80,6 +80,52 @@ void main() {
     expect(repository.openedIds, ['event-1']);
   });
 
+  testWidgets('notification cards fit a narrow phone with large Bangla text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final repository = _FakeInboxRepository()
+      ..messages = [
+        PatientInboxMessage(
+          id: 'narrow-1',
+          type: 'plan_updated',
+          scheduledAt: DateTime.utc(2026, 10, 9, 10),
+          opened: false,
+        ),
+        PatientInboxMessage(
+          id: 'narrow-2',
+          type: 'care_reminder',
+          scheduledAt: DateTime.utc(2026, 10, 9, 11),
+          opened: true,
+        ),
+      ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          notificationInboxRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: const PatientNotificationsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1টি নতুন বার্তা'), findsOneWidget);
+    expect(find.text('আপনার পরিকল্পনায় পরিবর্তন এসেছে'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('backend failure shows Bangla error without internals', (
     tester,
   ) async {
