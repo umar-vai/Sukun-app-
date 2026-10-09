@@ -1,0 +1,49 @@
+name: One-time member auth Dart formatting
+
+on:
+  push:
+    branches: [feat/member-auth-foundation-20261009]
+    paths:
+      - '.github/workflows/member-format-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: feat/member-auth-foundation-20261009
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Format member authentication changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format \
+            app/lib/core/auth/user_role.dart \
+            app/lib/core/auth/app_session.dart \
+            app/lib/core/auth/supabase_auth_repository.dart \
+            app/lib/core/auth/member_registration_repository.dart \
+            app/lib/core/config/app_environment.dart \
+            app/lib/app/router/app_router.dart \
+            app/lib/features/home/presentation/role_home_screens.dart \
+            app/lib/features/home/presentation/unified_home_screen.dart \
+            app/lib/features/auth/presentation/login_screen.dart \
+            app/lib/features/auth/presentation/member_signup_screen.dart \
+            app/lib/features/auth/domain/auth_inputs.dart \
+            app/test/core/auth/user_role_test.dart \
+            app/test/features/auth/member_signup_screen_test.dart
+          git diff --check
+          git add app/lib app/test
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(member): normalize Dart formatting before CI"
+          git push origin HEAD:feat/member-auth-foundation-20261009
