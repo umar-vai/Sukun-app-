@@ -16,6 +16,13 @@ abstract final class AppEnvironment {
     'SUPABASE_PUBLISHABLE_KEY',
     defaultValue: String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
+  // Off until member-role migrations, email confirmation and abuse protection
+  // are verified in a controlled environment.
+  static const publicMemberSignupEnabled = bool.fromEnvironment(
+    'ENABLE_MEMBER_SIGNUP',
+    defaultValue: false,
+  );
+
   static const firebaseProjectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
   );
