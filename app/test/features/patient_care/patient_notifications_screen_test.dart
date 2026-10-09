@@ -68,6 +68,16 @@ void main() {
 
     expect(repository.openedIds, ['event-1']);
     expect(find.text('Own patient plan'), findsOneWidget);
+
+    // The fake server deliberately keeps sending opened=false even after ack.
+    // Returning and refreshing must never reintroduce an unread badge.
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('0টি নতুন বার্তা'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('0টি নতুন বার্তা'), findsOneWidget);
+    expect(repository.openedIds, ['event-1']);
   });
 
   testWidgets('backend failure shows Bangla error without internals', (
