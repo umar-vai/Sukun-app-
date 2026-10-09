@@ -56,8 +56,22 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate browser platform files in CI only
-        run: flutter create --platforms web --project-name sukun_life .
+      - name: Reuse existing Web assets or generate missing platform scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f web/index.html ]; then
+            echo 'Using existing Flutter Web platform files.'
+          else
+            default_test_missing=0
+            if [ ! -f test/widget_test.dart ]; then default_test_missing=1; fi
+            flutter create --platforms web --project-name sukun_life .
+            if [ "$default_test_missing" -eq 1 ] &&
+               [ -f test/widget_test.dart ] &&
+               grep -Fq 'MyApp' test/widget_test.dart; then
+              rm test/widget_test.dart
+            fi
+          fi
 
       - name: Resolve Flutter dependencies
         run: flutter pub get
