@@ -299,7 +299,7 @@ class _SukunVideoBufferingBadge extends StatelessWidget {
 }
 
 class SukunVideoErrorOverlay extends StatelessWidget {
-  const SukunVideoErrorOverlay({required this.onRetry});
+  const SukunVideoErrorOverlay({required this.onRetry, super.key});
 
   final VoidCallback onRetry;
 
