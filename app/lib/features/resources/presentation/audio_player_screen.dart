@@ -30,9 +30,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   // A synchronously failing Future must never escape into the widget zone.
   Future<bool> _loadAudio() async {
     try {
-      await (widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load)(
-        widget.resource,
-      );
+      final loader =
+          widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load;
+      await loader(widget.resource);
       return true;
     } catch (_) {
       return false;
