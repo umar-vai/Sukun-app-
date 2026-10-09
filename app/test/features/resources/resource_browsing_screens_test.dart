@@ -81,6 +81,82 @@ void main() {
       expect(find.text('Qur’an 1:1'), findsOneWidget);
     },
   );
+
+  testWidgets('Hadith browsing reuses its requests on parent rebuild', (tester) async {
+    final repository = _TrackingBrowsingRepository();
+    await tester.pumpWidget(_testApp(const HadithBrowserScreen(), repository));
+    await tester.pumpAndSettle();
+    expect(repository.topicCalls, 1);
+    expect(repository.resourcePrefixes, [<String>{}]);
+
+    // Parent rebuilds (for example: theme or navigation updates) must not
+    // cause a new expensive resource query.
+    await tester.pumpWidget(_testApp(const HadithBrowserScreen(), repository));
+    await tester.pumpAndSettle();
+    expect(repository.topicCalls, 1);
+    expect(repository.resourcePrefixes.length, 1);
+
+    await tester.tap(find.text('আখলাক (1)'));
+    await tester.pumpAndSettle();
+    expect(repository.topicCalls, 1);
+    expect(repository.resourcePrefixes.last, {'hadith-character'});
+    expect(repository.resourcePrefixes.length, 2);
+
+    // Choosing the active filter is a no-op.
+    await tester.tap(find.text('আখলাক (1)'));
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.length, 2);
+  });
+
+  testWidgets('Dua browsing only reloads on filter changes', (tester) async {
+    final repository = _TrackingBrowsingRepository();
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+        repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes, [
+      {'dua-azkar'},
+    ]);
+
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+        repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.length, 1);
+
+    await tester.tap(find.text('সকালের আযকার'));
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.last, {'dua-azkar-morning'});
+    expect(repository.resourcePrefixes.length, 2);
+
+    await tester.tap(find.text('সকালের আযকার'));
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.length, 2);
+  });
+
+  testWidgets('failed resource load offers a working retry', (tester) async {
+    final repository = _TrackingBrowsingRepository(failFirstResource: true);
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
+        repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.length, 1);
+    expect(find.text('আবার চেষ্টা করুন'), findsOneWidget);
+
+    await tester.tap(find.text('আবার চেষ্টা করুন'));
+    await tester.pumpAndSettle();
+    expect(repository.resourcePrefixes.length, 2);
+    expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
+  });
 }
 
 Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
@@ -88,7 +164,7 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
   child: MaterialApp(home: home),
 );
 
-final class _BrowsingRepository implements ResourcesRepository {
+class _BrowsingRepository implements ResourcesRepository {
   const _BrowsingRepository();
 
   static const quran = ContentResource(
@@ -188,4 +264,42 @@ final class _BrowsingRepository implements ResourcesRepository {
 
   @override
   Future<ContentResource?> getResource(String resourceId) async => null;
+}
+
+class _TrackingBrowsingRepository extends _BrowsingRepository {
+  _TrackingBrowsingRepository({this.failFirstResource = false});
+
+  bool failFirstResource;
+  int topicCalls = 0;
+  final resourcePrefixes = <Set<String>>[];
+
+  @override
+  Future<List<ResourceTopic>> browseTopics({
+    required Set<String> types,
+    Set<String> categoryPrefixes = const {},
+  }) {
+    topicCalls++;
+    return super.browseTopics(
+      types: types,
+      categoryPrefixes: categoryPrefixes,
+    );
+  }
+
+  @override
+  Future<List<ContentResource>> browseResources({
+    String query = '',
+    Set<String> types = const {},
+    Set<String> categoryPrefixes = const {},
+  }) {
+    resourcePrefixes.add({...categoryPrefixes});
+    if (failFirstResource) {
+      failFirstResource = false;
+      return Future.error(StateError('Simulated network failure'));
+    }
+    return super.browseResources(
+      query: query,
+      types: types,
+      categoryPrefixes: categoryPrefixes,
+    );
+  }
 }
