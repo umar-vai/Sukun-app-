@@ -84,169 +84,226 @@ class _AdminContentListScreenState
         icon: const Icon(Icons.add),
         label: const Text('New resource'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Column(
-              children: [
-                const SukunPageIntro(
-                  eyebrow: 'Editorial workspace',
-                  title: 'Content library',
-                  subtitle: 'Add and review reusable resources through a simple guided workflow.',
-                ),
-                const SizedBox(height: 18),
-                SukunSearchField(
-                  controller: _searchController,
-                  hintText: 'Search resources by title',
-                  onSubmitted: (_) => _reload(),
-                  onClear: () {
-                    _searchController.clear();
-                    _reload();
-                  },
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _installTaxonomy,
-                  icon: const Icon(Icons.account_tree_outlined),
-                  label: const Text('Install approved taxonomy'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/admin/content/collections'),
-                  icon: const Icon(Icons.collections_bookmark_outlined),
-                  label: const Text('Ayat collections'),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
-            child: FutureBuilder<List<AdminContentItem>>(
-              future: _items,
-              builder: (context, snapshot) {
-                final items = snapshot.data ?? const <AdminContentItem>[];
-                const types = <(String, String, IconData)>[
-                  ('quran', 'Qur’an', Icons.auto_stories_outlined),
-                  ('hadith', 'Hadith', Icons.menu_book_outlined),
-                  ('dua', 'Dua & Azkar', Icons.volunteer_activism_outlined),
-                  ('ruqyah', 'Ruqyah', Icons.health_and_safety_outlined),
-                  ('audio', 'Audio', Icons.headphones_outlined),
-                  ('video', 'Video', Icons.play_circle_outline),
-                  ('book', 'Books & PDFs', Icons.picture_as_pdf_outlined),
-                  ('article', 'Articles', Icons.article_outlined),
-                ];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final refreshed = _load();
+          setState(() => _items = refreshed);
+          await refreshed;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Column(
                   children: [
-                    Text('Browse by category', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 10),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns = constraints.maxWidth >= 680 ? 4 : 2;
-                        final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
-                        return Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            for (final type in types)
-                              SizedBox(
-                                width: width,
-                                child: Semantics(
-                                  button: true,
-                                  selected: _type == type.$1,
-                                  child: SukunSurface(
-                                    padding: const EdgeInsets.all(12),
-                                    onTap: () => setState(() => _type = _type == type.$1 ? 'all' : type.$1),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Icon(type.$3, color: _type == type.$1 ? Theme.of(context).colorScheme.primary : SukunColors.deepTide),
-                                        const SizedBox(height: 7),
-                                        Text(type.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge),
-                                        Text('${items.where((item) => _matchesType(item.type, type.$1)).length} resources', style: Theme.of(context).textTheme.bodySmall),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        );
+                    const SukunPageIntro(
+                      eyebrow: 'Editorial workspace',
+                      title: 'Content library',
+                      subtitle: 'Add and review reusable resources through a simple guided workflow.',
+                    ),
+                    const SizedBox(height: 18),
+                    SukunSearchField(
+                      controller: _searchController,
+                      hintText: 'Search resources by title',
+                      onSubmitted: (_) => _reload(),
+                      onClear: () {
+                        _searchController.clear();
+                        _reload();
                       },
                     ),
-                    if (_type != 'all')
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: () => setState(() => _type = 'all'),
-                          icon: const Icon(Icons.close, size: 16),
-                          label: const Text('Show all categories'),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _installTaxonomy,
+                      icon: const Icon(Icons.account_tree_outlined),
+                      label: const Text('Install approved taxonomy'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          context.push('/admin/content/collections'),
+                      icon: const Icon(Icons.collections_bookmark_outlined),
+                      label: const Text('Ayat collections'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+                child: FutureBuilder<List<AdminContentItem>>(
+                  future: _items,
+                  builder: (context, snapshot) {
+                    final items = snapshot.data ?? const <AdminContentItem>[];
+                    const types = <(String, String, IconData)>[
+                      ('quran', 'Qur’an', Icons.auto_stories_outlined),
+                      ('hadith', 'Hadith', Icons.menu_book_outlined),
+                      ('dua', 'Dua & Azkar', Icons.volunteer_activism_outlined),
+                      ('ruqyah', 'Ruqyah', Icons.health_and_safety_outlined),
+                      ('audio', 'Audio', Icons.headphones_outlined),
+                      ('video', 'Video', Icons.play_circle_outline),
+                      ('book', 'Books & PDFs', Icons.picture_as_pdf_outlined),
+                      ('article', 'Articles', Icons.article_outlined),
+                    ];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Browse by category',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columns = constraints.maxWidth >= 680 ? 4 : 2;
+                            final width =
+                                (constraints.maxWidth - (columns - 1) * 10) /
+                                columns;
+                            return Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                for (final type in types)
+                                  SizedBox(
+                                    width: width,
+                                    child: Semantics(
+                                      button: true,
+                                      selected: _type == type.$1,
+                                      child: SukunSurface(
+                                        padding: const EdgeInsets.all(12),
+                                        onTap: () => setState(
+                                          () => _type = _type == type.$1
+                                              ? 'all'
+                                              : type.$1,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(
+                                              type.$3,
+                                              color: _type == type.$1
+                                                  ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                  : SukunColors.deepTide,
+                                            ),
+                                            const SizedBox(height: 7),
+                                            Text(
+                                              type.$2,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge,
+                                            ),
+                                            Text(
+                                              '${items.where((item) => _matchesType(item.type, type.$1)).length} resources',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        if (_type != 'all')
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () => setState(() => _type = 'all'),
+                              icon: const Icon(Icons.close, size: 16),
+                              label: const Text('Show all categories'),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 52,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
+                  ),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final status in const [
+                      'all',
+                      'draft',
+                      'review',
+                      'verified',
+                      'published',
+                      'archived',
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: SukunFilterPill(
+                          selected: _status == status,
+                          label: _display(status),
+                          onTap: () => setState(() => _status = status),
                         ),
                       ),
                   ],
-                );
-              },
+                ),
+              ),
             ),
-          ),
-          SizedBox(
-            height: 52,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final status in const [
-                  'all',
-                  'draft',
-                  'review',
-                  'verified',
-                  'published',
-                  'archived',
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: SukunFilterPill(
-                      selected: _status == status,
-                      label: _display(status),
-                      onTap: () => setState(() => _status = status),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<AdminContentItem>>(
+            FutureBuilder<List<AdminContentItem>>(
               future: _items,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoadingState(label: 'Loading content');
+                  return const SliverToBoxAdapter(
+                    child: AppLoadingState(label: 'Loading content'),
+                  );
                 }
                 if (snapshot.hasError) {
-                  return AppErrorState(
-                    message: snapshot.error.toString(),
-                    onRetry: _reload,
+                  return SliverToBoxAdapter(
+                    child: AppErrorState(
+                      message: snapshot.error.toString(),
+                      onRetry: _reload,
+                    ),
                   );
                 }
                 final items = (snapshot.data ?? const <AdminContentItem>[])
-                    .where((item) => (_status == 'all' || item.status == _status) && (_type == 'all' || _matchesType(item.type, _type)))
+                    .where(
+                      (item) =>
+                          (_status == 'all' || item.status == _status) &&
+                          (_type == 'all' || _matchesType(item.type, _type)),
+                    )
                     .toList(growable: false);
                 if (items.isEmpty) {
-                  return const AppEmptyState(
-                    icon: Icons.library_books_outlined,
-                    title: 'No content found',
-                    message: 'Create a resource or change the search filter.',
+                  return const SliverToBoxAdapter(
+                    child: AppEmptyState(
+                      icon: Icons.library_books_outlined,
+                      title: 'No content found',
+                      message: 'Create a resource or change the search filter.',
+                    ),
                   );
                 }
-                return RefreshIndicator(
-                  onRefresh: () async => _reload(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+                  sliver: SliverList.separated(
                     itemCount: items.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) =>
@@ -255,8 +312,8 @@ class _AdminContentListScreenState
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -314,12 +371,12 @@ class _ContentCard extends StatelessWidget {
 
 bool _matchesType(String itemType, String selectedType) =>
     selectedType == 'book'
-        ? const {'book', 'book_chapter', 'pdf'}.contains(itemType)
-        : selectedType == 'dua'
-            ? const {'dua', 'azkar', 'dua_azkar'}.contains(itemType)
-            : selectedType == 'article'
-                ? const {'article', 'guide'}.contains(itemType)
-                : itemType == selectedType;
+    ? const {'book', 'book_chapter', 'pdf'}.contains(itemType)
+    : selectedType == 'dua'
+    ? const {'dua', 'azkar', 'dua_azkar'}.contains(itemType)
+    : selectedType == 'article'
+    ? const {'article', 'guide'}.contains(itemType)
+    : itemType == selectedType;
 
 String _display(String value) => value
     .split('_')

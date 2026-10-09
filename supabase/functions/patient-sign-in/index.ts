@@ -37,7 +37,10 @@ Deno.serve(async (request) => {
     input = parsePatientSignInInput(await readLimitedJson(request));
   } catch (error) {
     if (error instanceof Error && error.message === "request_too_large") {
-      return response({ code: "request_too_large", message: "Request is too large." }, 413);
+      return response({
+        code: "request_too_large",
+        message: "Request is too large.",
+      }, 413);
     }
     return response({
       code: "invalid_input",
@@ -55,9 +58,15 @@ Deno.serve(async (request) => {
     // Fail closed when persistent abuse controls are not configured or available.
     // Keep this change undeployed until the SQL and trusted proxy header are verified.
     const rateSecret = requiredEnvironment("SIGN_IN_RATE_LIMIT_SECRET");
-    const ipHash = await hashedLimiterKey(rateSecret, "ip", trustedClientIp(request));
+    const ipHash = await hashedLimiterKey(
+      rateSecret,
+      "ip",
+      trustedClientIp(request),
+    );
     const identityHash = await hashedLimiterKey(
-      rateSecret, "identity", input.identifierKind + ":" + input.identifier,
+      rateSecret,
+      "identity",
+      input.identifierKind + ":" + input.identifier,
     );
     const { data: allowed, error: limiterError } = await adminClient.rpc(
       "check_patient_login_rate_limit",

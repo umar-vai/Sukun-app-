@@ -39,6 +39,12 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
+      - name: Report Dart formatting diff on failure
+        if: failure()
+        run: |
+          dart format lib/features/content_admin/presentation/admin_content_list_screen.dart
+          git diff -- lib/features/content_admin/presentation/admin_content_list_screen.dart
+
       - name: Analyze
         run: flutter analyze
 
@@ -123,12 +129,54 @@ jobs:
               else
                 deno test --allow-import "$test_file"
               fi
-            done < <(find "$dir" -type f -name '*_test.ts' -print0)
+            done < <(find "$dir" -type f \( -name '*_test.ts' -o -name '*.test.ts' \) -print0)
           done
           if [ "$found" -eq 0 ]; then
             echo 'No Edge Function tests found.' >&2
             exit 1
           fi
+
+  staged-auth-limiter:
+    name: Auth / Staged SQL Lockout Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check staged limiter using disposable PostgreSQL
+        shell: bash
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "create role anon nologin;" \
+            -c "create role authenticated nologin;" \
+            -c "create role service_role nologin;"
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f docs/security/patient_sign_in_rate_limit_staging.sql
+          psql -X -h 127.0.0.1 -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f docs/security/patient_sign_in_rate_limit_verify.sql
 
   database-security:
     name: Database / Supabase RLS Tests
@@ -155,6 +203,20 @@ jobs:
 
       - name: Lint local database
         run: supabase db lint --local
+
+      - name: Test staged patient sign-in limiter against isolated local PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          export PGPASSWORD=postgres
+          psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_staging.sql
+          psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_verify.sql
 
       - name: Stop local Supabase stack
         if: always()

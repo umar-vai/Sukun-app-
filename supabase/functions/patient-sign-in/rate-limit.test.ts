@@ -17,13 +17,20 @@ Deno.test("missing secret fails closed", async () => {
 
 Deno.test("only trusted proxy IP header is accepted", () => {
   const req = new Request("https://example.test", {
-    headers: {"cf-connecting-ip": "203.0.113.9", "x-forwarded-for": "10.0.0.1"},
+    headers: {
+      "cf-connecting-ip": "203.0.113.9",
+      "x-forwarded-for": "10.0.0.1",
+    },
   });
   assertEquals(trustedClientIp(req), "203.0.113.9");
   const forged = new Request("https://example.test", {
-    headers: {"x-forwarded-for": "203.0.113.9"},
+    headers: { "x-forwarded-for": "203.0.113.9" },
   });
   let rejected = false;
-  try { trustedClientIp(forged); } catch { rejected = true; }
+  try {
+    trustedClientIp(forged);
+  } catch {
+    rejected = true;
+  }
   assertEquals(rejected, true);
 });
