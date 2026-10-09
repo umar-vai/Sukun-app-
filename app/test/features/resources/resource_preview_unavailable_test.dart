@@ -14,9 +14,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          resourcesRepositoryProvider.overrideWithValue(unavailable),
-        ],
+        overrides: [resourcesRepositoryProvider.overrideWithValue(unavailable)],
         child: MaterialApp(
           home: ResourceCategoryScreen(
             section: resourceSectionBySlug('audio')!,
@@ -32,14 +30,10 @@ void main() {
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('guest resource hub explains missing backend', (
-    tester,
-  ) async {
+  testWidgets('guest resource hub explains missing backend', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          resourcesRepositoryProvider.overrideWithValue(unavailable),
-        ],
+        overrides: [resourcesRepositoryProvider.overrideWithValue(unavailable)],
         child: const MaterialApp(home: ResourcesHomeScreen()),
       ),
     );
