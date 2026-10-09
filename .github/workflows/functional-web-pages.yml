@@ -77,6 +77,10 @@ jobs:
       - name: Resolve Flutter dependencies
         run: flutter pub get
 
+      - name: Check isolated staging API gate syntax
+        shell: bash
+        run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
+
       - name: Validate full Flutter source and browser-compatible tests
         run: |
           dart format --output=none --set-exit-if-changed lib test
@@ -173,6 +177,17 @@ jobs:
           echo "ENABLE_PHONE_OTP=$phone_otp" >> "$GITHUB_ENV"
           echo "ENABLE_GOOGLE_OAUTH=$google_oauth" >> "$GITHUB_ENV"
           echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
+
+      - name: Verify anonymous staging API isolation (live backend only)
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$APP_ENVIRONMENT" == "staging" ]]; then
+            bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
+          else
+            echo "Guest-only preview: no backend exposure to test."
+          fi
 
       - name: Build role-aware Flutter Web (staging or guest-safe fallback)
         shell: bash
