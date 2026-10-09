@@ -5,6 +5,7 @@ on:
     branches: [main, feat/otp-google-auth-gates-20261009]
     paths:
       - 'app/**'
+      - 'supabase/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/functional-web-pages.yml'
   workflow_run:
@@ -81,6 +82,9 @@ jobs:
           dart format --output=none --set-exit-if-changed lib test
           flutter analyze
           flutter test
+
+      - name: Browser-platform isolation regression (Chrome)
+        run: flutter test --platform chrome test/core/config/web_preview_config_test.dart
 
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
@@ -223,3 +227,66 @@ jobs:
           done
           echo 'Pages artifact deployed but expected commit not served by HTTP.' >&2
           exit 1
+
+  local-backend-security:
+    name: Free local Supabase migrations + RLS isolation
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR code
+        uses: actions/checkout@v5
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start disposable local backend
+        run: supabase start
+      - name: Apply repository migrations to disposable backend
+        run: supabase db reset
+      - name: Test auth/member/patient isolation and database policies
+        run: supabase test db
+      - name: Lint local RLS and SQL
+        run: supabase db lint --local
+      - name: Stop disposable backend without retaining test patients
+        if: always()
+        run: supabase stop --no-backup
+
+  local-edge-security:
+    name: Free local Edge Function checks
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Edge source formatting
+        run: deno fmt --check supabase/functions
+      - name: Check Edge modules and their tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for dir in supabase/functions/*; do
+            [ -f "$dir/index.ts" ] || continue
+            if [ -f "$dir/deno.json" ]; then
+              deno check --allow-import --config "$dir/deno.json" "$dir/index.ts"
+            else
+              deno check --allow-import "$dir/index.ts"
+            fi
+            while IFS= read -r -d '' file; do
+              found=1
+              if [ -f "$dir/deno.json" ]; then
+                deno test --allow-import --config "$dir/deno.json" "$file"
+              else
+                deno test --allow-import "$file"
+              fi
+            done < <(find "$dir" -type f \( -name '*_test.ts' -o -name '*.test.ts' \) -print0)
+          done
+          test "$found" -eq 1
