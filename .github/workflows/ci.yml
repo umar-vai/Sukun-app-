@@ -46,71 +46,28 @@ jobs:
         run: flutter test
 
   web-preview-build:
-    name: Flutter / Web Preview Build
+    name: Flutter / Backend-free Web Build
+    needs: flutter-quality
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: flutter-quality
-    permissions:
-      contents: read
     defaults:
       run:
         working-directory: app
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.6'
           channel: stable
           cache: true
-
       - name: Resolve dependencies
         run: flutter pub get
-
-      - name: Build web preview
+      - name: Build actual Flutter Web app without production connectivity
         run: >
           flutter build web --release
+          --target lib/main_web.dart
           --base-href /Sukun-app-/
-          --dart-define=APP_ENVIRONMENT=development
-          --dart-define=SUPABASE_URL=https://vydfafumxptanpkmtrpr.supabase.co
-          --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
-
-
-  android-debug-build:
-    name: Flutter / Android Debug Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: flutter-quality
-    defaults:
-      run:
-        working-directory: app
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.6'
-          channel: stable
-          cache: true
-
-      - name: Resolve dependencies
-        run: flutter pub get
-
-      - name: Build debug APK
-        run: flutter build apk --debug
+          --dart-define=APP_ENVIRONMENT=local
 
   edge-functions:
     name: Backend / Edge Functions
