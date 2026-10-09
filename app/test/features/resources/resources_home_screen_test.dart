@@ -74,9 +74,9 @@ void main() {
     expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
   });
 
-  testWidgets('new search text hides stale previous query results immediately', (
-    tester,
-  ) async {
+  testWidgets(
+    'new search text hides stale previous query results immediately',
+    (tester) async {
     final repository = _FakeResourcesRepository();
     await tester.pumpWidget(
       ProviderScope(
