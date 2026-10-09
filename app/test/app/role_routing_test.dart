@@ -31,32 +31,35 @@ void main() {
     expect(find.text('Today'), findsNothing);
   });
 
-  testWidgets('raqi and support accounts stay in public UI without clinical data', (tester) async {
-    for (final role in [UserRole.raqi, UserRole.supportStaff]) {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            appSessionProvider.overrideWith(
-              (ref) => Stream.value(
-                AppSession(
-                  role: role,
-                  userId: 'assigned-staff-user',
-                  displayName: 'Staff',
+  testWidgets(
+    'raqi and support accounts stay in public UI without clinical data',
+    (tester) async {
+      for (final role in [UserRole.raqi, UserRole.supportStaff]) {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appSessionProvider.overrideWith(
+                (ref) => Stream.value(
+                  AppSession(
+                    role: role,
+                    userId: 'assigned-staff-user',
+                    displayName: 'Staff',
+                  ),
                 ),
               ),
-            ),
-          ],
-          child: const SukunLifeApp(),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
-      expect(find.text('লগআউট'), findsWidgets);
-      expect(find.text('Admin Dashboard'), findsNothing);
-      expect(find.text('আজকের কাজ'), findsNothing);
-      await tester.pumpWidget(const SizedBox.shrink());
-    }
-  });
+            ],
+            child: const SukunLifeApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
+        expect(find.text('লগআউট'), findsWidgets);
+        expect(find.text('Admin Dashboard'), findsNothing);
+        expect(find.text('আজকের কাজ'), findsNothing);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    },
+  );
 
   testWidgets('patient session is routed to patient home', (tester) async {
     await tester.pumpWidget(
