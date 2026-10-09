@@ -146,12 +146,16 @@ class _AdminContentListScreenState
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Browse by category', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Browse by category',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 10),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final columns = constraints.maxWidth >= 680 ? 4 : 2;
-                        final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
+                        final width =
+                            (constraints.maxWidth - (columns - 1) * 10) / columns;
                         return Wrap(
                           spacing: 10,
                           runSpacing: 10,
@@ -164,14 +168,31 @@ class _AdminContentListScreenState
                                   selected: _type == type.$1,
                                   child: SukunSurface(
                                     padding: const EdgeInsets.all(12),
-                                    onTap: () => setState(() => _type = _type == type.$1 ? 'all' : type.$1),
+                                    onTap: () => setState(
+                                      () => _type = _type == type.$1
+                                          ? 'all'
+                                          : type.$1,
+                                    ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Icon(type.$3, color: _type == type.$1 ? Theme.of(context).colorScheme.primary : SukunColors.deepTide),
+                                        Icon(
+                                          type.$3,
+                                          color: _type == type.$1
+                                              ? Theme.of(context).colorScheme.primary
+                                              : SukunColors.deepTide,
+                                        ),
                                         const SizedBox(height: 7),
-                                        Text(type.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge),
-                                        Text('${items.where((item) => _matchesType(item.type, type.$1)).length} resources', style: Theme.of(context).textTheme.bodySmall),
+                                        Text(
+                                          type.$2,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context).textTheme.labelLarge,
+                                        ),
+                                        Text(
+                                          '${items.where((item) => _matchesType(item.type, type.$1)).length} resources',
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -234,7 +255,11 @@ class _AdminContentListScreenState
                   );
                 }
                 final items = (snapshot.data ?? const <AdminContentItem>[])
-                    .where((item) => (_status == 'all' || item.status == _status) && (_type == 'all' || _matchesType(item.type, _type)))
+                    .where(
+                      (item) =>
+                          (_status == 'all' || item.status == _status) &&
+                          (_type == 'all' || _matchesType(item.type, _type)),
+                    )
                     .toList(growable: false);
                 if (items.isEmpty) {
                   return const AppEmptyState(
