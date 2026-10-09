@@ -61,6 +61,73 @@ void main() {
     expect(remote.submitted, isEmpty);
     expect(await store.readForUser('user-1'), hasLength(1));
   });
+  test('offline snooze followed by Done only replays the latest task event', () async {
+    final store = _MemoryCompletionQueueStore();
+    final remote = _FakeCompletionRemote()..retryableFailure = true;
+    final coordinator = TaskCompletionCoordinator(store: store, remote: remote);
+    final task = _task();
+    final occurredAt = DateTime.utc(2026, 10, 10, 7);
+
+    await coordinator.record(
+      userId: 'user-1',
+      task: task,
+      status: PatientTaskStatus.snoozed,
+      clientEventId: 'event-snooze',
+      occurredAt: occurredAt,
+      snoozedUntil: occurredAt.add(const Duration(minutes: 15)),
+    );
+    final updated = await coordinator.record(
+      userId: 'user-1',
+      task: task,
+      status: PatientTaskStatus.completed,
+      clientEventId: 'event-done',
+      occurredAt: occurredAt.add(const Duration(minutes: 2)),
+    );
+
+    expect(updated.status, PatientTaskStatus.completed);
+    expect(updated.isPendingSync, isTrue);
+    expect(
+      (await store.readForUser('user-1')).map((event) => event.clientEventId),
+      ['event-done'],
+    );
+    remote
+      ..submitted.clear()
+      ..retryableFailure = false;
+    await coordinator.flush('user-1');
+    expect(remote.submitted.map((event) => event.clientEventId), ['event-done']);
+    expect(await store.readForUser('user-1'), isEmpty);
+  });
+
+  test('same task identifier in a different patient queue is isolated', () async {
+    final store = _MemoryCompletionQueueStore();
+    final remote = _FakeCompletionRemote()..retryableFailure = true;
+    final coordinator = TaskCompletionCoordinator(store: store, remote: remote);
+    final task = _task();
+    final occurredAt = DateTime.utc(2026, 10, 10, 8);
+
+    for (final userId in ['user-1', 'user-2']) {
+      await coordinator.record(
+        userId: userId,
+        task: task,
+        status: PatientTaskStatus.snoozed,
+        clientEventId: 'event-$userId',
+        occurredAt: occurredAt,
+        snoozedUntil: occurredAt.add(const Duration(minutes: 15)),
+      );
+    }
+    expect(await store.readForUser('user-1'), hasLength(1));
+    expect(await store.readForUser('user-2'), hasLength(1));
+
+    remote
+      ..submitted.clear()
+      ..retryableFailure = false;
+    await coordinator.flush('user-1');
+
+    expect(remote.submitted.map((event) => event.userId), ['user-1']);
+    expect(await store.readForUser('user-1'), isEmpty);
+    expect(await store.readForUser('user-2'), hasLength(1));
+  });
+
 }
 
 PatientTask _task() {
@@ -102,13 +169,10 @@ final class _MemoryCompletionQueueStore implements CompletionQueueStore {
 
   @override
   Future<void> enqueue(PendingTaskCompletion event) async {
-    if (!events.any(
-      (item) =>
-          item.userId == event.userId &&
-          item.clientEventId == event.clientEventId,
-    )) {
-      events.add(event);
-    }
+    final next = stagePendingCompletion(events, event);
+    events
+      ..clear()
+      ..addAll(next);
   }
 
   @override
