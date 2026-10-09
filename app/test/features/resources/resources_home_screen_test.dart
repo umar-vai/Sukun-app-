@@ -73,6 +73,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
   });
+
+  testWidgets(
+    'new search text hides stale previous query results immediately',
+    (tester) async {
+      // Keep the search results below the category grid in the test viewport.
+      tester.view.physicalSize = const Size(390, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final repository = _FakeResourcesRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            resourcesRepositoryProvider.overrideWithValue(repository),
+          ],
+          child: const MaterialApp(home: ResourcesHomeScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'first search');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(repository.browseCalls, 1);
+      expect(find.text('Published resource'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'second search');
+      await tester.pump();
+      expect(repository.browseCalls, 1);
+      expect(find.text('Published resource'), findsNothing);
+      expect(find.text('অনুসন্ধান করা হচ্ছে…'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(repository.browseCalls, 2);
+      expect(repository.lastQuery, 'second search');
+      expect(find.text('Published resource'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      expect(find.text('Published resource'), findsNothing);
+      expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
+      expect(repository.browseCalls, 2);
+    },
+  );
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {

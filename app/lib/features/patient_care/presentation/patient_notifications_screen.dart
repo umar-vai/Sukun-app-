@@ -19,6 +19,7 @@ class PatientNotificationsScreen extends ConsumerStatefulWidget {
 class _PatientNotificationsScreenState
     extends ConsumerState<PatientNotificationsScreen> {
   late Future<List<PatientInboxMessage>> _messages;
+  final Set<String> _acknowledgedOpenedIds = {};
   String? _openingId;
 
   @override
@@ -27,8 +28,19 @@ class _PatientNotificationsScreenState
     _messages = _load();
   }
 
-  Future<List<PatientInboxMessage>> _load() =>
-      ref.read(notificationInboxRepositoryProvider).getRecentMessages();
+  Future<List<PatientInboxMessage>> _load() async {
+    final messages = await ref
+        .read(notificationInboxRepositoryProvider)
+        .getRecentMessages();
+    // A server read acknowledgment may be eventually consistent. Keep the
+    // current session's confirmed read state during a pull-to-refresh.
+    return [
+      for (final message in messages)
+        _acknowledgedOpenedIds.contains(message.id)
+            ? message.asOpened()
+            : message,
+    ];
+  }
 
   Future<void> _refresh() async {
     final future = _load();
@@ -50,6 +62,7 @@ class _PatientNotificationsScreenState
         await ref
             .read(notificationInboxRepositoryProvider)
             .markOpened(message.id);
+        _acknowledgedOpenedIds.add(message.id);
       }
       if (!mounted) return;
       final current = await _messages;
