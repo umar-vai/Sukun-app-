@@ -161,6 +161,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // The CMS header and category grid share one vertical scrollable with
+    // lazily built resource cards; scroll to the item before asserting.
+    await tester.scrollUntilVisible(
+      find.text('Ayatul Kursi'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Ayatul Kursi'), findsOneWidget);
     expect(find.text('Quran'), findsOneWidget);
     expect(find.text('Draft'), findsWidgets);
