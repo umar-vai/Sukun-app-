@@ -34,7 +34,11 @@ class _ResourceCategoryScreenState
   @override
   void initState() {
     super.initState();
-    _resources = _load();
+    final unavailable =
+        ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    _resources = unavailable
+        ? Future.value(const <ContentResource>[])
+        : _load();
   }
 
   Future<List<ContentResource>> _load() => ref
@@ -46,6 +50,9 @@ class _ResourceCategoryScreenState
       );
 
   Future<void> _refresh() async {
+    if (ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository) {
+      return;
+    }
     _debounce?.cancel();
     final next = _load();
     setState(() => _resources = next);
@@ -92,6 +99,8 @@ class _ResourceCategoryScreenState
   @override
   Widget build(BuildContext context) {
     final section = widget.section;
+    final backendUnavailable =
+        ref.watch(resourcesRepositoryProvider) is UnavailableResourcesRepository;
     return Scaffold(
       appBar: AppBar(title: Text(section.titleBn)),
       body: SafeArea(
@@ -114,22 +123,32 @@ class _ResourceCategoryScreenState
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  SukunSearchField(
-                    controller: _searchController,
-                    hintText: 'এই বিভাগে খুঁজুন',
-                    onChanged: _onSearch,
-                    onSubmitted: (_) => _refresh(),
-                    onClear: () {
-                      _searchController.clear();
-                      _refresh();
-                    },
-                  ),
+                  if (!backendUnavailable) ...[
+                    const SizedBox(height: 14),
+                    SukunSearchField(
+                      controller: _searchController,
+                      hintText: 'এই বিভাগে খুঁজুন',
+                      onChanged: _onSearch,
+                      onSubmitted: (_) => _refresh(),
+                      onClear: () {
+                        _searchController.clear();
+                        _refresh();
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
             Expanded(
-              child: FutureBuilder<List<ContentResource>>(
+              child: backendUnavailable
+                  ? AppEmptyState(
+                      icon: Icons.cloud_off_outlined,
+                      title: 'এই প্রিভিউতে ${section.titleBn} এখনো উপলব্ধ নয়',
+                      message:
+                          'এই ওয়েব প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
+                          'নিরাপদ স্টেজিং সার্ভার সংযুক্ত হলে প্রকাশিত উপকরণ দেখা যাবে।',
+                    )
+                  : FutureBuilder<List<ContentResource>>(
                 future: _resources,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
