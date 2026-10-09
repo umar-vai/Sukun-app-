@@ -23,6 +23,21 @@ abstract final class AppEnvironment {
     defaultValue: false,
   );
 
+  // Off until OAuth consent, OTP providers, rate limits, and staging QA pass.
+  static const emailOtpEnabled = bool.fromEnvironment(
+    'ENABLE_EMAIL_OTP',
+    defaultValue: false,
+  );
+  static const phoneOtpEnabled = bool.fromEnvironment(
+    'ENABLE_PHONE_OTP',
+    defaultValue: false,
+  );
+  static const googleOAuthEnabled = bool.fromEnvironment(
+    'ENABLE_GOOGLE_OAUTH',
+    defaultValue: false,
+  );
+  static const mobileAuthRedirectUrl = 'com.sukunlife.app://login-callback';
+
   static const firebaseProjectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
   );
