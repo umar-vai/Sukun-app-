@@ -77,6 +77,13 @@ void main() {
   testWidgets(
     'new search text hides stale previous query results immediately',
     (tester) async {
+      // Keep the search results below the category grid in the test viewport.
+      tester.view.physicalSize = const Size(390, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
       final repository = _FakeResourcesRepository();
       await tester.pumpWidget(
         ProviderScope(
