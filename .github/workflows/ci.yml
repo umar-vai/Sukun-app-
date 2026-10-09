@@ -123,7 +123,7 @@ jobs:
               else
                 deno test --allow-import "$test_file"
               fi
-            done < <(find "$dir" -type f -name '*_test.ts' -print0)
+            done < <(find "$dir" -type f \( -name '*_test.ts' -o -name '*.test.ts' \) -print0)
           done
           if [ "$found" -eq 0 ]; then
             echo 'No Edge Function tests found.' >&2
