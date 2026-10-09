@@ -128,6 +128,55 @@ void main() {
     expect(await store.readForUser('user-2'), hasLength(1));
   });
 
+  test('flush ignores a queued task event superseded during another upload', () async {
+    final store = _MemoryCompletionQueueStore();
+    final remote = _FakeCompletionRemote();
+    final coordinator = TaskCompletionCoordinator(store: store, remote: remote);
+    final when = DateTime.utc(2026, 10, 10, 9);
+
+    await store.enqueue(
+      PendingTaskCompletion(
+        userId: 'user-1',
+        taskId: 'task-1',
+        status: PatientTaskStatus.completed,
+        clientEventId: 'event-first',
+        occurredAt: when,
+      ),
+    );
+    await store.enqueue(
+      PendingTaskCompletion(
+        userId: 'user-1',
+        taskId: 'task-2',
+        status: PatientTaskStatus.snoozed,
+        clientEventId: 'event-stale',
+        occurredAt: when,
+        snoozedUntil: when.add(const Duration(minutes: 15)),
+      ),
+    );
+    remote.onSubmit = (event) async {
+      if (event.clientEventId == 'event-first') {
+        await store.enqueue(
+          PendingTaskCompletion(
+            userId: 'user-1',
+            taskId: 'task-2',
+            status: PatientTaskStatus.completed,
+            clientEventId: 'event-new',
+            occurredAt: when.add(const Duration(minutes: 2)),
+          ),
+        );
+      }
+    };
+
+    await coordinator.flush('user-1');
+    expect(remote.submitted.map((event) => event.clientEventId), [
+      'event-first',
+    ]);
+    expect(
+      (await store.readForUser('user-1')).map((event) => event.clientEventId),
+      ['event-new'],
+    );
+  });
+
 }
 
 PatientTask _task() {
@@ -153,11 +202,13 @@ PatientTask _task() {
 
 final class _FakeCompletionRemote implements TaskCompletionRemote {
   bool retryableFailure = false;
+  Future<void> Function(PendingTaskCompletion)? onSubmit;
   final List<PendingTaskCompletion> submitted = [];
 
   @override
   Future<void> submit(PendingTaskCompletion event) async {
     submitted.add(event);
+    await onSubmit?.call(event);
     if (retryableFailure) {
       throw const TaskCompletionSyncException('offline', retryable: true);
     }
