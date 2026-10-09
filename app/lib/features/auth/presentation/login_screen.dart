@@ -222,9 +222,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     OutlinedButton.icon(
                       onPressed: _googleStarting ? null : _signInGoogle,
                       icon: const Icon(Icons.login_rounded),
-                      label: Text(_googleStarting
-                          ? 'Google লগইন শুরু হচ্ছে…'
-                          : 'Google দিয়ে লগইন'),
+                      label: Text(
+                        _googleStarting
+                            ? 'Google লগইন শুরু হচ্ছে…'
+                            : 'Google দিয়ে লগইন',
+                      ),
                     ),
                   ],
                   const SizedBox(height: 12),

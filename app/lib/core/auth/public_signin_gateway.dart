@@ -7,8 +7,15 @@ enum PublicOtpChannel { email, phone }
 
 /// No phone/email matching or client metadata may upgrade the account to patient.
 abstract interface class PublicSignInGateway {
-  Future<void> requestCode({required PublicOtpChannel channel, required String identifier});
-  Future<void> verifyCode({required PublicOtpChannel channel, required String identifier, required String code});
+  Future<void> requestCode({
+    required PublicOtpChannel channel,
+    required String identifier,
+  });
+  Future<void> verifyCode({
+    required PublicOtpChannel channel,
+    required String identifier,
+    required String code,
+  });
   Future<void> signInWithGoogle();
 }
 
@@ -20,13 +27,15 @@ final class SupabasePublicSignInGateway implements PublicSignInGateway {
   const SupabasePublicSignInGateway(this._client);
   final SupabaseClient _client;
 
-  bool _enabled(PublicOtpChannel channel) =>
-      channel == PublicOtpChannel.email
-          ? AppEnvironment.emailOtpEnabled
-          : AppEnvironment.phoneOtpEnabled;
+  bool _enabled(PublicOtpChannel channel) => channel == PublicOtpChannel.email
+      ? AppEnvironment.emailOtpEnabled
+      : AppEnvironment.phoneOtpEnabled;
 
   @override
-  Future<void> requestCode({required PublicOtpChannel channel, required String identifier}) async {
+  Future<void> requestCode({
+    required PublicOtpChannel channel,
+    required String identifier,
+  }) async {
     if (!_enabled(channel)) throw const PublicSignInException();
     try {
       if (channel == PublicOtpChannel.email) {
@@ -92,12 +101,17 @@ final class UnavailablePublicSignInGateway implements PublicSignInGateway {
   const UnavailablePublicSignInGateway();
 
   @override
-  Future<void> requestCode({required PublicOtpChannel channel, required String identifier}) async =>
-      throw const PublicSignInException();
+  Future<void> requestCode({
+    required PublicOtpChannel channel,
+    required String identifier,
+  }) async => throw const PublicSignInException();
 
   @override
-  Future<void> verifyCode({required PublicOtpChannel channel, required String identifier, required String code}) async =>
-      throw const PublicSignInException();
+  Future<void> verifyCode({
+    required PublicOtpChannel channel,
+    required String identifier,
+    required String code,
+  }) async => throw const PublicSignInException();
 
   @override
   Future<void> signInWithGoogle() async => throw const PublicSignInException();

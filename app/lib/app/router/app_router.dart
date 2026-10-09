@@ -78,10 +78,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isPatient) {
         return '/patient/home';
       }
-      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isSuperAdmin) {
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) &&
+          session.isSuperAdmin) {
         return '/admin/dashboard';
       }
-      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isMember) return '/';
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isMember)
+        return '/';
       if (path == '/' && session.isPatient) return '/patient/home';
       if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
       return null;

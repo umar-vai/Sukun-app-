@@ -2,7 +2,8 @@ import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
 
 String? validateOtpRecipient(String? value, PublicOtpChannel channel) {
-  if (channel == PublicOtpChannel.email) return validateRegistrationEmail(value);
+  if (channel == PublicOtpChannel.email)
+    return validateRegistrationEmail(value);
   final phone = value?.trim() ?? '';
   if (!RegExp(r'^\+[1-9][0-9]{7,14}$').hasMatch(phone)) {
     return 'দেশের কোডসহ ফোন নম্বর লিখুন (যেমন +8801XXXXXXXXX)।';
