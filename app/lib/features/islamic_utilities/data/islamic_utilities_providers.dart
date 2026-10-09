@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/features/islamic_utilities/data/compass_gateway.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
@@ -17,5 +18,7 @@ final prayerCalculationServiceProvider = Provider<PrayerCalculationService>(
 );
 
 final compassGatewayProvider = Provider<CompassGateway>(
-  (ref) => const FlutterCompassGateway(),
+  (ref) => kIsWeb
+      ? const UnavailableCompassGateway()
+      : const FlutterCompassGateway(),
 );

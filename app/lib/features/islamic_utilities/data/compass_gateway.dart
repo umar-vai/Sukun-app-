@@ -5,6 +5,22 @@ abstract interface class CompassGateway {
   Stream<CompassReading> readings();
 }
 
+/// Used by browsers and platforms without a compass plugin.
+///
+/// A calculated Qibla bearing still works. Never trigger an unsupported
+/// native sensor channel on Flutter Web.
+final class UnavailableCompassGateway implements CompassGateway {
+  const UnavailableCompassGateway();
+
+  @override
+  Stream<CompassReading> readings() => Stream.value(
+    const CompassReading(
+      heading: null,
+      calibrationState: CompassCalibrationState.unavailable,
+    ),
+  );
+}
+
 final class FlutterCompassGateway implements CompassGateway {
   const FlutterCompassGateway();
 
