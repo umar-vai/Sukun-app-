@@ -157,12 +157,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -d existing-pages/prelaunch ]; then
-            mkdir -p app/build/web/prelaunch
-            cp -a existing-pages/prelaunch/. app/build/web/prelaunch/
+          # Checkout paths are workspace-relative; shell steps run in app/.
+          # Preserve the unrelated historical preview exactly as it is.
+          if [ -d "$GITHUB_WORKSPACE/existing-pages/prelaunch" ]; then
+            mkdir -p build/web/prelaunch
+            cp -a "$GITHUB_WORKSPACE/existing-pages/prelaunch/." build/web/prelaunch/
           fi
-          touch app/build/web/.nojekyll
-          test -s app/build/web/preview-build.json
+          touch build/web/.nojekyll
+          test -s build/web/preview-build.json
 
       - name: Upload Flutter Web artifact for review
         uses: actions/upload-artifact@v4
