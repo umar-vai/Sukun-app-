@@ -58,10 +58,7 @@ final class SharedPreferencesPlaybackPositionStore
 
 /// The same CMS resource can receive a refreshed signed or corrected URL.
 /// Reusing a player by ID alone can keep the wrong audio or defeat retry.
-bool audioResourceNeedsReload(
-  LinkedResource? current,
-  LinkedResource next,
-) =>
+bool audioResourceNeedsReload(LinkedResource? current, LinkedResource next) =>
     current == null ||
     current.id != next.id ||
     current.mediaSourceType != next.mediaSourceType ||
