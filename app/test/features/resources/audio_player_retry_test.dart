@@ -31,10 +31,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: AudioPlayerScreen(
-          resource: first,
-          loadResource: unavailable,
-        ),
+        home: AudioPlayerScreen(resource: first, loadResource: unavailable),
       ),
     );
     await tester.pumpAndSettle();
@@ -60,20 +57,14 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: AudioPlayerScreen(
-          resource: first,
-          loadResource: unavailable,
-        ),
+        home: AudioPlayerScreen(resource: first, loadResource: unavailable),
       ),
     );
     await tester.pumpAndSettle();
 
     await tester.pumpWidget(
       MaterialApp(
-        home: AudioPlayerScreen(
-          resource: refreshed,
-          loadResource: unavailable,
-        ),
+        home: AudioPlayerScreen(resource: refreshed, loadResource: unavailable),
       ),
     );
     await tester.pumpAndSettle();
