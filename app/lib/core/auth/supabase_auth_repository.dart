@@ -33,6 +33,10 @@ final class SupabaseAuthRepository implements AuthRepository {
           ? UserRole.superAdmin
           : roles.contains(UserRole.patient)
           ? UserRole.patient
+          : roles.contains(UserRole.raqi)
+          ? UserRole.raqi
+          : roles.contains(UserRole.supportStaff)
+          ? UserRole.supportStaff
           : roles.contains(UserRole.member)
           ? UserRole.member
           : UserRole.guest;

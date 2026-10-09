@@ -21,6 +21,9 @@ class AppSession {
 
   bool get isAuthenticated => userId != null;
   bool get isMember => isAuthenticated && role == UserRole.member;
+  bool get isRaqi => role == UserRole.raqi;
+  bool get isSupportStaff => role == UserRole.supportStaff;
+  bool get isStaff => isRaqi || isSupportStaff;
   bool get isPatient => role == UserRole.patient;
   bool get isSuperAdmin => role == UserRole.superAdmin;
 }
