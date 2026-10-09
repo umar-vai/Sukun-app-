@@ -7,8 +7,7 @@ import 'package:sukun_life/core/config/app_environment.dart';
 // Never initialize Supabase, credentials, Firebase, or patient/admin sessions.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  if (AppEnvironment.isSupabaseConfigured ||
-      AppEnvironment.name != 'local') {
+  if (AppEnvironment.isSupabaseConfigured || AppEnvironment.name != 'local') {
     throw StateError('Web preview must not connect to a backend.');
   }
   runApp(const ProviderScope(child: SukunLifeApp()));
