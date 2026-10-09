@@ -1,28 +1,55 @@
-# Sukun Life — Browser Preview
+# Sukun Life — Functional Flutter Web Preview (web-first)
 
-## Current status
-The production project is a standalone **Flutter Android/iOS app**, not the existing Sukun Life website. Changes pushed to GitHub are **not** automatically published to `sukunlife.com`, the production Supabase Edge Functions, or Google Play.
+## Deployment target and separation
 
-## New preview CI
-`.github/workflows/guest-web-preview.yml` attempts to compile the real Flutter UI for the browser. The preview target is `app/lib/main_web_preview.dart`. It intentionally refuses Supabase configuration and uses the app's GuestAuthRepository. All server-side credentials, patient data, admin login, notifications and push integrations are absent.
+- Source: `umar-vai/Sukun-app-` (the **existing application repository**, not a new demo repository).
+- This repository reports GitHub Pages support (`has_pages=true`). The actual live Pages URL and hosting source MUST be confirmed through GitHub's Settings → Pages and a successful deployment; never treat a guessed `github.io` address as verified.
+- `umar-vai/Sukun-landing-` is a separate campaign landing page; do not overwrite it.
+- `sukunlife.com`, the existing dashboard, and `app.sukunlife.com` are NOT deployment targets.
+- There is no automatic Android APK/AAB/IPA build.
 
-Build outputs, if compilation succeeds, are published as the **GitHub Actions artifact** `sukun-guest-web-preview` for seven days. A build artifact is **not a live website URL**. This workflow does not deploy anything to GitHub Pages or change the existing public site.
+## What runs
 
-## What the guest preview can show
-- Real Flutter guest/public layout, brand, navigation, and screens that work without backend data.
-- UI code changes on future pushes after the pipeline is merged.
-- Device-width responsive layout in a browser, subject to browser-specific plugin behavior.
+The actual `SukunLifeApp` and `app_router.dart` run from `app/lib/main_web.dart`. That is not a separate mock application.
 
-## What it cannot verify
-- Patient ID sign-in, OTP, Google Sign-in, super-admin, patient-specific plan, or production notifications.
-- Live Supabase security changes, Edge Function deployment state, or iOS-native behavior.
-- Browser UX until a web build **and** browser smoke test pass.
+- **Without staging settings:** guest resources/navigation render where locally supported; login remains disabled; no production backend connection.
+- **With isolated staging settings:** the existing Supabase-backed Patient ID/phone sign-in, admin email sign-in, patient routes, and admin routes can be exercised with **synthetic staging users only**. This enables the real feature code; it does not automatically prove that browser interactions or RLS work.
+- General User self-registration is NOT YET IMPLEMENTED. No UI-only replacement is marketed as a real account.
+- Browser-native plugins (background audio, push, orientation/compass, offline and platform storage) need independent fallback/QA; the web bootstrap deliberately skips native background services.
 
-## Next gates before enabling a public preview domain
-1. Pass the web compilation job with no secrets or backend connection.
-2. Validate a browser smoke test: guest home renders; navigation and responsive widths work; unsupported mobile plugins don't crash bootstrap.
-3. Enable a **separate** GitHub Pages deployment (or independent hosting) that never targets the existing public website or internal dashboard. Confirm URL and access policy.
-4. Add a clearly labeled mock/demo-only Admin/Patient walkthrough using synthetic data if requested. Never expose real patient data or run production Auth from a public UI showcase.
-5. For an authenticated staging web app, provision a separate Supabase staging project, test CORS/OAuth redirect allowlists, and require approved access controls.
+## CI and deploy gate
 
-Until step 3 is verified, there is **no browser URL** that reflects all app updates. A website should not be advertised as live based only on a GitHub commit.
+1. Pull request: regular CI checks plus this workflow compiles and uploads the actual Flutter Web bundle as an artifact; never deploys PR source.
+2. On approved changes merged/pushed to `main`, `CI` must **pass**. The Web workflow's `workflow_run` only accepts a successful **push** run to main and checks that the tested SHA is still the current main HEAD.
+3. The Web workflow rebuilds the actual Flutter Web entrypoint, uploads its artifact, and deploys to **this repository's existing GitHub Pages** via `actions/deploy-pages@v4`.
+4. HTTP smoke checks request `index.html`, `flutter_bootstrap.js`, and `preview-build.json` from the deployed URL, requiring the **exact commit SHA** in the marker. This is NOT equivalent to browser role testing.
+5. Inspect Actions logs and actual `page_url` before reporting that the preview is live or browser verified. In Settings → Pages, GitHub Actions must be the configured build/deploy source.
+
+**Do not merge while checks fail or while Pages points at content that must not be overwritten.**
+
+## GitHub Actions repository variables (optional until staging ready)
+
+Create *only after a separate, isolated Supabase staging project is approved and provisioned*:
+
+| Variable | Value |
+|---|---|
+| `SUKUN_PREVIEW_SUPABASE_PROJECT_REF` | Verified **staging** Supabase project ref, never production |
+| `SUKUN_PREVIEW_SUPABASE_URL` | `https://<staging-ref>.supabase.co` |
+| `SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY` | Public staging `sb_publishable_...` key, **not** service role |
+| `SUKUN_PREVIEW_BASE_HREF` | Optional Pages asset base, e.g. `/Sukun-app-/`, verified against the actual Pages URL |
+
+Do **not** add service-role keys, JWT secrets, Gemini credentials, patient passwords, or production access tokens as Web build variables. The release workflow checks variable completeness and exact ref/URL matching and rejects the known production project ref `vydfafumxptanpkmtrpr`. Never use live patient accounts or data on public Pages.
+
+## Staging and auth acceptance gate
+
+Before calling the full authenticated preview ready:
+
+1. Staging project/branch with clean synthetic patients, verified same-version migrations, functions, proper rate limiting, and RLS.
+2. Browser-origin/CORS checks, auth redirects, session persistence, sign-out, expired sessions, credential change, and cross-patient negative tests.
+3. Admin creates a synthetic patient → approved plan → patient completes a task → progress updates. Verify isolation by logging into two distinct patient identities.
+4. Fix browser-native plugin gaps and mobile/desktop accessibility. Verify sensitive data is not in public HTML/JS/analytics.
+5. Record the exact commit, Actions checks, deployed URL and manual browser QA separately.
+
+## Current restrictions
+
+The linked Supabase project `vydfafumxptanpkmtrpr` is **production**; no Supabase staging branches were discovered in the October 9 check. We must not use that environment as the preview backend, and must not apply the staged patient login limiter there without its release gates. Until staging is available, hosted Pages can only display the safely unconfigured guest portion of the **same real app**.
