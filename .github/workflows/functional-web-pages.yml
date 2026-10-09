@@ -83,8 +83,14 @@ jobs:
           flutter analyze
           flutter test
 
-      - name: Browser-platform isolation regression (Chrome)
-        run: flutter test --platform chrome test/core/config/web_preview_config_test.dart
+      - name: Browser-platform role and navigation regressions (Chrome)
+        run: |
+          flutter test --platform chrome \
+            test/core/config/web_preview_config_test.dart \
+            test/app/role_routing_test.dart \
+            test/features/auth/member_signup_screen_test.dart \
+            test/features/patient_care/patient_scaffold_test.dart \
+            test/features/home/admin_quick_actions_test.dart
 
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
