@@ -1,5 +1,17 @@
 # Sukun Life — Functional Flutter Web Preview (web-first)
 
+## Current verified state — 10 October 2026 (supersedes historical notes below)
+
+- Main commit `354eeb92` passed GitHub CI (Flutter, local RLS/pgTAP, Edge Functions, Web build and Chrome regressions). The subsequent Pages deployment reported success and confirmed the exact HTTP commit marker.
+- Its deployed preview manifest used `backend_mode: local`; **authenticated** staging Patient/Admin/Member testing is **not yet complete**.
+- PR #27 merged the role-aware Flutter source and existing Member auth code into `main`. PRs #28–#32 delivered subsequent browser and Patient offline reliability fixes. Legacy stacked PRs #19/#20/#23 remain open but their historical open state alone does not mean that all code is absent from main.
+- The Sukun Supabase account has **one active production project and no staging branches**. Staging Member schema/provider activation is **not deployed**; production must stay isolated.
+- The next change adds opt-in **staging-only** feature flags for Member Signup, Email OTP, Phone OTP and Google OAuth in the existing Pages pipeline. They remain **off** until clean staging, providers, RLS and synthetic-role/browser QA are approved. See [Staging Preview Activation](STAGING_PREVIEW_ACTIVATION_2026_10_10.md).
+- Browser UI and authenticated transaction success are distinct: CI and HTTP smoke checks do not prove a real authenticated end-to-end interaction.
+
+> Below this update, older sections reflect the 9 October planning baseline and should be read as historical, not live deploy evidence.
+
+
 ## Deployment target and separation
 
 - Source: `umar-vai/Sukun-app-` (the **existing application repository**, not a new demo repository).
@@ -14,7 +26,7 @@ The actual `SukunLifeApp` and `app_router.dart` run from `app/lib/main_web.dart`
 
 - **Without staging settings:** guest resources/navigation render where locally supported; login remains disabled; no production backend connection.
 - **With isolated staging settings:** the existing Supabase-backed Patient ID/phone sign-in, admin email sign-in, patient routes, and admin routes can be exercised with **synthetic staging users only**. This enables the real feature code; it does not automatically prove that browser interactions or RLS work.
-- General User self-registration is NOT YET IMPLEMENTED. No UI-only replacement is marketed as a real account.
+- General User registration UI and role code are implemented in current source, but staging member migrations, provider setup and feature activation are NOT yet deployed or verified. Do not present member sign-up as operational until the staging end-to-end gate passes.
 - Browser-native plugins (background audio, push, orientation/compass, offline and platform storage) need independent fallback/QA; the web bootstrap deliberately skips native background services.
 
 ## CI and deploy gate

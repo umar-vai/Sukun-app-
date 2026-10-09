@@ -117,12 +117,26 @@ jobs:
           PREVIEW_REF: ${{ vars.SUKUN_PREVIEW_SUPABASE_PROJECT_REF }}
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           EVENT_NAME: ${{ github.event_name }}
+          PREVIEW_ENABLE_MEMBER_SIGNUP: ${{ vars.SUKUN_PREVIEW_ENABLE_MEMBER_SIGNUP }}
+          PREVIEW_ENABLE_EMAIL_OTP: ${{ vars.SUKUN_PREVIEW_ENABLE_EMAIL_OTP }}
+          PREVIEW_ENABLE_PHONE_OTP: ${{ vars.SUKUN_PREVIEW_ENABLE_PHONE_OTP }}
+          PREVIEW_ENABLE_GOOGLE_OAUTH: ${{ vars.SUKUN_PREVIEW_ENABLE_GOOGLE_OAUTH }}
         run: |
           set -euo pipefail
           environment=local
           url=
           key=
+          member_signup=false
+          email_otp=false
+          phone_otp=false
+          google_oauth=false
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            for flag in PREVIEW_ENABLE_MEMBER_SIGNUP PREVIEW_ENABLE_EMAIL_OTP PREVIEW_ENABLE_PHONE_OTP PREVIEW_ENABLE_GOOGLE_OAUTH; do
+              case "${!flag}" in
+                ''|true|false) ;;
+                *) echo 'Preview auth flags must be true, false or unset.' >&2; exit 1 ;;
+              esac
+            done
             if [[ -n "$PREVIEW_URL" || -n "$PREVIEW_KEY" || -n "$PREVIEW_REF" ]]; then
               test -n "$PREVIEW_URL"
               test -n "$PREVIEW_KEY"
@@ -134,6 +148,13 @@ jobs:
               environment=staging
               url="$PREVIEW_URL"
               key="$PREVIEW_KEY"
+              member_signup="${PREVIEW_ENABLE_MEMBER_SIGNUP:-false}"
+              email_otp="${PREVIEW_ENABLE_EMAIL_OTP:-false}"
+              phone_otp="${PREVIEW_ENABLE_PHONE_OTP:-false}"
+              google_oauth="${PREVIEW_ENABLE_GOOGLE_OAUTH:-false}"
+            elif [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" || "$PREVIEW_ENABLE_GOOGLE_OAUTH" == "true" ]]; then
+              echo 'Cannot enable authentication without an isolated staging backend.' >&2
+              exit 1
             fi
           fi
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
@@ -147,6 +168,10 @@ jobs:
           echo "SUPABASE_URL=$url" >> "$GITHUB_ENV"
           echo "SUPABASE_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
           echo "PAGES_BASE_HREF=$base" >> "$GITHUB_ENV"
+          echo "ENABLE_MEMBER_SIGNUP=$member_signup" >> "$GITHUB_ENV"
+          echo "ENABLE_EMAIL_OTP=$email_otp" >> "$GITHUB_ENV"
+          echo "ENABLE_PHONE_OTP=$phone_otp" >> "$GITHUB_ENV"
+          echo "ENABLE_GOOGLE_OAUTH=$google_oauth" >> "$GITHUB_ENV"
           echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
 
       - name: Build role-aware Flutter Web (staging or guest-safe fallback)
@@ -158,12 +183,17 @@ jobs:
             --base-href "$PAGES_BASE_HREF" \
             --dart-define "APP_ENVIRONMENT=$APP_ENVIRONMENT" \
             --dart-define "SUPABASE_URL=$SUPABASE_URL" \
-            --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+            --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define "ENABLE_MEMBER_SIGNUP=$ENABLE_MEMBER_SIGNUP" \
+            --dart-define "ENABLE_EMAIL_OTP=$ENABLE_EMAIL_OTP" \
+            --dart-define "ENABLE_PHONE_OTP=$ENABLE_PHONE_OTP" \
+            --dart-define "ENABLE_GOOGLE_OAUTH=$ENABLE_GOOGLE_OAUTH"
           test -s build/web/index.html
           test -s build/web/flutter_bootstrap.js
           test -s build/web/main.dart.js
-          printf '{"commit":"%s","backend_mode":"%s"}\n' \
+          printf '{"commit":"%s","backend_mode":"%s","auth_features":{"member_signup":%s,"email_otp":%s,"phone_otp":%s,"google_oauth":%s}}\n' \
             "$(git rev-parse HEAD)" "${{ steps.preview-config.outputs.backend_mode }}" \
+            "$ENABLE_MEMBER_SIGNUP" "$ENABLE_EMAIL_OTP" "$ENABLE_PHONE_OTP" "$ENABLE_GOOGLE_OAUTH" \
             > build/web/preview-build.json
 
       - name: Preserve existing /prelaunch content in the SAME Pages site
