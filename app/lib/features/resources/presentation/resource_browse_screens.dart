@@ -305,14 +305,41 @@ class HadithBrowserScreen extends ConsumerStatefulWidget {
 
 class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
   String? _topicSlug;
+  late Future<List<ResourceTopic>> _topicsFuture;
+  late Future<(List<ResourceTopic>, List<ContentResource>)> _resultsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _topicsFuture = ref.read(resourcesRepositoryProvider).browseTopics(
+      types: const {'hadith'},
+    );
+    _resultsFuture = _load(null);
+  }
+
+  void _selectTopic(String? slug) {
+    if (_topicSlug == slug) return;
+    setState(() {
+      _topicSlug = slug;
+      _resultsFuture = _load(slug);
+    });
+  }
+
+  void _retry() {
+    setState(() {
+      _topicsFuture = ref.read(resourcesRepositoryProvider).browseTopics(
+        types: const {'hadith'},
+      );
+      _resultsFuture = _load(_topicSlug);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final repository = ref.watch(resourcesRepositoryProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Hadith by topic')),
       body: FutureBuilder<(List<ResourceTopic>, List<ContentResource>)>(
-        future: _load(repository),
+        future: _resultsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AppLoadingState(label: 'Loading Hadith topics');
@@ -320,6 +347,7 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
           if (snapshot.hasError) {
             return AppErrorState(
               message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+              onRetry: _retry,
             );
           }
           final data = snapshot.data!;
@@ -343,14 +371,14 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
                   SukunFilterPill(
                     label: 'All topics',
                     selected: _topicSlug == null,
-                    onTap: () => setState(() => _topicSlug = null),
+                    onTap: () => _selectTopic(null),
                   ),
                   for (final topic in data.$1)
                     SukunFilterPill(
                       label:
                           '${topic.nameBn ?? topic.name} (${topic.resourceCount})',
                       selected: _topicSlug == topic.slug,
-                      onTap: () => setState(() => _topicSlug = topic.slug),
+                      onTap: () => _selectTopic(topic.slug),
                     ),
                 ],
               ),
@@ -374,12 +402,13 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
   }
 
   Future<(List<ResourceTopic>, List<ContentResource>)> _load(
-    ResourcesRepository repository,
+    String? topicSlug,
   ) async {
-    final topics = await repository.browseTopics(types: const {'hadith'});
+    final repository = ref.read(resourcesRepositoryProvider);
+    final topics = await _topicsFuture;
     final resources = await repository.browseResources(
       types: const {'hadith'},
-      categoryPrefixes: _topicSlug == null ? const {} : {_topicSlug!},
+      categoryPrefixes: topicSlug == null ? const {} : {topicSlug},
     );
     return (topics, resources);
   }
@@ -399,6 +428,44 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
 
 class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
   String? _selectedSlug;
+  late Future<List<ContentResource>> _resourcesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _resourcesFuture = _load(null);
+  }
+
+  @override
+  void didUpdateWidget(covariant TaxonomyBrowserScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.kind != widget.kind) {
+      _selectedSlug = null;
+      _resourcesFuture = _load(null);
+    }
+  }
+
+  Future<List<ContentResource>> _load(String? slug) {
+    final isDua = widget.kind == TaxonomyKind.duaAzkar;
+    return ref.read(resourcesRepositoryProvider).browseResources(
+      types: isDua
+          ? const {'dua', 'amal'}
+          : const {'quran', 'amal', 'audio', 'guide'},
+      categoryPrefixes: {slug ?? (isDua ? 'dua-azkar' : 'ruqyah')},
+    );
+  }
+
+  void _selectCategory(String? slug) {
+    if (_selectedSlug == slug) return;
+    setState(() {
+      _selectedSlug = slug;
+      _resourcesFuture = _load(slug);
+    });
+  }
+
+  void _retry() {
+    setState(() => _resourcesFuture = _load(_selectedSlug));
+  }
 
   List<ResourceTaxonomyEntry> get _entries =>
       widget.kind == TaxonomyKind.duaAzkar ? duaAzkarTaxonomy : ruqyahTaxonomy;
@@ -406,19 +473,10 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
   @override
   Widget build(BuildContext context) {
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    final types = isDua
-        ? const {'dua', 'amal'}
-        : const {'quran', 'amal', 'audio', 'guide'};
-    final prefix = isDua ? 'dua-azkar' : 'ruqyah';
     return Scaffold(
       appBar: AppBar(title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah')),
       body: FutureBuilder<List<ContentResource>>(
-        future: ref
-            .read(resourcesRepositoryProvider)
-            .browseResources(
-              types: types,
-              categoryPrefixes: {_selectedSlug ?? prefix},
-            ),
+        future: _resourcesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AppLoadingState(label: 'Loading resources');
@@ -426,6 +484,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
           if (snapshot.hasError) {
             return AppErrorState(
               message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+              onRetry: _retry,
             );
           }
           final resources = snapshot.data ?? const <ContentResource>[];
@@ -453,13 +512,13 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                   SukunFilterPill(
                     label: 'All',
                     selected: _selectedSlug == null,
-                    onTap: () => setState(() => _selectedSlug = null),
+                    onTap: () => _selectCategory(null),
                   ),
                   for (final entry in _entries)
                     SukunFilterPill(
                       label: entry.titleBn,
                       selected: _selectedSlug == entry.slug,
-                      onTap: () => setState(() => _selectedSlug = entry.slug),
+                      onTap: () => _selectCategory(entry.slug),
                     ),
                 ],
               ),
