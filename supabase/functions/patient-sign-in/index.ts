@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { parsePatientSignInInput } from "./validation.ts";
 import { createInternalPatientEmail } from "./auth-identity.ts";
+import { readLimitedJson } from "./request-body.ts";
+import { hashedLimiterKey, trustedClientIp } from "./rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,8 +34,14 @@ Deno.serve(async (request) => {
 
   let input;
   try {
-    input = parsePatientSignInInput(await request.json());
+    input = parsePatientSignInInput(await readLimitedJson(request));
   } catch (error) {
+    if (error instanceof Error && error.message === "request_too_large") {
+      return response({
+        code: "request_too_large",
+        message: "Request is too large.",
+      }, 413);
+    }
     return response({
       code: "invalid_input",
       message: error instanceof Error ? error.message : "Invalid request.",
@@ -47,6 +55,31 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    // Fail closed when persistent abuse controls are not configured or available.
+    // Keep this change undeployed until the SQL and trusted proxy header are verified.
+    const rateSecret = requiredEnvironment("SIGN_IN_RATE_LIMIT_SECRET");
+    const ipHash = await hashedLimiterKey(
+      rateSecret,
+      "ip",
+      trustedClientIp(request),
+    );
+    const identityHash = await hashedLimiterKey(
+      rateSecret,
+      "identity",
+      input.identifierKind + ":" + input.identifier,
+    );
+    const { data: allowed, error: limiterError } = await adminClient.rpc(
+      "check_patient_login_rate_limit",
+      { p_ip_hash: ipHash, p_identity_hash: identityHash },
+    );
+    if (limiterError) throw new Error("Rate limiter unavailable");
+    if (allowed !== true) {
+      return response({
+        code: "too_many_attempts",
+        message: "Too many sign-in attempts. Please try again later.",
+      }, 429);
+    }
+
     let patientQuery = adminClient
       .from("patients")
       .select("user_id,status")
