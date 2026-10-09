@@ -8,7 +8,7 @@ create table if not exists private.patient_login_attempts (
   updated_at timestamptz not null default now()
 );
 revoke all on private.patient_login_attempts from public, anon, authenticated;
-create or replace function private.check_patient_login_rate_limit(
+create or replace function public.check_patient_login_rate_limit(
   p_ip_hash text, p_identity_hash text
 ) returns boolean
 language plpgsql security definer set search_path = ''
@@ -50,7 +50,6 @@ begin
   return permitted;
 end;
 $$;
-revoke all on function private.check_patient_login_rate_limit(text,text) from public, anon, authenticated;
-grant usage on schema private to service_role;
-grant execute on function private.check_patient_login_rate_limit(text,text) to service_role;
+revoke all on function public.check_patient_login_rate_limit(text,text) from public, anon, authenticated;
+grant execute on function public.check_patient_login_rate_limit(text,text) to service_role;
 -- Schedule daily TTL cleanup via existing trusted maintenance scheduler after review.
