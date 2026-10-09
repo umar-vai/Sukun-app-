@@ -29,12 +29,13 @@ trap 'rm -f "$tmp"' EXIT
 
 get_public_status() {
   local table="$1"
+  local column="${2:-id}"
   curl --silent --show-error --max-time 20 \
     --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
     --header 'Accept: application/json' \
     --output "$tmp" \
     --write-out '%{http_code}' \
-    "$SUPABASE_URL/rest/v1/$table?select=id&limit=1"
+    "$SUPABASE_URL/rest/v1/$table?select=$column&limit=1"
 }
 
 # The public Resources API should be reachable with a browser publishable key.
@@ -47,8 +48,9 @@ echo "PASS: public resources API available."
 
 # An anonymous preview must not return clinical, role or notification rows.
 # Explicit HTTP 401/403 is also a valid fail-closed state for private tables.
-for table in patients prescriptions care_plans profiles user_roles notification_events; do
-  code="$(get_public_status "$table")"
+for spec in patients:id prescriptions:id care_plans:id profiles:id user_roles:user_id notification_events:id; do
+  IFS=: read -r table column <<< "$spec"
+  code="$(get_public_status "$table" "$column")"
   case "$code" in
     200)
       if ! jq -e 'type == "array" and length == 0' "$tmp" >/dev/null; then
