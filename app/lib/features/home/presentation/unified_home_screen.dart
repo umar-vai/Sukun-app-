@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
@@ -15,10 +16,12 @@ class UnifiedHomeScreen extends ConsumerStatefulWidget {
   const UnifiedHomeScreen({
     super.key,
     required this.isPatient,
+    this.isSignedInMember = false,
     this.displayName,
   });
 
   final bool isPatient;
+  final bool isSignedInMember;
   final String? displayName;
 
   @override
@@ -194,7 +197,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               );
             },
           ),
-          if (!widget.isPatient) ...[
+          if (!widget.isPatient && !widget.isSignedInMember) ...[
             const SizedBox(height: 18),
             SukunSurface(
               tone: SukunSurfaceTone.soft,
@@ -230,8 +233,10 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         title: const SukunLifeLogo(height: 36),
         actions: [
           TextButton(
-            onPressed: () => context.push('/login'),
-            child: const Text('লগইন'),
+            onPressed: widget.isSignedInMember
+                ? () => ref.read(authRepositoryProvider).signOut()
+                : () => context.push('/login'),
+            child: Text(widget.isSignedInMember ? 'লগআউট' : 'লগইন'),
           ),
         ],
       ),
@@ -240,21 +245,31 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         selectedIndex: 0,
         onDestinationSelected: (index) {
           if (index == 1) context.go('/resources');
-          if (index == 2) context.go('/login');
+          if (index == 2) {
+            if (widget.isSignedInMember) {
+              ref.read(authRepositoryProvider).signOut();
+            } else {
+              context.go('/login');
+            }
+          }
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'হোম',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.menu_book_outlined),
             label: 'পাঠ ও অডিও',
           ),
           NavigationDestination(
-            icon: Icon(Icons.login_outlined),
-            label: 'লগইন',
+            icon: Icon(
+              widget.isSignedInMember
+                  ? Icons.logout_outlined
+                  : Icons.login_outlined,
+            ),
+            label: widget.isSignedInMember ? 'লগআউট' : 'লগইন',
           ),
         ],
       ),

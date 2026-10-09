@@ -4,6 +4,7 @@ import 'package:sukun_life/core/auth/user_role.dart';
 void main() {
   test('database role values map to the supported application roles', () {
     expect(UserRole.fromDatabaseValue('guest'), UserRole.guest);
+    expect(UserRole.fromDatabaseValue('member'), UserRole.member);
     expect(UserRole.fromDatabaseValue('patient'), UserRole.patient);
     expect(UserRole.fromDatabaseValue('super_admin'), UserRole.superAdmin);
   });
