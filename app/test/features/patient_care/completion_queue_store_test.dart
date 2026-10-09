@@ -31,13 +31,16 @@ void main() {
     expect(initial.map((value) => value.clientEventId), ['snooze', 'another']);
   });
 
-  test('same event ID does not add a duplicate while preserving retry identity', () {
-    final original = event('user-1', 'task-1', 'once');
-    final updated = stagePendingCompletion([original], original);
+  test(
+    'same event ID does not add a duplicate while preserving retry identity',
+    () {
+      final original = event('user-1', 'task-1', 'once');
+      final updated = stagePendingCompletion([original], original);
 
-    expect(updated, hasLength(1));
-    expect(updated.single.clientEventId, 'once');
-  });
+      expect(updated, hasLength(1));
+      expect(updated.single.clientEventId, 'once');
+    },
+  );
 
   test('different patients and tasks cannot replace one another', () {
     final existing = [
