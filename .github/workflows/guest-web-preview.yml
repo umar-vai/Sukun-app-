@@ -1,0 +1,54 @@
+name: Guest Web Preview Build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/guest-web-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/guest-web-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guest-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-guest-preview:
+    name: Build isolated Flutter Web guest preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Generate web platform assets in runner only
+        run: flutter create --platforms web --project-name sukun_life .
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Build real Flutter UI in guest-only mode
+        run: |
+          flutter build web --release \
+            --target lib/main_web_preview.dart \
+            --base-href /Sukun-app-/ \
+            --dart-define APP_ENVIRONMENT=local
+      - name: Upload static preview bundle (not a live website)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-guest-web-preview
+          path: app/build/web/
+          if-no-files-found: error
+          retention-days: 7
