@@ -23,6 +23,7 @@ class _AdminContentListScreenState
   final _searchController = TextEditingController();
   late Future<List<AdminContentItem>> _items;
   String _status = 'all';
+  String _type = 'all';
 
   @override
   void initState() {
@@ -126,6 +127,74 @@ class _AdminContentListScreenState
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+            child: FutureBuilder<List<AdminContentItem>>(
+              future: _items,
+              builder: (context, snapshot) {
+                final items = snapshot.data ?? const <AdminContentItem>[];
+                const types = <(String, String, IconData)>[
+                  ('quran', 'Qur’an', Icons.auto_stories_outlined),
+                  ('hadith', 'Hadith', Icons.menu_book_outlined),
+                  ('dua', 'Dua & Azkar', Icons.volunteer_activism_outlined),
+                  ('ruqyah', 'Ruqyah', Icons.health_and_safety_outlined),
+                  ('audio', 'Audio', Icons.headphones_outlined),
+                  ('video', 'Video', Icons.play_circle_outline),
+                  ('book', 'Books & PDFs', Icons.picture_as_pdf_outlined),
+                  ('article', 'Articles', Icons.article_outlined),
+                ];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Browse by category', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth >= 680 ? 4 : 2;
+                        final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final type in types)
+                              SizedBox(
+                                width: width,
+                                child: Semantics(
+                                  button: true,
+                                  selected: _type == type.$1,
+                                  child: SukunSurface(
+                                    padding: const EdgeInsets.all(12),
+                                    onTap: () => setState(() => _type = _type == type.$1 ? 'all' : type.$1),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(type.$3, color: _type == type.$1 ? Theme.of(context).colorScheme.primary : SukunColors.deepTide),
+                                        const SizedBox(height: 7),
+                                        Text(type.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge),
+                                        Text('${items.where((item) => _matchesType(item.type, type.$1)).length} resources', style: Theme.of(context).textTheme.bodySmall),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                    if (_type != 'all')
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => setState(() => _type = 'all'),
+                          icon: const Icon(Icons.close, size: 16),
+                          label: const Text('Show all categories'),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
           SizedBox(
             height: 52,
             child: ListView(
@@ -165,7 +234,7 @@ class _AdminContentListScreenState
                   );
                 }
                 final items = (snapshot.data ?? const <AdminContentItem>[])
-                    .where((item) => _status == 'all' || item.status == _status)
+                    .where((item) => (_status == 'all' || item.status == _status) && (_type == 'all' || _matchesType(item.type, _type)))
                     .toList(growable: false);
                 if (items.isEmpty) {
                   return const AppEmptyState(
@@ -242,6 +311,15 @@ class _ContentCard extends StatelessWidget {
     );
   }
 }
+
+bool _matchesType(String itemType, String selectedType) =>
+    selectedType == 'book'
+        ? const {'book', 'book_chapter', 'pdf'}.contains(itemType)
+        : selectedType == 'dua'
+            ? const {'dua', 'azkar', 'dua_azkar'}.contains(itemType)
+            : selectedType == 'article'
+                ? const {'article', 'guide'}.contains(itemType)
+                : itemType == selectedType;
 
 String _display(String value) => value
     .split('_')
