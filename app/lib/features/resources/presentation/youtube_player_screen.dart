@@ -307,7 +307,7 @@ class SukunVideoErrorOverlay extends StatelessWidget {
   Widget build(BuildContext context) => ColoredBox(
     color: SukunColors.nightNavy,
     child: Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
