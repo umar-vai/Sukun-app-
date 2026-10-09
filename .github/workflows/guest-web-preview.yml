@@ -1,54 +1,172 @@
-name: Guest Web Preview Build
+name: Flutter Web Preview
 
 on:
   pull_request:
     branches: [main]
     paths:
       - 'app/**'
+      - '.github/workflows/ci.yml'
       - '.github/workflows/guest-web-preview.yml'
-  push:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
     branches: [main]
-    paths:
-      - 'app/**'
-      - '.github/workflows/guest-web-preview.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: guest-preview-${{ github.ref }}
+  group: sukun-web-preview-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  compile-guest-preview:
-    name: Build isolated Flutter Web guest preview
+  build-web:
+    name: Build actual Flutter Web application
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@v2
+      - name: Checkout exact requested revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Refuse stale successful CI runs
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "${{ github.event.workflow_run.head_sha }}"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.6'
           channel: stable
           cache: true
-      - name: Generate web platform assets in runner only
+
+      - name: Generate browser platform files in CI only
         run: flutter create --platforms web --project-name sukun_life .
-      - name: Resolve dependencies
+
+      - name: Resolve Flutter dependencies
         run: flutter pub get
-      - name: Build real Flutter UI in guest-only mode
+
+      - name: Configure safely isolated preview build
+        id: preview-config
+        shell: bash
+        env:
+          PREVIEW_URL: ${{ vars.SUKUN_PREVIEW_SUPABASE_URL }}
+          PREVIEW_KEY: ${{ vars.SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
+          PREVIEW_REF: ${{ vars.SUKUN_PREVIEW_SUPABASE_PROJECT_REF }}
+          PREVIEW_BASE: ${{ vars.SUKUN_PREVIEW_BASE_HREF }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
+          set -euo pipefail
+          environment=local
+          url=
+          key=
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            if [[ -n "$PREVIEW_URL" || -n "$PREVIEW_KEY" || -n "$PREVIEW_REF" ]]; then
+              test -n "$PREVIEW_URL"
+              test -n "$PREVIEW_KEY"
+              test -n "$PREVIEW_REF"
+              [[ "$PREVIEW_REF" =~ ^[a-z0-9]+$ ]]
+              [[ "$PREVIEW_REF" != "vydfafumxptanpkmtrpr" ]]
+              [[ "$PREVIEW_URL" == "https://${PREVIEW_REF}.supabase.co" ]]
+              [[ "$PREVIEW_KEY" == sb_publishable_* ]]
+              environment=staging
+              url="$PREVIEW_URL"
+              key="$PREVIEW_KEY"
+            fi
+          fi
+          base="${PREVIEW_BASE:-/${GITHUB_REPOSITORY#*/}/}"
+          [[ "$base" == /*/ ]]
+          [[ "$base" != *'..'* ]]
+          echo "APP_ENVIRONMENT=$environment" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$url" >> "$GITHUB_ENV"
+          echo "SUPABASE_PUBLISHABLE_KEY=$key" >> "$GITHUB_ENV"
+          echo "PAGES_BASE_HREF=$base" >> "$GITHUB_ENV"
+          echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
+
+      - name: Build role-aware Flutter Web (staging or guest-safe fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
           flutter build web --release \
-            --target lib/main_web_preview.dart \
-            --base-href /Sukun-app-/ \
-            --dart-define APP_ENVIRONMENT=local
-      - name: Upload static preview bundle (not a live website)
+            --target lib/main_web.dart \
+            --base-href "$PAGES_BASE_HREF" \
+            --dart-define "APP_ENVIRONMENT=$APP_ENVIRONMENT" \
+            --dart-define "SUPABASE_URL=$SUPABASE_URL" \
+            --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+          test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+          test -s build/web/main.dart.js
+          printf '{"commit":"%s","backend_mode":"%s"}\n' \
+            "$(git rev-parse HEAD)" "${{ steps.preview-config.outputs.backend_mode }}" \
+            > build/web/preview-build.json
+
+      - name: Upload Web artifact for CI inspection
         uses: actions/upload-artifact@v4
         with:
-          name: sukun-guest-web-preview
+          name: sukun-flutter-web-preview
           path: app/build/web/
           if-no-files-found: error
           retention-days: 7
+
+      - name: Prepare GitHub Pages artifact after green main CI only
+        if: github.event_name == 'workflow_run'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web/
+
+  deploy-pages:
+    name: Deploy approved preview and smoke-check static delivery
+    needs: build-web
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: sukun-pages-production-preview
+      cancel-in-progress: false
+    steps:
+      - name: Publish to this repository's existing GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Check Pages serves this exact tested commit
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          base="${PAGE_URL%/}"
+          for attempt in {1..12}; do
+            if curl -fsSL "$base/preview-build.json" | grep -Fq "$EXPECTED_SHA" &&
+               curl -fsSL "$base/index.html" >/dev/null &&
+               curl -fsSL "$base/flutter_bootstrap.js" >/dev/null; then
+              echo "Pages HTML, bootstrap and exact commit marker verified at $base/"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Pages smoke check failed: new commit was not served.' >&2
+          exit 1
