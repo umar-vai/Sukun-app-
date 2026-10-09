@@ -155,7 +155,8 @@ class _AdminContentListScreenState
                       builder: (context, constraints) {
                         final columns = constraints.maxWidth >= 680 ? 4 : 2;
                         final width =
-                            (constraints.maxWidth - (columns - 1) * 10) / columns;
+                            (constraints.maxWidth - (columns - 1) * 10) /
+                            columns;
                         return Wrap(
                           spacing: 10,
                           runSpacing: 10,
@@ -174,12 +175,15 @@ class _AdminContentListScreenState
                                           : type.$1,
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Icon(
                                           type.$3,
                                           color: _type == type.$1
-                                              ? Theme.of(context).colorScheme.primary
+                                              ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
                                               : SukunColors.deepTide,
                                         ),
                                         const SizedBox(height: 7),
@@ -187,11 +191,15 @@ class _AdminContentListScreenState
                                           type.$2,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context).textTheme.labelLarge,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelLarge,
                                         ),
                                         Text(
                                           '${items.where((item) => _matchesType(item.type, type.$1)).length} resources',
-                                          style: Theme.of(context).textTheme.bodySmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                         ),
                                       ],
                                     ),
@@ -339,12 +347,12 @@ class _ContentCard extends StatelessWidget {
 
 bool _matchesType(String itemType, String selectedType) =>
     selectedType == 'book'
-        ? const {'book', 'book_chapter', 'pdf'}.contains(itemType)
-        : selectedType == 'dua'
-            ? const {'dua', 'azkar', 'dua_azkar'}.contains(itemType)
-            : selectedType == 'article'
-                ? const {'article', 'guide'}.contains(itemType)
-                : itemType == selectedType;
+    ? const {'book', 'book_chapter', 'pdf'}.contains(itemType)
+    : selectedType == 'dua'
+    ? const {'dua', 'azkar', 'dua_azkar'}.contains(itemType)
+    : selectedType == 'article'
+    ? const {'article', 'guide'}.contains(itemType)
+    : itemType == selectedType;
 
 String _display(String value) => value
     .split('_')
