@@ -6,7 +6,6 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
-import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 
