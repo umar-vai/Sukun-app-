@@ -55,8 +55,11 @@ class _PublicOtpSignInScreenState extends ConsumerState<PublicOtpSignInScreen> {
   }
 
   Future<void> _send() async {
-    if (!_available || _busy || _wait > 0 ||
-        !_recipientForm.currentState!.validate()) return;
+    if (!_available || _busy || _wait > 0) return;
+    // During code entry the recipient Form is unmounted; resend must not
+    // dereference an absent FormState.
+    if (!_requested && !_recipientForm.currentState!.validate()) return;
+    if (validateOtpRecipient(_recipient.text, widget.channel) != null) return;
     setState(() => _busy = true);
     try {
       await ref.read(publicSignInGatewayProvider).requestCode(
