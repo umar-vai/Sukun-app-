@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
@@ -91,11 +92,7 @@ class _PlayerBody extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-                const SukunStatusPill(
-                  label: 'পেছনেও চলবে',
-                  tone: SukunStatusTone.brand,
-                  icon: Icons.headphones_rounded,
-                ),
+                const AudioPlaybackPlatformBadge(),
               ],
             ),
           ),
@@ -263,15 +260,37 @@ class _PlayerBody extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 18),
-          Text(
-            'অন্য অ্যাপ খুললেও অডিও চলতে পারে। ফোনের লকস্ক্রিন থেকে চালু বা বন্ধ করতে পারবেন।',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          const AudioPlaybackPlatformHint(),
         ],
       ),
     );
   }
+}
+
+/// Browsers have different media-session and background-playback policies
+/// from Android/iOS. Avoid claiming lock-screen controls on Flutter Web.
+class AudioPlaybackPlatformBadge extends StatelessWidget {
+  const AudioPlaybackPlatformBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) => SukunStatusPill(
+    label: kIsWeb ? 'ব্রাউজারে অডিও' : 'পেছনেও চলবে',
+    tone: SukunStatusTone.brand,
+    icon: Icons.headphones_rounded,
+  );
+}
+
+class AudioPlaybackPlatformHint extends StatelessWidget {
+  const AudioPlaybackPlatformHint({super.key});
+
+  @override
+  Widget build(BuildContext context) => Text(
+    kIsWeb
+        ? 'ব্রাউজারে অডিও শুনুন। ট্যাব পরিবর্তন বা স্ক্রিন লক করলে অডিও চলা ব্রাউজারের নিয়মের ওপর নির্ভর করে।'
+        : 'অন্য অ্যাপ খুললেও অডিও চলতে পারে। ফোনের লকস্ক্রিন থেকে চালু বা বন্ধ করতে পারবেন।',
+    textAlign: TextAlign.center,
+    style: Theme.of(context).textTheme.bodySmall,
+  );
 }
 
 Future<void> _runPlaybackAction(
