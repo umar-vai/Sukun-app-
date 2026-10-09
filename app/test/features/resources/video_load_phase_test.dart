@@ -63,6 +63,35 @@ void main() {
     );
   });
 
+  testWidgets('blocked video shows a usable retry on a small phone', (
+    tester,
+  ) async {
+    var retryCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              height: 175,
+              child: SukunVideoErrorOverlay(onRetry: () => retryCount++),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('ভিডিও লোড করা যাচ্ছে না'), findsOneWidget);
+    expect(find.text('আবার চেষ্টা করুন'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.ensureVisible(find.text('আবার চেষ্টা করুন'));
+    await tester.pump();
+    await tester.tap(find.text('আবার চেষ্টা করুন'));
+    await tester.pump();
+    expect(retryCount, 1);
+  });
+
   testWidgets('loading overlay displays progress and explanatory text', (
     tester,
   ) async {

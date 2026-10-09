@@ -56,6 +56,14 @@ final class SharedPreferencesPlaybackPositionStore
   }
 }
 
+/// The same CMS resource can receive a refreshed signed or corrected URL.
+/// Reusing a player by ID alone can keep the wrong audio or defeat retry.
+bool audioResourceNeedsReload(LinkedResource? current, LinkedResource next) =>
+    current == null ||
+    current.id != next.id ||
+    current.mediaSourceType != next.mediaSourceType ||
+    current.mediaUrl?.trim() != next.mediaUrl?.trim();
+
 class AudioPlaybackController {
   AudioPlaybackController(this._player, this._positions) {
     _positionSubscription = _player.positionStream.listen(_rememberPosition);
@@ -84,13 +92,23 @@ class AudioPlaybackController {
         'This audio resource does not have a valid secure URL.',
       );
     }
-    if (_resource?.id == resource.id) return;
+    if (!audioResourceNeedsReload(_resource, resource)) return;
 
-    await _persistCurrentPosition();
+    // Playback must still work when optional resume storage is unavailable.
+    try {
+      await _persistCurrentPosition();
+    } on Exception {
+      // Persistence failure must not block a playable audio source.
+    }
     _resource = resource;
     _lastSavedSecond = -1;
-    final savedPosition = await _positions.read(resource.id) ?? Duration.zero;
     try {
+      Duration savedPosition = Duration.zero;
+      try {
+        savedPosition = await _positions.read(resource.id) ?? Duration.zero;
+      } on Exception {
+        // Retry from the beginning if a saved bookmark cannot be read.
+      }
       final artUri = _validHttpsUri(resource.thumbnailUrl);
       final duration = await _player.setAudioSource(
         AudioSource.uri(
@@ -118,6 +136,11 @@ class AudioPlaybackController {
     } on PlayerInterruptedException {
       _resource = null;
       throw const AudioPlaybackException('Audio loading was interrupted.');
+    } on Exception {
+      _resource = null;
+      throw const AudioPlaybackException(
+        'Audio loading failed. Check the link and try again.',
+      );
     }
   }
 

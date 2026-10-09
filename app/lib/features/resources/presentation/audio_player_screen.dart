@@ -8,30 +8,54 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 class AudioPlayerScreen extends ConsumerStatefulWidget {
-  const AudioPlayerScreen({required this.resource, super.key});
+  const AudioPlayerScreen({
+    required this.resource,
+    this.loadResource,
+    super.key,
+  });
 
   final LinkedResource resource;
+
+  /// Test seam for broken links and retry without loading real patient media.
+  final Future<void> Function(LinkedResource)? loadResource;
 
   @override
   ConsumerState<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
 class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
-  late Future<void> _loadFuture;
+  late Future<bool> _loadFuture;
+
+  // Convert a source failure into UI state before a retry can rebuild.
+  // A synchronously failing Future must never escape into the widget zone.
+  Future<bool> _loadAudio() async {
+    try {
+      final loader =
+          widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load;
+      await loader(widget.resource);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadFuture = ref
-        .read(audioPlaybackControllerProvider)
-        .load(widget.resource);
+    _loadFuture = _loadAudio();
+  }
+
+  @override
+  void didUpdateWidget(covariant AudioPlayerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (audioResourceNeedsReload(oldWidget.resource, widget.resource)) {
+      _loadFuture = _loadAudio();
+    }
   }
 
   void _retry() {
     setState(() {
-      _loadFuture = ref
-          .read(audioPlaybackControllerProvider)
-          .load(widget.resource);
+      _loadFuture = _loadAudio();
     });
   }
 
@@ -39,13 +63,13 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('অডিও শুনুন')),
-      body: FutureBuilder<void>(
+      body: FutureBuilder<bool>(
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AppLoadingState(label: 'অডিও চালু হচ্ছে…');
           }
-          if (snapshot.hasError) {
+          if (snapshot.data != true) {
             return AppErrorState(
               message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _retry,
