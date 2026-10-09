@@ -8,9 +8,16 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 class AudioPlayerScreen extends ConsumerStatefulWidget {
-  const AudioPlayerScreen({required this.resource, super.key});
+  const AudioPlayerScreen({
+    required this.resource,
+    this.loadResource,
+    super.key,
+  });
 
   final LinkedResource resource;
+
+  /// Test seam for broken links and retry without loading real patient media.
+  final Future<void> Function(LinkedResource)? loadResource;
 
   @override
   ConsumerState<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
@@ -19,19 +26,28 @@ class AudioPlayerScreen extends ConsumerStatefulWidget {
 class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   late Future<void> _loadFuture;
 
+  Future<void> _loadAudio() =>
+      (widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load)(
+        widget.resource,
+      );
+
   @override
   void initState() {
     super.initState();
-    _loadFuture = ref
-        .read(audioPlaybackControllerProvider)
-        .load(widget.resource);
+    _loadFuture = _loadAudio();
+  }
+
+  @override
+  void didUpdateWidget(covariant AudioPlayerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (audioResourceNeedsReload(oldWidget.resource, widget.resource)) {
+      _loadFuture = _loadAudio();
+    }
   }
 
   void _retry() {
     setState(() {
-      _loadFuture = ref
-          .read(audioPlaybackControllerProvider)
-          .load(widget.resource);
+      _loadFuture = _loadAudio();
     });
   }
 
