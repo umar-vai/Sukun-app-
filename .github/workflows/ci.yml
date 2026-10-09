@@ -156,6 +156,20 @@ jobs:
       - name: Lint local database
         run: supabase db lint --local
 
+      - name: Test staged patient sign-in limiter against isolated local PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          export PGPASSWORD=postgres
+          psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_staging.sql
+          psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_verify.sql
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop --no-backup
