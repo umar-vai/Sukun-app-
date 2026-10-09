@@ -58,6 +58,12 @@ final class TaskCompletionCoordinator {
   Future<void> flush(String userId) async {
     final events = await store.readForUser(userId);
     for (final event in events) {
+      // An updated action may supersede an item captured in this snapshot.
+      // Avoid replaying a stale snooze after a newer completion was queued.
+      final remaining = await store.readForUser(userId);
+      if (!remaining.any((item) => item.clientEventId == event.clientEventId)) {
+        continue;
+      }
       try {
         await remote.submit(event);
         await store.remove(userId, event.clientEventId);

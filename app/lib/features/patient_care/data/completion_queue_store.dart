@@ -11,6 +11,28 @@ abstract interface class CompletionQueueStore {
   Future<void> remove(String userId, String clientEventId);
 }
 
+/// Preserve the last offline intention for a patient task.
+///
+/// The server deduplicates identical client event IDs. Distinct offline
+/// updates to the *same* task must not replay a stale snooze after a newer
+/// completion. Never coalesce another patient's task or another task ID.
+List<PendingTaskCompletion> stagePendingCompletion(
+  List<PendingTaskCompletion> queued,
+  PendingTaskCompletion next,
+) {
+  if (queued.any(
+    (item) =>
+        item.userId == next.userId && item.clientEventId == next.clientEventId,
+  )) {
+    return List<PendingTaskCompletion>.of(queued);
+  }
+  return [
+    for (final item in queued)
+      if (item.userId != next.userId || item.taskId != next.taskId) item,
+    next,
+  ];
+}
+
 final class SecureCompletionQueueStore implements CompletionQueueStore {
   SecureCompletionQueueStore({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();
@@ -18,8 +40,19 @@ final class SecureCompletionQueueStore implements CompletionQueueStore {
   static const _storageKey = 'sukun.pending_task_completions.v1';
   final FlutterSecureStorage _storage;
 
+  // Storage uses read-modify-write. Serialize operations within this store
+  // instance so rapid updates from separate tasks cannot overwrite each other.
+  Future<void> _lastMutation = Future<void>.value();
+
+  Future<void> _mutate(Future<void> Function() operation) {
+    final result = _lastMutation.then((_) => operation());
+    _lastMutation = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
   @override
   Future<List<PendingTaskCompletion>> readForUser(String userId) async {
+    await _lastMutation;
     final events = await _readAll();
     return events
         .where((event) => event.userId == userId)
@@ -27,25 +60,19 @@ final class SecureCompletionQueueStore implements CompletionQueueStore {
   }
 
   @override
-  Future<void> enqueue(PendingTaskCompletion event) async {
+  Future<void> enqueue(PendingTaskCompletion event) => _mutate(() async {
     final events = await _readAll();
-    final exists = events.any(
-      (item) =>
-          item.userId == event.userId &&
-          item.clientEventId == event.clientEventId,
-    );
-    if (!exists) events.add(event);
-    await _writeAll(events);
-  }
+    await _writeAll(stagePendingCompletion(events, event));
+  });
 
   @override
-  Future<void> remove(String userId, String clientEventId) async {
+  Future<void> remove(String userId, String clientEventId) => _mutate(() async {
     final events = await _readAll();
     events.removeWhere(
       (event) => event.userId == userId && event.clientEventId == clientEventId,
     );
     await _writeAll(events);
-  }
+  });
 
   Future<List<PendingTaskCompletion>> _readAll() async {
     final encoded = await _storage.read(key: _storageKey);
