@@ -93,6 +93,7 @@ jobs:
             test/features/home/admin_quick_actions_test.dart \
             test/features/islamic_utilities/compass_web_fallback_test.dart \
             test/features/resources/resources_home_screen_test.dart \
+            test/features/resources/resource_preview_unavailable_test.dart \
             test/features/patient_care/patient_notifications_screen_test.dart \
             test/features/resources/resource_detail_screen_test.dart \
             test/features/resources/audio_platform_hint_test.dart \
