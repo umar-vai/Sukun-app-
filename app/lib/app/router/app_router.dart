@@ -78,7 +78,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if ((isLoginRoute || isSignupRoute) && session.isSuperAdmin) {
         return '/admin/dashboard';
       }
-      if ((isLoginRoute || isSignupRoute) && session.isMember) return '/';
+      if ((isLoginRoute || isSignupRoute) &&
+          (session.isMember || session.isStaff)) {
+        return '/';
+      }
       if (path == '/' && session.isPatient) return '/patient/home';
       if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
       return null;
@@ -357,7 +360,7 @@ class _SessionLanding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return sessionState.when(
-      data: (session) => session.isMember
+      data: (session) => (session.isMember || session.isStaff)
           ? MemberHomeScreen(displayName: session.displayName)
           : const GuestHomeScreen(),
       loading: () => const SukunLaunchScreen(),

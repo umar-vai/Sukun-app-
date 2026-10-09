@@ -5,6 +5,11 @@ void main() {
   test('database role values map to the supported application roles', () {
     expect(UserRole.fromDatabaseValue('guest'), UserRole.guest);
     expect(UserRole.fromDatabaseValue('member'), UserRole.member);
+    expect(UserRole.fromDatabaseValue('raqi'), UserRole.raqi);
+    expect(
+      UserRole.fromDatabaseValue('support_staff'),
+      UserRole.supportStaff,
+    );
     expect(UserRole.fromDatabaseValue('patient'), UserRole.patient);
     expect(UserRole.fromDatabaseValue('super_admin'), UserRole.superAdmin);
   });
