@@ -190,7 +190,7 @@ class _SukunYoutubePlayerState extends State<SukunYoutubePlayer> {
             if (_phase == VideoLoadPhase.loading)
               const SukunVideoLoadingOverlay(),
             if (_phase == VideoLoadPhase.failed)
-              _SukunVideoErrorOverlay(onRetry: _retry),
+              SukunVideoErrorOverlay(onRetry: _retry),
             // Once video has appeared, preserve the official player controls.
             // A small non-interactive indicator handles later buffering.
             if (_phase == VideoLoadPhase.buffering)
@@ -298,8 +298,8 @@ class _SukunVideoBufferingBadge extends StatelessWidget {
   );
 }
 
-class _SukunVideoErrorOverlay extends StatelessWidget {
-  const _SukunVideoErrorOverlay({required this.onRetry});
+class SukunVideoErrorOverlay extends StatelessWidget {
+  const SukunVideoErrorOverlay({required this.onRetry});
 
   final VoidCallback onRetry;
 
