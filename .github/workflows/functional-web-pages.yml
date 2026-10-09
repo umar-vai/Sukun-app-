@@ -90,7 +90,8 @@ jobs:
             test/app/role_routing_test.dart \
             test/features/auth/member_signup_screen_test.dart \
             test/features/patient_care/patient_scaffold_test.dart \
-            test/features/home/admin_quick_actions_test.dart
+            test/features/home/admin_quick_actions_test.dart \
+            test/features/islamic_utilities/compass_web_fallback_test.dart
 
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
