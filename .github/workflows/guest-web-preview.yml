@@ -133,14 +133,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Prepare GitHub Pages artifact after green main CI only
-        if: github.event_name == 'workflow_run'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: app/build/web/
 
   deploy-pages:
-    name: Deploy approved preview and smoke-check static delivery
+    name: Publish to existing gh-pages branch after approved green CI
     needs: build-web
     if: >-
       github.event_name == 'workflow_run' &&
@@ -149,28 +144,76 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions:
-      contents: read
-      pages: write
-      id-token: write
+      contents: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     concurrency:
-      group: sukun-pages-production-preview
+      group: sukun-existing-gh-pages
       cancel-in-progress: false
     steps:
-      - name: Publish to this repository's existing GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Checkout existing Pages publishing branch
+        uses: actions/checkout@v5
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Check Pages serves this exact tested commit
+      - name: Download exact Flutter Web artifact from this workflow
+        uses: actions/download-artifact@v4
+        with:
+          name: sukun-flutter-web-preview
+          path: ${{ runner.temp }}/sukun-tested-web
+
+      - name: Verify commit marker and recheck current main
         shell: bash
         env:
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          BUILD_DIR: ${{ runner.temp }}/sukun-tested-web
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$EXPECTED_SHA"
+          test -s "$BUILD_DIR/index.html"
+          test -s "$BUILD_DIR/flutter_bootstrap.js"
+          test -s "$BUILD_DIR/main.dart.js"
+          test -s "$BUILD_DIR/preview-build.json"
+          grep -Fq "$EXPECTED_SHA" "$BUILD_DIR/preview-build.json"
+          if grep -Fq 'vydfafumxptanpkmtrpr.supabase.co' "$BUILD_DIR/main.dart.js"; then
+            echo 'Production Supabase reference found in preview JavaScript.' >&2
+            exit 1
+          fi
+
+      - name: Update Pages ROOT only; preserve existing prelaunch subtree
+        shell: bash
+        env:
+          BUILD_DIR: ${{ runner.temp }}/sukun-tested-web
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          base="${PAGE_URL%/}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name prelaunch -exec rm -rf {} +
+          cp -a "$BUILD_DIR/." .
+          touch .nojekyll
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "ci(pages): publish validated Flutter Web $EXPECTED_SHA"
+            git push origin HEAD:gh-pages
+          else
+            echo 'Published artifact already matches Pages branch.'
+          fi
+
+      - name: Smoke-check existing GitHub Pages URL and deployed commit
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          PUBLIC_URL: ${{ vars.SUKUN_PREVIEW_PUBLIC_URL }}
+          GH_OWNER: ${{ github.repository_owner }}
+          GH_REPO: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          base="${PUBLIC_URL:-https://${GH_OWNER}.github.io/${GH_REPO}/}"
+          base="${base%/}"
           for attempt in {1..12}; do
             if curl -fsSL "$base/preview-build.json" | grep -Fq "$EXPECTED_SHA" &&
                curl -fsSL "$base/index.html" >/dev/null &&
@@ -180,5 +223,5 @@ jobs:
             fi
             sleep 10
           done
-          echo 'Pages smoke check failed: new commit was not served.' >&2
+          echo 'Pages smoke test FAILED; commit pushed but website not verified.' >&2
           exit 1
