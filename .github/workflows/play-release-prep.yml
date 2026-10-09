@@ -1,0 +1,125 @@
+name: Play Store Release Preparation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Approved version name e.g. 1.0.0"
+        type: string
+        required: true
+      version_code:
+        description: "Version code greater than every previously uploaded Play build"
+        type: number
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play-release-preparation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-policy:
+    name: Android Production Policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify API 36, signing and permissions
+        run: python3 scripts/verify_android_release_policy.py
+
+  signed-review-bundle:
+    name: Signed AAB for Manual Play Review (No Publishing)
+    if: github.event_name == 'workflow_dispatch'
+    needs: release-policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: play-production-prep
+    defaults:
+      run:
+        working-directory: app
+    env:
+      PLAY_PACKAGE_NAME: ${{ vars.SUKUN_PLAY_PACKAGE_NAME }}
+      PLAY_LATEST_VERSION_CODE: ${{ vars.SUKUN_PLAY_LATEST_VERSION_CODE }}
+      PLAY_UPLOAD_CERT_SHA256: ${{ vars.SUKUN_PLAY_UPLOAD_CERT_SHA256 }}
+      RELEASE_NAME: ${{ inputs.version_name }}
+      RELEASE_CODE: ${{ inputs.version_code }}
+      UPLOAD_KEYSTORE_BASE64: ${{ secrets.SUKUN_UPLOAD_KEYSTORE_BASE64 }}
+      SUKUN_UPLOAD_STORE_PASSWORD: ${{ secrets.SUKUN_UPLOAD_STORE_PASSWORD }}
+      SUKUN_UPLOAD_KEY_ALIAS: ${{ secrets.SUKUN_UPLOAD_KEY_ALIAS }}
+      SUKUN_UPLOAD_KEY_PASSWORD: ${{ secrets.SUKUN_UPLOAD_KEY_PASSWORD }}
+      APP_PRODUCTION_URL: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_URL }}
+      APP_PRODUCTION_KEY: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify Play identity and input before handling signing material
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PLAY_PACKAGE_NAME" == "com.sukunlife.app" ]] || { echo "::error::Package ID differs from Play Console."; exit 1; }
+          [[ "$RELEASE_CODE" =~ ^[1-9][0-9]*$ ]] || exit 1
+          [[ "$PLAY_LATEST_VERSION_CODE" =~ ^[0-9]+$ ]] || { echo "::error::Set latest uploaded version code."; exit 1; }
+          (( RELEASE_CODE > PLAY_LATEST_VERSION_CODE )) || { echo "::error::Version code must increase."; exit 1; }
+          [[ "$RELEASE_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "$PLAY_UPLOAD_CERT_SHA256" =~ ^([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}$ ]] || { echo "::error::Set approved upload-key SHA256 fingerprint."; exit 1; }
+          for name in UPLOAD_KEYSTORE_BASE64 SUKUN_UPLOAD_STORE_PASSWORD SUKUN_UPLOAD_KEY_ALIAS SUKUN_UPLOAD_KEY_PASSWORD APP_PRODUCTION_URL APP_PRODUCTION_KEY; do
+            [[ -n "${!name:-}" ]] || { echo "::error::Missing release secret: $name"; exit 1; }
+          done
+          [[ "$APP_PRODUCTION_URL" =~ ^https://[a-z0-9-]+\.supabase\.co$ ]] || exit 1
+          [[ "$APP_PRODUCTION_KEY" == sb_publishable_* || "$APP_PRODUCTION_KEY" == eyJ* ]] || exit 1
+          echo "Play package, monotonic version, upload certificate and secrets configured."
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Verify upload key fingerprint without revealing signing secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          store="$RUNNER_TEMP/sukun-upload.jks"
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$store"
+          test -s "$store"
+          echo "SUKUN_UPLOAD_KEYSTORE_PATH=$store" >> "$GITHUB_ENV"
+          actual=$(keytool -exportcert -rfc -keystore "$store" -storepass "$SUKUN_UPLOAD_STORE_PASSWORD" -alias "$SUKUN_UPLOAD_KEY_ALIAS" |
+            openssl x509 -noout -fingerprint -sha256 | sed 's/^.*=//')
+          [[ "${actual^^}" == "${PLAY_UPLOAD_CERT_SHA256^^}" ]] || { echo "::error::Wrong Play upload key. Refusing to sign."; exit 1; }
+          echo "Upload certificate matched the Play Console fingerprint."
+      - name: Flutter release validation
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+      - name: Build and verify signed AAB (not uploaded to Play)
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build appbundle --release \
+            --build-name="$RELEASE_NAME" \
+            --build-number="$RELEASE_CODE" \
+            --dart-define=APP_ENVIRONMENT=production \
+            --dart-define="SUPABASE_URL=$APP_PRODUCTION_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$APP_PRODUCTION_KEY"
+          bundle="build/app/outputs/bundle/release/app-release.aab"
+          test -s "$bundle"
+          jarsigner -verify "$bundle" >/dev/null
+          echo "### AAB signed and verified; Play Store upload was NOT performed." >> "$GITHUB_STEP_SUMMARY"
+      - name: Attach signed review-only bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukunlife-play-review-aab
+          path: app/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 3
+          if-no-files-found: error
+      - name: Clean up temporary signing keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sukun-upload.jks"
