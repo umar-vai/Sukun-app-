@@ -36,6 +36,10 @@ class _WebBootstrapState extends State<_WebBootstrap> {
       environment: AppEnvironment.name,
       url: AppEnvironment.supabaseUrl,
       publishableKey: AppEnvironment.supabasePublishableKey,
+      publicMemberSignupEnabled: AppEnvironment.publicMemberSignupEnabled,
+      emailOtpEnabled: AppEnvironment.emailOtpEnabled,
+      phoneOtpEnabled: AppEnvironment.phoneOtpEnabled,
+      googleOAuthEnabled: AppEnvironment.googleOAuthEnabled,
     );
     await AppEnvironment.initialize();
   }
