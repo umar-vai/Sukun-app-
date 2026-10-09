@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
@@ -179,6 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => context.push('/register'),
+                    child: const Text('নতুন অ্যাকাউন্ট তৈরি করুন'),
                   ),
                   const SizedBox(height: 18),
                   Row(

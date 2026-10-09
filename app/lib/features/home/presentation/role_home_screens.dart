@@ -14,6 +14,19 @@ class GuestHomeScreen extends StatelessWidget {
       const UnifiedHomeScreen(isPatient: false);
 }
 
+class MemberHomeScreen extends StatelessWidget {
+  const MemberHomeScreen({super.key, this.displayName});
+
+  final String? displayName;
+
+  @override
+  Widget build(BuildContext context) => UnifiedHomeScreen(
+    isPatient: false,
+    isSignedInMember: true,
+    displayName: displayName,
+  );
+}
+
 class _UtilityCard extends StatelessWidget {
   const _UtilityCard({
     required this.icon,
