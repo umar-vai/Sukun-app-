@@ -112,6 +112,13 @@ class _QiblaSetupRequired extends StatelessWidget {
   }
 }
 
+String _qiblaInstruction(CompassReading reading) {
+  if (reading.calibrationState == CompassCalibrationState.unavailable) {
+    return 'ব্রাউজারে কম্পাস সেন্সর পাওয়া যাচ্ছে না। নিচের কোণটি উত্তর দিক থেকে মেপে কিবলা নির্ধারণ করুন।';
+  }
+  return 'Keep your phone flat and turn slowly until the marker points straight ahead.';
+}
+
 class _QiblaView extends StatelessWidget {
   const _QiblaView({
     required this.locationName,
@@ -132,10 +139,7 @@ class _QiblaView extends StatelessWidget {
         SukunPageIntro(
           eyebrow: 'Direction from $locationName',
           title: 'Face the Qibla',
-          subtitle: reading.calibrationState ==
-                  CompassCalibrationState.unavailable
-              ? 'ব্রাউজারে কম্পাস সেন্সর পাওয়া যাচ্ছে না। নিচের কোণটি উত্তর দিক থেকে মেপে কিবলা নির্ধারণ করুন।'
-              : 'Keep your phone flat and turn slowly until the marker points straight ahead.',
+          subtitle: _qiblaInstruction(reading),
         ),
         const SizedBox(height: 24),
         SukunSurface(
