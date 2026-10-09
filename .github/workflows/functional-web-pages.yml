@@ -119,6 +119,9 @@ jobs:
           PREVIEW_URL: ${{ vars.SUKUN_PREVIEW_SUPABASE_URL }}
           PREVIEW_KEY: ${{ vars.SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
           PREVIEW_REF: ${{ vars.SUKUN_PREVIEW_SUPABASE_PROJECT_REF }}
+          # Staging-only, intentionally PUBLIC browser credential; never use sb_secret/service_role.
+          PUBLIC_STAGING_BOOTSTRAP_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          PREVIEW_FORCE_GUEST_ONLY: ${{ vars.SUKUN_PREVIEW_FORCE_GUEST_ONLY }}
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           EVENT_NAME: ${{ github.event_name }}
           PREVIEW_ENABLE_MEMBER_SIGNUP: ${{ vars.SUKUN_PREVIEW_ENABLE_MEMBER_SIGNUP }}
@@ -134,13 +137,27 @@ jobs:
           email_otp=false
           phone_otp=false
           google_oauth=false
+          public_staging_bootstrap=false
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
-            for flag in PREVIEW_ENABLE_MEMBER_SIGNUP PREVIEW_ENABLE_EMAIL_OTP PREVIEW_ENABLE_PHONE_OTP PREVIEW_ENABLE_GOOGLE_OAUTH; do
+            for flag in PREVIEW_FORCE_GUEST_ONLY PREVIEW_ENABLE_MEMBER_SIGNUP PREVIEW_ENABLE_EMAIL_OTP PREVIEW_ENABLE_PHONE_OTP PREVIEW_ENABLE_GOOGLE_OAUTH; do
               case "${!flag}" in
                 ''|true|false) ;;
                 *) echo 'Preview auth flags must be true, false or unset.' >&2; exit 1 ;;
               esac
             done
+            if [[ "${PREVIEW_FORCE_GUEST_ONLY:-false}" == "true" ]]; then
+              PREVIEW_URL=
+              PREVIEW_KEY=
+              PREVIEW_REF=
+            elif [[ -z "$PREVIEW_URL" && -z "$PREVIEW_KEY" && -z "$PREVIEW_REF" ]]; then
+              # Deploy the same actual Flutter app against a verified CLEAN staging project.
+              # This is an anonymous public key, already inherently visible in the built JS.
+              # Auth experiments remain disabled until explicit repo staging vars are set.
+              PREVIEW_REF=qacklgqvxvjjzsimjoip
+              PREVIEW_URL=https://qacklgqvxvjjzsimjoip.supabase.co
+              PREVIEW_KEY="$PUBLIC_STAGING_BOOTSTRAP_KEY"
+              public_staging_bootstrap=true
+            fi
             if [[ -n "$PREVIEW_URL" || -n "$PREVIEW_KEY" || -n "$PREVIEW_REF" ]]; then
               test -n "$PREVIEW_URL"
               test -n "$PREVIEW_KEY"
@@ -152,10 +169,17 @@ jobs:
               environment=staging
               url="$PREVIEW_URL"
               key="$PREVIEW_KEY"
-              member_signup="${PREVIEW_ENABLE_MEMBER_SIGNUP:-false}"
-              email_otp="${PREVIEW_ENABLE_EMAIL_OTP:-false}"
-              phone_otp="${PREVIEW_ENABLE_PHONE_OTP:-false}"
-              google_oauth="${PREVIEW_ENABLE_GOOGLE_OAUTH:-false}"
+              if [[ "$public_staging_bootstrap" == "true" ]]; then
+                if [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" || "$PREVIEW_ENABLE_GOOGLE_OAUTH" == "true" ]]; then
+                  echo 'Public staging bootstrap cannot enable experimental authentication.' >&2
+                  exit 1
+                fi
+              else
+                member_signup="${PREVIEW_ENABLE_MEMBER_SIGNUP:-false}"
+                email_otp="${PREVIEW_ENABLE_EMAIL_OTP:-false}"
+                phone_otp="${PREVIEW_ENABLE_PHONE_OTP:-false}"
+                google_oauth="${PREVIEW_ENABLE_GOOGLE_OAUTH:-false}"
+              fi
             elif [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" || "$PREVIEW_ENABLE_GOOGLE_OAUTH" == "true" ]]; then
               echo 'Cannot enable authentication without an isolated staging backend.' >&2
               exit 1
