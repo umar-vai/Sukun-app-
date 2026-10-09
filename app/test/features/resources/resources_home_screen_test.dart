@@ -110,7 +110,6 @@ void main() {
     expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
     expect(repository.browseCalls, 2);
   });
-
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
