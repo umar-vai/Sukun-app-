@@ -24,12 +24,20 @@ class AudioPlayerScreen extends ConsumerStatefulWidget {
 }
 
 class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
-  late Future<void> _loadFuture;
+  late Future<bool> _loadFuture;
 
-  Future<void> _loadAudio() =>
-      (widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load)(
+  // Convert a source failure into UI state before a retry can rebuild.
+  // A synchronously failing Future must never escape into the widget zone.
+  Future<bool> _loadAudio() async {
+    try {
+      await (widget.loadResource ?? ref.read(audioPlaybackControllerProvider).load)(
         widget.resource,
       );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   void initState() {
@@ -55,13 +63,13 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('অডিও শুনুন')),
-      body: FutureBuilder<void>(
+      body: FutureBuilder<bool>(
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const AppLoadingState(label: 'অডিও চালু হচ্ছে…');
           }
-          if (snapshot.hasError) {
+          if (snapshot.data != true) {
             return AppErrorState(
               message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _retry,
