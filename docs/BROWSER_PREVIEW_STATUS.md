@@ -3,7 +3,7 @@
 ## Deployment target and separation
 
 - Source: `umar-vai/Sukun-app-` (the **existing application repository**, not a new demo repository).
-- This repository reports GitHub Pages support (`has_pages=true`). The workflow reads the Pages site's exact `base_path` using `actions/configure-pages@v5`. The live URL and hosting source must still be confirmed through Settings → Pages and a successful deployment; never treat a guessed `github.io` address as verified.
+- This repository reports GitHub Pages support (`has_pages=true`). The current `gh-pages` branch's HTML sets `/Sukun-app-/` as the base href, and the workflow reads GitHub's Pages `base_path` via `actions/configure-pages@v5` for the merge-triggered build. The live URL and hosting source must still be confirmed through Settings → Pages and a successful deployment; never treat a guessed `github.io` address as verified.
 - `umar-vai/Sukun-landing-` is a separate campaign landing page; do not overwrite it.
 - `sukunlife.com`, the existing dashboard, and `app.sukunlife.com` are NOT deployment targets.
 - There is no automatic Android APK/AAB/IPA build.
@@ -21,7 +21,7 @@ The actual `SukunLifeApp` and `app_router.dart` run from `app/lib/main_web.dart`
 
 1. Pull request: regular CI checks plus this workflow compiles and uploads the actual Flutter Web bundle as an artifact; never deploys PR source.
 2. On approved changes merged/pushed to `main`, `CI` must **pass**. The Web workflow's `workflow_run` only accepts a successful **push** run to main and checks that the tested SHA is still the current main HEAD.
-3. The Web workflow rebuilds the actual Flutter Web entrypoint, uploads its artifact, and deploys to **this repository's existing GitHub Pages** via `actions/deploy-pages@v4`.
+3. The Web workflow rebuilds the actual Flutter Web entrypoint, uploads its artifact, and then updates the **existing `gh-pages` publishing branch's root** while preserving its separate `/prelaunch/` subtree. No parallel website or publishing repository is created. GitHub Pages must be configured to serve that `gh-pages` branch, and the HTTP smoke check must pass.
 4. HTTP smoke checks request `index.html`, `flutter_bootstrap.js`, and `preview-build.json` from the deployed URL, requiring the **exact commit SHA** in the marker. This is NOT equivalent to browser role testing.
 5. Inspect Actions logs and actual `page_url` before reporting that the preview is live or browser verified. In Settings → Pages, GitHub Actions must be the configured build/deploy source.
 
@@ -36,6 +36,7 @@ Create *only after a separate, isolated Supabase staging project is approved and
 | `SUKUN_PREVIEW_SUPABASE_PROJECT_REF` | Verified **staging** Supabase project ref, never production |
 | `SUKUN_PREVIEW_SUPABASE_URL` | `https://<staging-ref>.supabase.co` |
 | `SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY` | Public staging `sb_publishable_...` key, **not** service role |
+| `SUKUN_PREVIEW_PUBLIC_URL` | Optional validated, existing Pages URL; otherwise smoke-checks `https://umar-vai.github.io/Sukun-app-/` (not independently browser verified yet) |
 
 Do **not** add service-role keys, JWT secrets, Gemini credentials, patient passwords, or production access tokens as Web build variables. The release workflow checks variable completeness and exact ref/URL matching and rejects the known production project ref `vydfafumxptanpkmtrpr`. Never use live patient accounts or data on public Pages.
 
@@ -51,4 +52,4 @@ Before calling the full authenticated preview ready:
 
 ## Current restrictions
 
-The linked Supabase project `vydfafumxptanpkmtrpr` is **production**; no Supabase staging branches were discovered in the October 9 check. We must not use that environment as the preview backend, and must not apply the staged patient login limiter there without its release gates. Until staging is available, hosted Pages can only display the safely unconfigured guest portion of the **same real app**.
+The linked Supabase project `vydfafumxptanpkmtrpr` is **production**; no Supabase staging branches were discovered in the October 9 check. We must not use that environment as the preview backend, and must not apply the staged patient login limiter there without its release gates. The previous `web-preview` branch contained a production-connected public publishing workflow, which was changed on 9 October 2026 to checks/artifact-only (commit `3ac6e2c`). The `gh-pages` branch may still contain **older production-connected JavaScript** until a reviewed safe update is successfully published and verified. Treat it as untrusted for patient testing. Until staging is available, subsequent hosted Pages releases can only display the safely unconfigured guest portion of the **same real app**.
