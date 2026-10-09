@@ -48,7 +48,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   }
 
   Future<List<ContentResource>> _load() {
-    if (ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository) {
+    final backendUnavailable =
+        ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    if (backendUnavailable) {
       return Future.value(const <ContentResource>[]);
     }
     final query = _searchController.text.trim();
@@ -112,8 +114,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final backendUnavailable =
-        ref.watch(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+    final repository = ref.watch(resourcesRepositoryProvider);
+    final backendUnavailable = repository is UnavailableResourcesRepository;
     final hasSearch =
         !backendUnavailable && _searchController.text.trim().isNotEmpty;
     final content = RefreshIndicator(
@@ -150,7 +152,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         Expanded(
                           child: Text(
                             'এই প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
-                            'নিরাপদ স্টেজিং চালু হলে অডিওসহ প্রকাশিত উপকরণ খুঁজতে পারবেন।',
+                            'নিরাপদ স্টেজিং চালু হলে অডিওসহ '
+                            'প্রকাশিত উপকরণ খুঁজতে পারবেন।',
                           ),
                         ),
                       ],
