@@ -132,7 +132,10 @@ class _QiblaView extends StatelessWidget {
         SukunPageIntro(
           eyebrow: 'Direction from $locationName',
           title: 'Face the Qibla',
-          subtitle: 'Keep your phone flat and turn slowly until the marker points straight ahead.',
+          subtitle: reading.calibrationState ==
+                  CompassCalibrationState.unavailable
+              ? 'ব্রাউজারে কম্পাস সেন্সর পাওয়া যাচ্ছে না। নিচের কোণটি উত্তর দিক থেকে মেপে কিবলা নির্ধারণ করুন।'
+              : 'Keep your phone flat and turn slowly until the marker points straight ahead.',
         ),
         const SizedBox(height: 24),
         SukunSurface(
