@@ -95,7 +95,10 @@ jobs:
             test/features/resources/resources_home_screen_test.dart \
             test/features/patient_care/patient_notifications_screen_test.dart \
             test/features/resources/resource_detail_screen_test.dart \
-            test/features/resources/audio_platform_hint_test.dart
+            test/features/resources/audio_platform_hint_test.dart \
+            test/core/media/audio_source_reload_test.dart \
+            test/features/resources/audio_player_retry_test.dart \
+            test/features/resources/video_load_phase_test.dart
 
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
