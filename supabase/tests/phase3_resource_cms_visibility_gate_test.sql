@@ -141,7 +141,10 @@ select results_eq(
 
 reset role;
 set local role anon;
-select results_eq($$select slug from public.content_items
+-- An anonymous PostgREST request has no authenticated subject. SET ROLE in
+-- a synthetic SQL test does NOT automatically clear prior JWT GUCs.
+select set_config('request.jwt.claim.sub', '', true);
+select results_eq($select slug from public.content_items
   where slug like 'qa-phase3-%' order by slug$$,
   $$values ('qa-phase3-public-article'::text)$$,
   'Guests see only public published article');
