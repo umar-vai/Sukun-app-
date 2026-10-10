@@ -196,9 +196,6 @@ void main() {
       );
     },
   );
-}
-
-
   // A revoked/stale task may never be accepted by the server. It must not
   // permanently block unrelated pending offline completions for this user.
   test('flush drops permanently rejected task and continues other tasks', () async {
@@ -258,6 +255,9 @@ void main() {
     expect(remote.submitted.map((e) => e.taskId), ['task-offline']);
     expect(await store.readForUser('user-1'), hasLength(2));
   });
+}
+
+
 
 PatientTask _task() {
   final action = PlanAction(
