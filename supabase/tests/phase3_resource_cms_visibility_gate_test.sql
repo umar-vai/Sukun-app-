@@ -157,6 +157,10 @@ select results_eq($$select slug from public.content_items
   $$values ('qa-phase3-patient-article'::text),
            ('qa-phase3-public-article'::text)$$,
   'Patients see public and patient-only items; hidden draft stays private');
+select results_eq(
+  $update public.content_items set title='Unauthorized patient edit'
+    where slug='qa-phase3-public-article' returning id$,
+  array[]::uuid[], 'Patient cannot directly modify published resources');
 
 select * from finish();
 rollback;
