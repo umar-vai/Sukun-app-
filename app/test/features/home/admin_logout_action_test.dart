@@ -83,7 +83,7 @@ void main() {
     await tester.tap(find.byKey(const Key('admin-sign-out')));
     await tester.pump();
     expect(fake.signOutCalls, 2);
-    fake.finishRetry();
+    fake.finishSignOut();
     await tester.pumpAndSettle();
   });
 }
@@ -100,26 +100,24 @@ Widget _app(AuthRepository auth) => ProviderScope(
 );
 
 class _ControllableAdminAuthRepository implements AuthRepository {
-  Completer<void> _completion = Completer<void>();
+  final _pending = <Completer<void>>[];
   int signOutCalls = 0;
 
-  void finishSignOut() => _completion.complete();
+  void finishSignOut() => _pending.last.complete();
 
-  void failSignOut() {
-    _completion.completeError(StateError('staging connection unavailable'));
-  }
-
-  void finishRetry() => _completion.complete();
+  void failSignOut() => _pending.last.completeError(
+    StateError('staging connection unavailable'),
+  );
 
   @override
   Stream<AppSession> watchSession() => const Stream.empty();
 
   @override
-  Future<void> signOut() async {
+  Future<void> signOut() {
     signOutCalls++;
-    final request = _completion;
-    if (signOutCalls > 1) _completion = Completer<void>();
-    await (signOutCalls > 1 ? _completion.future : request.future);
+    final request = Completer<void>();
+    _pending.add(request);
+    return request.future;
   }
 
   @override
