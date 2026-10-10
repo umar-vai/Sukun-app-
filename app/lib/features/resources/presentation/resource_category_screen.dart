@@ -29,6 +29,7 @@ class _ResourceCategoryScreenState
     extends ConsumerState<ResourceCategoryScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
+  bool _searchPending = false;
   late Future<List<ContentResource>> _resources;
 
   @override
@@ -55,7 +56,10 @@ class _ResourceCategoryScreenState
     if (backendUnavailable) return;
     _debounce?.cancel();
     final next = _load();
-    setState(() => _resources = next);
+    setState(() {
+      _resources = next;
+      _searchPending = false;
+    });
     try {
       await next;
     } catch (_) {
@@ -65,6 +69,13 @@ class _ResourceCategoryScreenState
 
   void _onSearch(String _) {
     _debounce?.cancel();
+    // Hide results from an old query immediately, rather than showing stale
+    // tiles during the debounce window (including quick edits and clearing).
+    if (_searchController.text.trim().isEmpty) {
+      _refresh();
+      return;
+    }
+    setState(() => _searchPending = true);
     _debounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) _refresh();
     });
@@ -149,6 +160,8 @@ class _ResourceCategoryScreenState
                           'নিরাপদ স্টেজিং সার্ভার সংযুক্ত হলে '
                           'প্রকাশিত উপকরণ দেখা যাবে।',
                     )
+                  : _searchPending
+                  ? const AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…')
                   : FutureBuilder<List<ContentResource>>(
                       future: _resources,
                       builder: (context, snapshot) {
