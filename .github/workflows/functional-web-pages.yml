@@ -107,6 +107,12 @@ jobs:
             test/features/patient_care/completion_queue_store_test.dart \
             test/features/patient_care/task_completion_coordinator_test.dart
 
+      - name: Google sign-in entrypoints in staged browser build (Chrome)
+        run: |
+          flutter test --platform chrome \
+            --dart-define=ENABLE_GOOGLE_OAUTH=true \
+            test/features/auth/google_oauth_entrypoints_test.dart
+
       - name: Read this repository's REAL Pages URL and base path
         if: github.event_name == 'workflow_run'
         id: pages
@@ -152,7 +158,8 @@ jobs:
             elif [[ -z "$PREVIEW_URL" && -z "$PREVIEW_KEY" && -z "$PREVIEW_REF" ]]; then
               # Deploy the same actual Flutter app against a verified CLEAN staging project.
               # This is an anonymous public key, already inherently visible in the built JS.
-              # Auth experiments remain disabled until explicit repo staging vars are set.
+              # Staging Google OAuth is enabled only after live provider health gate.
+              # Password signup, email OTP and SMS OTP remain disabled.
               PREVIEW_REF=qacklgqvxvjjzsimjoip
               PREVIEW_URL=https://qacklgqvxvjjzsimjoip.supabase.co
               PREVIEW_KEY="$PUBLIC_STAGING_BOOTSTRAP_KEY"
@@ -170,10 +177,11 @@ jobs:
               url="$PREVIEW_URL"
               key="$PREVIEW_KEY"
               if [[ "$public_staging_bootstrap" == "true" ]]; then
-                if [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" || "$PREVIEW_ENABLE_GOOGLE_OAUTH" == "true" ]]; then
-                  echo 'Public staging bootstrap cannot enable experimental authentication.' >&2
+                if [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" ]]; then
+                  echo 'Public staging bootstrap permits Google OAuth only.' >&2
                   exit 1
                 fi
+                google_oauth=true
               else
                 member_signup="${PREVIEW_ENABLE_MEMBER_SIGNUP:-false}"
                 email_otp="${PREVIEW_ENABLE_EMAIL_OTP:-false}"

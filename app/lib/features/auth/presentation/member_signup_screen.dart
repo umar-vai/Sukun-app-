@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/member_registration_repository.dart';
+import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
@@ -21,6 +22,7 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
   final _confirmation = TextEditingController();
   bool _submitting = false;
   bool _submitted = false;
+  bool _googleStarting = false;
 
   @override
   void dispose() {
@@ -54,6 +56,24 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _signInGoogle() async {
+    if (_googleStarting || !AppEnvironment.googleOAuthEnabled) return;
+    setState(() => _googleStarting = true);
+    try {
+      await ref.read(publicSignInGatewayProvider).signInWithGoogle();
+      // Only a verified Supabase session may complete the sign-in flow.
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google দিয়ে প্রবেশ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _googleStarting = false);
     }
   }
 
@@ -106,68 +126,91 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                           'রোগীর প্রেসক্রিপশন এই অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে যুক্ত হবে না।',
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
-                        TextFormField(
-                          key: const Key('member-email'),
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'ইমেইল',
-                            prefixIcon: Icon(Icons.mail_outline),
+                        if (AppEnvironment.googleOAuthEnabled) ...[
+                          const SizedBox(height: 24),
+                          OutlinedButton.icon(
+                            key: const Key('member-google-oauth'),
+                            onPressed: _googleStarting ? null : _signInGoogle,
+                            icon: const Icon(Icons.login_rounded),
+                            label: Text(
+                              _googleStarting
+                                  ? 'Google লগইন শুরু হচ্ছে…'
+                                  : 'Google দিয়ে চালিয়ে যান',
+                            ),
                           ),
-                          validator: validateRegistrationEmail,
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          key: const Key('member-password'),
-                          controller: _password,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'পাসওয়ার্ড',
-                            prefixIcon: Icon(Icons.lock_outline),
+                        ],
+                        if (AppEnvironment.publicMemberSignupEnabled ||
+                            !AppEnvironment.googleOAuthEnabled) ...[
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            key: const Key('member-email'),
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(
+                              labelText: 'ইমেইল',
+                              prefixIcon: Icon(Icons.mail_outline),
+                            ),
+                            validator: validateRegistrationEmail,
                           ),
-                          validator: (value) =>
-                              validateAccountPassword(value) == null
-                              ? null
-                              : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          key: const Key('member-password-confirm'),
-                          controller: _confirmation,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'পাসওয়ার্ড নিশ্চিত করুন',
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            key: const Key('member-password'),
+                            controller: _password,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'পাসওয়ার্ড',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            validator: (value) =>
+                                validateAccountPassword(value) == null
+                                ? null
+                                : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
                           ),
-                          validator: (value) =>
-                              validateConfirmedPassword(
-                                    _password.text,
-                                    value ?? '',
-                                  ) ==
-                                  null
-                              ? null
-                              : 'পাসওয়ার্ড দুটি মিলছে না।',
-                        ),
-                        const SizedBox(height: 20),
-                        FilledButton(
-                          onPressed:
-                              !AppEnvironment.isSupabaseConfigured ||
-                                  !AppEnvironment.publicMemberSignupEnabled ||
-                                  _submitting
-                              ? null
-                              : _submit,
-                          child: Text(
-                            _submitting
-                                ? 'অ্যাকাউন্ট তৈরি হচ্ছে…'
-                                : 'অ্যাকাউন্ট তৈরি করুন',
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            key: const Key('member-password-confirm'),
+                            controller: _confirmation,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'পাসওয়ার্ড নিশ্চিত করুন',
+                            ),
+                            validator: (value) =>
+                                validateConfirmedPassword(
+                                      _password.text,
+                                      value ?? '',
+                                    ) ==
+                                    null
+                                ? null
+                                : 'পাসওয়ার্ড দুটি মিলছে না।',
                           ),
-                        ),
-                        if (!AppEnvironment.publicMemberSignupEnabled) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed:
+                                !AppEnvironment.isSupabaseConfigured ||
+                                    !AppEnvironment.publicMemberSignupEnabled ||
+                                    _submitting
+                                ? null
+                                : _submit,
+                            child: Text(
+                              _submitting
+                                  ? 'অ্যাকাউন্ট তৈরি হচ্ছে…'
+                                  : 'অ্যাকাউন্ট তৈরি করুন',
+                            ),
+                          ),
+                          if (!AppEnvironment.publicMemberSignupEnabled) ...[
+                            const SizedBox(height: 12),
+                            const Text(
+                              'নতুন অ্যাকাউন্ট খোলার সুবিধা প্রস্তুত করা হচ্ছে।',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ] else ...[
+                          const SizedBox(height: 14),
                           const Text(
-                            'নতুন অ্যাকাউন্ট খোলার সুবিধা প্রস্তুত করা হচ্ছে।',
+                            'ইমেইল-পাসওয়ার্ড নিবন্ধন এখনো চালু হয়নি। '
+                            'Google দিয়ে সাধারণ অ্যাকাউন্ট ব্যবহার করতে পারবেন।',
                             textAlign: TextAlign.center,
                           ),
                         ],

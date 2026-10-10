@@ -68,4 +68,20 @@ for spec in patients:id prescriptions:id care_plans:id profiles:id user_roles:us
   echo "PASS: $table anonymous access is empty or denied."
 done
 
+# A visible Google sign-in button must never ship against a disabled provider.
+# GoTrue exposes provider readiness through public /auth/v1/settings.
+if [[ "${ENABLE_GOOGLE_OAUTH:-false}" == "true" ]]; then
+  google_code="$(curl --silent --show-error --max-time 20 \
+    --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+    --header 'Accept: application/json' \
+    --output "$tmp" --write-out '%{http_code}' \
+    "$SUPABASE_URL/auth/v1/settings")"
+  if [[ "$google_code" != "200" ]] ||
+     ! jq -e '.external.google == true' "$tmp" >/dev/null; then
+    echo "Google OAuth is not enabled on the isolated staging Supabase provider." >&2
+    exit 1
+  fi
+  echo "PASS: Google provider enabled on isolated staging Auth."
+fi
+
 echo "Anonymous staging smoke gate passed. Run authenticated RLS/E2E tests separately."
