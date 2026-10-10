@@ -32,9 +32,10 @@ class _AdminScaffoldState extends State<AdminScaffold> {
     if (_signingOut) return;
     setState(() => _signingOut = true);
     try {
-      await ProviderScope.containerOf(context, listen: false)
-          .read(authRepositoryProvider)
-          .signOut();
+      await ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(authRepositoryProvider).signOut();
       // The authenticated router handles the verified signed-out session.
       // Never navigate to a guest route before Supabase confirms sign-out.
     } catch (_) {
