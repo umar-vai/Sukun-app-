@@ -24,11 +24,13 @@ void main() {
       ),
     );
     await tester.pump();
-    fake.emit(const AppSession(
-      role: UserRole.member,
-      userId: 'synthetic-member',
-      displayName: 'QA Member',
-    ));
+    fake.emit(
+      const AppSession(
+        role: UserRole.member,
+        userId: 'synthetic-member',
+        displayName: 'QA Member',
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('আসসালামু আলাইকুম, QA Member'), findsOneWidget);
 
@@ -57,11 +59,13 @@ void main() {
       ),
     );
     await tester.pump();
-    fake.emit(const AppSession(
-      role: UserRole.member,
-      userId: 'synthetic-member',
-      displayName: 'QA Member',
-    ));
+    fake.emit(
+      const AppSession(
+        role: UserRole.member,
+        userId: 'synthetic-member',
+        displayName: 'QA Member',
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(TextButton, 'লগআউট'));
@@ -91,15 +95,14 @@ void main() {
       ),
     );
     await tester.pump();
-    fake.emit(const AppSession(
-      role: UserRole.member,
-      userId: 'synthetic-member',
-    ));
+    fake.emit(
+      const AppSession(role: UserRole.member, userId: 'synthetic-member'),
+    );
     await tester.pumpAndSettle();
 
-    final width = tester.getSize(
-      find.byKey(const Key('public-home-content-width')),
-    ).width;
+    final width = tester
+        .getSize(find.byKey(const Key('public-home-content-width')))
+        .width;
     expect(width, lessThanOrEqualTo(1140));
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
     expect(find.text('নামাজের সময়'), findsOneWidget);
@@ -116,9 +119,8 @@ final class _ControllableAuthRepository implements AuthRepository {
 
   void finishSignOut() => _completion.complete();
 
-  void failSignOut() => _completion.completeError(
-    StateError('staging network unavailable'),
-  );
+  void failSignOut() =>
+      _completion.completeError(StateError('staging network unavailable'));
 
   Future<void> dispose() => _changes.close();
 
@@ -133,10 +135,8 @@ final class _ControllableAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signIn({
-    required String identifier,
-    required String password,
-  }) => throw UnimplementedError();
+  Future<void> signIn({required String identifier, required String password}) =>
+      throw UnimplementedError();
 
   @override
   Future<void> changePassword({
