@@ -67,8 +67,16 @@ final class TaskCompletionCoordinator {
       try {
         await remote.submit(event);
         await store.remove(userId, event.clientEventId);
-      } on TaskCompletionSyncException {
-        // Keep the write-ahead event intact. A later refresh/app launch retries it.
+      } on TaskCompletionSyncException catch (error) {
+        if (!error.retryable) {
+          // A permanent server rejection must not poison the entire offline
+          // queue forever. Match record(): discard this rejected intention,
+          // then allow independent tasks to sync.
+          await store.remove(userId, event.clientEventId);
+          continue;
+        }
+        // Temporary network/server failures retain the original event ID so
+        // a later refresh can retry without duplicating the completion.
         break;
       }
     }

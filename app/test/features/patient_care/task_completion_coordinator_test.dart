@@ -196,6 +196,77 @@ void main() {
       );
     },
   );
+  // A revoked/stale task may never be accepted by the server. It must not
+  // permanently block unrelated pending offline completions for this user.
+  test(
+    'flush drops permanently rejected task and continues other tasks',
+    () async {
+      final store = _MemoryCompletionQueueStore();
+      final remote = _FakeCompletionRemote();
+      final coordinator = TaskCompletionCoordinator(
+        store: store,
+        remote: remote,
+      );
+      final when = DateTime.utc(2026, 10, 11, 8);
+
+      for (final taskId in ['task-rejected', 'task-valid']) {
+        await store.enqueue(
+          PendingTaskCompletion(
+            userId: 'user-1',
+            taskId: taskId,
+            status: PatientTaskStatus.completed,
+            clientEventId: 'event-$taskId',
+            occurredAt: when,
+          ),
+        );
+      }
+      remote.onSubmit = (event) async {
+        if (event.taskId == 'task-rejected') {
+          throw const TaskCompletionSyncException(
+            'Task no longer belongs to this active plan',
+            retryable: false,
+          );
+        }
+      };
+
+      await coordinator.flush('user-1');
+
+      expect(remote.submitted.map((e) => e.taskId), [
+        'task-rejected',
+        'task-valid',
+      ]);
+      expect(await store.readForUser('user-1'), isEmpty);
+    },
+  );
+
+  test(
+    'transient sync error retains event and delays following tasks',
+    () async {
+      final store = _MemoryCompletionQueueStore();
+      final remote = _FakeCompletionRemote()..retryableFailure = true;
+      final coordinator = TaskCompletionCoordinator(
+        store: store,
+        remote: remote,
+      );
+      final when = DateTime.utc(2026, 10, 11, 9);
+
+      for (final taskId in ['task-offline', 'task-next']) {
+        await store.enqueue(
+          PendingTaskCompletion(
+            userId: 'user-1',
+            taskId: taskId,
+            status: PatientTaskStatus.completed,
+            clientEventId: 'event-$taskId',
+            occurredAt: when,
+          ),
+        );
+      }
+      await coordinator.flush('user-1');
+
+      expect(remote.submitted.map((e) => e.taskId), ['task-offline']);
+      expect(await store.readForUser('user-1'), hasLength(2));
+    },
+  );
 }
 
 PatientTask _task() {
