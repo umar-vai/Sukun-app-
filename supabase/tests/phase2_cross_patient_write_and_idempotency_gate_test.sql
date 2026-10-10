@@ -3,7 +3,7 @@ begin;
 -- Phase 2 release gate: directly exercise the real PostgREST/RPC roles and
 -- write policies with synthetic accounts. Disposable CI only; rollback always.
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(16);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-00000000d101', 'phase2-admin@invalid.test', '{}'::jsonb),
@@ -18,9 +18,14 @@ insert into public.user_roles (user_id, role, granted_by) values
   ('00000000-0000-4000-8000-00000000d111', 'patient',
    '00000000-0000-4000-8000-00000000d101'),
   ('00000000-0000-4000-8000-00000000d112', 'patient',
-   '00000000-0000-4000-8000-00000000d101'),
-  ('00000000-0000-4000-8000-00000000d113', 'member',
    '00000000-0000-4000-8000-00000000d101');
+
+select ok(
+  exists (select 1 from public.user_roles
+    where user_id='00000000-0000-4000-8000-00000000d113'
+      and role='member'),
+  'The Auth fixture has the canonical database-issued Member role'
+);
 
 insert into public.patients
   (id, user_id, patient_code, full_name, created_by)
