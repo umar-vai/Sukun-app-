@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { parseChangePasswordInput } from "./validation.ts";
+import { isVerifiedCurrentPassword } from "./password-proof.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,6 +65,37 @@ Deno.serve(async (request) => {
       .eq("status", "active")
       .maybeSingle();
     if (!patient) return response({ code: "forbidden" }, 403);
+
+    // The user-supplied old password is NOT proof unless GoTrue validates it.
+    // Independently reauthenticate this exact Patient ID with the supplied
+    // current password, so verification holds regardless of provider toggles.
+    const verifiedEmail = userData.user.email;
+    if (!verifiedEmail) {
+      return response({ code: "service_unavailable" }, 503);
+    }
+    const verificationClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: passwordProof, error: proofError } =
+      await verificationClient.auth.signInWithPassword({
+        email: verifiedEmail,
+        password: input.currentPassword,
+      });
+    if (!isVerifiedCurrentPassword(
+      {
+        user: passwordProof.user,
+        session: passwordProof.session,
+        error: proofError,
+      },
+      userData.user.id,
+    )) {
+      return response({
+        code: "invalid_credentials",
+        message: "The current password is incorrect.",
+      }, 400);
+    }
+    // Do NOT call the JavaScript signOut() default (global); this short-lived
+    // verifier is server-only and has no persistent session/token exposure.
 
     const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
       method: "PUT",
