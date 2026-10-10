@@ -145,7 +145,7 @@ set local role anon;
 -- An anonymous PostgREST request has no authenticated subject. SET ROLE in
 -- a synthetic SQL test does NOT automatically clear prior JWT GUCs.
 select set_config('request.jwt.claim.sub', '', true);
-select results_eq($select slug from public.content_items
+select results_eq($$select slug from public.content_items
   where slug like 'qa-phase3-%' order by slug$$,
   $$values ('qa-phase3-public-article'::text)$$,
   'Guests see only public published article');
@@ -154,7 +154,7 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub',
                   '00000000-0000-4000-8000-00000000d212', true);
-select results_eq($$select slug from public.content_items
+select results_eq($$$select slug from public.content_items
   where slug like 'qa-phase3-%' order by slug$$,
   $$values ('qa-phase3-public-article'::text)$$,
   'General Members see public article but not patient-only resource');
@@ -163,7 +163,7 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub',
                   '00000000-0000-4000-8000-00000000d211', true);
-select results_eq($$select slug from public.content_items
+select results_eq($$$select slug from public.content_items
   where slug like 'qa-phase3-%' order by slug$$,
   $$values ('qa-phase3-patient-article'::text),
            ('qa-phase3-public-article'::text)$$,
