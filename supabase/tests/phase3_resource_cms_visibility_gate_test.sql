@@ -4,7 +4,7 @@ begin;
 -- no Qur'an, Hadith, copyrighted audio, patient data, or third-party media.
 -- These fixture rows are rolled back after the test.
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(21);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-00000000d201', 'phase3-admin@invalid.test', '{}'::jsonb),
@@ -15,9 +15,14 @@ insert into public.user_roles (user_id, role, granted_by) values
   ('00000000-0000-4000-8000-00000000d201', 'super_admin',
    '00000000-0000-4000-8000-00000000d201'),
   ('00000000-0000-4000-8000-00000000d211', 'patient',
-   '00000000-0000-4000-8000-00000000d201'),
-  ('00000000-0000-4000-8000-00000000d212', 'member',
    '00000000-0000-4000-8000-00000000d201');
+select ok(
+  exists (select 1 from public.user_roles
+    where user_id='00000000-0000-4000-8000-00000000d212'
+      and role='member'),
+  'The Auth fixture has the canonical database-issued Member role'
+);
+
 insert into public.patients (user_id, patient_code, full_name, created_by)
 values ('00000000-0000-4000-8000-00000000d211',
         'QA-PH3-PATIENT','Original QA Patient only',
