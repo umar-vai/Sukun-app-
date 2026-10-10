@@ -68,7 +68,9 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google দিয়ে প্রবেশ করা যায়নি। আবার চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text('Google দিয়ে প্রবেশ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _googleStarting = false);
