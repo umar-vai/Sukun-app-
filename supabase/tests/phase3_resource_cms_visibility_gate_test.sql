@@ -15,6 +15,8 @@ insert into public.user_roles (user_id, role, granted_by) values
   ('00000000-0000-4000-8000-00000000d201', 'super_admin',
    '00000000-0000-4000-8000-00000000d201'),
   ('00000000-0000-4000-8000-00000000d211', 'patient',
+   '00000000-0000-4000-8000-00000000d201'),
+  ('00000000-0000-4000-8000-00000000d212', 'member',
    '00000000-0000-4000-8000-00000000d201');
 insert into public.patients (user_id, patient_code, full_name, created_by)
 values ('00000000-0000-4000-8000-00000000d211',
