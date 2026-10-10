@@ -15,9 +15,7 @@ void main() {
     final changes = StreamController<AppSession>.broadcast(sync: true);
     addTearDown(changes.close);
     final container = ProviderContainer(
-      overrides: [
-        appSessionProvider.overrideWith((ref) => changes.stream),
-      ],
+      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
@@ -43,9 +41,7 @@ void main() {
     final changes = StreamController<AppSession>.broadcast(sync: true);
     addTearDown(changes.close);
     final container = ProviderContainer(
-      overrides: [
-        appSessionProvider.overrideWith((ref) => changes.stream),
-      ],
+      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
