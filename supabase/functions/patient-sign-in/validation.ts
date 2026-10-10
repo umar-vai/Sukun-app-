@@ -17,9 +17,19 @@ export function parsePatientSignInInput(value: unknown): PatientSignInInput {
     : typeof body.patient_code === "string"
     ? body.patient_code
     : "";
-  const isPhone = rawIdentifier.trim().startsWith("+");
-  const identifier = isPhone
-    ? rawIdentifier.trim().replace(/[\s()-]/g, "")
+  // Normalize Bangladesh local (01...) and country-code (8801...)
+  // phone numbers to E.164 without altering hyphenated Patient IDs.
+  const phoneCandidate = rawIdentifier.trim().replace(/[\s()-]/g, "");
+  const localBdPhone = /^01\d{9}$/.test(phoneCandidate);
+  const unprefixedBdPhone = /^8801\d{9}$/.test(phoneCandidate);
+  const isPhone = phoneCandidate.startsWith("+") ||
+    localBdPhone || unprefixedBdPhone;
+  const identifier = localBdPhone
+    ? "+88" + phoneCandidate
+    : unprefixedBdPhone
+    ? "+" + phoneCandidate
+    : isPhone
+    ? phoneCandidate
     : rawIdentifier.trim().toUpperCase();
   const password = typeof body.password === "string" ? body.password : "";
   if (

@@ -1,6 +1,10 @@
--- Staging-first: patient sign-in persistent limiter.
--- Deploy only with matching Edge Function and SIGN_IN_RATE_LIMIT_SECRET.
+-- Staging-tested Patient sign-in limiter; never bypass or disable throttling.
+-- PostgREST now supplies the signed JWT role in request.jwt.claims; the
+-- legacy request.jwt.claim.role GUC may be absent. The old check caused
+-- "Server role required" (42501) for legitimate server-side sign-ins.
+-- Keep BOTH the signed service_role claim check and RPC execute ACL.
 create schema if not exists private;
+
 create table if not exists private.patient_login_attempts (
   bucket_key text primary key check (length(bucket_key) = 64),
   window_start timestamptz not null default now(),
@@ -8,6 +12,7 @@ create table if not exists private.patient_login_attempts (
   updated_at timestamptz not null default now()
 );
 revoke all on private.patient_login_attempts from public, anon, authenticated;
+
 create or replace function public.check_patient_login_rate_limit(
   p_ip_hash text, p_identity_hash text
 ) returns boolean
@@ -19,9 +24,10 @@ declare
   current_count integer;
   threshold integer;
 begin
-  -- This function is called using the server-only service-role client.
-  -- Trust signed PostgREST JSON claims first; legacy claim only as fallback.
-  -- EXECUTE is additionally restricted to service_role.
+  -- Only an API-validated service_role JWT may invoke this RPC.
+  -- auth.jwt() reads the signed request.jwt.claims representation, which is
+  -- the current PostgREST context. Legacy claim fallback supports older
+  -- PostgREST installations only when the JSON claim has no role.
   if coalesce(
       nullif(auth.jwt() ->> 'role', ''),
       nullif(current_setting('request.jwt.claim.role', true), ''),
@@ -29,10 +35,12 @@ begin
     ) <> 'service_role' then
     raise exception 'Server role required' using errcode = '42501';
   end if;
+
   if p_ip_hash !~ '^[0-9a-f]{64}$'
     or p_identity_hash !~ '^[0-9a-f]{64}$' then
     raise exception 'Invalid rate-limit key' using errcode = '22023';
   end if;
+
   permitted := true;
   for current_key, threshold in
     select 'i:' || p_ip_hash, 30
@@ -56,6 +64,8 @@ begin
   return permitted;
 end;
 $$;
-revoke all on function public.check_patient_login_rate_limit(text,text) from public, anon, authenticated;
-grant execute on function public.check_patient_login_rate_limit(text,text) to service_role;
--- Schedule daily TTL cleanup via existing trusted maintenance scheduler after review.
+
+revoke all on function public.check_patient_login_rate_limit(text,text)
+  from public, anon, authenticated;
+grant execute on function public.check_patient_login_rate_limit(text,text)
+  to service_role;
