@@ -80,9 +80,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('লগআউট করা যায়নি। আবার চেষ্টা করুন।'),
-        ),
+        const SnackBar(content: Text('লগআউট করা যায়নি। আবার চেষ্টা করুন।')),
       );
     } finally {
       if (mounted) setState(() => _signingOut = false);
@@ -97,150 +95,150 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         key: const Key('public-home-content-width'),
         constraints: const BoxConstraints(maxWidth: 1140),
         child: RefreshIndicator(
-      onRefresh: _refresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
-        children: [
-          Text(
-            widget.displayName == null
-                ? 'আসসালামু আলাইকুম'
-                : 'আসসালামু আলাইকুম, ${widget.displayName}',
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: SukunColors.muted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'আপনার প্রতিদিনের সুকুন',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) => constraints.maxWidth < 520
-                ? Column(
-                    children: [
-                      _HomeUtilityTile(
-                        icon: Icons.schedule_outlined,
-                        title: 'নামাজের সময়',
-                        onTap: () => context.push('/prayer-times'),
-                        detail: FutureBuilder<_PrayerSummary?>(
-                          future: _prayer,
-                          builder: (context, snapshot) =>
-                              _prayerStatus(context, snapshot),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _HomeUtilityTile(
-                        icon: Icons.explore_outlined,
-                        title: 'কিবলার দিক',
-                        onTap: () => context.push('/qibla'),
-                        detail: const Text('দিকনির্দেশনা দেখুন'),
-                      ),
-                    ],
-                  )
-                : Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          onRefresh: _refresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
             children: [
-              Expanded(
-                child: _HomeUtilityTile(
-                  icon: Icons.schedule_outlined,
-                  title: 'নামাজের সময়',
-                  onTap: () => context.push('/prayer-times'),
-                  detail: FutureBuilder<_PrayerSummary?>(
-                    future: _prayer,
-                    builder: (context, snapshot) =>
-                        _prayerStatus(context, snapshot),
+              Text(
+                widget.displayName == null
+                    ? 'আসসালামু আলাইকুম'
+                    : 'আসসালামু আলাইকুম, ${widget.displayName}',
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: SukunColors.muted),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'আপনার প্রতিদিনের সুকুন',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) => constraints.maxWidth < 520
+                    ? Column(
+                        children: [
+                          _HomeUtilityTile(
+                            icon: Icons.schedule_outlined,
+                            title: 'নামাজের সময়',
+                            onTap: () => context.push('/prayer-times'),
+                            detail: FutureBuilder<_PrayerSummary?>(
+                              future: _prayer,
+                              builder: (context, snapshot) =>
+                                  _prayerStatus(context, snapshot),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _HomeUtilityTile(
+                            icon: Icons.explore_outlined,
+                            title: 'কিবলার দিক',
+                            onTap: () => context.push('/qibla'),
+                            detail: const Text('দিকনির্দেশনা দেখুন'),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _HomeUtilityTile(
+                              icon: Icons.schedule_outlined,
+                              title: 'নামাজের সময়',
+                              onTap: () => context.push('/prayer-times'),
+                              detail: FutureBuilder<_PrayerSummary?>(
+                                future: _prayer,
+                                builder: (context, snapshot) =>
+                                    _prayerStatus(context, snapshot),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _HomeUtilityTile(
+                              icon: Icons.explore_outlined,
+                              title: 'কিবলার দিক',
+                              onTap: () => context.push('/qibla'),
+                              detail: const Text('দিকনির্দেশনা দেখুন'),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+              if (widget.isPatient && _patientDay != null) ...[
+                const SizedBox(height: 14),
+                _PatientHomeSummary(dayFuture: _patientDay!),
+              ],
+              const SizedBox(height: 22),
+              SukunSectionHeader(
+                title: 'পাঠ ও অডিও',
+                subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
+                action: TextButton(
+                  onPressed: () => context.push(
+                    widget.isPatient ? '/patient/resources' : '/resources',
                   ),
+                  child: const Text('সব দেখুন'),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _HomeUtilityTile(
-                  icon: Icons.explore_outlined,
-                  title: 'কিবলার দিক',
-                  onTap: () => context.push('/qibla'),
-                  detail: const Text('দিকনির্দেশনা দেখুন'),
-                ),
-              ),
-            ],
-          ),
-          ),
-          if (widget.isPatient && _patientDay != null) ...[
-            const SizedBox(height: 14),
-            _PatientHomeSummary(dayFuture: _patientDay!),
-          ],
-          const SizedBox(height: 22),
-          SukunSectionHeader(
-            title: 'পাঠ ও অডিও',
-            subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
-            action: TextButton(
-              onPressed: () => context.push(
-                widget.isPatient ? '/patient/resources' : '/resources',
-              ),
-              child: const Text('সব দেখুন'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth < 520 ? 2 : 3;
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  mainAxisExtent: 116,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: _homeShortcuts.length,
-                itemBuilder: (context, index) {
-                  final item = _homeShortcuts[index];
-                  return SukunSurface(
-                    padding: const EdgeInsets.all(8),
-                    onTap: () => context.push('/resources/${item.slug}'),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SukunIconBadge(icon: item.icon, size: 36),
-                        const SizedBox(height: 7),
-                        Text(
-                          item.title,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ],
+              const SizedBox(height: 10),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth < 520 ? 2 : 3;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      mainAxisExtent: 116,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
                     ),
+                    itemCount: _homeShortcuts.length,
+                    itemBuilder: (context, index) {
+                      final item = _homeShortcuts[index];
+                      return SukunSurface(
+                        padding: const EdgeInsets.all(8),
+                        onTap: () => context.push('/resources/${item.slug}'),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SukunIconBadge(icon: item.icon, size: 36),
+                            const SizedBox(height: 7),
+                            Text(
+                              item.title,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
-          if (!widget.isPatient && !widget.isSignedInMember) ...[
-            const SizedBox(height: 18),
-            SukunSurface(
-              tone: SukunSurfaceTone.soft,
-              onTap: () => context.push('/login'),
-              child: const Row(
-                children: [
-                  Icon(Icons.health_and_safety_outlined),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
-                    ),
-                  ),
-                  Icon(Icons.chevron_right),
-                ],
               ),
-            ),
-          ],
-        ],
+              if (!widget.isPatient && !widget.isSignedInMember) ...[
+                const SizedBox(height: 18),
+                SukunSurface(
+                  tone: SukunSurfaceTone.soft,
+                  onTap: () => context.push('/login'),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.health_and_safety_outlined),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
+                        ),
+                      ),
+                      Icon(Icons.chevron_right),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
-    ),
-    ),
     );
 
     if (widget.isPatient) {
@@ -277,41 +275,41 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
           child: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          if (index == 1) context.go('/resources');
-          if (index == 2 && !_signingOut) {
-            if (widget.isSignedInMember) {
-              _signOut();
-            } else {
-              context.go('/login');
-            }
-          }
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'হোম',
+            selectedIndex: 0,
+            onDestinationSelected: (index) {
+              if (index == 1) context.go('/resources');
+              if (index == 2 && !_signingOut) {
+                if (widget.isSignedInMember) {
+                  _signOut();
+                } else {
+                  context.go('/login');
+                }
+              }
+            },
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'হোম',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.menu_book_outlined),
+                label: 'পাঠ ও অডিও',
+              ),
+              NavigationDestination(
+                icon: Icon(
+                  widget.isSignedInMember
+                      ? Icons.logout_outlined
+                      : Icons.login_outlined,
+                ),
+                label: _signingOut
+                    ? 'লগআউট হচ্ছে…'
+                    : widget.isSignedInMember
+                    ? 'লগআউট'
+                    : 'লগইন',
+              ),
+            ],
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            label: 'পাঠ ও অডিও',
-          ),
-          NavigationDestination(
-            icon: Icon(
-              widget.isSignedInMember
-                  ? Icons.logout_outlined
-                  : Icons.login_outlined,
-            ),
-            label: _signingOut
-                ? 'লগআউট হচ্ছে…'
-                : widget.isSignedInMember
-                ? 'লগআউট'
-                : 'লগইন',
-          ),
-        ],
-      ),
         ),
       ),
     );
@@ -328,9 +326,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     if (snapshot.hasError || info == null) {
       return const Text('অবস্থান সেট করুন');
     }
-    final formatted = MaterialLocalizations.of(context).formatTimeOfDay(
-      TimeOfDay.fromDateTime(info.nextPrayer.time),
-    );
+    final formatted = MaterialLocalizations.of(context)
+        .formatTimeOfDay(TimeOfDay.fromDateTime(info.nextPrayer.time));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
