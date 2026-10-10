@@ -50,9 +50,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      if (session == null) return null;
-
+      // Fail closed while an OAuth or restored browser session is unresolved.
+      // Never construct patient/admin widgets before role verification.
+      // A guarded direct link falls back to the safe landing route; users can
+      // navigate to their permitted clinical route after session restoration.
       final path = state.uri.path;
+      if (session == null) {
+        if (path.startsWith('/patient') || path.startsWith('/admin')) {
+          return '/';
+        }
+        return null;
+      }
+
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isLoginRoute = path == '/login';
