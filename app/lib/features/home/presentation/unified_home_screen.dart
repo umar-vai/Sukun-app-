@@ -31,6 +31,7 @@ class UnifiedHomeScreen extends ConsumerStatefulWidget {
 class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
   late Future<_PrayerSummary?> _prayer;
   Future<PatientDay>? _patientDay;
+  bool _signingOut = false;
 
   @override
   void initState() {
@@ -70,9 +71,32 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     }
   }
 
+  Future<void> _signOut() async {
+    if (_signingOut || !widget.isSignedInMember) return;
+    setState(() => _signingOut = true);
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      // Router reacts to the verified signed-out Supabase auth event.
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('লগআউট করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final content = RefreshIndicator(
+    final content = Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        key: const Key('public-home-content-width'),
+        constraints: const BoxConstraints(maxWidth: 1140),
+        child: RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -91,7 +115,30 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),
-          Row(
+          LayoutBuilder(
+            builder: (context, constraints) => constraints.maxWidth < 520
+                ? Column(
+                    children: [
+                      _HomeUtilityTile(
+                        icon: Icons.schedule_outlined,
+                        title: 'নামাজের সময়',
+                        onTap: () => context.push('/prayer-times'),
+                        detail: FutureBuilder<_PrayerSummary?>(
+                          future: _prayer,
+                          builder: (context, snapshot) =>
+                              _prayerStatus(context, snapshot),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _HomeUtilityTile(
+                        icon: Icons.explore_outlined,
+                        title: 'কিবলার দিক',
+                        onTap: () => context.push('/qibla'),
+                        detail: const Text('দিকনির্দেশনা দেখুন'),
+                      ),
+                    ],
+                  )
+                : Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
@@ -101,35 +148,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   onTap: () => context.push('/prayer-times'),
                   detail: FutureBuilder<_PrayerSummary?>(
                     future: _prayer,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Text('হিসাব করা হচ্ছে…');
-                      }
-                      final info = snapshot.data;
-                      if (snapshot.hasError || info == null) {
-                        return const Text('অবস্থান সেট করুন');
-                      }
-                      final formatted = MaterialLocalizations.of(context)
-                          .formatTimeOfDay(
-                            TimeOfDay.fromDateTime(info.nextPrayer.time),
-                          );
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${info.nextPrayer.label} · $formatted',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            info.locationName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      );
-                    },
+                    builder: (context, snapshot) =>
+                        _prayerStatus(context, snapshot),
                   ),
                 ),
               ),
@@ -143,6 +163,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 ),
               ),
             ],
+          ),
           ),
           if (widget.isPatient && _patientDay != null) ...[
             const SizedBox(height: 14),
@@ -162,13 +183,13 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
-              final columns = constraints.maxWidth < 330 ? 2 : 3;
+              final columns = constraints.maxWidth < 520 ? 2 : 3;
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columns,
-                  mainAxisExtent: 102,
+                  mainAxisExtent: 116,
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
                 ),
@@ -188,7 +209,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium,
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
                       ],
                     ),
@@ -218,6 +239,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
           ],
         ],
       ),
+    ),
     );
 
     if (widget.isPatient) {
@@ -233,21 +255,33 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         title: const SukunLifeLogo(height: 36),
         actions: [
           TextButton(
-            onPressed: widget.isSignedInMember
-                ? () => ref.read(authRepositoryProvider).signOut()
+            onPressed: _signingOut
+                ? null
+                : widget.isSignedInMember
+                ? _signOut
                 : () => context.push('/login'),
-            child: Text(widget.isSignedInMember ? 'লগআউট' : 'লগইন'),
+            child: Text(
+              _signingOut
+                  ? 'লগআউট হচ্ছে…'
+                  : widget.isSignedInMember
+                  ? 'লগআউট'
+                  : 'লগইন',
+            ),
           ),
         ],
       ),
       body: content,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: NavigationBar(
         selectedIndex: 0,
         onDestinationSelected: (index) {
           if (index == 1) context.go('/resources');
-          if (index == 2) {
+          if (index == 2 && !_signingOut) {
             if (widget.isSignedInMember) {
-              ref.read(authRepositoryProvider).signOut();
+              _signOut();
             } else {
               context.go('/login');
             }
@@ -269,10 +303,48 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   ? Icons.logout_outlined
                   : Icons.login_outlined,
             ),
-            label: widget.isSignedInMember ? 'লগআউট' : 'লগইন',
+            label: _signingOut
+                ? 'লগআউট হচ্ছে…'
+                : widget.isSignedInMember
+                ? 'লগআউট'
+                : 'লগইন',
           ),
         ],
       ),
+        ),
+      ),
+    );
+  }
+
+  Widget _prayerStatus(
+    BuildContext context,
+    AsyncSnapshot<_PrayerSummary?> snapshot,
+  ) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Text('হিসাব করা হচ্ছে…');
+    }
+    final info = snapshot.data;
+    if (snapshot.hasError || info == null) {
+      return const Text('অবস্থান সেট করুন');
+    }
+    final formatted = MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay.fromDateTime(info.nextPrayer.time),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${info.nextPrayer.label} · $formatted',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          info.locationName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }
