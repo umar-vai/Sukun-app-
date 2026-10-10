@@ -7,7 +7,11 @@ const userB = "22222222-2222-4222-8222-222222222222";
 Deno.test("correct password proof must also match the authenticated Patient", () => {
   assertEquals(
     isVerifiedCurrentPassword(
-      { user: { id: userA }, session: { access_token: "synthetic" }, error: null },
+      {
+        user: { id: userA },
+        session: { access_token: "synthetic" },
+        error: null,
+      },
       userA,
     ),
     true,
@@ -27,7 +31,11 @@ Deno.test("wrong password is rejected even if bearer session was valid", () => {
 Deno.test("proof for another account cannot rotate Patient password", () => {
   assertEquals(
     isVerifiedCurrentPassword(
-      { user: { id: userB }, session: { access_token: "synthetic" }, error: null },
+      {
+        user: { id: userB },
+        session: { access_token: "synthetic" },
+        error: null,
+      },
       userA,
     ),
     false,
