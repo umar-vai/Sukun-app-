@@ -240,6 +240,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         ],
       ),
     ),
+    ),
     );
 
     if (widget.isPatient) {
