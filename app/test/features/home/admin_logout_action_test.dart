@@ -105,9 +105,8 @@ class _ControllableAdminAuthRepository implements AuthRepository {
 
   void finishSignOut() => _pending.last.complete();
 
-  void failSignOut() => _pending.last.completeError(
-    StateError('staging connection unavailable'),
-  );
+  void failSignOut() =>
+      _pending.last.completeError(StateError('staging connection unavailable'));
 
   @override
   Stream<AppSession> watchSession() => const Stream.empty();
