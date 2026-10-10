@@ -15,7 +15,7 @@ This operational snapshot updates the *historical* staging setup notes in
 - **Deployed staging-only Edge Functions:** `admin-create-patient` v1, `send-notification` v1, `prescription-to-actions` v1, `prescription-document-to-actions` v1 are ACTIVE. Deploy alone does not prove browser E2E.
 - **Not yet active:** `patient-sign-in` needs the staging-only `SIGN_IN_RATE_LIMIT_SECRET` and matching security verification. `patient-change-password` deployment was blocked by a tool security check; never weaken/bypass that gate. Do not claim either function working.
 - **Secrets:** production Gemini/Firebase keys have NOT been copied to staging. AI/manual and notification/no-sender fallback must be verified with synthetic users.
-- **Authentication:** no staging Auth users, Super Admin or Patient users have been provisioned. Member Signup / Email OTP / Phone OTP / Google OAuth switches remain **false** unless separately approved and configured.
+- **Authentication baseline at creation:** no staging Auth users, Super Admin or Patient users were provisioned. Password-based Member Signup, Email OTP and Phone OTP remain disabled. Google OAuth staging enablement is governed by a separate verified Provider/CI gate; real user login requires manual browser testing.
 
 ## Public-only staging bootstrap for the existing Pages site
 
@@ -28,10 +28,16 @@ configuration. It is deliberately pinned to staging ref
 `qacklgqvxvjjzsimjoip`, never production. The build rejects a key/ref/URL
 mismatch and refuses to deploy when its anonymous patient-data API gate fails.
 
-The fallback keeps **member registration, email OTP, phone OTP and Google OAuth
-all disabled**, regardless of any isolated feature flag attempts. To safely
-enable a provider feature later, configure the complete verified staging
-connection variable triplet below and verify the applicable Auth/E2E gate.
+The fallback keeps **password-based member registration, email OTP and phone OTP
+disabled**. The **Google OAuth** staging experiment is enabled only on a
+CI-successful main deployment after the staging Supabase Auth provider's public
+settings confirm `external.google == true`, in addition to the existing
+anonymous patient-data isolation gate. The user must configure and retain the
+Web OAuth Client ID/Secret **inside Supabase Staging Auth**, along with the
+GitHub Pages Site URL and Google's exact staging Supabase callback URI.
+New Google users receive a member-only database role from the existing
+`provision_public_member` trigger; no patient/admin role is granted.
+This is not authenticated E2E proof and does not enable email/password signup.
 
 For emergency rollback to backend-free guest-only preview, set repository
 Actions variable `SUKUN_PREVIEW_FORCE_GUEST_ONLY=true`, then run a fresh approved
@@ -83,6 +89,27 @@ in a configured staging release**:
 not proof of correct cross-user RLS. Run authenticated Patient A vs Patient B
 negative tests **after creating isolated synthetic accounts**, before claiming
 Patient/Admin preview sign-off.
+
+## Google OAuth web acceptance (staging only)
+
+- Google Cloud Web OAuth client **Authorized JavaScript origins**:
+  `https://umar-vai.github.io`
+- Google Cloud Web OAuth client **Authorized redirect URI**:
+  `https://qacklgqvxvjjzsimjoip.supabase.co/auth/v1/callback`
+- Supabase Staging Google Auth provider enabled with its client ID and secret
+  stored **only** in provider settings; do not send these to GitHub or chats.
+- Supabase Staging Auth Site URL and Allowed Redirect URL:
+  `https://umar-vai.github.io/Sukun-app-/`
+- If Google OAuth consent screen is in Testing mode, the tester's Google
+  identity must be in its test-user allowlist.
+- Post-deploy verify `preview-build.json` reports `backend_mode: staging`,
+  `auth_features.google_oauth: true`, and `auth_features.member_signup: false`.
+- In Chrome and mobile Safari, verify **Google দিয়ে লগইন** on Login and
+  **Google দিয়ে চালিয়ে যান** on Register; complete real browser redirect and
+  session creation with a dedicated synthetic tester, then verify
+  `user_roles` has **member only** and no clinical patient access.
+- Password signup remains off even though Google may create member accounts.
+  Do not claim a successful login until the real browser run succeeds.
 
 ## Synthetic user and audio acceptance checklist
 
