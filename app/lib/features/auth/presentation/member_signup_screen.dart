@@ -141,62 +141,62 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                             !AppEnvironment.googleOAuthEnabled) ...[
                           const SizedBox(height: 24),
                           TextFormField(
-                          key: const Key('member-email'),
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'ইমেইল',
-                            prefixIcon: Icon(Icons.mail_outline),
+                            key: const Key('member-email'),
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(
+                              labelText: 'ইমেইল',
+                              prefixIcon: Icon(Icons.mail_outline),
+                            ),
+                            validator: validateRegistrationEmail,
                           ),
-                          validator: validateRegistrationEmail,
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          key: const Key('member-password'),
-                          controller: _password,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'পাসওয়ার্ড',
-                            prefixIcon: Icon(Icons.lock_outline),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            key: const Key('member-password'),
+                            controller: _password,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'পাসওয়ার্ড',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            validator: (value) =>
+                                validateAccountPassword(value) == null
+                                ? null
+                                : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
                           ),
-                          validator: (value) =>
-                              validateAccountPassword(value) == null
-                              ? null
-                              : '৮ থেকে ৭২টি অক্ষরের পাসওয়ার্ড লিখুন।',
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          key: const Key('member-password-confirm'),
-                          controller: _confirmation,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'পাসওয়ার্ড নিশ্চিত করুন',
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            key: const Key('member-password-confirm'),
+                            controller: _confirmation,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'পাসওয়ার্ড নিশ্চিত করুন',
+                            ),
+                            validator: (value) =>
+                                validateConfirmedPassword(
+                                      _password.text,
+                                      value ?? '',
+                                    ) ==
+                                    null
+                                ? null
+                                : 'পাসওয়ার্ড দুটি মিলছে না।',
                           ),
-                          validator: (value) =>
-                              validateConfirmedPassword(
-                                    _password.text,
-                                    value ?? '',
-                                  ) ==
-                                  null
-                              ? null
-                              : 'পাসওয়ার্ড দুটি মিলছে না।',
-                        ),
-                        const SizedBox(height: 20),
-                        FilledButton(
-                          onPressed:
-                              !AppEnvironment.isSupabaseConfigured ||
-                                  !AppEnvironment.publicMemberSignupEnabled ||
-                                  _submitting
-                              ? null
-                              : _submit,
-                          child: Text(
-                            _submitting
-                                ? 'অ্যাকাউন্ট তৈরি হচ্ছে…'
-                                : 'অ্যাকাউন্ট তৈরি করুন',
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed:
+                                !AppEnvironment.isSupabaseConfigured ||
+                                    !AppEnvironment.publicMemberSignupEnabled ||
+                                    _submitting
+                                ? null
+                                : _submit,
+                            child: Text(
+                              _submitting
+                                  ? 'অ্যাকাউন্ট তৈরি হচ্ছে…'
+                                  : 'অ্যাকাউন্ট তৈরি করুন',
+                            ),
                           ),
-                        ),
                           if (!AppEnvironment.publicMemberSignupEnabled) ...[
                             const SizedBox(height: 12),
                             const Text(
