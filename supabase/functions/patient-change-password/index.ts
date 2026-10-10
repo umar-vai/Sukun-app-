@@ -76,19 +76,21 @@ Deno.serve(async (request) => {
     const verificationClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: passwordProof, error: proofError } =
-      await verificationClient.auth.signInWithPassword({
+    const { data: passwordProof, error: proofError } = await verificationClient
+      .auth.signInWithPassword({
         email: verifiedEmail,
         password: input.currentPassword,
       });
-    if (!isVerifiedCurrentPassword(
-      {
-        user: passwordProof.user,
-        session: passwordProof.session,
-        error: proofError,
-      },
-      userData.user.id,
-    )) {
+    if (
+      !isVerifiedCurrentPassword(
+        {
+          user: passwordProof.user,
+          session: passwordProof.session,
+          error: proofError,
+        },
+        userData.user.id,
+      )
+    ) {
       return response({
         code: "invalid_credentials",
         message: "The current password is incorrect.",
