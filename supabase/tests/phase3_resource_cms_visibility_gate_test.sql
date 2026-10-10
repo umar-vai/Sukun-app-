@@ -94,7 +94,7 @@ select results_eq($$select count(*) from public.content_items
 reset role;
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
-select results_eq($select count(*) from public.content_items
+select results_eq($$select count(*) from public.content_items
   where slug like 'qa-phase3-%'$$,
   array[0::bigint], 'Guest cannot see drafts');
 
@@ -169,8 +169,8 @@ select results_eq($$$select slug from public.content_items
            ('qa-phase3-public-article'::text)$$,
   'Patients see public and patient-only items; hidden draft stays private');
 select results_eq(
-  $update public.content_items set title='Unauthorized patient edit'
-    where slug='qa-phase3-public-article' returning id$,
+  $$update public.content_items set title='Unauthorized patient edit'
+    where slug='qa-phase3-public-article' returning id$$,
   array[]::uuid[], 'Patient cannot directly modify published resources');
 
 select * from finish();
