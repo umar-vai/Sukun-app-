@@ -20,7 +20,13 @@ declare
   threshold integer;
 begin
   -- This function is called using the server-only service-role client.
-  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' then
+  -- Trust signed PostgREST JSON claims first; legacy claim only as fallback.
+  -- EXECUTE is additionally restricted to service_role.
+  if coalesce(
+      nullif(auth.jwt() ->> 'role', ''),
+      nullif(current_setting('request.jwt.claim.role', true), ''),
+      ''
+    ) <> 'service_role' then
     raise exception 'Server role required' using errcode = '42501';
   end if;
   if p_ip_hash !~ '^[0-9a-f]{64}$'
