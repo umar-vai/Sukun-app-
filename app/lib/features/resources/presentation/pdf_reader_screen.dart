@@ -4,6 +4,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/media/bengali_pdf_font_resolver.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
@@ -15,17 +16,25 @@ typedef PdfReaderRenderer = Widget Function(
   PdfViewerController controller,
   PdfViewerParams params,
   Key key,
+  PdfFontManager? fontManager,
 );
 
 final pdfReaderRendererProvider = Provider<PdfReaderRenderer>(
   (ref) =>
-      (uri, controller, params, key) => PdfViewer.uri(
+      (uri, controller, params, key, fontManager) => PdfViewer.uri(
         uri,
         key: key,
         controller: controller,
+        fontManager: fontManager,
         params: params,
         timeout: const Duration(seconds: 30),
       ),
+);
+
+// Keep fallback scoped to Bengali PDFs; do not alter arbitrary English PDF
+// typography. PDFium only requests these font bytes for missing faces.
+final bengaliPdfFontManagerProvider = Provider<PdfFontManager>(
+  (ref) => PdfFontManager(resolvers: const [BengaliPdfFontResolver()]),
 );
 
 /// A Web-first, cross-platform PDF reader, never an automatic external link.
@@ -43,6 +52,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   int _attempt = 0;
   int _currentPage = 1;
   int _pageCount = 0;
+
+  bool get _hasBengaliTitle => RegExp(r'[\u0980-\u09FF]')
+      .hasMatch('${widget.resource.title} ${widget.resource.titleBn ?? ''}');
 
   Uri? get _pdfUri {
     final target = resolveResourceMedia(widget.resource);
@@ -185,6 +197,9 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                               ),
                         ),
                         ValueKey('pdf-reader-${widget.resource.id}-$_attempt'),
+                        _hasBengaliTitle
+                            ? ref.read(bengaliPdfFontManagerProvider)
+                            : null,
                       ),
                     ),
                   ),
