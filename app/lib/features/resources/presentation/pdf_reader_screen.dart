@@ -34,9 +34,7 @@ final pdfReaderRendererProvider = Provider<PdfReaderRenderer>(
 // Keep fallback scoped to Bengali PDFs; do not alter arbitrary English PDF
 // typography. PDFium only requests these font bytes for missing faces.
 final bengaliPdfFontManagerProvider = Provider<PdfFontManager>(
-  (ref) => PdfFontManager(
-    resolvers: const [BengaliPdfFontResolver()],
-  ),
+  (ref) => PdfFontManager(resolvers: const [BengaliPdfFontResolver()]),
 );
 
 /// A Web-first, cross-platform PDF reader, never an automatic external link.
@@ -55,9 +53,8 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
   int _currentPage = 1;
   int _pageCount = 0;
 
-  bool get _hasBengaliTitle => RegExp(
-    r'[\u0980-\u09FF]',
-  ).hasMatch('${widget.resource.title} ${widget.resource.titleBn ?? ''}');
+  bool get _hasBengaliTitle => RegExp(r'[\u0980-\u09FF]')
+      .hasMatch('${widget.resource.title} ${widget.resource.titleBn ?? ''}');
 
   Uri? get _pdfUri {
     final target = resolveResourceMedia(widget.resource);
