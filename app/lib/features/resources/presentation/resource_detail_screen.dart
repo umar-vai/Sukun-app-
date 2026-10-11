@@ -87,8 +87,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     ref.listen<AsyncValue<AppSession>>(appSessionProvider, (previous, next) {
       final before = previous?.value;
       final after = next.value;
-      if (before?.userId != after?.userId ||
-          before?.role != after?.role) {
+      if (before?.userId != after?.userId || before?.role != after?.role) {
         _reload();
       }
     });
