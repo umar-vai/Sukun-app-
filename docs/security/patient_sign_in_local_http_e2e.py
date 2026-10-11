@@ -69,7 +69,13 @@ def request_json(url, path, payload, key, ip=None):
 def expected(url, path, payload, key, ip, status, code=None):
     observed, body = request_json(url, path, payload, key, ip)
     if observed != status:
-        actual_code = body.get("code") or body.get("error_code") or "no_error_code"
+        actual_code = body.get("error_code") or body.get("code") or "no_error_code"
+        raw_message = body.get("msg") or body.get("error_description") or ""
+        # Log only a sanitised, short reason; never log passwords or tokens.
+        safe_message = str(raw_message)[:100] if isinstance(raw_message, str) else ""
+        if any(term in safe_message.lower() for term in ("@", "password", "token", "bearer")):
+            safe_message = "[redacted]"
+        actual_code = str(actual_code) + (": " + safe_message if safe_message else "")
         stop(
             "expected HTTP " + str(status) + " but got " + str(observed)
             + " (" + str(actual_code) + ") for " + (code or "success")
