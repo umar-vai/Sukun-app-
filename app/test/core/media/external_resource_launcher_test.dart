@@ -39,6 +39,42 @@ void main() {
     expect(externalResourceUri(unsafe), isNull);
   });
 
+  test('turns a GitHub PDF page into direct raw PDF bytes URL', () {
+    const githubPdf = LinkedResource(
+      id: 'github-pdf',
+      title: 'বাংলা বই',
+      type: 'pdf',
+      mediaSourceType: 'external_pdf',
+      mediaUrl:
+          'https://github.com/umar-vai/Sukun-app-/blob/main/'
+          'সেলফ%20রুকইয়াহ%20গাইড%20(ফাইনাল)%20(1).pdf?raw=1',
+    );
+
+    final target = resolveResourceMedia(githubPdf);
+    expect(target?.kind, ResourceMediaKind.pdf);
+    expect(target?.uri?.scheme, 'https');
+    expect(target?.uri?.host, 'raw.githubusercontent.com');
+    expect(target?.uri?.pathSegments, [
+      'umar-vai',
+      'Sukun-app-',
+      'main',
+      'সেলফ রুকইয়াহ গাইড (ফাইনাল) (1).pdf',
+    ]);
+    expect(target?.uri?.hasQuery, isFalse);
+  });
+
+  test('rejects GitHub HTML pages masquerading as PDF resources', () {
+    const githubPage = LinkedResource(
+      id: 'github-page',
+      title: 'Not a PDF',
+      type: 'pdf',
+      mediaSourceType: 'external_pdf',
+      mediaUrl: 'https://github.com/umar-vai/Sukun-app-/issues/50',
+    );
+
+    expect(resolveResourceMedia(githubPage), isNull);
+  });
+
   test('classifies supported linked media for the correct player', () {
     const audio = LinkedResource(
       id: 'audio-1',
