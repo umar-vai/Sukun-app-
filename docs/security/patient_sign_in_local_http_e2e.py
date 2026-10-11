@@ -69,9 +69,10 @@ def request_json(url, path, payload, key, ip=None):
 def expected(url, path, payload, key, ip, status, code=None):
     observed, body = request_json(url, path, payload, key, ip)
     if observed != status:
+        actual_code = body.get("code") or body.get("error_code") or "no_error_code"
         stop(
             "expected HTTP " + str(status) + " but got " + str(observed)
-            + " for " + (code or "success")
+            + " (" + str(actual_code) + ") for " + (code or "success")
         )
     if code and body.get("code") != code:
         stop("unexpected error code for HTTP " + str(status))
@@ -107,6 +108,14 @@ def main():
     )
     if status not in (200, 201):
         stop("unable to seed synthetic patient record")
+
+    direct_auth = expected(
+        url, "/auth/v1/token?grant_type=password",
+        {"email": email, "password": password}, anon_key, None, 200
+    )
+    if not direct_auth.get("access_token"):
+        stop("local synthetic Auth sign-in did not issue a token")
+    print("PASS: synthetic identity authenticates directly with isolated GoTrue")
 
     path = "/functions/v1/patient-sign-in"
     good = {"identifier": patient_code, "password": password}
