@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
+      - uses: actions/checkout@v5
+      - name: Validate FFT browser JavaScript syntax
+        run: node --check app/web/sukun_audio_spectrum.js
       - name: Inspect public sample CORS read permission
         shell: bash
         run: |
@@ -37,4 +40,11 @@ jobs:
           else
             echo 'SAMPLE_FFT_CORS_HEADER_NOT_CONFIRMED'
           fi
+          echo 'Confirm a byte-range GET header as browsers use GET, not just HEAD:'
+          get_headers="$(mktemp)"
+          curl -sS -L --connect-timeout 8 --max-time 25 \
+            -D "$get_headers" -o /dev/null \
+            -H 'Origin: https://umar-vai.github.io' \
+            -H 'Range: bytes=0-255' "$sample" || true
+          grep -Ei '^(HTTP/|access-control-allow-origin:|content-type:|content-range:)' "$get_headers" || true
           echo 'Real browser analysis remains a separate verification.'
