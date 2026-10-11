@@ -104,7 +104,10 @@ class _AudioBarsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const count = 43;
     const gap = 4.1;
-    final barWidth = math.max(2.0, math.min(6.0, (size.width - 42 * gap) / count));
+    final barWidth = math.max(
+      2.0,
+      math.min(6.0, (size.width - 42 * gap) / count),
+    );
     final totalWidth = count * barWidth + (count - 1) * gap;
     final left = (size.width - totalWidth) / 2;
     final middleY = size.height / 2;
@@ -125,7 +128,8 @@ class _AudioBarsPainter extends CustomPainter {
         const Color(0xFFE8F5FC),
         (index / count) * 0.7,
       )!;
-      final paint = Paint()..color = tint.withValues(alpha: active ? 0.95 : 0.65);
+      final paint = Paint()
+        ..color = tint.withValues(alpha: active ? 0.95 : 0.65);
       final x = left + index * (barWidth + gap);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
