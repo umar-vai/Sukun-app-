@@ -1,13 +1,6 @@
 /// Native/web adapter contract for genuine FFT frequency measurements.
 /// Visualizations must not fabricate sound levels when a host blocks analysis.
-enum FrequencyStatus {
-  idle,
-  ready,
-  active,
-  paused,
-  blocked,
-  unsupported,
-}
+enum FrequencyStatus { idle, ready, active, paused, blocked, unsupported }
 
 class AudioFrequencyFrame {
   const AudioFrequencyFrame({
@@ -23,8 +16,7 @@ class AudioFrequencyFrame {
   final double bass;
   final double mid;
   final double treble;
-  bool get hasSpectrum =>
-      status == FrequencyStatus.active && bands.isNotEmpty;
+  bool get hasSpectrum => status == FrequencyStatus.active && bands.isNotEmpty;
 }
 
 abstract interface class AudioFrequencySource {
