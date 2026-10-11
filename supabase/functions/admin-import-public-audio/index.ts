@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import {
-  AUDIO_BUCKET,
   approvedAudioSource,
+  AUDIO_BUCKET,
   boundedAudioBytes,
   parseImportRequest,
 } from "./validation.ts";
@@ -74,9 +74,11 @@ Deno.serve(async (request) => {
       return json({ code: "resource_not_found" }, 404);
     }
     const item = result.data;
-    if (item.type !== "audio" || item.visibility !== "public" ||
-        item.media_source_type !== "direct_audio_url" ||
-        !item.rights_note?.trim()) {
+    if (
+      item.type !== "audio" || item.visibility !== "public" ||
+      item.media_source_type !== "direct_audio_url" ||
+      !item.rights_note?.trim()
+    ) {
       return json({ code: "not_an_approved_public_audio" }, 400);
     }
     const originalUrl = typeof item.media_url === "string"
@@ -113,8 +115,10 @@ Deno.serve(async (request) => {
         headers: { Accept: "audio/mpeg" },
       });
       const mediaType = downloaded.headers.get("content-type") ?? "";
-      if (!/^(audio\/(mpeg|mp3)|application\/octet-stream)(?:;|$)/i
-          .test(mediaType)) {
+      if (
+        !/^(audio\/(mpeg|mp3)|application\/octet-stream)(?:;|$)/i
+          .test(mediaType)
+      ) {
         await downloaded.body?.cancel();
         return json({ code: "not_an_mp3" }, 415);
       }
@@ -129,8 +133,10 @@ Deno.serve(async (request) => {
     const hashArray = new Uint8Array(
       await crypto.subtle.digest("SHA-256", audio),
     );
-    const digest = Array.from(hashArray, (byte) =>
-      byte.toString(16).padStart(2, "0")).join("");
+    const digest = Array.from(
+      hashArray,
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("");
     const objectPath = `ruqyahbd/${item.id}/${digest}.mp3`;
     const upload = await admin.storage.from(AUDIO_BUCKET).upload(
       objectPath,
@@ -141,7 +147,9 @@ Deno.serve(async (request) => {
         cacheControl: "3600",
       },
     );
-    if (upload.error && upload.error.message.toLowerCase().indexOf("exists") < 0) {
+    if (
+      upload.error && upload.error.message.toLowerCase().indexOf("exists") < 0
+    ) {
       return json({ code: "storage_upload_failed" }, 503);
     }
 
