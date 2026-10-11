@@ -181,6 +181,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                                     'বাহিরের সার্ভারে সরাসরি PDF ফাইল ও '
                                     'Browser CORS অনুমতি থাকতে হবে।',
                                 onRetry: _retry,
+                                showSafeMessage: true,
                               ),
                         ),
                         ValueKey('pdf-reader-${widget.resource.id}-$_attempt'),
