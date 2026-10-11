@@ -81,9 +81,12 @@ Deno.serve(async (request) => {
     ) {
       return json({ code: "not_an_approved_public_audio" }, 400);
     }
-    const originalUrl = typeof item.media_url === "string"
-      ? approvedAudioSource(item.media_url)
-      : null;
+    const chosenSource = requestBody.sourceUrlOverride ??
+      (typeof item.media_url === "string" ? item.media_url : "");
+    // The alternative must still be on the exact licensed source hostname,
+    // be selected by an authenticated super-admin, and be confirmed manually.
+    // No URL redirects, localhost, or arbitrary remote servers are accepted.
+    const originalUrl = approvedAudioSource(chosenSource);
     if (!originalUrl) {
       return json({ code: "source_host_not_authorized" }, 400);
     }
@@ -108,6 +111,20 @@ Deno.serve(async (request) => {
 
     let audio: Uint8Array;
     try {
+      // A HEAD preflight avoids downloading >45MiB media on Free staging,
+      // but final streamed byte enforcement remains authoritative.
+      const preflight = await fetch(originalUrl, {
+        method: "HEAD",
+        redirect: "error",
+        signal: AbortSignal.timeout(12000),
+        headers: { Accept: "audio/mpeg" },
+      });
+      if (preflight.ok) {
+        const declared = Number(preflight.headers.get("content-length"));
+        if (Number.isFinite(declared) && declared > 47185920) {
+          return json({ code: "audio_too_large" }, 413);
+        }
+      }
       const downloaded = await fetch(originalUrl, {
         method: "GET",
         redirect: "error",
