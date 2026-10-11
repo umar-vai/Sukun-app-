@@ -57,3 +57,25 @@ jobs:
               print('Page-10 U+25A1/U+FFFD count:', boxes)
               print('Assessment needs browser visual comparison; text extraction is not proof of correct font rendering.')
           PY
+
+  report-format-diff:
+    name: Show exact Dart formatting fixes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+      - name: Format new reader files and print suggested diff
+        shell: bash
+        run: |
+          dart format app/lib/core/media/bengali_pdf_font_resolver.dart \
+            app/lib/features/resources/presentation/pdf_reader_screen.dart \
+            app/test/features/resources/pdf_reader_screen_test.dart \
+            app/test/core/media/bengali_pdf_font_resolver_test.dart
+          git diff -- \
+            app/lib/core/media/bengali_pdf_font_resolver.dart \
+            app/lib/features/resources/presentation/pdf_reader_screen.dart \
+            app/test/features/resources/pdf_reader_screen_test.dart \
+            app/test/core/media/bengali_pdf_font_resolver_test.dart
