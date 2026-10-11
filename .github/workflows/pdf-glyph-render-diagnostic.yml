@@ -67,3 +67,27 @@ jobs:
           emit('POPPLER',poppler)
           emit('PDFIUM',img)
           PY
+
+      - name: Render repaired page 14 as isolated proof, never replace source PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdf="$(find . -maxdepth 1 -type f -name '*.pdf' -print -quit)"
+          python tools/pdf_bengali_glyph_repair.py "$pdf" /tmp/sukun-p14-fixed.pdf --page 14
+          pdftotext -f 14 -l 14 "$pdf" - | sha256sum | awk '{print "ORIGINAL_TEXT_SHA256 " $1}'
+          pdftotext -f 1 -l 1 /tmp/sukun-p14-fixed.pdf - | sha256sum | awk '{print "FIXED_TEXT_SHA256 " $1}'
+          python - <<'PY'
+          import base64, io, fitz, pypdfium2 as pdfium
+          from PIL import Image
+          p = pdfium.PdfDocument('/tmp/sukun-p14-fixed.pdf')[0]
+          img = p.render(scale=1.35).to_pil().convert('RGB')
+          img.thumbnail((760, 760))
+          w, h = img.size
+          crop = img.crop((int(w * 0.12), int(h * 0.19),
+                           int(w * 0.91), int(h * 0.80)))
+          out = io.BytesIO()
+          crop.save(out, format='PNG', optimize=True)
+          print('BEGIN_FIXED_PDFIUM_PNG_BASE64')
+          print(base64.b64encode(out.getvalue()).decode('ascii'))
+          print('END_FIXED_PDFIUM_PNG_BASE64')
+          PY
