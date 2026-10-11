@@ -36,8 +36,9 @@ class SukunAudioVisualizer extends StatefulWidget {
 class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
   late AudioFrequencySource _source;
   Timer? _ticker;
-  AudioFrequencyFrame _frame =
-      const AudioFrequencyFrame(status: FrequencyStatus.idle);
+  AudioFrequencyFrame _frame = const AudioFrequencyFrame(
+    status: FrequencyStatus.idle,
+  );
 
   bool get _enabled =>
       widget.playing &&
@@ -76,7 +77,10 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
     _ticker = null;
     if (_enabled) {
       // Do not notify listeners during initState/didUpdateWidget build.
-      _ticker = Timer.periodic(const Duration(milliseconds: 70), (_) => _tick());
+      _ticker = Timer.periodic(
+        const Duration(milliseconds: 70),
+        (_) => _tick(),
+      );
     } else {
       _source.sync(widget.position, false, widget.playbackSpeed);
       _frame = const AudioFrequencyFrame(status: FrequencyStatus.paused);
@@ -153,9 +157,9 @@ class _FrequencyBarsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const count = 36;
     const gap = 3.5;
-    final barWidth =
-        math.max(2, math.min(8, (size.width - (count - 1) * gap) / count))
-            .toDouble();
+    final barWidth = math
+        .max(2, math.min(8, (size.width - (count - 1) * gap) / count))
+        .toDouble();
     final width = count * barWidth + (count - 1) * gap;
     final left = (size.width - width) / 2;
     final middle = size.height / 2;
