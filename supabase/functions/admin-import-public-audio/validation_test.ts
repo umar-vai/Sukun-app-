@@ -12,11 +12,13 @@ Deno.test("only valid content id with explicit permission acknowledgement", () =
     permissionConfirmed: true,
   });
   if (value.contentItemId !== id) throw new Error("bad id");
-  for (const input of [
-    { contentItemId: id },
-    { contentItemId: id, permissionConfirmed: false },
-    { contentItemId: "../bad", permissionConfirmed: true },
-  ]) {
+  for (
+    const input of [
+      { contentItemId: id },
+      { contentItemId: id, permissionConfirmed: false },
+      { contentItemId: "../bad", permissionConfirmed: true },
+    ]
+  ) {
     try {
       parseImportRequest(input);
       throw new Error("unsafe import accepted");
@@ -30,16 +32,18 @@ Deno.test("rejects SSRF paths, queries, redirects to arbitrary hosts", () => {
   const good =
     "https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-HQ-ruqyahbd.org.mp3";
   if (!approvedAudioSource(good)) throw new Error("approved host missing");
-  for (const url of [
-    "http://files.ruqyahbd.org/audio/test.mp3",
-    "https://evil.invalid/audio/test.mp3",
-    "https://files.ruqyahbd.org.evil.invalid/audio/test.mp3",
-    "https://files.ruqyahbd.org:444/audio/test.mp3",
-    "https://files.ruqyahbd.org/private/test.mp3",
-    "https://files.ruqyahbd.org/audio/test.mp3?redirect=evil",
-    "https://files.ruqyahbd.org/audio/%2e%2e/test.mp3",
-    "https://files.ruqyahbd.org/audio/file.pdf",
-  ]) {
+  for (
+    const url of [
+      "http://files.ruqyahbd.org/audio/test.mp3",
+      "https://evil.invalid/audio/test.mp3",
+      "https://files.ruqyahbd.org.evil.invalid/audio/test.mp3",
+      "https://files.ruqyahbd.org:444/audio/test.mp3",
+      "https://files.ruqyahbd.org/private/test.mp3",
+      "https://files.ruqyahbd.org/audio/test.mp3?redirect=evil",
+      "https://files.ruqyahbd.org/audio/%2e%2e/test.mp3",
+      "https://files.ruqyahbd.org/audio/file.pdf",
+    ]
+  ) {
     if (approvedAudioSource(url)) throw new Error("unsafe host accepted");
   }
 });
@@ -57,7 +61,9 @@ Deno.test("caps streamed source without trusting Content-Length", async () => {
   const good = new Response(new Uint8Array([0x49, 0x44, 0x33, 0x04, 1, 2]));
   const result = await boundedAudioBytes(good, 8);
   if (result.length !== 6) throw new Error("bad content");
-  const tooBig = new Response(new Uint8Array([0x49, 0x44, 0x33, 0x04, 1, 2, 3, 4]));
+  const tooBig = new Response(
+    new Uint8Array([0x49, 0x44, 0x33, 0x04, 1, 2, 3, 4]),
+  );
   try {
     await boundedAudioBytes(tooBig, 5);
     throw new Error("cap bypassed");
