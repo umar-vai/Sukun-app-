@@ -47,7 +47,7 @@ select results_eq(
         'ensure_patient_tasks', 'record_task_completion',
         'register_notification_device', 'remove_notification_device'
       )
-      and p.proconfig::text like '%search_path=%'$,
+      and 'search_path=""' = any(p.proconfig)$$,
   array[8::bigint],
   'All eight SECURITY DEFINER RPCs use an empty trusted search_path'
 );
