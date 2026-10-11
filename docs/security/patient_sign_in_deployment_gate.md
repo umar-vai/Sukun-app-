@@ -39,3 +39,16 @@ select to_regclass('private.patient_login_attempts') is not null
 - Native packaging/public website: intentionally out of scope.
 
 **Release rule:** Hold Phase 1 exit until both deployed function and DB are in parity and staging probes pass. Never turn this into an APK build or a change to `sukunlife.com`.
+
+## Hosted staging verification update — 2026-10-12
+
+The existing **Sukun Life Staging** project (`qacklgqvxvjjzsimjoip`) has been independently verified as ACTIVE_HEALTHY in the same organization as Sukun Mobile App. Its deployed `patient-sign-in` **v2** includes the limiter, and the corresponding rate-limit RPC/table are installed.
+
+A synthetic, unauthenticated GitHub Actions HTTP probe against **staging only** observed:
+- HTTP **413** for a request body beyond 4 KiB.
+- HTTP **401** with generic `invalid_credentials` for a nonexistent synthetic identifier.
+- HTTP **403** with non-JSON gateway rejection for a deliberately forged `cf-connecting-ip` header. This proves the observed spoof attempt did not proceed as a successful login request; it does **not** prove every edge routing path is spoof-resistant.
+
+Still pending: hosted valid synthetic credential login and 429 thresholds (already proven in disposable local CI), provider confirmation of trusted IP provenance, backup/restore drill, operator review of Auth settings, and production deployment approval. **The live production project is untouched and remains at patient-sign-in v7 without a limiter.**
+
+See `docs/security/phase1_release_operator_runbook.md` and `docs/security/hosted_staging_login_smoke.py` for staged response verification and remaining gates.
