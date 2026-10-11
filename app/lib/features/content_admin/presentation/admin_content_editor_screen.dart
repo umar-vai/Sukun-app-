@@ -192,7 +192,6 @@ class _AdminContentEditorScreenState
     }
   }
 
-
   /// Staging-safe admin operation. Never fetch external audio directly from
   /// Flutter Web: the third-party host does not permit browser CORS reads.
   /// The server validates role/source/rights and leaves publication manual.
@@ -232,8 +231,7 @@ class _AdminContentEditorScreenState
         body: {'contentItemId': id, 'permissionConfirmed': true},
       );
       final data = response.data;
-      if (response.status < 200 || response.status >= 300 ||
-          data is! Map) {
+      if (response.status < 200 || response.status >= 300 || data is! Map) {
         _show('অডিও ইমপোর্ট ব্যর্থ হয়েছে। সোর্স/সাইজ/অনুমতি পরীক্ষা করুন।');
         return;
       }
@@ -785,7 +783,9 @@ class _AdminContentEditorScreenState
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: OutlinedButton.icon(
-                onPressed: _importingAudio || _saving ? null : _importPublicAudio,
+                onPressed: _importingAudio || _saving
+                    ? null
+                    : _importPublicAudio,
                 icon: _importingAudio
                     ? const SizedBox(
                         width: 18,
@@ -793,9 +793,11 @@ class _AdminContentEditorScreenState
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.cloud_download_outlined),
-                label: Text(_importingAudio
-                    ? 'অডিও আনা হচ্ছে…'
-                    : 'অনুমোদিত অডিও নিজস্ব স্টোরেজে আনুন'),
+                label: Text(
+                  _importingAudio
+                      ? 'অডিও আনা হচ্ছে…'
+                      : 'অনুমোদিত অডিও নিজস্ব স্টোরেজে আনুন',
+                ),
               ),
             ),
           _rightsField(),
