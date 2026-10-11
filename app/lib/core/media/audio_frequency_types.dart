@@ -1,6 +1,14 @@
 /// Native/web adapter contract for genuine FFT frequency measurements.
 /// Visualizations must not fabricate sound levels when a host blocks analysis.
-enum FrequencyStatus { idle, ready, active, paused, blocked, unsupported }
+enum FrequencyStatus {
+  idle,
+  ready,
+  active,
+  paused,
+  blocked,
+  gestureRequired,
+  unsupported,
+}
 
 class AudioFrequencyFrame {
   const AudioFrequencyFrame({
