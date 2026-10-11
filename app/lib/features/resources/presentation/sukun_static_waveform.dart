@@ -12,10 +12,10 @@ class SukunStaticWaveform extends StatelessWidget {
   const SukunStaticWaveform({super.key});
 
   @override
-  Widget build(BuildContext context) => const Semantics(
+  Widget build(BuildContext context) => Semantics(
     label: 'অডিও প্লেয়ারের স্থির তরঙ্গচিত্র',
     image: true,
-    child: SizedBox(
+    child: const SizedBox(
       height: 106,
       width: double.infinity,
       child: CustomPaint(
