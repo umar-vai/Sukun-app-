@@ -3,6 +3,7 @@ import {
   approvedAudioSource,
   AUDIO_BUCKET,
   boundedAudioBytes,
+  MAX_AUDIO_BYTES,
   parseImportRequest,
 } from "./validation.ts";
 
@@ -113,17 +114,21 @@ Deno.serve(async (request) => {
     try {
       // A HEAD preflight avoids downloading >45MiB media on Free staging,
       // but final streamed byte enforcement remains authoritative.
-      const preflight = await fetch(originalUrl, {
-        method: "HEAD",
-        redirect: "error",
-        signal: AbortSignal.timeout(12000),
-        headers: { Accept: "audio/mpeg" },
-      });
-      if (preflight.ok) {
-        const declared = Number(preflight.headers.get("content-length"));
-        if (Number.isFinite(declared) && declared > 47185920) {
-          return json({ code: "audio_too_large" }, 413);
+      try {
+        const preflight = await fetch(originalUrl, {
+          method: "HEAD",
+          redirect: "error",
+          signal: AbortSignal.timeout(12000),
+          headers: { Accept: "audio/mpeg" },
+        });
+        if (preflight.ok) {
+          const declared = Number(preflight.headers.get("content-length"));
+          if (Number.isFinite(declared) && declared > MAX_AUDIO_BYTES) {
+            return json({ code: "audio_too_large" }, 413);
+          }
         }
+      } catch {
+        // HEAD is optional; boundedAudioBytes enforces the cap on GET.
       }
       const downloaded = await fetch(originalUrl, {
         method: "GET",
