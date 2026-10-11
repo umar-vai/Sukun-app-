@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
@@ -114,6 +116,15 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // This is a public browser route, which may remain mounted after logout.
+    // Do not retain previous Patient/Member query results in the same tab.
+    ref.listen<AsyncValue<AppSession>>(appSessionProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      if (before?.userId != after?.userId || before?.role != after?.role) {
+        _refresh();
+      }
+    });
     final repository = ref.watch(resourcesRepositoryProvider);
     final backendUnavailable = repository is UnavailableResourcesRepository;
     final hasSearch =
