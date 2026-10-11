@@ -25,16 +25,17 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) {
-              requestedUri = uri;
-              return const Center(child: Text('EMBEDDED PDF PAGE'));
-            },
-          ),
+          pdfReaderRendererProvider.overrideWithValue((
+            uri,
+            controller,
+            params,
+            key,
+          ) {
+            requestedUri = uri;
+            return const Center(child: Text('EMBEDDED PDF PAGE'));
+          }),
         ],
-        child: const MaterialApp(
-          home: PdfReaderScreen(resource: validPdf),
-        ),
+        child: const MaterialApp(home: PdfReaderScreen(resource: validPdf)),
       ),
     );
     await tester.pumpAndSettle();
@@ -57,12 +58,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) {
-              keys.add(key);
-              return const Text('INLINE READER');
-            },
-          ),
+          pdfReaderRendererProvider.overrideWithValue((
+            uri,
+            controller,
+            params,
+            key,
+          ) {
+            keys.add(key);
+            return const Text('INLINE READER');
+          }),
         ],
         child: const MaterialApp(home: PdfReaderScreen(resource: validPdf)),
       ),
@@ -89,8 +93,7 @@ void main() {
       ProviderScope(
         overrides: [
           pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) =>
-                const Text('SHOULD NEVER LOAD'),
+            (uri, controller, params, key) => const Text('SHOULD NEVER LOAD'),
           ),
         ],
         child: const MaterialApp(home: PdfReaderScreen(resource: unsafe)),
@@ -107,12 +110,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          resourcesRepositoryProvider.overrideWithValue(
-            _PdfQaRepository(),
-          ),
+          resourcesRepositoryProvider.overrideWithValue(_PdfQaRepository()),
           pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) =>
-                const Text('PDF IS INSIDE SUKUN'),
+            (uri, controller, params, key) => const Text('PDF IS INSIDE SUKUN'),
           ),
         ],
         child: const MaterialApp(
