@@ -1,6 +1,7 @@
 export const AUDIO_BUCKET = "sukun-public-audio";
 export const MAX_AUDIO_BYTES = 47_185_920;
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ImportRequest = {
   contentItemId: string;
@@ -12,8 +13,10 @@ export function parseImportRequest(input: unknown): ImportRequest {
     throw new Error("invalid_request");
   }
   const data = input as Record<string, unknown>;
-  if (typeof data.contentItemId !== "string" ||
-      !uuidPattern.test(data.contentItemId)) {
+  if (
+    typeof data.contentItemId !== "string" ||
+    !uuidPattern.test(data.contentItemId)
+  ) {
     throw new Error("invalid_content_item");
   }
   if (data.permissionConfirmed !== true) {
@@ -28,12 +31,14 @@ export function parseImportRequest(input: unknown): ImportRequest {
 export function approvedAudioSource(raw: string): URL | null {
   try {
     const url = new URL(raw);
-    if (url.protocol !== "https:" ||
-        url.hostname !== "files.ruqyahbd.org" ||
-        url.port !== "" ||
-        url.username || url.password ||
-        url.search || url.hash ||
-        !/^\/audio\/[a-z0-9_.-]+\.mp3$/i.test(url.pathname)) {
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "files.ruqyahbd.org" ||
+      url.port !== "" ||
+      url.username || url.password ||
+      url.search || url.hash ||
+      !/^\/audio\/[a-z0-9_.-]+\.mp3$/i.test(url.pathname)
+    ) {
       return null;
     }
     return url;
