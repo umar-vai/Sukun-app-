@@ -44,8 +44,10 @@ def call(payload, key, fake_proxy_ip=None):
         raise RuntimeError("Hosted staging endpoint unreachable") from exc
     try:
         body = json.loads(raw)
-    except (ValueError, UnicodeDecodeError) as exc:
-        raise RuntimeError("Staging returned non-JSON response") from exc
+    except (ValueError, UnicodeDecodeError):
+        # Some gateways reject spoofed IP headers *before* Edge Function code.
+        # Only status and HTTP content type are surfaced; not the raw response.
+        return code, {"code": "non_json_gateway_response"}
     return code, body
 
 
