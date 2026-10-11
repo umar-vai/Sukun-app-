@@ -70,7 +70,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     if (target.kind == ResourceMediaKind.pdf) {
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
-          builder: (context) => PdfReaderScreen(resource: resource.linkedResource),
+          builder: (context) =>
+              PdfReaderScreen(resource: resource.linkedResource),
         ),
       );
       return;
