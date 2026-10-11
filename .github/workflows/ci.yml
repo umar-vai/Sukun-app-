@@ -129,6 +129,25 @@ jobs:
             exit 1
           fi
 
+  hosted-staging-auth-smoke:
+    name: Security / Hosted staging login (synthetic only)
+    # Never run hosted tests from untrusted forks or from push to main.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: edge-functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      SUKUN_TARGET_PROJECT_REF: qacklgqvxvjjzsimjoip
+      # Existing public staging key from the functional-web-pages workflow;
+      # this is NOT a secret and is safe to include in a browser build.
+      SUKUN_STAGING_PUBLIC_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check hosted synthetic login errors and spoofed header behavior
+        run: python3 docs/security/hosted_staging_login_smoke.py
+
   database-security:
     name: Database / Supabase RLS Tests
     runs-on: ubuntu-latest
