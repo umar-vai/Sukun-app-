@@ -1,0 +1,55 @@
+name: PDF Bengali Font Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '*.pdf'
+      - '.github/workflows/pdf-font-audit.yml'
+      - 'app/lib/features/resources/presentation/pdf_reader_screen.dart'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-repository-guide:
+    name: Inspect original PDF font embedding (read-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install PDF font-inspection tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: Report font embedding and Unicode coverage without exposing book text
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          pdfs = sorted(Path('.').glob('*.pdf'))
+          if not pdfs:
+              raise SystemExit('No root-level PDF found')
+          for pdf in pdfs:
+              print('PDF:', pdf.name)
+              info = subprocess.run(['pdfinfo', str(pdf)], capture_output=True, text=True, check=True)
+              for line in info.stdout.splitlines():
+                  if line.startswith(('Pages:', 'Page size:', 'File size:', 'PDF version:')):
+                      print(line)
+              fonts = subprocess.run(['pdffonts', str(pdf)], capture_output=True, text=True, check=True)
+              print('PDF font table (full):')
+              print(fonts.stdout[:20000])
+              lines = fonts.stdout.splitlines()[2:]
+              missing = [line for line in lines if len(line.split()) >= 7 and line.split()[3].lower() == 'no']
+              print('Fonts listed:', len(lines))
+              print('Fonts marked not embedded:', len(missing))
+              text = subprocess.run(
+                  ['pdftotext', '-f', '10', '-l', '10', '-enc', 'UTF-8', str(pdf), '-'],
+                  capture_output=True, text=True, check=True,
+              ).stdout
+              bengali = sum(0x0980 <= ord(c) <= 0x09FF for c in text)
+              boxes = text.count('\u25a1') + text.count('\ufffd')
+              print('Page-10 extracted Bengali codepoints:', bengali)
+              print('Page-10 U+25A1/U+FFFD count:', boxes)
+              print('Assessment needs browser visual comparison; text extraction is not proof of correct font rendering.')
+          PY
