@@ -1,0 +1,40 @@
+name: Public Audio CORS Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/audio-spectrum-cors-probe.yml'
+      - 'app/web/sukun_audio_spectrum.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-audio-cors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Inspect public sample CORS read permission
+        shell: bash
+        run: |
+          set -euo pipefail
+          sample='https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-ruqyahbd.org.mp3'
+          echo 'Sample: public Sukun Life staging audio resource'
+          echo 'Browser Origin: https://umar-vai.github.io'
+          headers="$(mktemp)"
+          curl -sS -I -L --connect-timeout 8 --max-time 25 \
+            -H 'Origin: https://umar-vai.github.io' \
+            -H 'Range: bytes=0-255' \
+            "$sample" > "$headers" || {
+              echo 'PROBE_NETWORK_UNAVAILABLE'
+              exit 0
+            }
+          grep -Ei '^(HTTP/|access-control-allow-origin:|access-control-allow-credentials:|content-type:|accept-ranges:|content-range:|location:)' "$headers" || true
+          if grep -Eiq '^access-control-allow-origin: (\*|https://umar-vai.github.io)\r?$' "$headers"; then
+            echo 'SAMPLE_FFT_CORS_HEADER_PRESENT'
+          else
+            echo 'SAMPLE_FFT_CORS_HEADER_NOT_CONFIRMED'
+          fi
+          echo 'Real browser analysis remains a separate verification.'
