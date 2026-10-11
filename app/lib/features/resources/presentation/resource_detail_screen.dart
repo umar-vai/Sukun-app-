@@ -11,6 +11,7 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
 class ResourceDetailScreen extends ConsumerStatefulWidget {
@@ -62,6 +63,14 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         MaterialPageRoute(
           builder: (context) =>
               AudioPlayerScreen(resource: resource.linkedResource),
+        ),
+      );
+      return;
+    }
+    if (target.kind == ResourceMediaKind.pdf) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) => PdfReaderScreen(resource: resource.linkedResource),
         ),
       );
       return;
