@@ -96,4 +96,52 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/');
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
   });
+
+  testWidgets('expired Patient session denies restored clinical deep links', (
+    tester,
+  ) async {
+    final changes = StreamController<AppSession>.broadcast(sync: true);
+    addTearDown(changes.close);
+    final container = ProviderContainer(
+      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pump();
+    changes.add(
+      const AppSession(
+        role: UserRole.patient,
+        userId: 'synthetic-patient-a',
+        requiresCredentialChange: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    var router = container.read(appRouterProvider);
+    router.go('/patient/change-password');
+    await tester.pumpAndSettle();
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/patient/change-password',
+    );
+
+    // Simulate an expired/rejected session or verified Supabase sign-out event.
+    // No previously authorized screen can survive the new guest identity.
+    changes.add(const AppSession.guest());
+    await tester.pumpAndSettle();
+
+    router = container.read(appRouterProvider);
+    router.go('/patient/change-password');
+    await tester.pumpAndSettle();
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/login',
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

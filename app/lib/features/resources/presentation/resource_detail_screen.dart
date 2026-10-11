@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/auth/app_session.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/external_resource_launcher.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -28,6 +30,16 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   void initState() {
     super.initState();
     _resource = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant ResourceDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.resourceId != widget.resourceId) {
+      // GoRouter may reuse this State when a different resource is opened.
+      // Never render content fetched for the previous resource identifier.
+      _resource = _load();
+    }
   }
 
   Future<ContentResource?> _load() =>
@@ -69,6 +81,18 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Public resource routes remain mounted across sign-in/sign-out. Re-fetch
+    // with the *new* database-verified identity instead of retaining content
+    // from the previous Patient/Admin in the same browser tab.
+    ref.listen<AsyncValue<AppSession>>(appSessionProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      // Initial loading -> Guest is not an account switch.
+      if (before?.userId == null && after?.userId == null) return;
+      if (before?.userId != after?.userId || before?.role != after?.role) {
+        _reload();
+      }
+    });
     return Scaffold(
       appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
       body: FutureBuilder<ContentResource?>(
