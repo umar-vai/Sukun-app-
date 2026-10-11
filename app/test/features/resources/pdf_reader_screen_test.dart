@@ -31,6 +31,7 @@ void main() {
             controller,
             params,
             key,
+            fontManager,
           ) {
             requestedUri = uri;
             return const Center(child: Text('EMBEDDED PDF PAGE'));
@@ -52,6 +53,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Bengali title opts into missing-font recovery only', (
+    tester,
+  ) async {
+    const bengali = LinkedResource(
+      id: 'bn-doc',
+      title: 'সেলফ রুকইয়াহ গাইড',
+      type: 'pdf',
+      mediaSourceType: 'external_pdf',
+      mediaUrl: 'https://files.example.test/guide.pdf',
+    );
+    bool? hadFontManager;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pdfReaderRendererProvider.overrideWithValue((
+            uri,
+            controller,
+            params,
+            key,
+            fontManager,
+          ) {
+            hadFontManager = fontManager != null;
+            return const Text('INLINE BENGALI READER');
+          }),
+        ],
+        child: const MaterialApp(home: PdfReaderScreen(resource: bengali)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(hadFontManager, isTrue);
+    expect(find.text('INLINE BENGALI READER'), findsOneWidget);
+  });
+
   testWidgets('retry reconstructs the reader without redirecting to browser', (
     tester,
   ) async {
@@ -64,6 +98,7 @@ void main() {
             controller,
             params,
             key,
+            fontManager,
           ) {
             keys.add(key);
             return const Text('INLINE READER');
@@ -94,7 +129,7 @@ void main() {
       ProviderScope(
         overrides: [
           pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) => const Text('SHOULD NEVER LOAD'),
+            (uri, controller, params, key, fontManager) => const Text('SHOULD NEVER LOAD'),
           ),
         ],
         child: const MaterialApp(home: PdfReaderScreen(resource: unsafe)),
