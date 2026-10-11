@@ -129,7 +129,8 @@ void main() {
       ProviderScope(
         overrides: [
           pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key, fontManager) => const Text('SHOULD NEVER LOAD'),
+            (uri, controller, params, key, fontManager) =>
+                const Text('SHOULD NEVER LOAD'),
           ),
         ],
         child: const MaterialApp(home: PdfReaderScreen(resource: unsafe)),
