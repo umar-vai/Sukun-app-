@@ -5,14 +5,8 @@ import {
   assertRejects,
   assertThrows,
 } from "jsr:@std/assert@1";
-import {
-  hashedLimiterKey,
-  trustedClientIp,
-} from "./rate-limit.ts";
-import {
-  MAX_SIGN_IN_BODY_BYTES,
-  readLimitedJson,
-} from "./request-body.ts";
+import { hashedLimiterKey, trustedClientIp } from "./rate-limit.ts";
+import { MAX_SIGN_IN_BODY_BYTES, readLimitedJson } from "./request-body.ts";
 
 const secret = "only-synthetic-test-secret-32-plus-chars";
 
