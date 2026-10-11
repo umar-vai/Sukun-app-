@@ -40,9 +40,13 @@ jobs:
               print('PDF font table (full):')
               print(fonts.stdout[:20000])
               lines = fonts.stdout.splitlines()[2:]
-              missing = [line for line in lines if len(line.split()) >= 7 and line.split()[3].lower() == 'no']
+              missing = [line for line in lines if len(line.split()) >= 7 and line.split()[-5].lower() == 'no']
               print('Fonts listed:', len(lines))
               print('Fonts marked not embedded:', len(missing))
+              for page in (2, 10, 11, 100):
+                  page_fonts = subprocess.run(['pdffonts', '-f', str(page), '-l', str(page), str(pdf)], capture_output=True, text=True, check=True)
+                  print('Font entries for page', page, ':')
+                  print(page_fonts.stdout[:12000])
               text = subprocess.run(
                   ['pdftotext', '-f', '10', '-l', '10', '-enc', 'UTF-8', str(pdf), '-'],
                   capture_output=True, text=True, check=True,
