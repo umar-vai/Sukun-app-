@@ -4,12 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
-import 'package:sukun_life/core/media/audio_frequency_source.dart';
-import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
-import 'package:sukun_life/features/resources/presentation/sukun_audio_visualizer.dart';
+import 'package:sukun_life/features/resources/presentation/sukun_static_waveform.dart';
 
 class AudioPlayerScreen extends ConsumerStatefulWidget {
   const AudioPlayerScreen({
@@ -97,7 +95,6 @@ class _PlayerBody extends ConsumerStatefulWidget {
 
 class _PlayerBodyState extends ConsumerState<_PlayerBody> {
   double? _draggingMilliseconds;
-  bool _animationEnabled = true;
 
   Uri? get _artwork {
     final raw = widget.resource.thumbnailUrl;
@@ -148,21 +145,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                             children: [
                               _AudioHero(
                                 artwork: _artwork,
-                                audioUrl: resolveResourceMedia(widget.resource)
-                                    ?.uri,
-                                playbackSpeed: player.speed,
                                 playing: playing,
                                 buffering: isBuffering,
-                                position: position,
-                                animationEnabled: _animationEnabled,
-                                onToggleAnimation: () {
-                                  if (!_animationEnabled) {
-                                    unlockAudioFrequencyFromGesture();
-                                  }
-                                  setState(() {
-                                    _animationEnabled = !_animationEnabled;
-                                  });
-                                },
                               ),
                               const SizedBox(height: 22),
                               Text(
@@ -339,21 +323,13 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                   tooltip: playing
                                                       ? 'থামান'
                                                       : 'চালু করুন',
-                                                  onPressed: () {
-                                                    // This must happen in the same
-                                                    // synchronous tap as Play,
-                                                    // before awaiting player.play.
-                                                    if (!playing &&
-                                                        _animationEnabled) {
-                                                      unlockAudioFrequencyFromGesture();
-                                                    }
-                                                    _runPlaybackAction(
-                                                      context,
-                                                      playing
-                                                          ? controller.pause
-                                                          : controller.play,
-                                                    );
-                                                  },
+                                                  onPressed: () =>
+                                                      _runPlaybackAction(
+                                                        context,
+                                                        playing
+                                                            ? controller.pause
+                                                            : controller.play,
+                                                      ),
                                                   icon: Icon(
                                                     playing
                                                         ? Icons.pause_rounded
@@ -512,23 +488,13 @@ Duration audioSeekTarget(Duration position, Duration? duration, int seconds) {
 class _AudioHero extends StatelessWidget {
   const _AudioHero({
     required this.artwork,
-    required this.audioUrl,
-    required this.playbackSpeed,
     required this.playing,
     required this.buffering,
-    required this.position,
-    required this.animationEnabled,
-    required this.onToggleAnimation,
   });
 
   final Uri? artwork;
-  final Uri? audioUrl;
-  final double playbackSpeed;
   final bool playing;
   final bool buffering;
-  final Duration position;
-  final bool animationEnabled;
-  final VoidCallback onToggleAnimation;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -548,23 +514,9 @@ class _AudioHero extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
       child: Column(
         children: [
-          Row(
-            children: [
-              const AudioPlaybackPlatformBadge(),
-              const Spacer(),
-              IconButton(
-                tooltip: animationEnabled
-                    ? 'অ্যানিমেশন বন্ধ করুন'
-                    : 'অ্যানিমেশন চালু করুন',
-                onPressed: onToggleAnimation,
-                icon: Icon(
-                  animationEnabled
-                      ? Icons.animation_rounded
-                      : Icons.motion_photos_off_rounded,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: AudioPlaybackPlatformBadge(),
           ),
           const SizedBox(height: 2),
           Container(
@@ -596,13 +548,7 @@ class _AudioHero extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: 8),
-          SukunAudioVisualizer(
-            playing: playing,
-            position: position,
-            audioUrl: audioUrl,
-            playbackSpeed: playbackSpeed,
-            animated: animationEnabled,
-          ),
+          const SukunStaticWaveform(),
           const SizedBox(height: 4),
           Text(
             buffering
@@ -617,7 +563,7 @@ class _AudioHero extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           const Text(
-            'সোর্স অনুমতি দিলে প্রকৃত শব্দের ফ্রিকোয়েন্সি দেখা যাবে',
+            'স্থির তরঙ্গচিত্র',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFFD1E6F3), fontSize: 12),
           ),

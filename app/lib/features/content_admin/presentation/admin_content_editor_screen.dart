@@ -7,7 +7,6 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminContentEditorScreen extends ConsumerStatefulWidget {
   const AdminContentEditorScreen({
@@ -41,7 +40,6 @@ class _AdminContentEditorScreenState
   String? _existingType;
   bool _populated = false;
   bool _saving = false;
-  bool _importingAudio = false;
 
   @override
   void initState() {
@@ -189,87 +187,6 @@ class _AdminContentEditorScreenState
       if (mounted) _show('উপকরণটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  /// Staging-safe admin operation. Never fetch external audio directly from
-  /// Flutter Web: the third-party host does not permit browser CORS reads.
-  /// The server validates role/source/rights and leaves publication manual.
-  Future<void> _importPublicAudio() async {
-    final id = _savedContentId;
-    if (id == null || _importingAudio || _saving) {
-      _show('প্রথমে অডিও উপকরণটি ড্রাফট হিসেবে সংরক্ষণ করুন।');
-      return;
-    }
-    final candidateUrl = _nullable('mediaUrl');
-    if (candidateUrl == null) {
-      _show('ইমপোর্টের আগে অনুমোদিত MP3 লিংক দিন।');
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('অডিও নিজের স্টোরেজে আনবেন?'),
-        content: Text(
-          'আপনি যে MP3 লিংকটি বেছে নিয়েছেন সেটি কপি হবে:\n'
-          '$candidateUrl\n\n'
-          'মূল প্রকাশিত অডিওর লিংক আপনি সেভ/পাবলিশ না করা পর্যন্ত বদলাবে না। '
-          'বিকল্প অডিও হলে বিষয়বস্তু ও স্বত্ব যাচাই করুন। '
-          'ফ্রি স্টোরেজে ৪৫ MiB-এর বেশি ফাইল আনা যাবে না।',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('বাতিল'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('অনুমতি আছে, ইমপোর্ট করুন'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _importingAudio = true);
-    try {
-      final response = await Supabase.instance.client.functions.invoke(
-        'admin-import-public-audio',
-        body: {
-          'contentItemId': id,
-          'permissionConfirmed': true,
-          'sourceUrlOverride': candidateUrl,
-        },
-      );
-      final data = response.data;
-      if (response.status < 200 || response.status >= 300 || data is! Map) {
-        _show('অডিও ইমপোর্ট ব্যর্থ হয়েছে। সোর্স/সাইজ/অনুমতি পরীক্ষা করুন।');
-        return;
-      }
-      final newUrl = data['publicUrl'];
-      final oldUrl = data['originalUrl'];
-      if (newUrl is! String ||
-          !newUrl.startsWith('https://') ||
-          oldUrl is! String ||
-          !oldUrl.startsWith('https://')) {
-        _show('নতুন অডিও লিংক যাচাই করা যায়নি।');
-        return;
-      }
-      // Keep external origin for provenance, without overwriting a source
-      // citation already entered by the content reviewer.
-      if (_nullable('sourceUrl') == null) {
-        _controller('sourceUrl').text = oldUrl;
-      }
-      _controller('mediaUrl').text = newUrl;
-      if (mounted) setState(() {});
-      _show('অডিও স্টোরেজে এসেছে। নতুন লিংক যাচাই করে সেভ ও পাবলিশ করুন।');
-    } on FunctionException {
-      if (mounted) {
-        _show('ইমপোর্ট করা যায়নি। Admin অনুমতি বা অডিও সার্ভার যাচাই করুন।');
-      }
-    } on Exception {
-      if (mounted) _show('অডিও ইমপোর্ট ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      if (mounted) setState(() => _importingAudio = false);
     }
   }
 
@@ -785,31 +702,11 @@ class _AdminContentEditorScreenState
           _field(
             'mediaUrl',
             'অডিও লিংক *',
-            helper: 'অনুমোদিত MP3-এর HTTPS লিংক দিন। বিকল্প লিংক সেভ না করেও প্রথমে স্টোরেজে ইমপোর্ট করে যাচাই করতে পারবেন।',
+            helper:
+                'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
             required: true,
             url: true,
           ),
-          if (_savedContentId != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: OutlinedButton.icon(
-                onPressed: _importingAudio || _saving
-                    ? null
-                    : _importPublicAudio,
-                icon: _importingAudio
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.cloud_download_outlined),
-                label: Text(
-                  _importingAudio
-                      ? 'অডিও আনা হচ্ছে…'
-                      : 'অনুমোদিত অডিও নিজস্ব স্টোরেজে আনুন',
-                ),
-              ),
-            ),
           _rightsField(),
         ],
         AdminResourceKind.bookPdf => [
