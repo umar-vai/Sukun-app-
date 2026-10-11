@@ -121,6 +121,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     ref.listen<AsyncValue<AppSession>>(appSessionProvider, (previous, next) {
       final before = previous?.value;
       final after = next.value;
+      // Initial loading -> Guest is not an account switch.
+      if (before?.userId == null && after?.userId == null) return;
       if (before?.userId != after?.userId || before?.role != after?.role) {
         _refresh();
       }
