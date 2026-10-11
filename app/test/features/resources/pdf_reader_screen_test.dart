@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
@@ -102,6 +103,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('সঠিক পিডিএফ লিংক পাওয়া যায়নি'), findsOneWidget);
     expect(find.text('SHOULD NEVER LOAD'), findsNothing);
+  });
+
+  testWidgets('shows PDF-specific, safe recovery guidance on load failure', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AppErrorState(
+            message:
+                'পিডিএফটি অ্যাপের মধ্যে পড়া যাচ্ছে না। '
+                'বাহিরের সার্ভারে সরাসরি PDF ফাইল ও '
+                'Browser CORS অনুমতি থাকতে হবে।',
+            showSafeMessage: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Browser CORS অনুমতি থাকতে হবে'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('PDF detail button opens internal viewer, not a new tab', (
