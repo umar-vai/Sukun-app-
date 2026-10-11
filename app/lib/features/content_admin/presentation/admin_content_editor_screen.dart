@@ -201,15 +201,21 @@ class _AdminContentEditorScreenState
       _show('প্রথমে অডিও উপকরণটি ড্রাফট হিসেবে সংরক্ষণ করুন।');
       return;
     }
+    final candidateUrl = _nullable('mediaUrl');
+    if (candidateUrl == null) {
+      _show('ইমপোর্টের আগে অনুমোদিত MP3 লিংক দিন।');
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('অডিও নিজের স্টোরেজে আনবেন?'),
-        content: const Text(
-          'শুধুমাত্র অনুমতি পাওয়া পাবলিক অডিও ইমপোর্ট করুন। '
-          'ফাইল কপি হবে, কিন্তু বর্তমানে প্রকাশিত অডিওর লিংক '
-          'আপনি নতুন করে সংরক্ষণ ও প্রকাশ না করা পর্যন্ত বদলাবে না। '
-          'ইমপোর্টে নেটওয়ার্ক ও স্টোরেজ খরচ হতে পারে।',
+        content: Text(
+          'আপনি যে MP3 লিংকটি বেছে নিয়েছেন সেটি কপি হবে:\n'
+          '$candidateUrl\n\n'
+          'মূল প্রকাশিত অডিওর লিংক আপনি সেভ/পাবলিশ না করা পর্যন্ত বদলাবে না। '
+          'বিকল্প অডিও হলে বিষয়বস্তু ও স্বত্ব যাচাই করুন। '
+          'ফ্রি স্টোরেজে ৪৫ MiB-এর বেশি ফাইল আনা যাবে না।',
         ),
         actions: [
           TextButton(
@@ -228,7 +234,11 @@ class _AdminContentEditorScreenState
     try {
       final response = await Supabase.instance.client.functions.invoke(
         'admin-import-public-audio',
-        body: {'contentItemId': id, 'permissionConfirmed': true},
+        body: {
+          'contentItemId': id,
+          'permissionConfirmed': true,
+          'sourceUrlOverride': candidateUrl,
+        },
       );
       final data = response.data;
       if (response.status < 200 || response.status >= 300 || data is! Map) {
@@ -775,7 +785,7 @@ class _AdminContentEditorScreenState
           _field(
             'mediaUrl',
             'অডিও লিংক *',
-            helper: 'সরাসরি HTTPS লিংক দিন। অনুমোদিত বাহিরের অডিও নিজস্ব স্টোরেজে আনতে পারেন।',
+            helper: 'অনুমোদিত MP3-এর HTTPS লিংক দিন। বিকল্প লিংক সেভ না করেও প্রথমে স্টোরেজে ইমপোর্ট করে যাচাই করতে পারবেন।',
             required: true,
             url: true,
           ),

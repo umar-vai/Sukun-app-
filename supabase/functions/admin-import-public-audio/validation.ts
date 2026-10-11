@@ -6,6 +6,7 @@ const uuidPattern =
 export type ImportRequest = {
   contentItemId: string;
   permissionConfirmed: true;
+  sourceUrlOverride?: string;
 };
 
 export function parseImportRequest(input: unknown): ImportRequest {
@@ -22,9 +23,18 @@ export function parseImportRequest(input: unknown): ImportRequest {
   if (data.permissionConfirmed !== true) {
     throw new Error("rights_confirmation_required");
   }
+  const sourceUrlOverride = data.sourceUrlOverride;
+  if (
+    sourceUrlOverride !== undefined &&
+    (typeof sourceUrlOverride !== "string" ||
+      !approvedAudioSource(sourceUrlOverride))
+  ) {
+    throw new Error("unapproved_source_url");
+  }
   return {
     contentItemId: data.contentItemId,
     permissionConfirmed: true,
+    ...(sourceUrlOverride === undefined ? {} : { sourceUrlOverride }),
   };
 }
 
