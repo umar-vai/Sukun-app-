@@ -57,6 +57,8 @@ def request_json(url, path, payload, key, ip=None):
         raw = exc.read(8192)
     except urllib.error.URLError as exc:
         stop("local HTTP endpoint unavailable (" + type(exc).__name__ + ")")
+    if not raw:
+        return status, {}
     try:
         body = json.loads(raw)
     except (ValueError, UnicodeDecodeError):
