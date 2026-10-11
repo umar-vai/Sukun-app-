@@ -1,0 +1,69 @@
+name: PDF Bengali Glyph Render Diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/pdf-glyph-render-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-renderers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Inspect PDFium and Poppler on the original Bengali book
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils fonts-noto-core
+          python -m pip install -q --break-system-packages pypdfium2 pillow pymupdf
+          python - <<'PY'
+          import base64, io, re, subprocess, pathlib
+          import pypdfium2 as pdfium
+          import fitz
+          from PIL import Image
+          pdf = next(pathlib.Path('.').glob('*.pdf'))
+          print('PDF',pdf.name)
+          subprocess.run(['pdffonts','-f','14','-l','14',str(pdf)],check=True)
+          text = subprocess.run(['pdftotext','-f','14','-l','14',str(pdf),'-'],capture_output=True,check=True).stdout.decode('utf-8','replace')
+          print('PAGE14_BENGALI_CODEPOINTS',sum(0x980<=ord(c)<=0x9ff for c in text))
+          print('PAGE14_REPLACEMENT_CODEPOINTS',sum(c in ('\u25a1','\ufffd') for c in text))
+          with fitz.open(pdf) as doc:
+            p=doc[13]
+            print('PAGE14_FONT_TABLE',repr(p.get_fonts(full=True)))
+            text_info=p.get_text('rawdict')
+            fontglyphs={}
+            for block in text_info['blocks']:
+              for line in block.get('lines',[]):
+                for span in line['spans']:
+                  chars=span['chars']
+                  font=span['font']
+                  ct=sum(0x980<=ord(c['c'])<=0x9ff for c in chars)
+                  squares=sum(c['c'] in ('\u25a1','\ufffd') for c in chars)
+                  old=fontglyphs.get(font,(0,0,0))
+                  fontglyphs[font]=(old[0]+len(chars),old[1]+ct,old[2]+squares)
+            print('PAGE14_FONTS_BY_TEXT_COUNTS',fontglyphs)
+            # Poppler rendering.
+            subprocess.run(['pdftoppm','-f','14','-l','14','-scale-to','760','-singlefile','-png',str(pdf),'/tmp/page14-poppler'],check=True,capture_output=True)
+            poppler=Image.open('/tmp/page14-poppler.png').convert('RGB')
+          doc=pdfium.PdfDocument(str(pdf))
+          page=doc[13]
+          img=page.render(scale=1.35).to_pil().convert('RGB')
+          img.thumbnail((760,760))
+          def emit(name,img):
+            # crop to the main text area, excluding padding
+            W,H=img.size
+            crop=img.crop((int(W*.12),int(H*.19),int(W*.91),int(H*.80)))
+            out=io.BytesIO();crop.save(out,format='PNG',optimize=True)
+            print(f'BEGIN_{name}_PNG_BASE64')
+            print(base64.b64encode(out.getvalue()).decode())
+            print(f'END_{name}_PNG_BASE64')
+          emit('POPPLER',poppler)
+          emit('PDFIUM',img)
+          PY
