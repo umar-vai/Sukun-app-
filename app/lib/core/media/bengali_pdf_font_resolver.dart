@@ -58,9 +58,9 @@ class BengaliPdfFontResolver implements PdfFontResolver {
   }
 
   static Future<Uint8List> _downloadFont() async {
-    final response = await http.get(fontUri).timeout(
-      const Duration(seconds: 20),
-    );
+    final response = await http
+        .get(fontUri)
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
       throw StateError('Bengali PDF fallback font is unavailable');
     }
