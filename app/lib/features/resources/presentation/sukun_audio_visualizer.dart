@@ -75,7 +75,7 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
     _ticker?.cancel();
     _ticker = null;
     if (_enabled) {
-      _tick();
+      // Do not notify listeners during initState/didUpdateWidget build.
       _ticker = Timer.periodic(const Duration(milliseconds: 70), (_) => _tick());
     } else {
       _source.sync(widget.position, false, widget.playbackSpeed);
