@@ -41,11 +41,7 @@ class _WebAudioFrequency implements AudioFrequencySource {
   void sync(Duration position, bool playing, double speed) {
     if (_uri == null || _status == FrequencyStatus.unsupported) return;
     try {
-      _sync(
-        (position.inMilliseconds / 1000).toJS,
-        playing.toJS,
-        speed.toJS,
-      );
+      _sync((position.inMilliseconds / 1000).toJS, playing.toJS, speed.toJS);
     } catch (_) {
       _status = FrequencyStatus.unsupported;
     }
@@ -71,10 +67,10 @@ class _WebAudioFrequency implements AudioFrequencySource {
       final parsed = data['bands'];
       final bands = parsed is List
           ? parsed
-              .whereType<num>()
-              .take(36)
-              .map((value) => value.toDouble().clamp(0, 1).toDouble())
-              .toList(growable: false)
+                .whereType<num>()
+                .take(36)
+                .map((value) => value.toDouble().clamp(0, 1).toDouble())
+                .toList(growable: false)
           : <double>[];
       return AudioFrequencyFrame(
         status: state,
