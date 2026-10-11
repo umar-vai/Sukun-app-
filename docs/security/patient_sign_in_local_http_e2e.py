@@ -85,7 +85,7 @@ def main():
     suffix = uuid.uuid4().hex[:12]
     patient_code = "SL-QA-" + suffix.upper()
     password = "LocalQa-" + secrets.token_urlsafe(18)
-    email = "patient-" + suffix + "@sukun-local.invalid"
+    email = "patient-" + suffix + "@example.com"
 
     status, auth = request_json(
         url, "/auth/v1/admin/users",
