@@ -123,10 +123,16 @@ class _SukunLoadingMarkState extends State<_SukunLoadingMark>
 }
 
 class AppErrorState extends StatelessWidget {
-  const AppErrorState({super.key, required this.message, this.onRetry});
+  const AppErrorState({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.showSafeMessage = false,
+  });
 
   final String message;
   final VoidCallback? onRetry;
+  final bool showSafeMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +163,7 @@ class AppErrorState extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  FriendlyFailures.generic(context),
+                  showSafeMessage ? message : FriendlyFailures.generic(context),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: SukunColors.muted),
