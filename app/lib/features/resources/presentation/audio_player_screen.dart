@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
-import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
