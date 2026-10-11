@@ -172,7 +172,8 @@ void main() {
         overrides: [
           resourcesRepositoryProvider.overrideWithValue(_PdfQaRepository()),
           pdfReaderRendererProvider.overrideWithValue(
-            (uri, controller, params, key) => const Text('PDF IS INSIDE SUKUN'),
+            (uri, controller, params, key, fontManager) =>
+                const Text('PDF IS INSIDE SUKUN'),
           ),
         ],
         child: const MaterialApp(
