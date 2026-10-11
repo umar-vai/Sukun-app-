@@ -147,7 +147,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                             children: [
                               _AudioHero(
                                 artwork: _artwork,
-                                audioUrl: resolveResourceMedia(widget.resource)?.uri,
+                                audioUrl: resolveResourceMedia(widget.resource)
+                                    ?.uri,
                                 playbackSpeed: player.speed,
                                 playing: playing,
                                 buffering: isBuffering,
