@@ -153,6 +153,20 @@ jobs:
           target = Path("supabase/functions/.env")
           target.write_text("SIGN_IN_RATE_LIMIT_SECRET=" + secrets.token_hex(32) + "\n")
           os.chmod(target, 0o600)
+          # The committed local config disables email authentication.
+          # For disposable synthetic login HTTP tests ONLY, enable it in
+          # this runner's working copy. Never push this runtime override.
+          config_path = Path("supabase/config.toml")
+          config = config_path.read_text()
+          start = config.index("[auth.email]")
+          end = config.index("\\n[auth.sms]", start)
+          section = config[start:end]
+          assert "enable_signup = false" in section
+          config_path.write_text(
+              config[:start] + section.replace(
+                  "enable_signup = false", "enable_signup = true", 1
+              ) + config[end:]
+          )
           PY
 
       - name: Start local Supabase stack
