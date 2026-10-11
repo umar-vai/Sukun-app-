@@ -116,6 +116,8 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
             FrequencyStatus.active => 'লাইভ Bass · Mid · Treble',
             FrequencyStatus.blocked =>
               'অডিও সার্ভার লাইভ সিগন্যালের অনুমতি দেয়নি',
+            FrequencyStatus.gestureRequired =>
+              'লাইভ ফ্রিকোয়েন্সি চালু করতে নিচে চাপুন',
             FrequencyStatus.unsupported =>
               'এই প্ল্যাটফর্মে লাইভ অ্যানালাইসিস নেই',
             _ => 'অডিও ফ্রিকোয়েন্সির জন্য অপেক্ষা…',
@@ -147,6 +149,17 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
               fontWeight: FontWeight.w500,
             ),
           ),
+          if (_enabled &&
+              _frame.status == FrequencyStatus.gestureRequired)
+            TextButton.icon(
+              key: const ValueKey('unlock-audio-frequency'),
+              onPressed: unlockAudioFrequencyFromGesture,
+              icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+              label: const Text('লাইভ ফ্রিকোয়েন্সি চালু করুন'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFE8F5FC),
+              ),
+            ),
         ],
       ),
     );
