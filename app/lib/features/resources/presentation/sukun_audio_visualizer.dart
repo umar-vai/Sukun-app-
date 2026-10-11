@@ -36,6 +36,7 @@ class SukunAudioVisualizer extends StatefulWidget {
 class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
   late AudioFrequencySource _source;
   Timer? _ticker;
+  bool _ticking = false;
   AudioFrequencyFrame _frame = const AudioFrequencyFrame(
     status: FrequencyStatus.idle,
   );
@@ -73,9 +74,14 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
   }
 
   void _updateTicker() {
+    final enabled = _enabled;
+    // Position can update more frequently than the FFT frame timer.
+    // Do not cancel/restart the timer for every position-stream rebuild.
+    if (enabled == _ticking) return;
+    _ticking = enabled;
     _ticker?.cancel();
     _ticker = null;
-    if (_enabled) {
+    if (enabled) {
       // Do not notify listeners during initState/didUpdateWidget build.
       _ticker = Timer.periodic(
         const Duration(milliseconds: 70),
