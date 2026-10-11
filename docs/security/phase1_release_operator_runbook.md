@@ -6,10 +6,10 @@
 
 - Repo: `umar-vai/Sukun-app-`; one Flutter codebase and the **existing** GitHub Pages preview only.
 - User-reported basic/role QA: 8/8 passed with test accounts.
-- GitHub CI run 522: Flutter quality, Edge checks, 18 files/270 pgTAP DB assertions and disposable local patient sign-in HTTP tests all passed; real HTTP responses include 200, 401, 413, 429.
+- GitHub CI run 522: Flutter quality, Edge checks and disposable local patient sign-in HTTP tests passed (200, 401, 413, 429). Expanded CI later passed 19 files/285 pgTAP assertions, including privileged RPC negative tests.
 - Live Supabase: deployed `patient-sign-in` version 7 (at audit), without persistent limiter. Both `public.check_patient_login_rate_limit(text,text)` and `private.patient_login_attempts` were absent.
 - Eight authenticated-executable `SECURITY DEFINER` RPCs are intentionally present and use an empty search_path with no anon EXECUTE; follow-up negative tests on synthetic Member identity remain required.
-- Current hosted IP header provenance is **not verified**. A caller-controlled `cf-connecting-ip` would defeat IP-bucket throttling; do not presume local tests establish trust.
+- Existing **Sukun Life Staging** project `qacklgqvxvjjzsimjoip` is independently confirmed ACTIVE_HEALTHY, with its own `patient-sign-in` v2 and persistent limiter RPC/table. Hosted HTTP smoke on PR #63 returned 413 for oversized requests, 401 for a synthetic unknown ID, and gateway-level **403** for forged `cf-connecting-ip` header. This is positive evidence for rejection of that tested spoof input, **not** exhaustive proof of trusted IP provenance or all WAF paths.
 
 ## Mandatory stop conditions
 
@@ -23,8 +23,8 @@ STOP / NO GO if any of these are true:
 
 ## Remaining steps in order
 
-1. **Hosted staging environment:** Obtain explicit cost/organization approval if Supabase branch creation incurs billing. Branches are not provisioned by this PR. Use migrations and **synthetic** users only. No production data clone.
-2. **Trusted network boundary:** Establish from hosted gateway configuration/provider contract that the chosen client IP field is *generated/sanitized* by the gateway. Test missing header and user-spoofed header at staging. A positive local smoke with an injected header does not satisfy this step.
+1. **Hosted staging environment:** Reuse existing, verified Sukun Life Staging (`qacklgqvxvjjzsimjoip`); no new billable branch is needed for this gate. Existing staging content is not an invitation to inspect or modify patients. Use only **synthetic** identities. No production data clone.
+2. **Trusted network boundary:** Observed a hosted **403 non-JSON gateway rejection** when submitting a forged `cf-connecting-ip` header in a synthetic staging request. Still verify the hosted gateway/provider contract for IP generation/sanitization and test non-CF variants. A local smoke with an injected header alone does not satisfy this step.
 3. **Stage database and function together:** Apply reviewed `docs/security/patient_sign_in_rate_limit_staging.sql` to isolated staging, then verify via `..._verify.sql`. Provide random `SIGN_IN_RATE_LIMIT_SECRET` *only as a hosted Function secret*. Deploy the matching `patient-sign-in` code to staging and check actual deployed version/source.
 4. **Staging HTTP checks:** Repeat valid/invalid/unknown patient, bounded body 413, both 429 thresholds, token refresh, success after window expiration, concurrent retries, and browser Patient/Admin login with synthetic identities.
 5. **Security:** Review all 8 privileged RPCs and their actual users; do not blindly revoke `authenticated` EXECUTE on APIs the app calls. Check new SQL negative tests, service-role isolation, Auth password exposure protection availability and Admin MFA feasibility. Review PII-safe logs.
@@ -45,9 +45,9 @@ STOP / NO GO if any of these are true:
 | Gate | Status as of 2026-10-12 | Evidence / owner |
 | --- | --- | --- |
 | Disposable local HTTP limiter | PASS | GitHub CI #522 |
-| Automated privileged RPC denial | IN CI | PR #63 |
-| Hosted IP header trust | BLOCKED | Provider/gateway confirmation required |
-| Hosted staging and synthetic HTTP | NOT STARTED | Requires staging availability/cost approval |
+| Automated privileged RPC denial | PASS in disposable CI | PR #63, 15 new assertions; 285 total |
+| Hosted IP header trust | PARTIAL | Forged header rejected 403; provider trust contract still pending |
+| Hosted staging and synthetic HTTP | PARTIAL | Existing staging verified; 401, 413 and spoofed-header 403 observed; valid login + 429 remain to confirm there |
 | Admin MFA and compromised password protection | PENDING | Auth configuration/operator |
 | Backup + isolated restore drill | PENDING | Dashboard/operator |
 | Production DB limiter/function parity | NOT DEPLOYED | Live v7; DB check absent |
