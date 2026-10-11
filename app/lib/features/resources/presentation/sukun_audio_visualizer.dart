@@ -1,149 +1,202 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/media/audio_frequency_source.dart';
 
-/// A lightweight position-synced ambient waveform for streaming audio.
-///
-/// This animation responds to play/pause, seek and playback position. It is not
-/// an FFT or a representation of the actual audio-frequency spectrum: the
-/// current just_audio playback pipeline does not expose decoded PCM samples.
-/// True beat analysis requires a separate, permission-safe audio analysis
-/// adapter, rather than displaying invented amplitude values as measurements.
+/// Actual Web Audio FFT values, never a play/pause-dependent imitation.
+/// Audio playback remains in just_audio. The Web analyzer attempts a separate
+/// CORS-enabled, inaudible stream from the same external media host.
+/// Unavailable sources remain readable and playable with a clear explanation.
 class SukunAudioVisualizer extends StatefulWidget {
   const SukunAudioVisualizer({
     super.key,
     required this.playing,
     required this.position,
+    this.audioUrl,
+    this.playbackSpeed = 1,
     this.animated = true,
+    this.source,
   });
 
   final bool playing;
   final Duration position;
+  final Uri? audioUrl;
+  final double playbackSpeed;
   final bool animated;
+
+  /// Injection point for deterministic FFT regression tests.
+  final AudioFrequencySource? source;
 
   @override
   State<SukunAudioVisualizer> createState() => _SukunAudioVisualizerState();
 }
 
-class _SukunAudioVisualizerState extends State<SukunAudioVisualizer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _motion = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2500),
+class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
+  late AudioFrequencySource _source;
+  Timer? _ticker;
+  bool _ticking = false;
+  AudioFrequencyFrame _frame = const AudioFrequencyFrame(
+    status: FrequencyStatus.idle,
   );
+
+  bool get _enabled =>
+      widget.playing &&
+      widget.animated &&
+      !MediaQuery.disableAnimationsOf(context) &&
+      widget.audioUrl != null;
 
   @override
   void initState() {
     super.initState();
-    _syncMotion();
+    _source = widget.source ?? createAudioFrequencySource();
+    _source.attach(widget.audioUrl);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateTicker();
   }
 
   @override
   void didUpdateWidget(covariant SukunAudioVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.playing != widget.playing ||
-        oldWidget.animated != widget.animated) {
-      _syncMotion();
+    if (oldWidget.source != widget.source && widget.source != null) {
+      _source.dispose();
+      _source = widget.source!;
+      _source.attach(widget.audioUrl);
+    } else if (oldWidget.audioUrl != widget.audioUrl) {
+      _source.attach(widget.audioUrl);
+    }
+    _updateTicker();
+  }
+
+  void _updateTicker() {
+    final enabled = _enabled;
+    // Position can update more frequently than the FFT frame timer.
+    // Do not cancel/restart the timer for every position-stream rebuild.
+    if (enabled == _ticking) return;
+    _ticking = enabled;
+    _ticker?.cancel();
+    _ticker = null;
+    if (enabled) {
+      // Do not notify listeners during initState/didUpdateWidget build.
+      _ticker = Timer.periodic(
+        const Duration(milliseconds: 70),
+        (_) => _tick(),
+      );
+    } else {
+      _source.sync(widget.position, false, widget.playbackSpeed);
+      _frame = const AudioFrequencyFrame(status: FrequencyStatus.paused);
     }
   }
 
-  void _syncMotion() {
-    if (widget.playing && widget.animated) {
-      _motion.repeat();
-    } else {
-      _motion.stop();
-    }
+  void _tick() {
+    if (!mounted || !_enabled) return;
+    _source.sync(widget.position, true, widget.playbackSpeed);
+    final current = _source.sample();
+    if (mounted) setState(() => _frame = current);
   }
 
   @override
   void dispose() {
-    _motion.dispose();
+    _ticker?.cancel();
+    _source.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final animate = widget.animated && !reduceMotion && widget.playing;
+    final running = _enabled && _frame.hasSpectrum;
+    final description = !_enabled
+        ? 'লাইভ ফ্রিকোয়েন্সি বন্ধ'
+        : switch (_frame.status) {
+            FrequencyStatus.active => 'লাইভ Bass · Mid · Treble',
+            FrequencyStatus.blocked =>
+              'অডিও সার্ভার লাইভ সিগন্যালের অনুমতি দেয়নি',
+            FrequencyStatus.unsupported =>
+              'এই প্ল্যাটফর্মে লাইভ অ্যানালাইসিস নেই',
+            _ => 'অডিও ফ্রিকোয়েন্সির জন্য অপেক্ষা…',
+          };
     return Semantics(
-      label: animate
-          ? 'অডিও চলছে, প্লেব্যাক অ্যানিমেশন চলছে'
-          : 'অডিও প্লেব্যাক ভিজ্যুয়ালাইজার স্থির আছে',
+      label: description,
       image: true,
-      child: SizedBox(
-        height: 96,
-        width: double.infinity,
-        child: AnimatedBuilder(
-          animation: _motion,
-          builder: (context, child) => CustomPaint(
-            painter: _AudioBarsPainter(
-              positionSeconds: widget.position.inMilliseconds / 1000,
-              motion: animate ? _motion.value : 0,
-              active: animate,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 106,
+            width: double.infinity,
+            child: CustomPaint(
+              key: const ValueKey('live-audio-frequency-bars'),
+              painter: _FrequencyBarsPainter(
+                bands: running ? _frame.bands : const [],
+                active: running,
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 3),
+          Text(
+            description,
+            key: const ValueKey('audio-frequency-status'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFD1E6F3),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _AudioBarsPainter extends CustomPainter {
-  const _AudioBarsPainter({
-    required this.positionSeconds,
-    required this.motion,
-    required this.active,
-  });
+class _FrequencyBarsPainter extends CustomPainter {
+  const _FrequencyBarsPainter({required this.bands, required this.active});
 
-  final double positionSeconds;
-  final double motion;
+  final List<double> bands;
   final bool active;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const count = 43;
-    const gap = 4.1;
-    final barWidth = math.max(
-      2.0,
-      math.min(6.0, (size.width - 42 * gap) / count),
-    );
-    final totalWidth = count * barWidth + (count - 1) * gap;
-    final left = (size.width - totalWidth) / 2;
-    final middleY = size.height / 2;
-    final phase = positionSeconds * 2.6 + motion * math.pi * 2;
+    const count = 36;
+    const gap = 3.5;
+    final barWidth = math
+        .max(2, math.min(8, (size.width - (count - 1) * gap) / count))
+        .toDouble();
+    final width = count * barWidth + (count - 1) * gap;
+    final left = (size.width - width) / 2;
+    final middle = size.height / 2;
+
     for (var index = 0; index < count; index++) {
-      final normalized = (index - (count - 1) / 2).abs() / (count / 2);
-      final dome = 0.3 + 0.7 * (1 - normalized * normalized);
-      final pattern =
-          0.5 +
-          0.25 * math.sin(index * 0.63 + (active ? phase : 0)) +
-          0.2 * math.sin(index * 1.39 - (active ? phase * 0.75 : 0));
-      final height = math.max(
-        5.0,
-        math.min(size.height - 6, 8 + dome * 78 * pattern),
-      );
+      // The actual FFT energy is sourced from analyser.getByteFrequencyData.
+      final energy = active && index < bands.length
+          ? bands[index].clamp(0.0, 1.0)
+          : 0.0;
+      final barHeight = 5 + math.sqrt(energy) * (size.height - 11);
       final tint = Color.lerp(
         SukunColors.sukunBlue,
         const Color(0xFFE8F5FC),
-        (index / count) * 0.7,
+        index / (count - 1) * 0.68,
       )!;
-      final paint = Paint()
-        ..color = tint.withValues(alpha: active ? 0.95 : 0.65);
-      final x = left + index * (barWidth + gap);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, middleY - height / 2, barWidth, height),
-          const Radius.circular(5),
+          Rect.fromLTWH(
+            left + index * (barWidth + gap),
+            middle - barHeight / 2,
+            barWidth,
+            barHeight,
+          ),
+          const Radius.circular(8),
         ),
-        paint,
+        Paint()..color = tint.withValues(alpha: active ? 0.98 : 0.48),
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _AudioBarsPainter oldDelegate) =>
-      oldDelegate.motion != motion ||
-      oldDelegate.positionSeconds != positionSeconds ||
-      oldDelegate.active != active;
+  bool shouldRepaint(covariant _FrequencyBarsPainter other) =>
+      active != other.active || !identical(bands, other.bands);
 }

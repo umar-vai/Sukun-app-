@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
@@ -146,6 +147,9 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                             children: [
                               _AudioHero(
                                 artwork: _artwork,
+                                audioUrl: resolveResourceMedia(widget.resource)
+                                    ?.uri,
+                                playbackSpeed: player.speed,
                                 playing: playing,
                                 buffering: isBuffering,
                                 position: position,
@@ -494,6 +498,8 @@ Duration audioSeekTarget(Duration position, Duration? duration, int seconds) {
 class _AudioHero extends StatelessWidget {
   const _AudioHero({
     required this.artwork,
+    required this.audioUrl,
+    required this.playbackSpeed,
     required this.playing,
     required this.buffering,
     required this.position,
@@ -502,6 +508,8 @@ class _AudioHero extends StatelessWidget {
   });
 
   final Uri? artwork;
+  final Uri? audioUrl;
+  final double playbackSpeed;
   final bool playing;
   final bool buffering;
   final Duration position;
@@ -577,6 +585,8 @@ class _AudioHero extends StatelessWidget {
           SukunAudioVisualizer(
             playing: playing,
             position: position,
+            audioUrl: audioUrl,
+            playbackSpeed: playbackSpeed,
             animated: animationEnabled,
           ),
           const SizedBox(height: 4),
@@ -593,7 +603,8 @@ class _AudioHero extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           const Text(
-            'প্লেব্যাকের সঙ্গে চলা ভিজ্যুয়ালাইজার',
+            'সোর্স অনুমতি দিলে প্রকৃত শব্দের ফ্রিকোয়েন্সি দেখা যাবে',
+            textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFFD1E6F3), fontSize: 12),
           ),
         ],
