@@ -105,6 +105,7 @@ jobs:
             test/features/patient_care/patient_notifications_screen_test.dart \
             test/features/resources/resource_detail_screen_test.dart \
             test/features/resources/resource_detail_session_isolation_test.dart \
+            test/features/resources/pdf_reader_screen_test.dart \
             test/features/resources/audio_platform_hint_test.dart \
             test/core/media/audio_source_reload_test.dart \
             test/features/resources/audio_player_retry_test.dart \
