@@ -131,7 +131,7 @@ Deno.serve(async (request) => {
     }
 
     const hashArray = new Uint8Array(
-      await crypto.subtle.digest("SHA-256", audio),
+      await crypto.subtle.digest("SHA-256", audio.buffer as ArrayBuffer),
     );
     const digest = Array.from(
       hashArray,
