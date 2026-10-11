@@ -702,7 +702,8 @@ class _AdminContentEditorScreenState
           _field(
             'mediaUrl',
             'অডিও লিংক *',
-            helper: 'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
+            helper:
+                'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
             required: true,
             url: true,
           ),
