@@ -11,6 +11,8 @@ import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
+import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 void main() {
   testWidgets('logout removes another patient resource detail in same tab', (
@@ -86,6 +88,39 @@ void main() {
     expect(find.text('Synthetic Public B'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('category reloads after logout and removes patient-only tile', (
+    tester,
+  ) async {
+    final sessionChanges = StreamController<AppSession>.broadcast(sync: true);
+    addTearDown(sessionChanges.close);
+    final repository = _ViewerAwareResourcesRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appSessionProvider.overrideWith((ref) => sessionChanges.stream),
+          resourcesRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          home: ResourceCategoryScreen(
+            section: resourceSectionBySlug('audio')!,
+          ),
+        ),
+      ),
+    );
+    sessionChanges.add(
+      const AppSession(role: UserRole.patient, userId: 'synthetic-patient-a'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('PRIVATE AUDIO FOR PATIENT A'), findsOneWidget);
+
+    repository.viewer = 'guest';
+    sessionChanges.add(const AppSession.guest());
+    await tester.pumpAndSettle();
+    expect(find.text('PRIVATE AUDIO FOR PATIENT A'), findsNothing);
+    expect(find.text('কোনো উপকরণ পাওয়া যায়নি'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 final class _ViewerAwareResourcesRepository implements ResourcesRepository {
@@ -122,7 +157,18 @@ final class _ViewerAwareResourcesRepository implements ResourcesRepository {
     String query = '',
     Set<String> types = const {},
     Set<String> categoryPrefixes = const {},
-  }) async => const [];
+  }) async {
+    if (viewer != 'patient-a') return const [];
+    return const [
+      ContentResource(
+        id: 'private-audio',
+        type: 'audio',
+        title: 'PRIVATE AUDIO FOR PATIENT A',
+        visibility: 'patient_only',
+        status: 'published',
+      ),
+    ];
+  }
 
   @override
   Future<List<QuranSurahSummary>> browseSurahs() async => const [];
