@@ -47,9 +47,7 @@ void main() {
     expect(source.syncs, greaterThan(0));
     expect(find.text('লাইভ Bass · Mid · Treble'), findsOneWidget);
 
-    source.frame = const AudioFrequencyFrame(
-      status: FrequencyStatus.blocked,
-    );
+    source.frame = const AudioFrequencyFrame(status: FrequencyStatus.blocked);
     await tester.pump(const Duration(milliseconds: 90));
     expect(find.textContaining('অনুমতি দেয়নি'), findsOneWidget);
 
