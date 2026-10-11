@@ -175,6 +175,11 @@ class AudioPlaybackController {
 
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
 
+  /// Repeat the current resource without changing other app audio sessions.
+  Future<void> toggleRepeatOne() => _player.setLoopMode(
+    _player.loopMode == LoopMode.one ? LoopMode.off : LoopMode.one,
+  );
+
   void _rememberPosition(Duration position) {
     final resourceId = _resource?.id;
     if (resourceId == null || position.inSeconds == _lastSavedSecond) return;
