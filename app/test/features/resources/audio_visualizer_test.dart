@@ -39,9 +39,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: SukunStaticWaveform()),
-      ),
+      const MaterialApp(home: Scaffold(body: SukunStaticWaveform())),
     );
     expect(find.byType(SukunStaticWaveform), findsOneWidget);
     expect(find.byKey(const ValueKey('static-audio-waveform')), findsOneWidget);
