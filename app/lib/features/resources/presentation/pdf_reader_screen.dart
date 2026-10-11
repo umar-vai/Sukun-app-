@@ -10,22 +10,22 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 /// The external host retains the file; only the PDF pages are rendered here.
 /// Web PDF network requests require the host to allow cross-origin reads.
-typedef PdfReaderRenderer =
-    Widget Function(
-      Uri uri,
-      PdfViewerController controller,
-      PdfViewerParams params,
-      Key key,
-    );
+typedef PdfReaderRenderer = Widget Function(
+  Uri uri,
+  PdfViewerController controller,
+  PdfViewerParams params,
+  Key key,
+);
 
 final pdfReaderRendererProvider = Provider<PdfReaderRenderer>(
-  (ref) => (uri, controller, params, key) => PdfViewer.uri(
-    uri,
-    key: key,
-    controller: controller,
-    params: params,
-    timeout: const Duration(seconds: 30),
-  ),
+  (ref) =>
+      (uri, controller, params, key) => PdfViewer.uri(
+        uri,
+        key: key,
+        controller: controller,
+        params: params,
+        timeout: const Duration(seconds: 30),
+      ),
 );
 
 /// A Web-first, cross-platform PDF reader, never an automatic external link.
@@ -131,8 +131,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                         ),
                         IconButton(
                           tooltip: 'পরের পৃষ্ঠা',
-                          onPressed:
-                              _pageCount > 0 && _currentPage < _pageCount
+                          onPressed: _pageCount > 0 && _currentPage < _pageCount
                               ? () => _goToPage(_currentPage + 1)
                               : null,
                           icon: const Icon(Icons.chevron_right),
@@ -174,12 +173,11 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
                             setState(() => _currentPage = page);
                           },
                           loadingBannerBuilder: (context, bytes, total) =>
-                              const AppLoadingState(
-                                label: 'পিডিএফ লোড হচ্ছে…',
-                              ),
+                              const AppLoadingState(label: 'পিডিএফ লোড হচ্ছে…'),
                           errorBannerBuilder: (context, error, trace, ref) =>
                               AppErrorState(
-                                message: 'পিডিএফটি অ্যাপের মধ্যে পড়া যাচ্ছে না। '
+                                message:
+                                    'পিডিএফটি অ্যাপের মধ্যে পড়া যাচ্ছে না। '
                                     'বাহিরের সার্ভারে সরাসরি PDF ফাইল ও '
                                     'Browser CORS অনুমতি থাকতে হবে।',
                                 onRetry: _retry,
