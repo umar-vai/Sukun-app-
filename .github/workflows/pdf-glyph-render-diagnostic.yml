@@ -91,3 +91,33 @@ jobs:
           print(base64.b64encode(out.getvalue()).decode('ascii'))
           print('END_FIXED_PDFIUM_PNG_BASE64')
           PY
+
+      - name: Compare extracted Unicode between PDF engines before repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import subprocess, fitz
+          pdf = next(Path('.').glob('*.pdf'))
+          poppler = subprocess.run(
+            ['pdftotext','-f','14','-l','14',str(pdf),'-'],
+            capture_output=True, check=True
+          ).stdout.decode('utf-8','replace')
+          with fitz.open(pdf) as doc:
+            p = doc[13]
+            fitz_text=p.get_text()
+            spans=[]
+            for b in p.get_text('dict')['blocks']:
+              for line in b.get('lines',[]):
+                for span in line.get('spans',[]):
+                  if any(0x980<=ord(c)<=0x9ff for c in span['text']):
+                    spans.append((span['font'],span['text'][:80]))
+          for name,content in [('POPPLER',poppler),('PYMUPDF',fitz_text)]:
+            bengali=[c for c in content if 0x980<=ord(c)<=0x9ff]
+            print(name+'_UNICODE_SAMPLE',repr(content[:400]))
+            print(name+'_BENGALI_TOP_CODEPOINTS',Counter(bengali).most_common(20))
+            print(name+'_BENGALI_UNIQUE_CHARS',len(set(bengali)))
+          print('FIRST_BENGALI_SPANS',repr(spans[:12]))
+          PY
