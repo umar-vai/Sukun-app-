@@ -78,6 +78,34 @@
     silentGain.connect(context.destination);
   };
 
+  // Must be called synchronously inside an actual user click/tap, before
+  // awaiting Flutter's playback Future. Browsers may refuse AudioContext.resume
+  // or a second media element's play() from the 70 ms sampling timer.
+  const unlock = () => {
+    if (!element || document.hidden || !nativeCtor ||
+        status === 'cors-or-network') return;
+    try {
+      initGraph();
+      if (context.state === 'suspended') {
+        void context.resume().catch(() => { status = 'gesture-required'; });
+      }
+      if (element.paused && !pendingPlay) {
+        lastPlayAttempt = performance.now();
+        pendingPlay = true;
+        Promise.resolve(element.play()).then(() => {
+          pendingPlay = false;
+          status = 'active';
+        }).catch((error) => {
+          pendingPlay = false;
+          status = error && error.name === 'NotAllowedError'
+            ? 'gesture-required' : 'cors-or-network';
+        });
+      }
+    } catch (_) {
+      status = 'unsupported';
+    }
+  };
+
   const sync = (seconds, playing, rate) => {
     if (!element || status === 'cors-or-network' || status === 'unsupported') return;
     if (!playing || document.hidden) {
@@ -161,5 +189,5 @@
     }
   }
 
-  window.sukunSpectrum = Object.freeze({attach, sync, sample, stop});
+  window.sukunSpectrum = Object.freeze({attach, sync, sample, stop, unlock});
 })();

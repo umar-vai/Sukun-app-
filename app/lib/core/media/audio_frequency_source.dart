@@ -7,3 +7,7 @@ export 'audio_frequency_types.dart';
 
 AudioFrequencySource createAudioFrequencySource() =>
     platform.createAudioFrequencySource();
+
+/// Call directly from Play or the visualizer's user-gesture action.
+void unlockAudioFrequencyFromGesture() =>
+    platform.unlockAudioFrequencyFromGesture();

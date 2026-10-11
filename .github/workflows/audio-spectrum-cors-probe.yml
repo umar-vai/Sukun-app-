@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/audio-spectrum-cors-probe.yml'
       - 'app/web/sukun_audio_spectrum.js'
+      - 'app/web/sukun_audio_spectrum_gesture_test.cjs'
   workflow_dispatch:
 
 permissions:
@@ -19,11 +20,13 @@ jobs:
       - uses: actions/checkout@v5
       - name: Validate FFT browser JavaScript syntax
         run: node --check app/web/sukun_audio_spectrum.js
+      - name: Verify actual FFT waits for user gesture
+        run: node app/web/sukun_audio_spectrum_gesture_test.cjs
       - name: Inspect public sample CORS read permission
         shell: bash
         run: |
           set -euo pipefail
-          sample='https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-ruqyahbd.org.mp3'
+          sample='https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-HQ-ruqyahbd.org.mp3'
           echo 'Sample: public Sukun Life staging audio resource'
           echo 'Browser Origin: https://umar-vai.github.io'
           headers="$(mktemp)"
@@ -34,7 +37,7 @@ jobs:
               echo 'PROBE_NETWORK_UNAVAILABLE'
               exit 0
             }
-          grep -Ei '^(HTTP/|access-control-allow-origin:|access-control-allow-credentials:|content-type:|accept-ranges:|content-range:|location:)' "$headers" || true
+          grep -Ei '^(HTTP/|access-control-allow-origin:|access-control-allow-credentials:|content-type:|content-length:|accept-ranges:|content-range:|location:)' "$headers" || true
           if grep -Eiq '^access-control-allow-origin: (\*|https://umar-vai.github.io)\r?$' "$headers"; then
             echo 'SAMPLE_FFT_CORS_HEADER_PRESENT'
           else

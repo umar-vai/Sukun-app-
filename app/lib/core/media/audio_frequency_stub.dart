@@ -3,6 +3,8 @@ import 'audio_frequency_types.dart';
 /// No native FFT is claimed without a tested platform PCM tap.
 AudioFrequencySource createAudioFrequencySource() => _UnavailableFrequency();
 
+void unlockAudioFrequencyFromGesture() {}
+
 class _UnavailableFrequency implements AudioFrequencySource {
   @override
   void attach(Uri? url) {}

@@ -15,6 +15,18 @@ external JSString _sample();
 @JS('sukunSpectrum.stop')
 external void _stop();
 
+@JS('sukunSpectrum.unlock')
+external void _unlock();
+
+/// User activation expires across awaited playback Futures.
+void unlockAudioFrequencyFromGesture() {
+  try {
+    _unlock();
+  } catch (_) {
+    // Old cached HTML must not prevent the audible player from starting.
+  }
+}
+
 AudioFrequencySource createAudioFrequencySource() => _WebAudioFrequency();
 
 class _WebAudioFrequency implements AudioFrequencySource {
@@ -61,7 +73,8 @@ class _WebAudioFrequency implements AudioFrequencySource {
         'active' => FrequencyStatus.active,
         'ready' => FrequencyStatus.ready,
         'paused' || 'idle' => FrequencyStatus.paused,
-        'cors-or-network' || 'gesture-required' => FrequencyStatus.blocked,
+        'cors-or-network' => FrequencyStatus.blocked,
+        'gesture-required' => FrequencyStatus.gestureRequired,
         _ => FrequencyStatus.unsupported,
       };
       final parsed = data['bands'];

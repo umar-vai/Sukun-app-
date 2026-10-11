@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
+import 'package:sukun_life/core/media/audio_frequency_source.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -154,9 +155,14 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                 buffering: isBuffering,
                                 position: position,
                                 animationEnabled: _animationEnabled,
-                                onToggleAnimation: () => setState(() {
-                                  _animationEnabled = !_animationEnabled;
-                                }),
+                                onToggleAnimation: () {
+                                  if (!_animationEnabled) {
+                                    unlockAudioFrequencyFromGesture();
+                                  }
+                                  setState(() {
+                                    _animationEnabled = !_animationEnabled;
+                                  });
+                                },
                               ),
                               const SizedBox(height: 22),
                               Text(
@@ -333,13 +339,21 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                   tooltip: playing
                                                       ? 'থামান'
                                                       : 'চালু করুন',
-                                                  onPressed: () =>
-                                                      _runPlaybackAction(
-                                                        context,
-                                                        playing
-                                                            ? controller.pause
-                                                            : controller.play,
-                                                      ),
+                                                  onPressed: () {
+                                                    // This must happen in the same
+                                                    // synchronous tap as Play,
+                                                    // before awaiting player.play.
+                                                    if (!playing &&
+                                                        _animationEnabled) {
+                                                      unlockAudioFrequencyFromGesture();
+                                                    }
+                                                    _runPlaybackAction(
+                                                      context,
+                                                      playing
+                                                          ? controller.pause
+                                                          : controller.play,
+                                                    );
+                                                  },
                                                   icon: Icon(
                                                     playing
                                                         ? Icons.pause_rounded
