@@ -143,6 +143,18 @@ jobs:
         with:
           version: 2.120.0
 
+      - name: Prepare ephemeral local function secret
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import secrets
+          target = Path("supabase/functions/.env")
+          target.write_text("SIGN_IN_RATE_LIMIT_SECRET=" + secrets.token_hex(32) + "\n")
+          os.chmod(target, 0o600)
+          PY
+
       - name: Start local Supabase stack
         run: supabase start
 
@@ -168,6 +180,10 @@ jobs:
             -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_staging.sql
           psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
             -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_verify.sql
+
+      - name: Exercise synthetic HTTP patient sign-in in disposable local backend
+        shell: bash
+        run: python3 docs/security/patient_sign_in_local_http_e2e.py
 
       - name: Stop local Supabase stack
         if: always()
