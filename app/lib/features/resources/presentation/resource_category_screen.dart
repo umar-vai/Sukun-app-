@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -109,6 +110,15 @@ class _ResourceCategoryScreenState
 
   @override
   Widget build(BuildContext context) {
+    // This is a public browser route, which may remain mounted after logout.
+    // Do not retain previous Patient/Member query results in the same tab.
+    ref.listen<AsyncValue<AppSession>>(appSessionProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      if (before?.userId != after?.userId || before?.role != after?.role) {
+        _refresh();
+      }
+    });
     final section = widget.section;
     final repository = ref.watch(resourcesRepositoryProvider);
     final backendUnavailable = repository is UnavailableResourcesRepository;
