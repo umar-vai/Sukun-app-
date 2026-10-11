@@ -149,8 +149,7 @@ class _SukunAudioVisualizerState extends State<SukunAudioVisualizer> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          if (_enabled &&
-              _frame.status == FrequencyStatus.gestureRequired)
+          if (_enabled && _frame.status == FrequencyStatus.gestureRequired)
             TextButton.icon(
               key: const ValueKey('unlock-audio-frequency'),
               onPressed: unlockAudioFrequencyFromGesture,
