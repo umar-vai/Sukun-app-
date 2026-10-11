@@ -146,7 +146,6 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                             children: [
                               _AudioHero(
                                 artwork: _artwork,
-                                title: title,
                                 playing: playing,
                                 buffering: isBuffering,
                                 position: position,
@@ -232,7 +231,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                     .clamp(
                                                       0.0,
                                                       maxMs > 0 ? maxMs : 1.0,
-                                                    ),
+                                                    ).toDouble(),
                                                 min: 0,
                                                 max: maxMs > 0 ? maxMs : 1.0,
                                                 onChanged: maxMs <= 0
@@ -300,7 +299,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
                                         IconButton(
-                                          tooltip: '১৫ সেকেন্ড পেছনে যান',
+                                          tooltip: '১০ সেকেন্ড পেছনে যান',
                                           onPressed: () =>
                                               _runPlaybackAction(
                                                 context,
@@ -308,7 +307,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                   audioSeekTarget(
                                                     player.position,
                                                     player.duration,
-                                                    -15,
+                                                    -10,
                                                   ),
                                                 ),
                                               ),
@@ -349,7 +348,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                 ),
                                         ),
                                         IconButton(
-                                          tooltip: '১৫ সেকেন্ড সামনে যান',
+                                          tooltip: '১০ সেকেন্ড সামনে যান',
                                           onPressed: () =>
                                               _runPlaybackAction(
                                                 context,
@@ -357,7 +356,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                   audioSeekTarget(
                                                     player.position,
                                                     player.duration,
-                                                    15,
+                                                    10,
                                                   ),
                                                 ),
                                               ),
@@ -498,7 +497,6 @@ Duration audioSeekTarget(Duration position, Duration? duration, int seconds) {
 class _AudioHero extends StatelessWidget {
   const _AudioHero({
     required this.artwork,
-    required this.title,
     required this.playing,
     required this.buffering,
     required this.position,
@@ -507,7 +505,6 @@ class _AudioHero extends StatelessWidget {
   });
 
   final Uri? artwork;
-  final String title;
   final bool playing;
   final bool buffering;
   final Duration position;
