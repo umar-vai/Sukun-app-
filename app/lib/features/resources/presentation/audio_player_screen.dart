@@ -206,15 +206,14 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                         return Column(
                                           children: [
                                             SliderTheme(
-                                              data: SliderTheme.of(
-                                                context,
-                                              ).copyWith(
-                                                trackHeight: 5,
-                                                thumbShape:
-                                                    const RoundSliderThumbShape(
-                                                      enabledThumbRadius: 8,
-                                                    ),
-                                              ),
+                                              data: SliderTheme.of(context)
+                                                  .copyWith(
+                                                    trackHeight: 5,
+                                                    thumbShape:
+                                                        const RoundSliderThumbShape(
+                                                          enabledThumbRadius: 8,
+                                                        ),
+                                                  ),
                                               child: Slider(
                                                 key: const ValueKey(
                                                   'audio-progress-slider',
@@ -222,8 +221,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                 semanticFormatterCallback:
                                                     (value) => _durationLabel(
                                                       Duration(
-                                                        milliseconds:
-                                                            value.round(),
+                                                        milliseconds: value
+                                                            .round(),
                                                       ),
                                                     ),
                                                 value: current.inMilliseconds
@@ -231,7 +230,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                     .clamp(
                                                       0.0,
                                                       maxMs > 0 ? maxMs : 1.0,
-                                                    ).toDouble(),
+                                                    )
+                                                    .toDouble(),
                                                 min: 0,
                                                 max: maxMs > 0 ? maxMs : 1.0,
                                                 onChanged: maxMs <= 0
@@ -249,14 +249,12 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                         });
                                                         _runPlaybackAction(
                                                           context,
-                                                          () => controller
-                                                              .seek(
-                                                                Duration(
-                                                                  milliseconds:
-                                                                      value
-                                                                          .round(),
-                                                                ),
-                                                              ),
+                                                          () => controller.seek(
+                                                            Duration(
+                                                              milliseconds:
+                                                                  value.round(),
+                                                            ),
+                                                          ),
                                                         );
                                                       },
                                               ),
@@ -300,17 +298,16 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                       children: [
                                         IconButton(
                                           tooltip: '১০ সেকেন্ড পেছনে যান',
-                                          onPressed: () =>
-                                              _runPlaybackAction(
-                                                context,
-                                                () => controller.seek(
-                                                  audioSeekTarget(
-                                                    player.position,
-                                                    player.duration,
-                                                    -10,
-                                                  ),
-                                                ),
+                                          onPressed: () => _runPlaybackAction(
+                                            context,
+                                            () => controller.seek(
+                                              audioSeekTarget(
+                                                player.position,
+                                                player.duration,
+                                                -10,
                                               ),
+                                            ),
+                                          ),
                                           icon: const Icon(
                                             Icons.replay_10_rounded,
                                             size: 29,
@@ -349,17 +346,16 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                         ),
                                         IconButton(
                                           tooltip: '১০ সেকেন্ড সামনে যান',
-                                          onPressed: () =>
-                                              _runPlaybackAction(
-                                                context,
-                                                () => controller.seek(
-                                                  audioSeekTarget(
-                                                    player.position,
-                                                    player.duration,
-                                                    10,
-                                                  ),
-                                                ),
+                                          onPressed: () => _runPlaybackAction(
+                                            context,
+                                            () => controller.seek(
+                                              audioSeekTarget(
+                                                player.position,
+                                                player.duration,
+                                                10,
                                               ),
+                                            ),
+                                          ),
                                           icon: const Icon(
                                             Icons.forward_10_rounded,
                                             size: 29,
@@ -436,8 +432,9 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                 onSelected: (_) =>
                                                     _runPlaybackAction(
                                                       context,
-                                                      () => controller
-                                                          .setSpeed(speed),
+                                                      () => controller.setSpeed(
+                                                        speed,
+                                                      ),
                                                     ),
                                               ),
                                           ],
