@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sample='https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-ruqyahbd.org.mp3'
+          sample='https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-HQ-ruqyahbd.org.mp3'
           echo 'Sample: public Sukun Life staging audio resource'
           echo 'Browser Origin: https://umar-vai.github.io'
           headers="$(mktemp)"
@@ -37,7 +37,7 @@ jobs:
               echo 'PROBE_NETWORK_UNAVAILABLE'
               exit 0
             }
-          grep -Ei '^(HTTP/|access-control-allow-origin:|access-control-allow-credentials:|content-type:|accept-ranges:|content-range:|location:)' "$headers" || true
+          grep -Ei '^(HTTP/|access-control-allow-origin:|access-control-allow-credentials:|content-type:|content-length:|accept-ranges:|content-range:|location:)' "$headers" || true
           if grep -Eiq '^access-control-allow-origin: (\*|https://umar-vai.github.io)\r?$' "$headers"; then
             echo 'SAMPLE_FFT_CORS_HEADER_PRESENT'
           else
