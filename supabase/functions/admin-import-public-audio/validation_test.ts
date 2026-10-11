@@ -62,19 +62,21 @@ Deno.test("allows explicit admin alternate from approved host only", () => {
   if (selected.sourceUrlOverride !== alternate) {
     throw new Error("approved alternate was not accepted");
   }
-  for (const input of [
-    { contentItemId: id, permissionConfirmed: true, sourceUrlOverride: null },
-    {
-      contentItemId: id,
-      permissionConfirmed: true,
-      sourceUrlOverride: "http://127.0.0.1/audio/demo.mp3",
-    },
-    {
-      contentItemId: id,
-      permissionConfirmed: true,
-      sourceUrlOverride: original + "?next=https://evil.example/",
-    },
-  ]) {
+  for (
+    const input of [
+      { contentItemId: id, permissionConfirmed: true, sourceUrlOverride: null },
+      {
+        contentItemId: id,
+        permissionConfirmed: true,
+        sourceUrlOverride: "http://127.0.0.1/audio/demo.mp3",
+      },
+      {
+        contentItemId: id,
+        permissionConfirmed: true,
+        sourceUrlOverride: original + "?next=https://evil.example/",
+      },
+    ]
+  ) {
     try {
       parseImportRequest(input);
       throw new Error("unsafe override accepted");
