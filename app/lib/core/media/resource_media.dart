@@ -60,10 +60,9 @@ Uri? _directPdfUri(Uri uri) {
       !parts.last.toLowerCase().endsWith('.pdf')) {
     return null;
   }
-  return uri.replace(
+  return Uri(
+    scheme: 'https',
     host: 'raw.githubusercontent.com',
     pathSegments: [parts[0], parts[1], ...parts.skip(3)],
-    query: '',
-    fragment: '',
   );
 }
