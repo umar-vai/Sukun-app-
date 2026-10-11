@@ -82,14 +82,17 @@ def main():
         call(fake_login, key),
         401, "invalid_credentials", "unknown-identity",
     )
-    require(
-        call(
-            {"identifier": "QA-NOT-REAL2-" + nonce, "password": "Wrong-Synthetic-Password"},
-            key,
-            fake_proxy_ip="203.0.113.44",
-        ),
-        401, "invalid_credentials", "forged-header-handling",
+    forged = call(
+        {"identifier": "QA-NOT-REAL2-" + nonce, "password": "Wrong-Synthetic-Password"},
+        key,
+        fake_proxy_ip="203.0.113.44",
     )
+    if forged == (403, {"code": "non_json_gateway_response"}):
+        print("PASS staging forged-header: rejected by gateway (HTTP 403)")
+    else:
+        # A 401 is also acceptable if gateway sanitizes the client-sent
+        # field. Confirmation of the actual IP provenance remains separate.
+        require(forged, 401, "invalid_credentials", "forged-header-handling")
     print("Hosted staging response gate passed; IP sanitization requires")
     print("independent gateway/bucket evidence before production approval")
 
