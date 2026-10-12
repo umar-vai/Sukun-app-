@@ -45,7 +45,8 @@ void main() {
       sourceType: 'human_provided_book',
       sourceReference: source,
       rightsNote: rights,
-      body: 'সাধারণ গোসল: মূল বইয়ের বিস্তারিত প্রস্তুতি ও ধাপ—'
+      body:
+          'সাধারণ গোসল: মূল বইয়ের বিস্তারিত প্রস্তুতি ও ধাপ—'
           'এই বাক্যগুলো টেস্টের জন্য লেখা, বাস্তব ধর্মীয় নির্দেশনা নয়। '
           'এখানে আরও অনেকগুলো কাল্পনিক বাক্য আছে।',
     ),
@@ -64,36 +65,53 @@ void main() {
   });
 
   test('published, reviewed or staff-edited text cannot be overwritten', () {
-    expect(prepareHeadingOnlySourceRepair(
-      existing: old(status: 'published'),
-      candidate: replacement(),
-    ), isNull);
-    expect(prepareHeadingOnlySourceRepair(
-      existing: old(body: 'ম্যানুয়ালি যাচাই করা গুরুত্বপূর্ণ বিস্তারিত আলোচনা'),
-      candidate: replacement(),
-    ), isNull);
-    expect(prepareHeadingOnlySourceRepair(
-      existing: old(sourceRef: 'different source'),
-      candidate: replacement(),
-    ), isNull);
-    expect(prepareHeadingOnlySourceRepair(
-      existing: old(visibility: 'public'),
-      candidate: replacement(),
-    ), isNull);
+    expect(
+      prepareHeadingOnlySourceRepair(
+        existing: old(status: 'published'),
+        candidate: replacement(),
+      ),
+      isNull,
+    );
+    expect(
+      prepareHeadingOnlySourceRepair(
+        existing: old(
+          body: 'ম্যানুয়ালি যাচাই করা গুরুত্বপূর্ণ বিস্তারিত আলোচনা',
+        ),
+        candidate: replacement(),
+      ),
+      isNull,
+    );
+    expect(
+      prepareHeadingOnlySourceRepair(
+        existing: old(sourceRef: 'different source'),
+        candidate: replacement(),
+      ),
+      isNull,
+    );
+    expect(
+      prepareHeadingOnlySourceRepair(
+        existing: old(visibility: 'public'),
+        candidate: replacement(),
+      ),
+      isNull,
+    );
   });
 
   Map<String, dynamic> candidate() => {
     'schema': 'sukun.ruqyahbd.external_audio_crosswalk.v1',
-    'entries': [{
-      'id': 'ruqyahbd-eight-surah',
-      'title_bn': 'আট সুরার রুকইয়াহ',
-      'original_page': 'https://ruqyahbd.org/download',
-      'media_url': 'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
-      'book_paragraph_indices': [259, 293],
-      'licensing': 'external_reference_only_no_rehosting_no_offline_copy',
-      'publication_status': 'draft_review_only',
-      'matching_status': 'title_and_book_reference_matched',
-    }]
+    'entries': [
+      {
+        'id': 'ruqyahbd-eight-surah',
+        'title_bn': 'আট সুরার রুকইয়াহ',
+        'original_page': 'https://ruqyahbd.org/download',
+        'media_url':
+            'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
+        'book_paragraph_indices': [259, 293],
+        'licensing': 'external_reference_only_no_rehosting_no_offline_copy',
+        'publication_status': 'draft_review_only',
+        'matching_status': 'title_and_book_reference_matched',
+      },
+    ],
   };
   test('external audio source is staff-only CMS draft, never published', () {
     final sources = parseBookAudioCatalog(jsonEncode(candidate()));
@@ -109,7 +127,8 @@ void main() {
   });
   test('rejects untrusted domains and duplicate external IDs', () {
     final bad = candidate();
-    (bad['entries'] as List).first['media_url'] = 'https://evil.example/track.mp3';
+    (bad['entries'] as List).first['media_url'] =
+        'https://evil.example/track.mp3';
     expect(() => parseBookAudioCatalog(jsonEncode(bad)), throwsFormatException);
     final dup = candidate();
     (dup['entries'] as List).add(
