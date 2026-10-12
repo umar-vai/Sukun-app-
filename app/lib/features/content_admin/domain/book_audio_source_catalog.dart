@@ -23,7 +23,7 @@ class BookAudioSourceCandidate {
   final bool requiresContextReview;
 
   String get slug => 'sukun-${id.replaceAll('_', '-')}';
-  
+
   /// Immutable, entry-specific binding of title and URL for the shared player.
   LinkedResource get playbackResource => LinkedResource(
     id: id,
@@ -33,7 +33,6 @@ class BookAudioSourceCandidate {
     mediaSourceType: 'direct_audio_url',
     mediaUrl: externalMediaUrl,
   );
-
 
   SaveContentInput draftInput({String? categoryId}) => SaveContentInput(
     type: 'audio',
