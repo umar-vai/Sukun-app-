@@ -71,7 +71,7 @@ fi
 # Plaintext travels only across a pipe into a fresh, isolated local database.
 age -d -i "$work/identity" "$archive" |
   docker exec -i -u postgres "$name" pg_restore -U postgres \
-    -d sukun_fixture_restored --no-owner --single-transaction --exit-on-error
+    -d sukun_fixture_restored --clean --if-exists --no-owner --single-transaction --exit-on-error
 
 q() {
   docker exec -u postgres "$name" psql -U postgres -At \
