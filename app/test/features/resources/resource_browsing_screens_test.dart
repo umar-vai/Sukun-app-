@@ -82,17 +82,18 @@ void main() {
     },
   );
 
-  testWidgets('ayat collection index exposes sections without fake published ayat', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _testApp(const QuranCollectionsScreen(), const _BrowsingRepository()),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('বেসিক রুকইয়াহ'), findsOneWidget);
-    expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
-    expect(find.text('যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'), findsWidgets);
-  });
+  testWidgets(
+    'ayat collection index exposes sections without fake published ayat',
+    (tester) async {
+      await tester.pumpWidget(
+        _testApp(const QuranCollectionsScreen(), const _BrowsingRepository()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('বেসিক রুকইয়াহ'), findsOneWidget);
+      expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
+      expect(find.text('যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'), findsWidgets);
+    },
+  );
 
   test('Ruqyah ayat sections include distinct named editorial categories', () {
     expect(ruqyahAyatIndex, hasLength(8));
@@ -107,10 +108,7 @@ void main() {
         'আয়াতুল সাকিনাহ',
       ]),
     );
-    expect(
-      ruqyahAyatIndex.singleWhere((e) => e.isDua).titleBn,
-      'রুকইয়াহ দোয়া',
-    );
+    expect(ruqyahAyatIndex.singleWhere((e) => e.isDua).titleBn, 'রুকইয়াহ দোয়া');
   });
 }
 
