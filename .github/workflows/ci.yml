@@ -27,6 +27,13 @@ jobs:
         run: python3 -m unittest discover -s scripts/resources -p 'test_*.py' -v
       # Never use the private uploaded Word source or actual editorial
       # catalog in CI. The local operator explicitly holds those files.
+      - name: Read-only publisher audio fingerprint audit (non-blocking)
+        timeout-minutes: 3
+        continue-on-error: true
+        run: python3 scripts/resources/audit_publisher_audio.py
+      # External servers can rate-limit or fail; inspect audit logs even when
+      # this advisory network check cannot make a request.
+
 
   flutter-quality:
     name: Flutter / Format Analyze Test
