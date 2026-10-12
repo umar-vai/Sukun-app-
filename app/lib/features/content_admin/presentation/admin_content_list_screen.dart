@@ -8,6 +8,7 @@ import 'package:sukun_life/features/content_admin/data/content_admin_providers.d
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
 import 'package:sukun_life/features/content_admin/presentation/private_resource_draft_import_dialog.dart';
+import 'package:sukun_life/features/content_admin/presentation/book_audio_source_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
@@ -97,6 +98,15 @@ class _AdminContentListScreenState
       _status = 'all';
       _search = '';
     });
+  }
+
+  Future<void> _openAudioReferences() async {
+    final imported = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const BookAudioSourceDialog(),
+    );
+    if (mounted && imported == true) await _refresh();
   }
 
   Future<void> _importPrivateCatalog() async {
@@ -284,6 +294,12 @@ class _AdminContentListScreenState
           onPressed: _importPrivateCatalog,
           icon: const Icon(Icons.upload_file_outlined),
           label: const Text('Private Dua/Amal Draft Catalog Import (Staging)'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _openAudioReferences,
+          icon: const Icon(Icons.headphones_outlined),
+          label: const Text('বইয়ে উল্লেখিত Ruqyah BD অডিও — ১৯টি উৎস'),
         ),
         const SizedBox(height: 12),
       ],
