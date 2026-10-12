@@ -93,6 +93,14 @@ abstract final class SukunTypography {
   }
 
   static TextStyle canonicalReligiousText({TextStyle? textStyle}) {
-    return GoogleFonts.tiroBangla(textStyle: textStyle);
+    // Arabic scripture uses a clear Naskh face, not the Bangla display font.
+    // Do not alter diacritics or apply decorative letter spacing.
+    return GoogleFonts.notoNaskhArabic(
+      textStyle: textStyle,
+      fontSize: 26,
+      fontWeight: FontWeight.w400,
+      height: 2.0,
+      letterSpacing: 0,
+    );
   }
 }

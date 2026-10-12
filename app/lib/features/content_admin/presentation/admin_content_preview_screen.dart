@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
+import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
@@ -173,14 +174,13 @@ class _AdminContentPreviewScreenState
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ],
-              if (item.arabicText != null)
-                _PreviewSection(
-                  title: 'আরবি',
-                  body: item.arabicText!,
-                  rtl: true,
-                  textStyle: SukunTypography.canonicalReligiousText(
-                    textStyle: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(height: 1.9),
+              if (item.arabicText?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 22),
+                  child: AyahReadingCard(
+                    arabicText: item.arabicText!,
+                    transliteration: item.transliteration,
+                    reference: item.referenceText,
                   ),
                 ),
               if (item.banglaText != null)
@@ -192,7 +192,8 @@ class _AdminContentPreviewScreenState
                         ?.copyWith(height: 1.65),
                   ),
                 ),
-              if (item.transliteration != null)
+              if (item.arabicText?.trim().isNotEmpty != true &&
+                  item.transliteration != null)
                 _PreviewSection(title: 'উচ্চারণ', body: item.transliteration!),
               if (item.translation != null)
                 _PreviewSection(title: 'অনুবাদ', body: item.translation!),
@@ -333,27 +334,25 @@ class _PreviewSection extends StatelessWidget {
   const _PreviewSection({
     required this.title,
     required this.body,
-    this.rtl = false,
     this.textStyle,
   });
 
   final String title;
   final String body;
-  final bool rtl;
   final TextStyle? textStyle;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 22),
     child: SukunSurface(
-      tone: rtl ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+      tone: SukunSurfaceTone.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Directionality(
-            textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+            textDirection: TextDirection.ltr,
             child: SelectableText(body, style: textStyle),
           ),
         ],

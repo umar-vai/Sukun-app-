@@ -11,6 +11,7 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
@@ -164,18 +165,21 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     ? resource.summary
                     : null,
               ),
-              _Section(
-                label: 'আরবি',
-                value: resource.arabicText,
-                textAlign: TextAlign.right,
-                canonical: true,
-              ),
+              if (resource.arabicText?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 18),
+                  child: AyahReadingCard(
+                    arabicText: resource.arabicText!,
+                    transliteration: resource.transliteration,
+                  ),
+                ),
               _Section(
                 label: 'বাংলা',
                 value: resource.banglaText,
                 bangla: true,
               ),
-              _Section(label: 'উচ্চারণ', value: resource.transliteration),
+              if (resource.arabicText?.trim().isNotEmpty != true)
+                _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
               _Section(
                 label: 'নির্দেশনা',
@@ -232,28 +236,16 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.label,
-    this.value,
-    this.textAlign,
-    this.canonical = false,
-    this.bangla = false,
-  });
+  const _Section({required this.label, this.value, this.bangla = false});
 
   final String label;
   final String? value;
-  final TextAlign? textAlign;
-  final bool canonical;
   final bool bangla;
 
   @override
   Widget build(BuildContext context) {
     if (value?.trim().isNotEmpty != true) return const SizedBox.shrink();
-    final base = canonical
-        ? SukunTypography.canonicalReligiousText(
-            textStyle: Theme.of(context).textTheme.headlineSmall,
-          ).copyWith(height: 2)
-        : bangla
+    final base = bangla
         ? SukunTypography.banglaBody(
             textStyle: Theme.of(context).textTheme.bodyLarge,
           ).copyWith(height: 1.75)
@@ -261,8 +253,7 @@ class _Section extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: SukunSurface(
-        tone: canonical ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
-        showBorder: !canonical,
+        tone: SukunSurfaceTone.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -276,8 +267,8 @@ class _Section extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Directionality(
-              textDirection: canonical ? TextDirection.rtl : TextDirection.ltr,
-              child: SelectableText(value!, textAlign: textAlign, style: base),
+              textDirection: TextDirection.ltr,
+              child: SelectableText(value!, style: base),
             ),
           ],
         ),
