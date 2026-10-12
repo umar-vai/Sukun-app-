@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
+import 'package:sukun_life/features/content_admin/domain/source_heading_repair.dart';
 
 /// Authenticated Admin-only operation, with backend RPC authorization.
 /// No automatic publishing, patient linking, or unattended remote ingestion.
@@ -21,6 +22,7 @@ class _PrivateResourceDraftImportDialogState
   String? _error;
   int _saved = 0;
   int _skipped = 0;
+  int _repaired = 0;
   int _failed = 0;
   int _processed = 0;
   bool _busy = false;
@@ -48,6 +50,7 @@ class _PrivateResourceDraftImportDialogState
         _complete = false;
         _saved = 0;
         _skipped = 0;
+        _repaired = 0;
         _failed = 0;
         _processed = 0;
       });
@@ -72,17 +75,34 @@ class _PrivateResourceDraftImportDialogState
     try {
       final repository = ref.read(contentAdminRepositoryProvider);
       // Existing items are never overwritten. Resumable after interruption.
-      final existing = (await repository.listContent())
-          .map((item) => item.slug)
-          .toSet();
+      final existing = {
+        for (final item in await repository.listContent()) item.slug: item,
+      };
       for (final entry in batch.items) {
         if (_stopRequested || !_allowed) break;
-        if (existing.contains(entry.input.slug)) {
-          _skipped++;
+        final already = existing[entry.input.slug];
+        if (already != null) {
+          // Only repair the untouched, heading-only book draft. Never modify
+          // approved, published or human-expanded content during bulk import.
+          final repair = prepareHeadingOnlySourceRepair(
+            existing: already,
+            candidate: entry,
+          );
+          if (repair == null) {
+            _skipped++;
+          } else {
+            try {
+              final updated = await repository.saveContent(repair);
+              existing[updated.slug] = updated;
+              _repaired++;
+            } catch (_) {
+              _failed++;
+            }
+          }
         } else {
           try {
-            await repository.saveContent(entry.input);
-            existing.add(entry.input.slug);
+            final saved = await repository.saveContent(entry.input);
+            existing[saved.slug] = saved;
             _saved++;
           } catch (_) {
             _failed++;
@@ -124,7 +144,7 @@ class _PrivateResourceDraftImportDialogState
             children: [
               const Text(
                 'Sukun Life Staging-এ original guide-এর খসড়া সংরক্ষণ করুন। '
-                'সব উপকরণ Staff-only ও Draft থাকবে। প্রকাশ বা Patient Assignment '
+                'আগের শিরোনামমাত্র Draft-এ মূল বইয়ের পূর্ণ লেখা যোগ করা যাবে। সব উপকরণ Staff-only ও Draft থাকবে। প্রকাশ বা Patient Assignment '
                 'আলাদাভাবে Admin যাচাইয়ের পরে হবে।',
               ),
               const SizedBox(height: 12),
@@ -177,7 +197,7 @@ class _PrivateResourceDraftImportDialogState
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'সংরক্ষিত $_saved · আগেই আছে $_skipped · '
+                    'নতুন $_saved · পূর্ণ লেখা যোগ $_repaired · অপরিবর্তিত $_skipped · '
                     'ব্যর্থ $_failed · পরীক্ষিত $_processed/${batch.items.length}',
                   ),
                 ],
@@ -200,7 +220,7 @@ class _PrivateResourceDraftImportDialogState
             child: const Text('বাকি Import বন্ধ করুন'),
           ),
         TextButton(
-          onPressed: _busy ? null : () => Navigator.of(context).pop(_saved > 0),
+          onPressed: _busy ? null : () => Navigator.of(context).pop(_saved + _repaired > 0),
           child: Text(_saved > 0 ? 'শেষ করুন' : 'বন্ধ করুন'),
         ),
         if (batch != null && !_complete)
