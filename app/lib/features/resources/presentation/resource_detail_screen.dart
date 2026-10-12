@@ -237,11 +237,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.label,
-    this.value,
-    this.bangla = false,
-  });
+  const _Section({required this.label, this.value, this.bangla = false});
 
   final String label;
   final String? value;
