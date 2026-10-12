@@ -15,6 +15,7 @@ import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ResourcesHomeScreen extends ConsumerStatefulWidget {
   const ResourcesHomeScreen({
@@ -198,6 +199,15 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   label: const Text(
                     'বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি মূল উৎস',
                   ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://ayat.ruqyahbd.org/'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('রুকইয়াহর আয়াত পড়ুন — মূল উৎস খুলুন'),
                 ),
                 const SizedBox(height: 8),
                 Text(
