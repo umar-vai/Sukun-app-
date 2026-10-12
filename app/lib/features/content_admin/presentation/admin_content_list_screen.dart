@@ -90,6 +90,19 @@ class _AdminContentListScreenState
     });
   }
 
+  void _openUnverifiedQuranDrafts() {
+    const query = 'srg2024-qur-';
+    _searchController.text = query;
+    setState(() {
+      // Source snippets are deliberately ARTICLE drafts until their exact
+      // Surah/Ayah boundaries and canonical readings are verified.
+      _selectedKind = AdminResourceKind.articleGuide;
+      _allDrafts = false;
+      _status = 'draft';
+      _search = query;
+    });
+  }
+
   void _backToCategories() {
     _searchController.clear();
     setState(() {
@@ -206,6 +219,7 @@ class _AdminContentListScreenState
     final items = data?.items ?? const <AdminContentItem>[];
     final categories = data?.categories ?? const <ContentCategory>[];
     final drafts = items.where((item) => item.status == 'draft').length;
+    final quranPending = items.where((item) => item.status == 'draft' && item.slug.startsWith('srg2024-qur-')).length;
     final review = items
         .where((item) => item.status == 'review' || item.status == 'verified')
         .length;
@@ -236,6 +250,15 @@ class _AdminContentListScreenState
           _openDrafts();
           setState(() => _status = 'review');
         },
+      ),
+      const SizedBox(height: 10),
+      _DashboardShortcut(
+        icon: Icons.menu_book_outlined,
+        title: 'কুরআনের পাঠ — উৎস যাচাই বাকি',
+        detail: data == null
+            ? 'মূল বইয়ের আয়াত ও পাঠের অংশ যাচাই করুন'
+            : '$quranPendingটি বইয়ের পাঠের খসড়া · সূরা–আয়াত যাচাই না হওয়া পর্যন্ত অপ্রকাশিত',
+        onTap: _openUnverifiedQuranDrafts,
       ),
       const SizedBox(height: 24),
       Text('বিভাগ বেছে নিন', style: Theme.of(context).textTheme.titleLarge),
