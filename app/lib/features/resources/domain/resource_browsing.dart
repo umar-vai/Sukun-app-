@@ -158,3 +158,32 @@ const ruqyahTaxonomy = <ResourceTaxonomyEntry>[
     titleBn: 'সুস্থতা',
   ),
 ];
+
+/// Navigation categories observed in RuqyahBD's ayat index (2026-10-12).
+/// This is an editorial navigation blueprint, NOT imported canonical ayat.
+class RuqyahAyatIndexEntry {
+  const RuqyahAyatIndexEntry({
+    required this.slug,
+    required this.titleBn,
+    this.isDua = false,
+  });
+
+  final String slug;
+  final String titleBn;
+  final bool isDua;
+}
+
+const ruqyahAyatIndex = <RuqyahAyatIndexEntry>[
+  RuqyahAyatIndexEntry(slug: 'basic-ruqyah', titleBn: 'বেসিক রুকইয়াহ'),
+  RuqyahAyatIndexEntry(slug: 'ruqyah-ayat', titleBn: 'রুকইয়াহ আয়াত'),
+  RuqyahAyatIndexEntry(
+    slug: 'ruqyah-dua',
+    titleBn: 'রুকইয়াহ দোয়া',
+    isDua: true,
+  ),
+  RuqyahAyatIndexEntry(slug: 'evil-eye-ayat', titleBn: 'বদনজরের আয়াত'),
+  RuqyahAyatIndexEntry(slug: 'sihr-ayat', titleBn: 'সিহরের আয়াত'),
+  RuqyahAyatIndexEntry(slug: 'ayat-shifa', titleBn: 'আয়াতুশ শিফা'),
+  RuqyahAyatIndexEntry(slug: 'ayat-harq', titleBn: 'আয়াতুল হারক'),
+  RuqyahAyatIndexEntry(slug: 'ayat-sakinah', titleBn: 'আয়াতুল সাকিনাহ'),
+];

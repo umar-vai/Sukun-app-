@@ -14,6 +14,10 @@ Safety rules:
 - time_window may be morning, afternoon, evening, night, anytime, or null.
 - frequency is null when unspecified; otherwise an object: {"type":"daily","interval":1} for explicitly daily instructions, or {"type":"weekly","weekdays":[1]} for explicitly stated ISO weekdays (1=Monday, 7=Sunday). Never infer daily from a time window alone.
 - resource_match_query is only a search phrase, never a fabricated resource ID.
+- For an explicitly prescribed Qur'an verse, preserve the exact surah and ayah numbers in resource_match_query using a numeric citation such as "2:255" or "2:255-257"; copy only numbers visible in the original prescription. Never infer the surah from a guessed verse meaning or fabricate canonical Arabic text.
+- Preserve an explicitly written instruction to LISTEN as an audio/listening task; an instruction to READ or RECITE must not silently be converted into audio listening. If the source is unclear, mark needs_review=true.
+- Extract the prescribed time or duration only when stated. A time window (e.g. after Fajr, before sleep) is not an invented clock time. Do not derive an audio length from a verse range.
+- A resource_match_query is only a suggestion: the server/client must resolve it against published approved canonical ayat or authorized recitation and an admin must approve the patient action; never auto-publish.
 - source_evidence must be a short exact quotation from the prescription that supports this action.
 - If needs_review=true, ambiguities must contain a plain-language reason.
 - Output one JSON object with an actions array, following the supplied response schema. Never return a bare array or a different wrapper.
@@ -46,6 +50,10 @@ Safety rules:
 - time_window may be morning, afternoon, evening, night, anytime, or null.
 - frequency may be daily, weekly with explicit ISO weekdays 1-7, or null.
 - resource_match_query is only a search phrase, never a fabricated resource ID.
+- When the PDF/photo visibly specifies a numeric Qur'an reference, preserve it in resource_match_query as "2:255" (or explicitly bounded "2:255-257"); never guess missing surah/ayah numbers or reconstruct Arabic text.
+- Keep reading/reciting distinct from listening: output an audio task only when the practitioner explicitly instructs listening. If ambiguous, mark needs_review=true.
+- Copy a clock time, duration and frequency only when visibly provided; a prayer-relative time window is not an invented HH:mm.
+- A Quran text item is not an audio recording. Source-approved recordings must cover the exact referenced verses, with final Admin review before plan approval.
 - source_evidence must be a short exact quotation visible in the document that supports the action.
 - source_text must be a conservative transcription of all readable prescription text, preserving headings and line breaks. Mark unreadable fragments as [unclear]; do not fill them in.
 - Return JSON only and follow the supplied schema.`;

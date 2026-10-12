@@ -183,54 +183,123 @@ class QuranCollectionsScreen extends ConsumerWidget {
             );
           }
           final collections = snapshot.data ?? const <ContentCollection>[];
-          if (collections.isEmpty) {
-            return const AppEmptyState(
-              icon: Icons.collections_bookmark_outlined,
-              title: 'No Ayat collections published yet',
-              message: 'Collections reuse sourced canonical Ayat and never duplicate Qur’an text.',
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(20),
-            itemCount: collections.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final collection = collections[index];
-              return SukunSurface(
-                padding: const EdgeInsets.all(16),
-                radius: 20,
-                onTap: () => context.push(
-                  '/resources/quran/collections/${collection.id}',
+          final publishedBySlug = <String, ContentCollection>{
+            for (final collection in collections) collection.slug: collection,
+          };
+          final otherCollections = collections
+              .where(
+                (item) => !ruqyahAyatIndex.any(
+                  (section) => section.slug == item.slug,
                 ),
-                child: Row(
-                  children: [
-                    const SukunIconBadge(icon: Icons.bookmarks_outlined),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              )
+              .toList(growable: false);
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 40),
+            children: [
+              const SukunPageIntro(
+                eyebrow: 'নির্বাচিত আয়াত',
+                title: 'রুকইয়াহ আয়াতসমূহ',
+                subtitle: 'বিভাগ অনুযায়ী যাচাইকৃত কুরআনের আয়াত। আরবি পাঠ ও অডিও প্রকাশের আগে উৎস যাচাই করা হয়।',
+                trailing: SukunIconBadge(
+                  icon: Icons.auto_stories_outlined,
+                  size: 54,
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (final section in ruqyahAyatIndex) ...[
+                Builder(
+                  builder: (context) {
+                    final collection = publishedBySlug[section.slug];
+                    final available = section.isDua || collection != null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: SukunSurface(
+                        radius: 18,
+                        padding: const EdgeInsets.all(16),
+                        onTap: available
+                            ? () => context.push(
+                                section.isDua
+                                    ? '/resources/dua-azkar'
+                                    : '/resources/quran/collections/${collection!.id}',
+                              )
+                            : null,
+                        child: Row(
+                          children: [
+                            SukunIconBadge(
+                              icon: section.isDua
+                                  ? Icons.menu_book_outlined
+                                  : Icons.auto_stories_outlined,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    section.titleBn,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    section.isDua
+                                        ? 'দুআ ও আযকার বিভাগ'
+                                        : collection == null
+                                        ? 'যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'
+                                        : 'আয়াত ও উৎস দেখুন',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: SukunColors.muted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              available
+                                  ? Icons.arrow_forward_ios_rounded
+                                  : Icons.hourglass_empty_rounded,
+                              size: 16,
+                              color: SukunColors.muted,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+              if (otherCollections.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const SukunSectionHeader(title: 'অন্যান্য যাচাইকৃত সংকলন'),
+                const SizedBox(height: 10),
+                for (final collection in otherCollections)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SukunSurface(
+                      radius: 18,
+                      padding: const EdgeInsets.all(16),
+                      onTap: () => context.push(
+                        '/resources/quran/collections/${collection.id}',
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            collection.titleBn ?? collection.title,
-                            style: Theme.of(context).textTheme.titleMedium,
+                          const SukunIconBadge(
+                            icon: Icons.collections_bookmark_outlined,
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            collection.summary ??
-                                (collection.type == 'ruqyah_ayat'
-                                    ? 'Ruqyah Ayat'
-                                    : 'Selected Ayat'),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: SukunColors.muted),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              collection.titleBn ?? collection.title,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                  ],
-                ),
-              );
-            },
+                  ),
+              ],
+            ],
           );
         },
       ),

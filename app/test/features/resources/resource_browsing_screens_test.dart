@@ -81,6 +81,35 @@ void main() {
       expect(find.text('Qur’an 1:1'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'ayat collection index exposes sections without fake published ayat',
+    (tester) async {
+      await tester.pumpWidget(
+        _testApp(const QuranCollectionsScreen(), const _BrowsingRepository()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('বেসিক রুকইয়াহ'), findsOneWidget);
+      expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
+      expect(find.text('যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'), findsWidgets);
+    },
+  );
+
+  test('Ruqyah ayat sections include distinct named editorial categories', () {
+    expect(ruqyahAyatIndex, hasLength(8));
+    expect(ruqyahAyatIndex.map((e) => e.slug).toSet(), hasLength(8));
+    expect(
+      ruqyahAyatIndex.map((e) => e.titleBn),
+      containsAll([
+        'বদনজরের আয়াত',
+        'সিহরের আয়াত',
+        'আয়াতুশ শিফা',
+        'আয়াতুল হারক',
+        'আয়াতুল সাকিনাহ',
+      ]),
+    );
+    expect(ruqyahAyatIndex.singleWhere((e) => e.isDua).titleBn, 'রুকইয়াহ দোয়া');
+  });
 }
 
 Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
