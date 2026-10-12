@@ -78,5 +78,92 @@ void main() {
       expect(matchResources('', [publicResource]), isEmpty);
       expect(matchResources(null, [publicResource]), isEmpty);
     });
+
+    test('numeric ayat citation matches only exact verified Quran references', () {
+      const approved = ContentResourceOption(
+        id: 'quran-2-255',
+        title: 'Ayatul Kursi',
+        type: 'quran',
+        visibility: 'public',
+        status: 'published',
+        verificationStatus: 'verified',
+        surahNumber: 2,
+        ayahNumber: 255,
+      );
+      const wrongAyah = ContentResourceOption(
+        id: 'quran-2-256',
+        title: 'Similar Ayat',
+        type: 'quran',
+        visibility: 'public',
+        status: 'published',
+        verificationStatus: 'verified',
+        surahNumber: 2,
+        ayahNumber: 256,
+      );
+      const unverified = ContentResourceOption(
+        id: 'unverified',
+        title: 'Other duplicate',
+        type: 'quran',
+        visibility: 'public',
+        status: 'published',
+        surahNumber: 2,
+        ayahNumber: 255,
+      );
+      final library = [wrongAyah, unverified, approved];
+      expect(matchResources('2:255', library).single.resource.id, approved.id);
+      expect(
+        matchResources('সূরা ২ আয়াত ২৫৫', library).single.resource.id,
+        approved.id,
+      );
+      expect(matchResources('Surah 2 Ayah 255', library).single.resource.id, approved.id);
+      expect(matchResources('2:257', library), isEmpty);
+      expect(matchResources('2:999', library), isEmpty);
+    });
+
+    test('exact range and listening media are never guessed from a title', () {
+      const single = ContentResourceOption(
+        id: 'quran-single',
+        title: 'Ruqyah Audio',
+        type: 'quran',
+        visibility: 'public',
+        status: 'published',
+        verificationStatus: 'verified',
+        surahNumber: 2,
+        ayahNumber: 255,
+      );
+      const verifiedRange = ContentResourceOption(
+        id: 'quran-range',
+        title: 'Approved Quran range',
+        type: 'quran',
+        visibility: 'public',
+        status: 'published',
+        verificationStatus: 'verified',
+        surahNumber: 2,
+        ayahNumber: 255,
+        ayahEndNumber: 257,
+      );
+      const untrustedAudio = ContentResourceOption(
+        id: 'audio-without-url',
+        title: 'Ayat recording',
+        type: 'audio',
+        visibility: 'public',
+        status: 'published',
+        surahNumber: 2,
+        ayahNumber: 255,
+        mediaSourceType: 'direct_audio_url',
+      );
+      expect(
+        matchResources('2:255-257', [single, verifiedRange, untrustedAudio])
+            .single.resource.id,
+        'quran-range',
+      );
+      expect(
+        matchResources('2:255', [untrustedAudio, single])
+            .single.resource.id,
+        'quran-single',
+      );
+      expect(matchResources('2:255-256', [single]), isEmpty);
+    });
+
   });
 }
