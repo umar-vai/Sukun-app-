@@ -32,6 +32,11 @@ void main() {
 
     expect(find.text('Ayatul Kursi'), findsOneWidget);
     expect(find.text('আরবি'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('তথ্যসূত্র'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('তথ্যসূত্র'), findsOneWidget);
     expect(find.text('Surah Al-Baqarah 2:255'), findsOneWidget);
     expect(tester.takeException(), isNull);
