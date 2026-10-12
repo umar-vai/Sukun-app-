@@ -72,7 +72,7 @@ void main() {
   });
 
   testWidgets(
-    'unverified third-party audio shows publisher source without in-app playback',
+    'owner-licensed audio has working player and no internal rights notices',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -88,9 +88,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('উৎস উল্লেখ আছে'), findsOneWidget);
+      expect(find.text('উৎস উল্লেখ আছে'), findsNothing);
       expect(find.text('তথ্যসূত্র দেওয়া আছে'), findsNothing);
-      expect(find.text('অডিও শুনুন'), findsNothing);
+      expect(find.text('অডিও শুনুন'), findsOneWidget);
+      expect(find.text('রুকইয়াহ সাপোর্ট বিডি'), findsOneWidget);
       expect(
         find.textContaining('Third-party rights not independently'),
         findsNothing,
