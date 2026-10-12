@@ -10,8 +10,7 @@ class PrivateResourceDraftBatch {
 
   static const sourceSha256 =
       '8b9af4677cec5c4b8964a431a47c076a7a59e862d91606caede8ad6141257f24';
-  static const stagingSupabaseUrl =
-      'https://qacklgqvxvjjzsimjoip.supabase.co';
+  static const stagingSupabaseUrl = 'https://qacklgqvxvjjzsimjoip.supabase.co';
   static const maxBytes = 8 * 1024 * 1024;
 
   final List<PrivateResourceDraft> items;
@@ -28,7 +27,9 @@ class PrivateResourceDraftBatch {
 
   static PrivateResourceDraftBatch parse(List<int> bytes) {
     if (bytes.isEmpty || bytes.length > maxBytes) {
-      throw const FormatException('Private catalog file is empty or too large.');
+      throw const FormatException(
+        'Private catalog file is empty or too large.',
+      );
     }
     final decoded = jsonDecode(utf8.decode(bytes));
     if (decoded is! Map<String, dynamic> ||
@@ -36,8 +37,7 @@ class PrivateResourceDraftBatch {
         decoded['source_sha256'] != sourceSha256 ||
         decoded['imported'] != false ||
         decoded['published'] != false ||
-        decoded['copyright_permission'] !=
-            'user_attested_for_sukun_life_app') {
+        decoded['copyright_permission'] != 'user_attested_for_sukun_life_app') {
       throw const FormatException('Unrecognized or unapproved draft catalog.');
     }
     final rows = decoded['entries'];
@@ -76,7 +76,8 @@ class PrivateResourceDraftBatch {
             r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
           ).hasMatch(input['requestId'] as String) ||
           (kind == 'quran' && input['type'] != 'article') ||
-          (kind != 'quran' && !const {'article', 'dua', 'amal'}.contains(input['type']))) {
+          (kind != 'quran' &&
+              !const {'article', 'dua', 'amal'}.contains(input['type']))) {
         throw FormatException('Unsafe or duplicated resource ID: $sourceId.');
       }
       final draft = SaveContentInput(
