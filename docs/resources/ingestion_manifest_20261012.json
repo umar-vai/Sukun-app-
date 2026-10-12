@@ -25,15 +25,17 @@
     "canonical_quran_verse_verification": "pending",
     "hadith_reference_verification": "pending",
     "arabic_bangla_editor_review": "pending",
-    "publisher_republication_rights": "pending",
+    "publisher_republication_rights": "sukun_life_owner_attested_permission_for_app_on_2026_10_12_not_independently_verified",
     "human_approval_required": true,
     "auto_patient_assignment": false,
-    "production_import": false
+    "production_import": false,
+    "publication_rights_attested_by_user": true,
+    "rights_scope": "Sukun Life app resources, drafts, translations and related materials; original compiler/editor/publisher attribution retained"
   },
   "next": [
+    "Record user-attested rights for Sukun Life app; retain original book/compiler/editor/publisher credit on every published resource",
     "Verify individual ayat references and split/merge the 101 Quran-text blocks",
     "Review daily Dua/Amal material cards and canonical sources",
-    "Confirm reuse rights with publisher",
     "Implement staff-only ingestion and Admin review in staging",
     "Connect approved resource IDs to prescription draft suggestions and printable draft handouts"
   ]
