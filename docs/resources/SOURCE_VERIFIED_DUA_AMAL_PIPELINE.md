@@ -4,7 +4,7 @@
 
 ## Input and provenance: required before extraction
 
-The repository contains a file named `সেলফ রুকইয়াহ গাইড (ফাইনাল) (1).pdf`; earlier analysis (Issue #54) reported a corrupted Bengali text layer. A clean original DOC/DOCX or readable source PDF is **not currently verified**. Do not translate or reconstruct illegible Arabic/Bangla lines from guesswork; do not treat summary/planning documents as the original guide.
+The repository still contains a previously corrupted PDF (`সেলফ রুকইয়াহ গাইড (ফাইনাল) (1).pdf`; Issue #54). On 2026-10-12 the user privately supplied the original legacy Word `.doc` file. Its SHA-256 is `8b9af4677cec5c4b8964a431a47c076a7a59e862d91606caede8ad6141257f24`. Local LibreOffice conversion recovered 125,503 Bengali codepoints and 30,286 Arabic codepoints in Word XML; unlike the broken PDF, the source is legible. **Do not commit the source, full extracted passages, or private editorial card package into public GitHub.** An initial 160-candidate internal index was generated (23 dua, 101 Quran-text blocks, 8 amal, 15 supplements, 4 ghusl, 8 guides, 1 compiled prayer). These are *unverified draft blocks*, not 160 separate authenticated religious actions. Human verification, de-duplication, rights clearance and source references are still required before publication.
 
 For every entry captured from the exact source, store:
 - Stable source ID, source file **SHA-256**, publisher/edition, licensed-use decision, page or chapter/heading and a **verbatim short source excerpt**.
@@ -27,7 +27,7 @@ For every entry captured from the exact source, store:
 
 ## Source catalog draft transport contract (local/staging only)
 
-Path: `docs/resources/source_catalog_template.json`. Its `entries` array is initially EMPTY because source verification is pending. Do not seed production data. Each later entry should contain:
+Path: `docs/resources/source_catalog_template.json`. Its `entries` array remains EMPTY intentionally because item-level religious-source and publication-rights verification are pending. A local/private draft index has been prepared from the now-readable original. Do not seed production data. Each later entry should contain:
 
 ```json
 {
@@ -60,4 +60,4 @@ Path: `docs/resources/source_catalog_template.json`. Its `entries` array is init
 - Browser smoke from **same** Flutter app's approved GitHub Pages preview; no parallel websites or native packaging.
 - Staging/synthetic tests before any production schema or sensitive data change.
 
-**Source blocker:** upload the intact Word/DOCX or a readable PDF. Do not turn the corrupted repository PDF into canonical Dua/Ayat text without verification.
+**Source received:** original Word `.doc` recovered locally (hash above). Next blockers are canonical Arabic/Hadith source verification, legal re-publication rights, editorial review and safe admin-only import. Never infer that code or private local drafts are already staged/published.
