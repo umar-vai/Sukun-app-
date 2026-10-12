@@ -199,8 +199,7 @@ class QuranCollectionsScreen extends ConsumerWidget {
               const SukunPageIntro(
                 eyebrow: 'নির্বাচিত আয়াত',
                 title: 'রুকইয়াহ আয়াতসমূহ',
-                subtitle:
-                    'বিভাগ অনুযায়ী যাচাইকৃত কুরআনের আয়াত। আরবি পাঠ ও অডিও প্রকাশের আগে উৎস যাচাই করা হয়।',
+                subtitle: 'বিভাগ অনুযায়ী যাচাইকৃত কুরআনের আয়াত। আরবি পাঠ ও অডিও প্রকাশের আগে উৎস যাচাই করা হয়।',
                 trailing: SukunIconBadge(
                   icon: Icons.auto_stories_outlined,
                   size: 54,
@@ -238,17 +237,18 @@ class QuranCollectionsScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     section.titleBn,
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     section.isDua
                                         ? 'দুআ ও আযকার বিভাগ'
                                         : collection == null
-                                            ? 'যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'
-                                            : 'আয়াত ও উৎস দেখুন',
-                                    style: Theme.of(context)
-                                        .textTheme.bodySmall
+                                        ? 'যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'
+                                        : 'আয়াত ও উৎস দেখুন',
+                                    style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(color: SukunColors.muted),
                                   ),
                                 ],
