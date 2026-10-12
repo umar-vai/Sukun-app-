@@ -36,7 +36,7 @@ List<ResourceMatch> matchResources(
       .toList(growable: false);
     return List.unmodifiable(result);
   }
-  if (RegExp(r'[0-9০-৯]+\\s*:').hasMatch(query ?? '')) {
+  if (RegExp(r'[0-9০-৯]+\s*:').hasMatch(query ?? '')) {
     return const []; // Invalid numeric citation must not fuzzy-match.
   }
   final queryTokens = _tokens(normalizedQuery);
@@ -94,22 +94,26 @@ String _normalize(String value) => value
 Set<String> _tokens(String value) =>
     value.split(RegExp(r'\s+')).where((token) => token.isNotEmpty).toSet();
 
-\n// Numeric references are supplied by the conservative AI parser as e.g.
- // "2:255", "Surah 2 Ayah 255", or "সূরা ২ আয়াত ২৫৫".
- // Return (surah, first ayah, last ayah) only for an unambiguous citation.
+// Numeric references are supplied by the conservative AI parser as e.g.
+// "2:255", "Surah 2 Ayah 255", or "সূরা ২ আয়াত ২৫৫".
+// Return (surah, first ayah, last ayah) only for an unambiguous citation.
 (int, int, int)? _parseVerseReference(String value) {
   final candidate = value.toLowerCase().trim();
   final match = RegExp(
-    r'^(?:(?:surah|sura|surat|সূরা|সূরাহ|quran|কুরআন)\\s*)?'
-    r'([0-9০-৯]{1,3})\\s*(?::|[,\\s]+(?:ayah|ayat|আয়াত)\\s*)'
-    r'([0-9০-৯]{1,3})(?:\\s*[-–]\\s*([0-9০-৯]{1,3}))?\$',
+    r'^(?:(?:surah|sura|surat|সূরা|সূরাহ|quran|কুরআন)\s*)?'
+    r'([0-9০-৯]{1,3})\s*(?::|[,\s]+(?:ayah|ayat|আয়াত)\s*)'
+    r'([0-9০-৯]{1,3})(?:\s*[-–]\s*([0-9০-৯]{1,3}))?$',
   ).firstMatch(candidate);
   if (match == null) return null;
-  int digits(String value) => int.parse(String.fromCharCodes(value.runes.map(
-    (code) => code >= 0x09E6 && code <= 0x09EF
-        ? code - 0x09E6 + 0x30
-        : code,
-  )));
+
+  int digits(String input) => int.parse(
+        input.split('').map((digit) {
+          final code = digit.codeUnitAt(0);
+          return code >= 0x09E6 && code <= 0x09EF
+              ? String.fromCharCode(code - 0x09E6 + 0x30)
+              : digit;
+        }).join(),
+      );
   final surah = digits(match.group(1)!);
   final start = digits(match.group(2)!);
   final end = match.group(3) == null ? start : digits(match.group(3)!);
