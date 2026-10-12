@@ -74,6 +74,12 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
       final page = value['original_page'];
       final media = value['media_url'];
       final paragraphIndices = value['book_paragraph_indices'];
+      final authorization = root['owner_authorization'];
+      if (authorization is! Map<String, dynamic> ||
+          authorization['basis'] != 'owner_attested' ||
+          authorization['attested_at'] != '2026-10-12') {
+        throw const FormatException('Missing Sukun Life audio authorization.');
+      }
       if (id is! String ||
           !RegExp(r'^ruqyahbd-[a-z0-9-]+$').hasMatch(id) ||
           !seen.add(id) ||
@@ -91,7 +97,7 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
           paragraphIndices.isEmpty ||
           !paragraphIndices.every((p) => p is int && p >= 1) ||
           value['licensing'] !=
-              'external_reference_only_no_rehosting_no_offline_copy' ||
+              'owner_attested_for_sukun_life_app_2026_10_12' ||
           value['publication_status'] != 'draft_review_only') {
         throw const FormatException(
           'Untrusted external audio URL or metadata.',
