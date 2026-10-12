@@ -6,6 +6,7 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
+import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -152,10 +153,18 @@ class QuranSurahScreen extends ConsumerWidget {
         builder: (context, snapshot) => _ResourceFutureList(
           snapshot: snapshot,
           emptyTitle: 'No Ayat published for this Surah',
-          itemBuilder: (resource) => _ResourceListTile(
-            resource: resource,
-            leadingLabel: resource.ayahNumber?.toString(),
-          ),
+          itemBuilder: (resource) => resource.arabicText?.trim().isNotEmpty == true
+              ? AyahReadingCard(
+                  arabicText: resource.arabicText!,
+                  transliteration: resource.transliteration,
+                  title: resource.titleBn ?? resource.title,
+                  reference: resource.referenceText,
+                  onOpenDetail: () => context.push('/resources/${resource.id}'),
+                )
+              : _ResourceListTile(
+                  resource: resource,
+                  leadingLabel: resource.ayahNumber?.toString(),
+                ),
         ),
       ),
     );
@@ -354,7 +363,16 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
               for (final resource in details.items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _ResourceListTile(resource: resource),
+                  child: resource.type == 'quran' &&
+                          resource.arabicText?.trim().isNotEmpty == true
+                      ? AyahReadingCard(
+                          arabicText: resource.arabicText!,
+                          transliteration: resource.transliteration,
+                          title: resource.titleBn ?? resource.title,
+                          reference: resource.referenceText,
+                          onOpenDetail: () => context.push('/resources/${resource.id}'),
+                        )
+                      : _ResourceListTile(resource: resource),
                 ),
             ],
           );
