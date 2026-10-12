@@ -115,7 +115,10 @@ void main() {
         matchResources('সূরা ২ আয়াত ২৫৫', library).single.resource.id,
         approved.id,
       );
-      expect(matchResources('Surah 2 Ayah 255', library).single.resource.id, approved.id);
+      expect(
+        matchResources('Surah 2 Ayah 255', library).single.resource.id,
+        approved.id,
+      );
       expect(matchResources('2:257', library), isEmpty);
       expect(matchResources('2:999', library), isEmpty);
     });
@@ -164,6 +167,5 @@ void main() {
       );
       expect(matchResources('2:255-256', [single]), isEmpty);
     });
-
   });
 }
