@@ -130,25 +130,28 @@ void main() {
     expect(draft.rightsNote, contains('Owner-attested'));
     expect(draft.validate(), isNull);
   });
-  test('all 19 real audio entries bind distinct IDs to distinct URLs', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    final data = await rootBundle.loadString(
-      'assets/data/ruqyahbd_book_audio_crosswalk.json',
-    );
-    final sources = parseBookAudioCatalog(data);
-    expect(sources, hasLength(19));
-    expect(sources.map((entry) => entry.id).toSet(), hasLength(19));
-    expect(
-      sources.map((entry) => entry.externalMediaUrl).toSet(),
-      hasLength(19),
-    );
-    for (final entry in sources) {
-      expect(entry.playbackResource.id, entry.id);
-      expect(entry.playbackResource.mediaUrl, entry.externalMediaUrl);
-      expect(entry.playbackResource.titleBn, entry.titleBn);
-      expect(entry.playbackResource.mediaSourceType, 'direct_audio_url');
-    }
-  });
+  test(
+    'all 19 real audio entries bind distinct IDs to distinct URLs',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final data = await rootBundle.loadString(
+        'assets/data/ruqyahbd_book_audio_crosswalk.json',
+      );
+      final sources = parseBookAudioCatalog(data);
+      expect(sources, hasLength(19));
+      expect(sources.map((entry) => entry.id).toSet(), hasLength(19));
+      expect(
+        sources.map((entry) => entry.externalMediaUrl).toSet(),
+        hasLength(19),
+      );
+      for (final entry in sources) {
+        expect(entry.playbackResource.id, entry.id);
+        expect(entry.playbackResource.mediaUrl, entry.externalMediaUrl);
+        expect(entry.playbackResource.titleBn, entry.titleBn);
+        expect(entry.playbackResource.mediaSourceType, 'direct_audio_url');
+      }
+    },
+  );
 
   test('rejects untrusted domains and duplicate external IDs', () {
     final bad = candidate();
@@ -162,9 +165,7 @@ void main() {
     expect(() => parseBookAudioCatalog(jsonEncode(dup)), throwsFormatException);
     final duplicateStream = candidate();
     (duplicateStream['entries'] as List).add({
-      ...Map<String, Object>.from(
-        (duplicateStream['entries'] as List).first,
-      ),
+      ...Map<String, Object>.from((duplicateStream['entries'] as List).first),
       'id': 'ruqyahbd-another-record',
     });
     expect(
