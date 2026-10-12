@@ -81,11 +81,37 @@ class AudioPlaybackController {
   late final StreamSubscription<PlayerState> _stateSubscription;
   LinkedResource? _resource;
   int _lastSavedSecond = -1;
+  Future<void> _loadQueue = Future<void>.value();
+  int _requestedLoad = 0;
 
   AudioPlayer get player => _player;
   LinkedResource? get resource => _resource;
 
-  Future<void> load(LinkedResource resource) async {
+  /// Serialize changes of audio sources: a previous asynchronous load must
+  /// never install its old stream after the listener selected another track.
+  Future<void> load(LinkedResource resource) {
+    final previous = _loadQueue;
+    final completion = Completer<void>();
+    _loadQueue = completion.future;
+    final request = ++_requestedLoad;
+
+    return () async {
+      try {
+        await previous;
+        if (request != _requestedLoad) {
+          throw const AudioPlaybackException('Audio selection was changed.');
+        }
+        await _loadSelectedResource(resource, request);
+      } finally {
+        completion.complete();
+      }
+    }();
+  }
+
+  Future<void> _loadSelectedResource(
+    LinkedResource resource,
+    int request,
+  ) async {
     final target = resolveResourceMedia(resource);
     if (target?.kind != ResourceMediaKind.audio || target?.uri == null) {
       throw const AudioPlaybackException(
@@ -94,22 +120,30 @@ class AudioPlaybackController {
     }
     if (!audioResourceNeedsReload(_resource, resource)) return;
 
-    // Playback must still work when optional resume storage is unavailable.
     try {
       await _persistCurrentPosition();
     } on Exception {
-      // Persistence failure must not block a playable audio source.
+      // Resume data is optional and must never block the selected track.
     }
-    _resource = resource;
+
+    // The player is shared across routes. Immediately stop the old stream
+    // before loading the new URL, including on web/mobile browsers.
+    _resource = null;
     _lastSavedSecond = -1;
     try {
+      await _player.stop();
+      if (request != _requestedLoad) {
+        throw const AudioPlaybackException('Audio selection was changed.');
+      }
       Duration savedPosition = Duration.zero;
       try {
         savedPosition = await _positions.read(resource.id) ?? Duration.zero;
       } on Exception {
-        // Retry from the beginning if a saved bookmark cannot be read.
+        // Start from the beginning if the resume store is unavailable.
       }
-      final artUri = _validHttpsUri(resource.thumbnailUrl);
+      if (request != _requestedLoad) {
+        throw const AudioPlaybackException('Audio selection was changed.');
+      }
       final duration = await _player.setAudioSource(
         AudioSource.uri(
           target!.uri!,
@@ -119,11 +153,16 @@ class AudioPlaybackController {
                 ? resource.titleBn!
                 : resource.title,
             album: 'Sukun Life',
-            artUri: artUri,
+            artUri: _validHttpsUri(resource.thumbnailUrl),
           ),
         ),
         initialPosition: savedPosition,
       );
+      if (request != _requestedLoad) {
+        await _player.stop();
+        throw const AudioPlaybackException('Audio selection was changed.');
+      }
+      _resource = resource;
       if (duration != null && savedPosition >= duration) {
         await _player.seek(Duration.zero);
         await _positions.clear(resource.id);
@@ -136,6 +175,9 @@ class AudioPlaybackController {
     } on PlayerInterruptedException {
       _resource = null;
       throw const AudioPlaybackException('Audio loading was interrupted.');
+    } on AudioPlaybackException {
+      _resource = null;
+      rethrow;
     } on Exception {
       _resource = null;
       throw const AudioPlaybackException(
@@ -144,7 +186,14 @@ class AudioPlaybackController {
     }
   }
 
-  Future<void> play() async {
+  Future<void> play({LinkedResource? expectedResource}) async {
+    if (_resource == null ||
+        (expectedResource != null &&
+            audioResourceNeedsReload(_resource, expectedResource))) {
+      throw const AudioPlaybackException(
+        'The selected audio is not loaded. Retry to play this track.',
+      );
+    }
     try {
       if (_player.processingState == ProcessingState.completed) {
         await _player.seek(Duration.zero);

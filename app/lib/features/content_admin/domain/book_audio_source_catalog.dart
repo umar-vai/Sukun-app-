@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:uuid/uuid.dart';
 
 /// Public metadata only; never includes third-party audio bytes.
@@ -22,6 +23,16 @@ class BookAudioSourceCandidate {
   final bool requiresContextReview;
 
   String get slug => 'sukun-${id.replaceAll('_', '-')}';
+
+  /// Immutable, entry-specific binding of title and URL for the shared player.
+  LinkedResource get playbackResource => LinkedResource(
+    id: id,
+    title: titleBn,
+    titleBn: titleBn,
+    type: 'audio',
+    mediaSourceType: 'direct_audio_url',
+    mediaUrl: externalMediaUrl,
+  );
 
   SaveContentInput draftInput({String? categoryId}) => SaveContentInput(
     type: 'audio',
@@ -64,6 +75,7 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
     throw const FormatException('Invalid external audio catalog length.');
   }
   final seen = <String>{};
+  final seenUrls = <String>{};
   return List.unmodifiable(
     list.map((value) {
       if (value is! Map<String, dynamic>) {
@@ -83,6 +95,7 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
       if (id is! String ||
           !RegExp(r'^ruqyahbd-[a-z0-9-]+$').hasMatch(id) ||
           !seen.add(id) ||
+          !seenUrls.add(media is String ? media : '') ||
           title is! String ||
           title.trim().isEmpty ||
           page is! String ||

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/domain/book_audio_source_catalog.dart';
@@ -129,6 +130,29 @@ void main() {
     expect(draft.rightsNote, contains('Owner-attested'));
     expect(draft.validate(), isNull);
   });
+  test(
+    'all 19 real audio entries bind distinct IDs to distinct URLs',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final data = await rootBundle.loadString(
+        'assets/data/ruqyahbd_book_audio_crosswalk.json',
+      );
+      final sources = parseBookAudioCatalog(data);
+      expect(sources, hasLength(19));
+      expect(sources.map((entry) => entry.id).toSet(), hasLength(19));
+      expect(
+        sources.map((entry) => entry.externalMediaUrl).toSet(),
+        hasLength(19),
+      );
+      for (final entry in sources) {
+        expect(entry.playbackResource.id, entry.id);
+        expect(entry.playbackResource.mediaUrl, entry.externalMediaUrl);
+        expect(entry.playbackResource.titleBn, entry.titleBn);
+        expect(entry.playbackResource.mediaSourceType, 'direct_audio_url');
+      }
+    },
+  );
+
   test('rejects untrusted domains and duplicate external IDs', () {
     final bad = candidate();
     (bad['entries'] as List).first['media_url'] =
@@ -139,5 +163,14 @@ void main() {
       Map<String, Object>.from((dup['entries'] as List).first),
     );
     expect(() => parseBookAudioCatalog(jsonEncode(dup)), throwsFormatException);
+    final duplicateStream = candidate();
+    (duplicateStream['entries'] as List).add({
+      ...Map<String, Object>.from((duplicateStream['entries'] as List).first),
+      'id': 'ruqyahbd-another-record',
+    });
+    expect(
+      () => parseBookAudioCatalog(jsonEncode(duplicateStream)),
+      throwsFormatException,
+    );
   });
 }

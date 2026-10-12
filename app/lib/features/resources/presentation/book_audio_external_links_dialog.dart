@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sukun_life/features/content_admin/domain/book_audio_source_catalog.dart';
-import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -72,14 +71,7 @@ class _BookAudioExternalLinksDialogState
                         onTap: () => Navigator.of(context).push<void>(
                           MaterialPageRoute(
                             builder: (context) => AudioPlayerScreen(
-                              resource: LinkedResource(
-                                id: entry.id,
-                                title: entry.titleBn,
-                                titleBn: entry.titleBn,
-                                type: 'audio',
-                                mediaSourceType: 'direct_audio_url',
-                                mediaUrl: entry.externalMediaUrl,
-                              ),
+                              resource: entry.playbackResource,
                             ),
                           ),
                         ),
