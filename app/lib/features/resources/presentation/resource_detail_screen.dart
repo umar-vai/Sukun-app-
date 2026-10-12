@@ -240,25 +240,17 @@ class _Section extends StatelessWidget {
   const _Section({
     required this.label,
     this.value,
-    this.textAlign,
-    this.canonical = false,
     this.bangla = false,
   });
 
   final String label;
   final String? value;
-  final TextAlign? textAlign;
-  final bool canonical;
   final bool bangla;
 
   @override
   Widget build(BuildContext context) {
     if (value?.trim().isNotEmpty != true) return const SizedBox.shrink();
-    final base = canonical
-        ? SukunTypography.canonicalReligiousText(
-            textStyle: Theme.of(context).textTheme.headlineSmall,
-          ).copyWith(height: 2)
-        : bangla
+    final base = bangla
         ? SukunTypography.banglaBody(
             textStyle: Theme.of(context).textTheme.bodyLarge,
           ).copyWith(height: 1.75)
@@ -266,8 +258,7 @@ class _Section extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: SukunSurface(
-        tone: canonical ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
-        showBorder: !canonical,
+        tone: SukunSurfaceTone.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -281,8 +272,8 @@ class _Section extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Directionality(
-              textDirection: canonical ? TextDirection.rtl : TextDirection.ltr,
-              child: SelectableText(value!, textAlign: textAlign, style: base),
+              textDirection: TextDirection.ltr,
+              child: SelectableText(value!, style: base),
             ),
           ],
         ),
