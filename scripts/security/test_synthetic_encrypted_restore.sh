@@ -75,15 +75,21 @@ age -d -i "$work/identity" "$archive" |
     -d sukun_fixture_restored --clean --if-exists --no-owner --single-transaction --exit-on-error
 
 q() {
-  docker exec -u postgres "$name" psql -U postgres -At \
-    -d sukun_fixture_restored -c "$1" | tr -d '\r'
+  docker exec -u postgres "$name" psql -X -q -v ON_ERROR_STOP=1 -U postgres -At \
+    -d sukun_fixture_restored -c "$1" | tr -d '\r' | tail -n 1
 }
-[[ "$(q "select count(*) from pg_namespace where nspname in ('auth','private','storage','public')")" == '4' ]]
-[[ "$(q "select (select count(*) from public.synthetic_tasks)::text || ':' || (select count(*) from auth.synthetic_accounts)::text || ':' || (select count(*) from private.synthetic_log)::text || ':' || (select count(*) from storage.synthetic_objects)::text")" == '2:1:1:1' ]]
-[[ "$(q "select relrowsecurity from pg_class where oid='public.synthetic_tasks'::regclass")" == 't' ]]
-[[ "$(q "select has_table_privilege('qa_reader','public.synthetic_tasks','SELECT')")" == 't' ]]
-[[ "$(q "set role qa_reader; set qa.owner_code='qa_a'; select count(*) from public.synthetic_tasks")" == '1' ]]
-[[ "$(q "set role qa_reader; set qa.owner_code='qa_b'; select count(*) from public.synthetic_tasks")" == '1' ]]
-[[ "$(q "set role qa_reader; set qa.owner_code='qa_c'; select count(*) from public.synthetic_tasks")" == '0' ]]
-echo 'PASS: fake-data age encryption, checksum, wrong-key refusal, isolated pg_restore, four schemas, grants, RLS cross-user isolation.'
-echo 'LIMITATION: this verifies an isolated synthetic fixture, NOT a production export or recoverability of managed Supabase services.'
+check() {
+  if [[ "$1" != "$2" ]]; then
+    printf 'FAIL synthetic fixture %s: expected [%s], got [%s]\n' "$3" "$2" "$1" >&2
+    exit 1
+  fi
+}
+check "$(q "select count(*) from pg_namespace where nspname in ('auth','private','storage','public')")" '4' 'four-schemas'
+check "$(q "select (select count(*) from public.synthetic_tasks)::text || ':' || (select count(*) from auth.synthetic_accounts)::text || ':' || (select count(*) from private.synthetic_log)::text || ':' || (select count(*) from storage.synthetic_objects)::text")" '2:1:1:1' 'fake-row-counts'
+check "$(q "select relrowsecurity from pg_class where oid='public.synthetic_tasks'::regclass")" 't' 'RLS-enabled'
+check "$(q "select has_table_privilege('qa_reader','public.synthetic_tasks','SELECT')")" 't' 'restored-privileges'
+check "$(q "set role qa_reader; set qa.owner_code='qa_a'; select count(*) from public.synthetic_tasks")" '1' 'tenant-A'
+check "$(q "set role qa_reader; set qa.owner_code='qa_b'; select count(*) from public.synthetic_tasks")" '1' 'tenant-B'
+check "$(q "set role qa_reader; set qa.owner_code='qa_c'; select count(*) from public.synthetic_tasks")" '0' 'cross-account-denial'
+echo 'PASS: fake-data encryption, checksum, wrong-key refusal, isolated restore, four schemas, grants, and RLS isolation.'
+echo 'LIMITATION: synthetic fixture only; not a production backup or Supabase managed-service recovery.'
