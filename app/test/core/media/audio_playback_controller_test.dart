@@ -12,7 +12,8 @@ void main() {
       title: 'আট সুরা',
       type: 'audio',
       mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
+      mediaUrl:
+          'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
     );
     const second = LinkedResource(
       id: 'ruqyahbd-three-kul',
@@ -26,7 +27,8 @@ void main() {
       title: 'তিনকুল',
       type: 'audio',
       mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
+      mediaUrl:
+          'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
     );
 
     expect(audioResourceNeedsReload(null, first), isTrue);
