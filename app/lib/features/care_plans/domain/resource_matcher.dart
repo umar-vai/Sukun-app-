@@ -18,22 +18,24 @@ List<ResourceMatch> matchResources(
   // Never substitute a similarly named ayah or an unverified draft.
   final reference = _parseVerseReference(query?.trim() ?? '');
   if (reference != null) {
-    final result = resources.where((resource) {
-      if (!resource.isLinkable ||
-          resource.surahNumber != reference.$1 ||
-          resource.ayahNumber != reference.$2 ||
-          (resource.ayahEndNumber ?? resource.ayahNumber) != reference.$3) {
-        return false;
-      }
-      if (resource.type == 'quran') return true;
-      final uri = Uri.tryParse(resource.mediaUrl ?? '');
-      return resource.type == 'audio' &&
-          resource.mediaSourceType == 'direct_audio_url' &&
-          uri?.scheme == 'https' &&
-          uri?.host.isNotEmpty == true;
-    }).map((resource) => ResourceMatch(resource: resource, score: 1.0))
-      .take(limit)
-      .toList(growable: false);
+    final result = resources
+        .where((resource) {
+          if (!resource.isLinkable ||
+              resource.surahNumber != reference.$1 ||
+              resource.ayahNumber != reference.$2 ||
+              (resource.ayahEndNumber ?? resource.ayahNumber) != reference.$3) {
+            return false;
+          }
+          if (resource.type == 'quran') return true;
+          final uri = Uri.tryParse(resource.mediaUrl ?? '');
+          return resource.type == 'audio' &&
+              resource.mediaSourceType == 'direct_audio_url' &&
+              uri?.scheme == 'https' &&
+              uri?.host.isNotEmpty == true;
+        })
+        .map((resource) => ResourceMatch(resource: resource, score: 1.0))
+        .take(limit)
+        .toList(growable: false);
     return List.unmodifiable(result);
   }
   if (RegExp(r'[0-9০-৯]+\s*:').hasMatch(query ?? '')) {
@@ -107,13 +109,13 @@ Set<String> _tokens(String value) =>
   if (match == null) return null;
 
   int digits(String input) => int.parse(
-        input.split('').map((digit) {
-          final code = digit.codeUnitAt(0);
-          return code >= 0x09E6 && code <= 0x09EF
-              ? String.fromCharCode(code - 0x09E6 + 0x30)
-              : digit;
-        }).join(),
-      );
+    input.split('').map((digit) {
+      final code = digit.codeUnitAt(0);
+      return code >= 0x09E6 && code <= 0x09EF
+          ? String.fromCharCode(code - 0x09E6 + 0x30)
+          : digit;
+    }).join(),
+  );
   final surah = digits(match.group(1)!);
   final start = digits(match.group(2)!);
   final end = match.group(3) == null ? start : digits(match.group(3)!);
