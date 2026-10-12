@@ -23,16 +23,19 @@ void main() {
       expect(second.single.resource.id, 'approved-bangla');
     });
 
-    test('Bengali vowel marks are preserved; unrelated titles are not merged', () {
-      const resource = ContentResourceOption(
-        id: 'other',
-        title: 'দয়া',
-        type: 'article',
-        visibility: 'public',
-        status: 'published',
-      );
-      expect(matchResources('দোয়া', [resource]), isEmpty);
-    });
+    test(
+      'Bengali vowel marks are preserved; unrelated titles are not merged',
+      () {
+        const resource = ContentResourceOption(
+          id: 'other',
+          title: 'দয়া',
+          type: 'article',
+          visibility: 'public',
+          status: 'published',
+        );
+        expect(matchResources('দোয়া', [resource]), isEmpty);
+      },
+    );
 
     test('Arabic vowelization does not prevent matching catalog titles', () {
       const resource = ContentResourceOption(
