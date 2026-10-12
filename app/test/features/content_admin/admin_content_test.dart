@@ -105,20 +105,24 @@ void main() {
     );
   });
 
-  test('third-party external audio cannot advance without rights clearance', () {
-    final draft = _input(
-      type: 'audio',
-      mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://files.ruqyahbd.org/audio/example.mp3',
-      rightsNote: 'Third-party rights not independently verified. '
-          'SOURCE LINK ONLY. No audio rehosting.',
-    );
-    expect(draft.validate(), isNull);
-    expect(
-      draft.publicationValidationError(),
-      contains('require verification'),
-    );
-  });
+  test(
+    'third-party external audio cannot advance without rights clearance',
+    () {
+      final draft = _input(
+        type: 'audio',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://files.ruqyahbd.org/audio/example.mp3',
+        rightsNote:
+            'Third-party rights not independently verified. '
+            'SOURCE LINK ONLY. No audio rehosting.',
+      );
+      expect(draft.validate(), isNull);
+      expect(
+        draft.publicationValidationError(),
+        contains('require verification'),
+      );
+    },
+  );
 
   test('publication validation accepts complete canonical metadata', () {
     final input = _input(
