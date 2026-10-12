@@ -57,3 +57,16 @@ STOP / NO GO if any of these are true:
 ## Existing public site and native policy
 
 Never modify `sukunlife.com` or the old internal dashboard. Do not create guest-only parallel websites, expose secrets in public Flutter, or package APK/AAB/IPA during routine Web-first security work.
+
+## Production backup blocker confirmed by operator (2026-10-12)
+
+The user showed the production Supabase Dashboard > **Database > Backups** for **Sukun Mobile App / main (PRODUCTION)**. It explicitly states:
+
+- **Free Plan does not include project backups** — no scheduled backups are available.
+- **Point-in-Time Recovery is a Pro Plan add-on** — not enabled. Do not confuse the dashboard's marketing text about daily backup cadence with an active restore point.
+
+**P0 / NO-GO:** Production clinical-data migrations and public rollout remain blocked until an actual recoverable copy and tested recovery process exist. Do not assume a GitHub SQL migration or staging test is a backup. No backup or recovery drill has been executed by this PR.
+
+**Cost-conscious options, require operator involvement:** (a) upgrade to paid scheduled backups after explicit budget approval and verify recovery, or (b) export a *complete enough* logical database backup from a **trusted, operator-controlled workstation**, using least-privileged approved credentials as appropriate; encrypt it, store an access-restricted offsite copy, define retention and test a restore into an isolated project/database. Auth and clinical schemas must be inventoried; storage files, Edge Functions, settings, OAuth providers and secrets need separate recovery evidence. Verify the chosen backup tool's defaults and exclusions rather than assuming `db dump` covers everything.
+
+**Do not** export production patient data into ChatGPT, GitHub PRs, Actions logs/artifacts or the public Flutter app. Never run restore over production or install backup credentials in CI. Record a timestamped, access-controlled backup/restore attestation (counts/hashes *without PII*) and a tested incident runbook before proceeding.
