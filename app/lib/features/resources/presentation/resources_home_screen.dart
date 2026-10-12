@@ -197,7 +197,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   onPressed: _openBookAudioLinks,
                   icon: const Icon(Icons.headphones_outlined),
                   label: const Text(
-                    'বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি মূল উৎস',
+                    'বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি শুনুন',
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -210,11 +210,6 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   label: const Text('রুকইয়াহর আয়াত পড়ুন — মূল উৎস খুলুন'),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'অডিও Ruqyah Support BD-এর নিজস্ব সার্ভারে রয়েছে। '
-                  'মূল উৎসের লিংক খুলবে; Sukun Life ফাইল কপি করছে না।',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
                 const SizedBox(height: 22),
                 SukunSectionHeader(
                   title: 'বিষয় অনুযায়ী দেখুন',
