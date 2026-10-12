@@ -334,27 +334,25 @@ class _PreviewSection extends StatelessWidget {
   const _PreviewSection({
     required this.title,
     required this.body,
-    this.rtl = false,
     this.textStyle,
   });
 
   final String title;
   final String body;
-  final bool rtl;
   final TextStyle? textStyle;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 22),
     child: SukunSurface(
-      tone: rtl ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+      tone: SukunSurfaceTone.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Directionality(
-            textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+            textDirection: TextDirection.ltr,
             child: SelectableText(body, style: textStyle),
           ),
         ],
