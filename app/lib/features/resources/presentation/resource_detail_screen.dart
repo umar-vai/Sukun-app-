@@ -11,6 +11,7 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
@@ -164,18 +165,22 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     ? resource.summary
                     : null,
               ),
-              _Section(
-                label: 'আরবি',
-                value: resource.arabicText,
-                textAlign: TextAlign.right,
-                canonical: true,
-              ),
+              if (resource.arabicText?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 18),
+                  child: AyahReadingCard(
+                    arabicText: resource.arabicText!,
+                    transliteration: resource.transliteration,
+                    reference: resource.referenceText,
+                  ),
+                ),
               _Section(
                 label: 'বাংলা',
                 value: resource.banglaText,
                 bangla: true,
               ),
-              _Section(label: 'উচ্চারণ', value: resource.transliteration),
+              if (resource.arabicText?.trim().isNotEmpty != true)
+                _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
               _Section(
                 label: 'নির্দেশনা',
