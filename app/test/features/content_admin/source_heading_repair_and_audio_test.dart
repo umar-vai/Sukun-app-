@@ -132,7 +132,7 @@ void main() {
     expect(() => parseBookAudioCatalog(jsonEncode(bad)), throwsFormatException);
     final dup = candidate();
     (dup['entries'] as List).add(
-      Map<String, dynamic>.from((dup['entries'] as List).first),
+      Map<String, Object>.from((dup['entries'] as List).first),
     );
     expect(() => parseBookAudioCatalog(jsonEncode(dup)), throwsFormatException);
   });
