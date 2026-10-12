@@ -5,7 +5,7 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
-import 'package:sukun_life/app/config/app_environment.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
 import 'package:sukun_life/features/content_admin/presentation/private_resource_draft_import_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
