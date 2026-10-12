@@ -13,7 +13,9 @@ class ResourceMaterialPacket {
       ..writeln('# সুকুন লাইফ — উপকরণের খসড়া')
       ..writeln()
       ..writeln('**শুধু অ্যাডমিন পর্যালোচনার জন্য — রোগীর জন্য প্রকাশিত নয়।**')
-      ..writeln('নিচের নিয়মগুলো মূল প্রেসক্রিপশন ও অনুমোদিত উৎসের সঙ্গে মিলিয়ে দেখুন।')
+      ..writeln(
+        'নিচের নিয়মগুলো মূল প্রেসক্রিপশন ও অনুমোদিত উৎসের সঙ্গে মিলিয়ে দেখুন।',
+      )
       ..writeln();
 
     for (var index = 0; index < actions.length; index++) {
@@ -38,23 +40,30 @@ class ResourceMaterialPacket {
       }
       if (action.durationMinutes != null && action.durationMinutes! > 0) {
         buffer
-          ..writeln('**প্রেসক্রিপশনে উল্লেখিত সময়:** ${action.durationMinutes} মিনিট')
+          ..writeln(
+            '**প্রেসক্রিপশনে উল্লেখিত সময়:** ${action.durationMinutes} মিনিট',
+          )
           ..writeln();
       }
 
       final resource = action.resource;
-      final approved = resource != null &&
+      final approved =
+          resource != null &&
           resource.status == 'published' &&
-          const {'public', 'patient_only', 'assigned_only'}.contains(
-            resource.visibility,
-          ) &&
+          const {
+            'public',
+            'patient_only',
+            'assigned_only',
+          }.contains(resource.visibility) &&
           (!const {'quran', 'hadith'}.contains(resource.type) ||
               resource.verificationStatus == 'verified');
 
       if (!approved) {
         buffer
-          ..writeln('**উপকরণের অবস্থা:** অনুমোদিত উৎস পাওয়া যায়নি; '
-              'অ্যাডমিন যাচাই ও Resource Library linkage প্রয়োজন।')
+          ..writeln(
+            '**উপকরণের অবস্থা:** অনুমোদিত উৎস পাওয়া যায়নি; '
+            'অ্যাডমিন যাচাই ও Resource Library linkage প্রয়োজন।',
+          )
           ..writeln();
         continue;
       }
@@ -88,8 +97,10 @@ class ResourceMaterialPacket {
     }
     buffer
       ..writeln('---')
-      ..writeln('**প্রকাশের আগে:** আরবি পাঠ, সূত্র, অনুবাদ, সংখ্যা, সময়, '
-          'নির্দেশনা ও রোগীর জন্য উপযোগিতা Admin যাচাই করবেন।');
+      ..writeln(
+        '**প্রকাশের আগে:** আরবি পাঠ, সূত্র, অনুবাদ, সংখ্যা, সময়, '
+        'নির্দেশনা ও রোগীর জন্য উপযোগিতা Admin যাচাই করবেন।',
+      );
     return buffer.toString();
   }
 }
