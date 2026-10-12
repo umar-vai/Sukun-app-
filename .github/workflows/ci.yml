@@ -148,6 +148,27 @@ jobs:
       - name: Check hosted synthetic login errors and spoofed header behavior
         run: python3 docs/security/hosted_staging_login_smoke.py
 
+  synthetic-backup-restore:
+    name: Recovery / Encrypted Synthetic Restore
+    # Never send production credentials/data to GitHub Actions.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Validate security shell scripts (no production connection)
+        run: |
+          bash -n scripts/security/production_encrypted_backup.sh
+          bash -n scripts/security/test_synthetic_encrypted_restore.sh
+      - name: Install public-key encryption utility
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+      - name: Rehearse encrypted backup and isolated restore with fake fixture
+        run: bash scripts/security/test_synthetic_encrypted_restore.sh
+
   database-security:
     name: Database / Supabase RLS Tests
     runs-on: ubuntu-latest
