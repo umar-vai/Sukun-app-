@@ -194,7 +194,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               if (resource.isUnverifiedThirdPartyAudio) ...[
                 const _Section(
                   label: 'অডিওর অবস্থা',
-                  value: 'এই অডিওটি তৃতীয় পক্ষের। ব্যবহার ও ইন-অ্যাপ প্লেব্যাকের '
+                  value:
+                      'এই অডিওটি তৃতীয় পক্ষের। ব্যবহার ও ইন-অ্যাপ প্লেব্যাকের '
                       'অনুমতি যাচাই বাকি থাকায় Sukun Life প্লেয়ার বন্ধ রাখা হয়েছে।',
                 ),
                 if (resource.verifiedPublisherPage case final publisher?)
