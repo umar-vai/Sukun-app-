@@ -60,7 +60,7 @@ class _PrivateResourceDraftImportDialogState
       if (mounted) {
         setState(() {
           _batch = null;
-          _error = 'যাচাইকৃত private draft JSON নির্বাচন করুন।',
+          _error = 'যাচাইকৃত private draft JSON নির্বাচন করুন।';
         });
       }
     }
