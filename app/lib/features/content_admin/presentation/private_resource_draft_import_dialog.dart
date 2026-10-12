@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sukun_life/app/config/app_environment.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
 import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
 
@@ -35,17 +35,12 @@ class _PrivateResourceDraftImportDialogState
   Future<void> _choose() async {
     if (_busy || !_allowed) return;
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final picked = await FilePicker.pickFile(
         type: FileType.custom,
-        allowedExtensions: ['json'],
-        withData: true,
-        allowMultiple: false,
+        allowedExtensions: const ['json'],
       );
-      if (!mounted || result == null) return;
-      final bytes = result.files.single.bytes;
-      if (bytes == null) {
-        throw const FormatException('Please select a local JSON file.');
-      }
+      if (!mounted || picked == null) return;
+      final bytes = await picked.readAsBytes();
       final batch = PrivateResourceDraftBatch.parse(bytes);
       setState(() {
         _batch = batch;
