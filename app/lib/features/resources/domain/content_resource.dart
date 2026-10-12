@@ -123,9 +123,9 @@ class ContentResource {
   /// rights clearance must be recorded before in-app playback is offered.
   bool get isUnverifiedThirdPartyAudio =>
       type == 'audio' &&
-      (rightsNote
-              ?.toLowerCase()
-              .contains('third-party rights not independently verified') ??
+      (rightsNote?.toLowerCase().contains(
+            'third-party rights not independently verified',
+          ) ??
           false);
 
   Uri? get verifiedPublisherPage {
