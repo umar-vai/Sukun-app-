@@ -99,6 +99,10 @@ void main() {
 
   Map<String, dynamic> candidate() => {
     'schema': 'sukun.ruqyahbd.external_audio_crosswalk.v1',
+    'owner_authorization': {
+      'basis': 'owner_attested',
+      'attested_at': '2026-10-12',
+    },
     'entries': [
       {
         'id': 'ruqyahbd-eight-surah',
@@ -107,7 +111,7 @@ void main() {
         'media_url':
             'https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3',
         'book_paragraph_indices': [259, 293],
-        'licensing': 'external_reference_only_no_rehosting_no_offline_copy',
+        'licensing': 'owner_attested_for_sukun_life_app_2026_10_12',
         'publication_status': 'draft_review_only',
         'matching_status': 'title_and_book_reference_matched',
       },
@@ -122,7 +126,7 @@ void main() {
     expect(draft.status, 'draft');
     expect(draft.mediaSourceType, 'direct_audio_url');
     expect(draft.mediaUrl, contains('files.ruqyahbd.org'));
-    expect(draft.rightsNote, contains('rights not independently verified'));
+    expect(draft.rightsNote, contains('Owner-attested'));
     expect(draft.validate(), isNull);
   });
   test('rejects untrusted domains and duplicate external IDs', () {
