@@ -256,15 +256,6 @@ class _AdminContentListScreenState
           setState(() => _status = 'review');
         },
       ),
-      const SizedBox(height: 10),
-      _DashboardShortcut(
-        icon: Icons.menu_book_outlined,
-        title: 'কুরআনের পাঠ — উৎস যাচাই বাকি',
-        detail: data == null
-            ? 'মূল বইয়ের আয়াত ও পাঠের অংশ যাচাই করুন'
-            : '$quranPendingটি বইয়ের পাঠের খসড়া · সূরা–আয়াত যাচাই না হওয়া পর্যন্ত অপ্রকাশিত',
-        onTap: _openUnverifiedQuranDrafts,
-      ),
       const SizedBox(height: 24),
       Text('বিভাগ বেছে নিন', style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 6),
@@ -301,6 +292,15 @@ class _AdminContentListScreenState
         },
       ),
       const SizedBox(height: 18),
+      _DashboardShortcut(
+        icon: Icons.menu_book_outlined,
+        title: 'কুরআনের পাঠ — উৎস যাচাই বাকি',
+        detail: data == null
+            ? 'মূল বইয়ের আয়াত ও পাঠের অংশ যাচাই করুন'
+            : '$quranPendingটি বইয়ের পাঠের খসড়া · সূরা–আয়াত যাচাই না হওয়া পর্যন্ত অপ্রকাশিত',
+        onTap: _openUnverifiedQuranDrafts,
+      ),
+      const SizedBox(height: 10),
       if (snapshot.hasError)
         const SukunSurface(
           tone: SukunSurfaceTone.soft,
