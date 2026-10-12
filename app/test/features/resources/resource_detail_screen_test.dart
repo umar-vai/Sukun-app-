@@ -91,7 +91,10 @@ void main() {
       expect(find.text('উৎস উল্লেখ আছে'), findsOneWidget);
       expect(find.text('তথ্যসূত্র দেওয়া আছে'), findsNothing);
       expect(find.text('অডিও শুনুন'), findsNothing);
-      expect(find.textContaining('Third-party rights not independently'), findsNothing);
+      expect(
+        find.textContaining('Third-party rights not independently'),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -120,7 +123,10 @@ void main() {
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
-  const _FakeResourcesRepository({this.invalidMedia = false, this.unverifiedAudio = false});
+  const _FakeResourcesRepository({
+    this.invalidMedia = false,
+    this.unverifiedAudio = false,
+  });
 
   final bool invalidMedia;
   final bool unverifiedAudio;
@@ -133,28 +139,29 @@ final class _FakeResourcesRepository implements ResourcesRepository {
   }) async => const [];
 
   @override
-  Future<ContentResource?> getResource(String resourceId) async =>
-      ContentResource(
-        id: 'resource-1',
-        type: unverifiedAudio ? 'audio' : 'quran',
-        mediaSourceType: invalidMedia || unverifiedAudio
-            ? 'direct_audio_url'
-            : null,
-        mediaUrl: unverifiedAudio
-            ? 'https://files.ruqyahbd.org/audio/example.mp3'
-            : invalidMedia
-                ? 'http://unsafe.example/file.mp3'
-                : null,
-        sourceUrl: unverifiedAudio ? 'https://ruqyahbd.org/download' : null,
-        rightsNote: unverifiedAudio
-            ? 'Third-party rights not independently verified. No in-app embedding.'
-            : null,
-        title: 'Ayatul Kursi',
-        arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
-        referenceText: 'Surah Al-Baqarah 2:255',
-        visibility: 'assigned_only',
-        status: 'published',
-      );
+  Future<ContentResource?> getResource(
+    String resourceId,
+  ) async => ContentResource(
+    id: 'resource-1',
+    type: unverifiedAudio ? 'audio' : 'quran',
+    mediaSourceType: invalidMedia || unverifiedAudio
+        ? 'direct_audio_url'
+        : null,
+    mediaUrl: unverifiedAudio
+        ? 'https://files.ruqyahbd.org/audio/example.mp3'
+        : invalidMedia
+        ? 'http://unsafe.example/file.mp3'
+        : null,
+    sourceUrl: unverifiedAudio ? 'https://ruqyahbd.org/download' : null,
+    rightsNote: unverifiedAudio
+        ? 'Third-party rights not independently verified. No in-app embedding.'
+        : null,
+    title: 'Ayatul Kursi',
+    arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
+    referenceText: 'Surah Al-Baqarah 2:255',
+    visibility: 'assigned_only',
+    status: 'published',
+  );
 
   @override
   Future<List<QuranSurahSummary>> browseSurahs() async => const [];
