@@ -17,8 +17,7 @@ class BookAudioSourceDialog extends ConsumerStatefulWidget {
       _BookAudioSourceDialogState();
 }
 
-class _BookAudioSourceDialogState
-    extends ConsumerState<BookAudioSourceDialog> {
+class _BookAudioSourceDialogState extends ConsumerState<BookAudioSourceDialog> {
   late final Future<List<BookAudioSourceCandidate>> _sources = _load();
   bool _saving = false;
   int _saved = 0;
@@ -42,7 +41,9 @@ class _BookAudioSourceDialogState
     setState(() => _saving = true);
     try {
       final repo = ref.read(contentAdminRepositoryProvider);
-      final existing = (await repo.listContent()).map((item) => item.slug).toSet();
+      final existing = (await repo.listContent())
+          .map((item) => item.slug)
+          .toSet();
       final categories = await repo.listCategories();
       String? categoryId;
       for (final category in categories) {
@@ -68,7 +69,9 @@ class _BookAudioSourceDialogState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Staging Super Admin permission বা সংযোগ যাচাই করুন।'),
+            content: Text(
+              'Staging Super Admin permission বা সংযোগ যাচাই করুন।',
+            ),
           ),
         );
       }
@@ -156,7 +159,9 @@ class _BookAudioSourceDialogState
       ),
       actions: [
         TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(_saved > 0),
+          onPressed: _saving
+              ? null
+              : () => Navigator.of(context).pop(_saved > 0),
           child: const Text('বন্ধ করুন'),
         ),
       ],
