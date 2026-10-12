@@ -153,7 +153,8 @@ class QuranSurahScreen extends ConsumerWidget {
         builder: (context, snapshot) => _ResourceFutureList(
           snapshot: snapshot,
           emptyTitle: 'No Ayat published for this Surah',
-          itemBuilder: (resource) => resource.arabicText?.trim().isNotEmpty == true
+          itemBuilder: (resource) =>
+              resource.arabicText?.trim().isNotEmpty == true
               ? AyahReadingCard(
                   arabicText: resource.arabicText!,
                   transliteration: resource.transliteration,
@@ -363,14 +364,16 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
               for (final resource in details.items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: resource.type == 'quran' &&
+                  child:
+                      resource.type == 'quran' &&
                           resource.arabicText?.trim().isNotEmpty == true
                       ? AyahReadingCard(
                           arabicText: resource.arabicText!,
                           transliteration: resource.transliteration,
                           title: resource.titleBn ?? resource.title,
                           reference: resource.referenceText,
-                          onOpenDetail: () => context.push('/resources/${resource.id}'),
+                          onOpenDetail: () =>
+                              context.push('/resources/${resource.id}'),
                         )
                       : _ResourceListTile(resource: resource),
                 ),
