@@ -13,6 +13,7 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
 
 class ResourcesHomeScreen extends ConsumerStatefulWidget {
@@ -88,6 +89,13 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
       if (!mounted) return;
       _refresh();
     });
+  }
+
+  Future<void> _openBookAudioLinks() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => const BookAudioExternalLinksDialog(),
+    );
   }
 
   void _selectSection(ResourceSection section) {
@@ -183,6 +191,18 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                       _refresh();
                     },
                   ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _openBookAudioLinks,
+                  icon: const Icon(Icons.headphones_outlined),
+                  label: const Text('বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি মূল উৎস'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'অডিও Ruqyah Support BD-এর নিজস্ব সার্ভারে রয়েছে। '
+                  'মূল উৎসের লিংক খুলবে; Sukun Life ফাইল কপি করছে না।',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: 22),
                 SukunSectionHeader(
                   title: 'বিষয় অনুযায়ী দেখুন',
