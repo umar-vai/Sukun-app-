@@ -119,6 +119,22 @@ class ContentResource {
   final String visibility;
   final String status;
 
+  /// The external publisher's track is linked as metadata only. An actual
+  /// rights clearance must be recorded before in-app playback is offered.
+  bool get isUnverifiedThirdPartyAudio =>
+      type == 'audio' &&
+      (rightsNote
+              ?.toLowerCase()
+              .contains('third-party rights not independently verified') ??
+          false);
+
+  Uri? get verifiedPublisherPage {
+    if (!isUnverifiedThirdPartyAudio) return null;
+    final url = Uri.tryParse(sourceUrl ?? '');
+    if (url?.scheme != 'https' || url?.host != 'ruqyahbd.org') return null;
+    return url;
+  }
+
   LinkedResource get linkedResource => LinkedResource(
     id: id,
     title: title,
