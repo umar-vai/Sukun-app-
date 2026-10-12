@@ -171,7 +171,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   child: AyahReadingCard(
                     arabicText: resource.arabicText!,
                     transliteration: resource.transliteration,
-                    reference: resource.referenceText,
                   ),
                 ),
               _Section(
