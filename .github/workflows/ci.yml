@@ -14,6 +14,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  private-editorial-validator:
+    name: Resources / Synthetic Draft Guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Test draft-only offline catalog adapter with synthetic text
+        run: python3 -m unittest discover -s scripts/resources -p 'test_*.py' -v
+      # Never use the private uploaded Word source or actual editorial
+      # catalog in CI. The local operator explicitly holds those files.
+
   flutter-quality:
     name: Flutter / Format Analyze Test
     runs-on: ubuntu-latest
