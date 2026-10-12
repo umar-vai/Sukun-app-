@@ -135,12 +135,13 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     label: _typeLabel(resource.type),
                     tone: SukunStatusTone.brand,
                   ),
-                  if (resource.referenceText?.isNotEmpty == true ||
-                      resource.sourceReference?.isNotEmpty == true)
+                  if (!resource.isRuqyahBdAudio &&
+                      (resource.referenceText?.isNotEmpty == true ||
+                          resource.sourceReference?.isNotEmpty == true))
                     const SukunStatusPill(
-                      label: 'তথ্যসূত্র দেওয়া আছে',
-                      tone: SukunStatusTone.success,
-                      icon: Icons.verified_outlined,
+                      label: 'উৎস উল্লেখ আছে',
+                      tone: SukunStatusTone.brand,
+                      icon: Icons.menu_book_outlined,
                     ),
                 ],
               ),
@@ -157,7 +158,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 const SizedBox(height: 4),
               _Section(
                 label: 'সংক্ষেপে',
-                value: resource.titleBn?.isNotEmpty == true
+                value: resource.isRuqyahBdAudio
+                    ? null
+                    : resource.titleBn?.isNotEmpty == true
                     ? resource.summary
                     : null,
               ),
@@ -174,15 +177,19 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               ),
               _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
-              _Section(label: 'নির্দেশনা', value: resource.body),
               _Section(
-                label: 'তথ্যসূত্র',
-                value: resource.referenceText ?? resource.sourceReference,
+                label: 'নির্দেশনা',
+                value: resource.isRuqyahBdAudio ? null : resource.body,
               ),
-              _Section(
-                label: 'উৎস ও ব্যবহারের অনুমতি',
-                value: resource.rightsNote,
-              ),
+              if (resource.isRuqyahBdAudio)
+                const _Section(label: 'অডিও উৎস', value: 'রুকইয়াহ সাপোর্ট বিডি')
+              else
+                _Section(
+                  label: 'তথ্যসূত্র',
+                  value: resource.referenceText ?? resource.sourceReference,
+                ),
+              // Publication rights, internal book paragraph IDs and review
+              // metadata remain accessible to Admin; not to listeners.
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.youtube) ...[
                 const SizedBox(height: 20),

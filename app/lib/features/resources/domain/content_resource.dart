@@ -119,6 +119,15 @@ class ContentResource {
   final String visibility;
   final String status;
 
+  /// Use publisher provenance only for a concise listener-facing credit.
+  /// Rights/authorization details belong in the Admin CMS, never this page.
+  bool get isRuqyahBdAudio {
+    final uri = Uri.tryParse(mediaUrl ?? '');
+    return type == 'audio' &&
+        uri?.scheme == 'https' &&
+        uri?.host == 'files.ruqyahbd.org';
+  }
+
   LinkedResource get linkedResource => LinkedResource(
     id: id,
     title: title,

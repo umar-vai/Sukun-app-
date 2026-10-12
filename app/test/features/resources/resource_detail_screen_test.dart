@@ -71,6 +71,35 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'owner-licensed audio has working player and no internal rights notices',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            resourcesRepositoryProvider.overrideWithValue(
+              const _FakeResourcesRepository(unverifiedAudio: true),
+            ),
+          ],
+          child: const MaterialApp(
+            home: ResourceDetailScreen(resourceId: 'source-audio'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('উৎস উল্লেখ আছে'), findsNothing);
+      expect(find.text('তথ্যসূত্র দেওয়া আছে'), findsNothing);
+      expect(find.text('অডিও শুনুন'), findsOneWidget);
+      expect(find.text('রুকইয়াহ সাপোর্ট বিডি'), findsOneWidget);
+      expect(
+        find.textContaining('Third-party rights not independently'),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('invalid media URLs never offer a misleading play button', (
     tester,
   ) async {
@@ -95,9 +124,13 @@ void main() {
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
-  const _FakeResourcesRepository({this.invalidMedia = false});
+  const _FakeResourcesRepository({
+    this.invalidMedia = false,
+    this.unverifiedAudio = false,
+  });
 
   final bool invalidMedia;
+  final bool unverifiedAudio;
 
   @override
   Future<List<ContentResource>> browseResources({
@@ -107,18 +140,29 @@ final class _FakeResourcesRepository implements ResourcesRepository {
   }) async => const [];
 
   @override
-  Future<ContentResource?> getResource(String resourceId) async =>
-      ContentResource(
-        id: 'resource-1',
-        type: 'quran',
-        mediaSourceType: invalidMedia ? 'direct_audio_url' : null,
-        mediaUrl: invalidMedia ? 'http://unsafe.example/file.mp3' : null,
-        title: 'Ayatul Kursi',
-        arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
-        referenceText: 'Surah Al-Baqarah 2:255',
-        visibility: 'assigned_only',
-        status: 'published',
-      );
+  Future<ContentResource?> getResource(
+    String resourceId,
+  ) async => ContentResource(
+    id: 'resource-1',
+    type: unverifiedAudio ? 'audio' : 'quran',
+    mediaSourceType: invalidMedia || unverifiedAudio
+        ? 'direct_audio_url'
+        : null,
+    mediaUrl: unverifiedAudio
+        ? 'https://files.ruqyahbd.org/audio/example.mp3'
+        : invalidMedia
+        ? 'http://unsafe.example/file.mp3'
+        : null,
+    sourceUrl: unverifiedAudio ? 'https://ruqyahbd.org/download' : null,
+    rightsNote: unverifiedAudio
+        ? 'Third-party rights not independently verified. No in-app embedding.'
+        : null,
+    title: 'Ayatul Kursi',
+    arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
+    referenceText: 'Surah Al-Baqarah 2:255',
+    visibility: 'assigned_only',
+    status: 'published',
+  );
 
   @override
   Future<List<QuranSurahSummary>> browseSurahs() async => const [];

@@ -32,13 +32,8 @@ class BookAudioSourceCandidate {
     visibility: 'staff_only',
     status: 'draft',
     requestId: const Uuid().v4(),
-    summary:
-        'রুকইয়াহ সাপোর্ট বিডির উৎস লিংক। ব্যবহারের অনুমতি, '
-        'স্ট্রিমিং সামঞ্জস্য ও বইয়ের প্রসঙ্গ যাচাই না হওয়া পর্যন্ত প্রকাশ নয়।',
-    body:
-        'মূল বইয়ের উল্লেখ: paragraph ${bookParagraphIndices.join(', ')}। '
-        'অডিওটি তৃতীয় পক্ষের। এই খসড়া থেকে Sukun Life-এ অডিও কপি, '
-        'স্বয়ংক্রিয় ডাউনলোড বা পুনঃপ্রকাশ করা হয়নি।',
+    summary: 'রুকইয়াহ অডিও — শুনুন ও প্রয়োজনে পুনরায় চালান।',
+    body: 'রুকইয়াহ অডিওটি শুনতে উপরের প্লেয়ার ব্যবহার করুন।',
     sourceType: 'external_reference',
     sourceReference:
         'সেলফ রুকইয়াহ গাইড · paragraph '
@@ -49,10 +44,11 @@ class BookAudioSourceCandidate {
     author: 'Ruqyah Support BD (external)',
     languageCode: 'ar',
     rightsNote:
-        'Third-party rights not independently verified. '
-        'SOURCE LINK ONLY. No audio rehosting, in-app embedding/publication '
-        'or offline redistribution until explicit authorization and '
-        'browser compatibility are verified.',
+        'Owner-attested Sukun Life audio authorization, 2026-10-12: '
+        'Sukun Life representative confirms license for app playback, '
+        'distribution and internal use of all referenced Ruqyah BD audio. '
+        'This is the owner\'s authorization statement, not a third-party '
+        'signed licensing certificate. Attribution: Ruqyah Support BD.',
   );
 }
 
@@ -78,6 +74,12 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
       final page = value['original_page'];
       final media = value['media_url'];
       final paragraphIndices = value['book_paragraph_indices'];
+      final authorization = root['owner_authorization'];
+      if (authorization is! Map<String, dynamic> ||
+          authorization['basis'] != 'owner_attested' ||
+          authorization['attested_at'] != '2026-10-12') {
+        throw const FormatException('Missing Sukun Life audio authorization.');
+      }
       if (id is! String ||
           !RegExp(r'^ruqyahbd-[a-z0-9-]+$').hasMatch(id) ||
           !seen.add(id) ||
@@ -95,7 +97,7 @@ List<BookAudioSourceCandidate> parseBookAudioCatalog(String encoded) {
           paragraphIndices.isEmpty ||
           !paragraphIndices.every((p) => p is int && p >= 1) ||
           value['licensing'] !=
-              'external_reference_only_no_rehosting_no_offline_copy' ||
+              'owner_attested_for_sukun_life_app_2026_10_12' ||
           value['publication_status'] != 'draft_review_only') {
         throw const FormatException(
           'Untrusted external audio URL or metadata.',

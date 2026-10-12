@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sukun_life/features/content_admin/domain/book_audio_source_catalog.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Public source index, not a mirror or a proxy. External site hosts audio.
+/// Owner-licensed, publisher-hosted audio links streamed using the existing
+/// Flutter audio player. No redundant MP3 upload or second audio player.
 class BookAudioExternalLinksDialog extends StatefulWidget {
   const BookAudioExternalLinksDialog({super.key});
 
@@ -26,7 +29,7 @@ class _BookAudioExternalLinksDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('রুকইয়াহ অডিওর মূল উৎস'),
+      title: const Text('রুকইয়াহ অডিও শুনুন'),
       content: SizedBox(
         width: 600,
         height: MediaQuery.sizeOf(context).height * .65,
@@ -43,10 +46,7 @@ class _BookAudioExternalLinksDialogState
             return Column(
               children: [
                 const Text(
-                  'বইয়ে উল্লেখিত অডিওর এই তালিকা Ruqyah Support BD-এর '
-                  'ওয়েবসাইট থেকে সংগৃহীত উৎস লিংক। '
-                  'Sukun Life অডিও ফাইলের মালিক বা হোস্ট নয়। '
-                  'লিংকটি খুললে মূল ওয়েবসাইট/মিডিয়া খুলবে।',
+                  'বইয়ে উল্লেখিত রুকইয়াহ অডিওগুলো শুনতে পছন্দের অডিওতে চাপ দিন।',
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -58,33 +58,30 @@ class _BookAudioExternalLinksDialogState
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(entry.titleBn),
-                        subtitle: Text(
-                          entry.requiresContextReview
-                              ? 'বিশেষজ্ঞের পর্যালোচনা প্রয়োজন'
-                              : 'Ruqyah Support BD · মূল অডিও লিংক',
+                        subtitle: const Text(
+                          'অডিও শুনুন · রুকইয়াহ সাপোর্ট বিডি',
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.open_in_new_rounded),
-                          tooltip: 'মূল সাইটে অডিও খুলুন',
-                          onPressed: () async {
-                            final opened = await launchUrl(
-                              Uri.parse(entry.externalMediaUrl),
-                              mode: LaunchMode.externalApplication,
-                            );
-                            if (!opened && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'অডিও খুলতে সমস্যা হয়েছে। উৎস সাইটে চেষ্টা করুন।',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          tooltip: 'মূল উৎস খুলুন',
+                          onPressed: () => launchUrl(
+                            Uri.parse(entry.sourcePage),
+                            mode: LaunchMode.externalApplication,
+                          ),
                         ),
-                        onTap: () => launchUrl(
-                          Uri.parse(entry.sourcePage),
-                          mode: LaunchMode.externalApplication,
+                        onTap: () => Navigator.of(context).push<void>(
+                          MaterialPageRoute(
+                            builder: (context) => AudioPlayerScreen(
+                              resource: LinkedResource(
+                                id: entry.id,
+                                title: entry.titleBn,
+                                titleBn: entry.titleBn,
+                                type: 'audio',
+                                mediaSourceType: 'direct_audio_url',
+                                mediaUrl: entry.externalMediaUrl,
+                              ),
+                            ),
+                          ),
                         ),
                       );
                     },
