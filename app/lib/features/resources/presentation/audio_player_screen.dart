@@ -444,25 +444,6 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                       );
                     },
                   ),
-                  if (widget.resource.rightsNote?.trim().isNotEmpty ==
-                      true) ...[
-                    const SizedBox(height: 22),
-                    SukunSurface(
-                      tone: SukunSurfaceTone.soft,
-                      showBorder: false,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'উৎস ও ব্যবহারের অনুমতি',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(widget.resource.rightsNote!),
-                        ],
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 18),
                   const AudioPlaybackPlatformHint(),
                 ],
