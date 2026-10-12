@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:sukun_life/app/config/app_environment.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 
 /// Accepts ONLY the staff-only payload produced from the owner-provided book.
