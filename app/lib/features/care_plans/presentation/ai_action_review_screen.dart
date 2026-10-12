@@ -156,7 +156,8 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
   }
 
   Future<void> _previewMaterialDraft() async {
-    final selected = _drafts
+    final selected =
+        _drafts
             ?.where((draft) => draft.selected && !draft.imported)
             .toList(growable: false) ??
         const <_EditableSuggestion>[];
@@ -194,9 +195,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
           content: SizedBox(
             width: 660,
             height: 440,
-            child: SingleChildScrollView(
-              child: SelectableText(markdown),
-            ),
+            child: SingleChildScrollView(child: SelectableText(markdown)),
           ),
           actions: [
             TextButton(
