@@ -1,0 +1,40 @@
+{
+  "schema": "sukun.resource_ingestion_manifest.v1",
+  "source": {
+    "title": "সেলফ রুকইয়াহ গাইড",
+    "compiler": "ইবনে ইসহাক",
+    "editor": "মুফতি হানিফ আল হাদি",
+    "publisher": "চেতনা প্রকাশন",
+    "edition": "নভেম্বর 2024",
+    "sha256": "8b9af4677cec5c4b8964a431a47c076a7a59e862d91606caede8ad6141257f24",
+    "format": "Word .doc; user-provided private original",
+    "text_extraction": "Unicode DOCX conversion succeeded; no original book text committed"
+  },
+  "candidates": {
+    "total": 160,
+    "dua": 23,
+    "quran_text_blocks": 101,
+    "amal": 8,
+    "supplement_reference": 15,
+    "ghusl_reference": 4,
+    "ruqyah_guide": 8,
+    "composite_author_prayer": 1
+  },
+  "flags": {
+    "private_catalog_in_public_repo": false,
+    "canonical_quran_verse_verification": "pending",
+    "hadith_reference_verification": "pending",
+    "arabic_bangla_editor_review": "pending",
+    "publisher_republication_rights": "pending",
+    "human_approval_required": true,
+    "auto_patient_assignment": false,
+    "production_import": false
+  },
+  "next": [
+    "Verify individual ayat references and split/merge the 101 Quran-text blocks",
+    "Review daily Dua/Amal material cards and canonical sources",
+    "Confirm reuse rights with publisher",
+    "Implement staff-only ingestion and Admin review in staging",
+    "Connect approved resource IDs to prescription draft suggestions and printable draft handouts"
+  ]
+}
