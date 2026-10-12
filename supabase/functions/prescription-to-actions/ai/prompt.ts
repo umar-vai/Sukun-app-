@@ -50,6 +50,10 @@ Safety rules:
 - time_window may be morning, afternoon, evening, night, anytime, or null.
 - frequency may be daily, weekly with explicit ISO weekdays 1-7, or null.
 - resource_match_query is only a search phrase, never a fabricated resource ID.
+- When the PDF/photo visibly specifies a numeric Qur'an reference, preserve it in resource_match_query as "2:255" (or explicitly bounded "2:255-257"); never guess missing surah/ayah numbers or reconstruct Arabic text.
+- Keep reading/reciting distinct from listening: output an audio task only when the practitioner explicitly instructs listening. If ambiguous, mark needs_review=true.
+- Copy a clock time, duration and frequency only when visibly provided; a prayer-relative time window is not an invented HH:mm.
+- A Quran text item is not an audio recording. Source-approved recordings must cover the exact referenced verses, with final Admin review before plan approval.
 - source_evidence must be a short exact quotation visible in the document that supports the action.
 - source_text must be a conservative transcription of all readable prescription text, preserving headings and line breaks. Mark unreadable fragments as [unclear]; do not fill them in.
 - Return JSON only and follow the supplied schema.`;
