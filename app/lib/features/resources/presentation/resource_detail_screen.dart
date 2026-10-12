@@ -13,7 +13,6 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ResourceDetailScreen extends ConsumerStatefulWidget {
   const ResourceDetailScreen({super.key, required this.resourceId});
@@ -54,10 +53,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   }
 
   Future<void> _openMedia(ContentResource resource) async {
-    if (resource.isUnverifiedThirdPartyAudio) {
-      _showError('অডিওটি এখনো ইন-অ্যাপ শোনার জন্য অনুমোদিত নয়। মূল উৎস দেখুন।');
-      return;
-    }
     final target = resolveResourceMedia(resource.linkedResource);
     if (target == null) {
       _showError('এই উপকরণের লিংকটি এখন কাজ করছে না।');
@@ -140,8 +135,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     label: _typeLabel(resource.type),
                     tone: SukunStatusTone.brand,
                   ),
-                  if (resource.referenceText?.isNotEmpty == true ||
-                      resource.sourceReference?.isNotEmpty == true)
+                  if (!resource.isRuqyahBdAudio &&
+                      (resource.referenceText?.isNotEmpty == true ||
+                          resource.sourceReference?.isNotEmpty == true))
                     const SukunStatusPill(
                       label: 'উৎস উল্লেখ আছে',
                       tone: SukunStatusTone.brand,
@@ -162,7 +158,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 const SizedBox(height: 4),
               _Section(
                 label: 'সংক্ষেপে',
-                value: resource.titleBn?.isNotEmpty == true
+                value: resource.isRuqyahBdAudio
+                    ? null
+                    : resource.titleBn?.isNotEmpty == true
                     ? resource.summary
                     : null,
               ),
@@ -181,52 +179,28 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               _Section(label: 'অনুবাদ', value: resource.translation),
               _Section(
                 label: 'নির্দেশনা',
-                value: resource.isUnverifiedThirdPartyAudio
-                    ? null
-                    : resource.body,
+                value: resource.isRuqyahBdAudio ? null : resource.body,
               ),
-              _Section(
-                label: 'তথ্যসূত্র',
-                value: resource.isUnverifiedThirdPartyAudio
-                    ? 'Ruqyah Support BD — মূল প্রকাশকের উৎস'
-                    : resource.referenceText ?? resource.sourceReference,
-              ),
-              if (resource.isUnverifiedThirdPartyAudio) ...[
+              if (resource.isRuqyahBdAudio)
                 const _Section(
-                  label: 'অডিওর অবস্থা',
-                  value:
-                      'এই অডিওটি তৃতীয় পক্ষের। ব্যবহার ও ইন-অ্যাপ প্লেব্যাকের '
-                      'অনুমতি যাচাই বাকি থাকায় Sukun Life প্লেয়ার বন্ধ রাখা হয়েছে।',
-                ),
-                if (resource.verifiedPublisherPage case final publisher?)
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final opened = await launchUrl(
-                        publisher,
-                        mode: LaunchMode.externalApplication,
-                      );
-                      if (!opened) {
-                        _showError('মূল উৎসের ওয়েবসাইট খোলা যাচ্ছে না।');
-                      }
-                    },
-                    icon: const Icon(Icons.open_in_new_rounded),
-                    label: const Text('মূল প্রকাশকের ওয়েবসাইট দেখুন'),
-                  ),
-              ] else
+                  label: 'অডিও উৎস',
+                  value: 'রুকইয়াহ সাপোর্ট বিডি',
+                )
+              else
                 _Section(
-                  label: 'উৎস ও ব্যবহারের অনুমতি',
-                  value: resource.rightsNote,
+                  label: 'তথ্যসূত্র',
+                  value: resource.referenceText ?? resource.sourceReference,
                 ),
-              if (!resource.isUnverifiedThirdPartyAudio &&
-                  resolveResourceMedia(resource.linkedResource)?.kind ==
+              // Publication rights, internal book paragraph IDs and review
+              // metadata remain accessible to Admin; not to listeners.
+              if (resolveResourceMedia(resource.linkedResource)?.kind ==
                       ResourceMediaKind.youtube) ...[
                 const SizedBox(height: 20),
                 SukunYoutubePlayer(
                   resource: resource.linkedResource,
                   autoPlay: false,
                 ),
-              ] else if (!resource.isUnverifiedThirdPartyAudio &&
-                  resolveResourceMedia(resource.linkedResource) != null) ...[
+              ] else if (resolveResourceMedia(resource.linkedResource) != null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
                   tone: SukunSurfaceTone.navy,
