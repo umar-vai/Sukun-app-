@@ -219,7 +219,12 @@ class _AdminContentListScreenState
     final items = data?.items ?? const <AdminContentItem>[];
     final categories = data?.categories ?? const <ContentCategory>[];
     final drafts = items.where((item) => item.status == 'draft').length;
-    final quranPending = items.where((item) => item.status == 'draft' && item.slug.startsWith('srg2024-qur-')).length;
+    final quranPending = items
+        .where(
+          (item) =>
+              item.status == 'draft' && item.slug.startsWith('srg2024-qur-'),
+        )
+        .length;
     final review = items
         .where((item) => item.status == 'review' || item.status == 'verified')
         .length;
