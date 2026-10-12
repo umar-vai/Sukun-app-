@@ -196,9 +196,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 OutlinedButton.icon(
                   onPressed: _openBookAudioLinks,
                   icon: const Icon(Icons.headphones_outlined),
-                  label: const Text(
-                    'বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি শুনুন',
-                  ),
+                  label: const Text('বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি শুনুন'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
