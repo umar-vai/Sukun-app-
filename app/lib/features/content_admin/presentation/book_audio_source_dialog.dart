@@ -83,7 +83,7 @@ class _BookAudioSourceDialogState extends ConsumerState<BookAudioSourceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('বইয়ে উল্লেখিত অডিও — উৎস যাচাই'),
+      title: const Text('বইয়ে উল্লেখিত অডিও — Admin তালিকা'),
       content: SizedBox(
         width: 600,
         height: MediaQuery.sizeOf(context).height * .65,
@@ -101,11 +101,9 @@ class _BookAudioSourceDialogState extends ConsumerState<BookAudioSourceDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Ruqyah Support BD-এর অফিসিয়াল উৎসে পাওয়া অডিওগুলো '
-                  'বইয়ের অনুচ্ছেদ অনুযায়ী মিলানো হয়েছে। এগুলো তৃতীয় পক্ষের '
-                  'রেকর্ডিং। ব্যবহার/ইন-অ্যাপ স্ট্রিমিংয়ের অনুমতি ও '
-                  'ব্রাউজার প্লেব্যাক যাচাই না করে Publish করবেন না। '
-                  'কোনো MP3 কপি বা rehost করা হচ্ছে না।',
+                  'Sukun Life Owner Authorization নথিভুক্ত রয়েছে। '
+                  'এই তালিকা থেকে নতুন অডিও Staff-only Draft হিসেবে যোগ হবে; '
+                  'প্রকাশনা ও বিষয়বস্তু পর্যালোচনা আলাদা থাকবে।',
                 ),
                 const SizedBox(height: 10),
                 Text(
