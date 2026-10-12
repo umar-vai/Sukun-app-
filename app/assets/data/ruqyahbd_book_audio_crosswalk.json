@@ -1,0 +1,291 @@
+{
+  "schema": "sukun.ruqyahbd.external_audio_crosswalk.v1",
+  "verification_date": "2026-10-12",
+  "book_source": "Sukun Life owner-supplied Self Ruqyah Guide",
+  "link_source": "Ruqyah Support BD official download pages",
+  "copyright_caution": "Third party audio is not owned by Sukun Life. Source web links are references only. Do not copy, rehost, offline distribute or auto-embed until explicit permission and compatibility checks. Site download does not establish a commercial reuse license.",
+  "matched_title_count": 19,
+  "entries": [
+    {
+      "id": "ruqyahbd-luhaidan",
+      "title_bn": "শায়খ লুহাইদানের সাধারণ রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Luhaidan-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        259,
+        293,
+        688
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-sihr-hibshi",
+      "title_bn": "সিহর হিবশি (জাদু বিষয়ক)",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Sihr-Hibshi-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        259
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-shifa",
+      "title_bn": "আয়াতুশ শিফা",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download/others-ruqyah",
+      "media_url": "https://files.ruqyahbd.org/clips/ayat-shifa-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        259,
+        338,
+        707
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-eight-surah",
+      "title_bn": "আট সুরার রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-8surah-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        259,
+        293,
+        658,
+        688
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-harq",
+      "title_bn": "আয়াতুল হারক",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Harq-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293,
+        328,
+        338,
+        688
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-ayatul-kursi",
+      "title_bn": "আয়াতুল কুরসির রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-AyatulKursi-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-ajmy",
+      "title_bn": "শায়খ আহমাদ আজমির রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-AhmadAjmy-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-jinn",
+      "title_bn": "জিনের আছরের রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Jinn-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293,
+        688
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-zilzal-nas",
+      "title_bn": "সুরা যিলযাল থেকে নাস",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download/others-ruqyah",
+      "media_url": "https://files.ruqyahbd.org/audio/Sura-Zilzal-to-Nas-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-zina",
+      "title_bn": "রুকইয়াহ জিনা",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Zina-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        293
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-three-kul",
+      "title_bn": "তিনকুলের রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-3Kul-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        338,
+        658
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-evil-eye",
+      "title_bn": "বদনজরের রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-EvilEye-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        342,
+        594
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-baqara",
+      "title_bn": "সুরা বাকারা — শায়খ সুদাইস",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Surah-Baqara-by-Sudais-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        366
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-azan",
+      "title_bn": "আযানের রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Azan-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        688,
+        710
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-shifa-sakina",
+      "title_bn": "শিফা ও সাকিনা রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Shifa-Sakina-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        707
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-common-bangla",
+      "title_bn": "বাংলা অনুবাদসহ কমন রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download/others-ruqyah",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-withBangla-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        594,
+        688
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-fatiha",
+      "title_bn": "সুরা ফাতিহার রুকইয়াহ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-SuraFatiha-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        707
+      ],
+      "matching_status": "title_and_book_reference_matched",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-khuruj",
+      "title_bn": "রুকইয়াহ খুরুজ",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-Khuruj-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        820
+      ],
+      "matching_status": "editorial_context_review",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    },
+    {
+      "id": "ruqyahbd-qital-tadmir",
+      "title_bn": "রুকইয়াহ কিতাল-তাদমির (বিশেষ পর্যালোচনা)",
+      "origin": "Ruqyah Support BD",
+      "original_page": "https://ruqyahbd.org/download/others-ruqyah",
+      "media_url": "https://files.ruqyahbd.org/audio/Ruqyah-tadmir-qital-ruqyahbd.org.mp3",
+      "book_paragraph_indices": [
+        803
+      ],
+      "matching_status": "editorial_context_review",
+      "licensing": "external_reference_only_no_rehosting_no_offline_copy",
+      "playback_validation": "not_tested_cors_or_license",
+      "publication_status": "draft_review_only"
+    }
+  ]
+}
