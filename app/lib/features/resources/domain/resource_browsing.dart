@@ -159,7 +159,6 @@ const ruqyahTaxonomy = <ResourceTaxonomyEntry>[
   ),
 ];
 
-
 /// Navigation categories observed in RuqyahBD's ayat index (2026-10-12).
 /// This is an editorial navigation blueprint, NOT imported canonical ayat.
 class RuqyahAyatIndexEntry {
