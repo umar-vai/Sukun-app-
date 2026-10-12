@@ -8,6 +8,7 @@ import 'package:sukun_life/features/content_admin/data/content_admin_providers.d
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
 import 'package:sukun_life/features/content_admin/presentation/private_resource_draft_import_dialog.dart';
+import 'package:sukun_life/features/content_admin/presentation/book_audio_source_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
@@ -89,6 +90,19 @@ class _AdminContentListScreenState
     });
   }
 
+  void _openUnverifiedQuranDrafts() {
+    const query = 'srg2024-qur-';
+    _searchController.text = query;
+    setState(() {
+      // Source snippets are deliberately ARTICLE drafts until their exact
+      // Surah/Ayah boundaries and canonical readings are verified.
+      _selectedKind = AdminResourceKind.articleGuide;
+      _allDrafts = false;
+      _status = 'draft';
+      _search = query;
+    });
+  }
+
   void _backToCategories() {
     _searchController.clear();
     setState(() {
@@ -97,6 +111,15 @@ class _AdminContentListScreenState
       _status = 'all';
       _search = '';
     });
+  }
+
+  Future<void> _openAudioReferences() async {
+    final imported = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const BookAudioSourceDialog(),
+    );
+    if (mounted && imported == true) await _refresh();
   }
 
   Future<void> _importPrivateCatalog() async {
@@ -196,6 +219,12 @@ class _AdminContentListScreenState
     final items = data?.items ?? const <AdminContentItem>[];
     final categories = data?.categories ?? const <ContentCategory>[];
     final drafts = items.where((item) => item.status == 'draft').length;
+    final quranPending = items
+        .where(
+          (item) =>
+              item.status == 'draft' && item.slug.startsWith('srg2024-qur-'),
+        )
+        .length;
     final review = items
         .where((item) => item.status == 'review' || item.status == 'verified')
         .length;
@@ -263,6 +292,15 @@ class _AdminContentListScreenState
         },
       ),
       const SizedBox(height: 18),
+      _DashboardShortcut(
+        icon: Icons.menu_book_outlined,
+        title: 'কুরআনের পাঠ — উৎস যাচাই বাকি',
+        detail: data == null
+            ? 'মূল বইয়ের আয়াত ও পাঠের অংশ যাচাই করুন'
+            : '$quranPendingটি বইয়ের পাঠের খসড়া · সূরা–আয়াত যাচাই না হওয়া পর্যন্ত অপ্রকাশিত',
+        onTap: _openUnverifiedQuranDrafts,
+      ),
+      const SizedBox(height: 10),
       if (snapshot.hasError)
         const SukunSurface(
           tone: SukunSurfaceTone.soft,
@@ -284,6 +322,12 @@ class _AdminContentListScreenState
           onPressed: _importPrivateCatalog,
           icon: const Icon(Icons.upload_file_outlined),
           label: const Text('Private Dua/Amal Draft Catalog Import (Staging)'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _openAudioReferences,
+          icon: const Icon(Icons.headphones_outlined),
+          label: const Text('বইয়ে উল্লেখিত Ruqyah BD অডিও — ১৯টি উৎস'),
         ),
         const SizedBox(height: 12),
       ],
