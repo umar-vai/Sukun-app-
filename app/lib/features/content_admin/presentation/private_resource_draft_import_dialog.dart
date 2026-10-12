@@ -205,9 +205,7 @@ class _PrivateResourceDraftImportDialogState
             child: const Text('বাকি Import বন্ধ করুন'),
           ),
         TextButton(
-          onPressed: _busy
-              ? null
-              : () => Navigator.of(context).pop(_saved > 0),
+          onPressed: _busy ? null : () => Navigator.of(context).pop(_saved > 0),
           child: Text(_saved > 0 ? 'শেষ করুন' : 'বন্ধ করুন'),
         ),
         if (batch != null && !_complete)
