@@ -48,6 +48,7 @@ ALTER TABLE public.synthetic_tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY synthetic_tenant_guard ON public.synthetic_tasks
  FOR SELECT TO qa_reader
  USING (owner_code = current_setting('qa.owner_code', true));
+GRANT USAGE ON SCHEMA public TO qa_reader;
 GRANT SELECT ON public.synthetic_tasks TO qa_reader;
 SQL
 
