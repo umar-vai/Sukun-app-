@@ -323,16 +323,15 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                   tooltip: playing
                                                       ? 'থামান'
                                                       : 'চালু করুন',
-                                                  onPressed: () =>
-                                                      _runPlaybackAction(
-                                                        context,
-                                                        playing
-                                                            ? controller.pause
-                                                            : () => controller.play(
-                                                                expectedResource:
-                                                                    widget.resource,
-                                                              ),
-                                                      ),
+                                                  onPressed: () => _runPlaybackAction(
+                                                    context,
+                                                    playing
+                                                        ? controller.pause
+                                                        : () => controller.play(
+                                                            expectedResource:
+                                                                widget.resource,
+                                                          ),
+                                                  ),
                                                   icon: Icon(
                                                     playing
                                                         ? Icons.pause_rounded
