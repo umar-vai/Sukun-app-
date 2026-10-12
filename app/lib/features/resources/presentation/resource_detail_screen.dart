@@ -13,6 +13,7 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ResourceDetailScreen extends ConsumerStatefulWidget {
   const ResourceDetailScreen({super.key, required this.resourceId});
@@ -53,6 +54,10 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   }
 
   Future<void> _openMedia(ContentResource resource) async {
+    if (resource.isUnverifiedThirdPartyAudio) {
+      _showError('অডিওটি এখনো ইন-অ্যাপ শোনার জন্য অনুমোদিত নয়। মূল উৎস দেখুন।');
+      return;
+    }
     final target = resolveResourceMedia(resource.linkedResource);
     if (target == null) {
       _showError('এই উপকরণের লিংকটি এখন কাজ করছে না।');
@@ -138,9 +143,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   if (resource.referenceText?.isNotEmpty == true ||
                       resource.sourceReference?.isNotEmpty == true)
                     const SukunStatusPill(
-                      label: 'তথ্যসূত্র দেওয়া আছে',
-                      tone: SukunStatusTone.success,
-                      icon: Icons.verified_outlined,
+                      label: 'উৎস উল্লেখ আছে',
+                      tone: SukunStatusTone.brand,
+                      icon: Icons.menu_book_outlined,
                     ),
                 ],
               ),
@@ -174,24 +179,53 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               ),
               _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
-              _Section(label: 'নির্দেশনা', value: resource.body),
+              _Section(
+                label: 'নির্দেশনা',
+                value: resource.isUnverifiedThirdPartyAudio
+                    ? null
+                    : resource.body,
+              ),
               _Section(
                 label: 'তথ্যসূত্র',
-                value: resource.referenceText ?? resource.sourceReference,
+                value: resource.isUnverifiedThirdPartyAudio
+                    ? 'Ruqyah Support BD — মূল প্রকাশকের উৎস'
+                    : resource.referenceText ?? resource.sourceReference,
               ),
-              _Section(
-                label: 'উৎস ও ব্যবহারের অনুমতি',
-                value: resource.rightsNote,
-              ),
-              if (resolveResourceMedia(resource.linkedResource)?.kind ==
-                  ResourceMediaKind.youtube) ...[
+              if (resource.isUnverifiedThirdPartyAudio) ...[
+                const _Section(
+                  label: 'অডিওর অবস্থা',
+                  value: 'এই অডিওটি তৃতীয় পক্ষের। ব্যবহার ও ইন-অ্যাপ প্লেব্যাকের '
+                      'অনুমতি যাচাই বাকি থাকায় Sukun Life প্লেয়ার বন্ধ রাখা হয়েছে।',
+                ),
+                if (resource.verifiedPublisherPage case final publisher?)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final opened = await launchUrl(
+                        publisher,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!opened) {
+                        _showError('মূল উৎসের ওয়েবসাইট খোলা যাচ্ছে না।');
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: const Text('মূল প্রকাশকের ওয়েবসাইট দেখুন'),
+                  ),
+              ] else
+                _Section(
+                  label: 'উৎস ও ব্যবহারের অনুমতি',
+                  value: resource.rightsNote,
+                ),
+              if (!resource.isUnverifiedThirdPartyAudio &&
+                  resolveResourceMedia(resource.linkedResource)?.kind ==
+                      ResourceMediaKind.youtube) ...[
                 const SizedBox(height: 20),
                 SukunYoutubePlayer(
                   resource: resource.linkedResource,
                   autoPlay: false,
                 ),
-              ] else if (resolveResourceMedia(resource.linkedResource) !=
-                  null) ...[
+              ] else if (!resource.isUnverifiedThirdPartyAudio &&
+                  resolveResourceMedia(resource.linkedResource) != null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
                   tone: SukunSurfaceTone.navy,
