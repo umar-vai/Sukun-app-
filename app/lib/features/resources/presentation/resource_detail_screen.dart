@@ -182,10 +182,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 value: resource.isRuqyahBdAudio ? null : resource.body,
               ),
               if (resource.isRuqyahBdAudio)
-                const _Section(
-                  label: 'অডিও উৎস',
-                  value: 'রুকইয়াহ সাপোর্ট বিডি',
-                )
+                const _Section(label: 'অডিও উৎস', value: 'রুকইয়াহ সাপোর্ট বিডি')
               else
                 _Section(
                   label: 'তথ্যসূত্র',
@@ -194,13 +191,14 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               // Publication rights, internal book paragraph IDs and review
               // metadata remain accessible to Admin; not to listeners.
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
-                      ResourceMediaKind.youtube) ...[
+                  ResourceMediaKind.youtube) ...[
                 const SizedBox(height: 20),
                 SukunYoutubePlayer(
                   resource: resource.linkedResource,
                   autoPlay: false,
                 ),
-              ] else if (resolveResourceMedia(resource.linkedResource) != null) ...[
+              ] else if (resolveResourceMedia(resource.linkedResource) !=
+                  null) ...[
                 const SizedBox(height: 24),
                 SukunSurface(
                   tone: SukunSurfaceTone.navy,
