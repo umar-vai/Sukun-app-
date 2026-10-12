@@ -58,7 +58,9 @@ class _BookAudioExternalLinksDialogState
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(entry.titleBn),
-                        subtitle: const Text('অডিও শুনুন · রুকইয়াহ সাপোর্ট বিডি'),
+                        subtitle: const Text(
+                          'অডিও শুনুন · রুকইয়াহ সাপোর্ট বিডি',
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.open_in_new_rounded),
                           tooltip: 'মূল উৎস খুলুন',
