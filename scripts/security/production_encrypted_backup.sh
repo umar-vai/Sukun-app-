@@ -76,7 +76,7 @@ pg_dump \
   --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" --dbname="$PGDATABASE" \
   --format=custom --no-owner \
   --schema=auth --schema=private --schema=public --schema=storage |
-  age --recipient "$recipient" --output "$partial"
+  age --recipient "$recipient" > "$partial"
 [[ -s "$partial" ]] || fail 'Encrypted file is empty.'
 chmod 600 "$partial"
 mv -n -- "$partial" "$target"
