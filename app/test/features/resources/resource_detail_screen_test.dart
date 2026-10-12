@@ -84,7 +84,10 @@ void main() {
     await tester.tap(find.text('বাংলা উচ্চারণ দেখুন'));
     await tester.pumpAndSettle();
 
-    expect(find.text('যাচাইকৃত বাংলা উচ্চারণ এখনো যুক্ত হয়নি।'), findsOneWidget);
+    expect(
+      find.text('যাচাইকৃত বাংলা উচ্চারণ এখনো যুক্ত হয়নি।'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
