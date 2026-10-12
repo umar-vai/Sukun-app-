@@ -74,9 +74,6 @@ void main() {
   });
 
   test('refuses empty draft', () {
-    expect(
-      () => ResourceMaterialPacket.draftMarkdown([]),
-      throwsArgumentError,
-    );
+    expect(() => ResourceMaterialPacket.draftMarkdown([]), throwsArgumentError);
   });
 }
