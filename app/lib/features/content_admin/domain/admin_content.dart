@@ -442,9 +442,9 @@ String? _publicationValidationError({
     }
   }
   if (mediaSourceType != null &&
-      (rightsNote
-              ?.toLowerCase()
-              .contains('third-party rights not independently verified') ??
+      (rightsNote?.toLowerCase().contains(
+            'third-party rights not independently verified',
+          ) ??
           false)) {
     return 'Third-party audio rights and browser playback require verification '
         'before content can enter the review or publication workflow.';
