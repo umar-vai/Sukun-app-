@@ -119,20 +119,13 @@ class ContentResource {
   final String visibility;
   final String status;
 
-  /// The external publisher's track is linked as metadata only. An actual
-  /// rights clearance must be recorded before in-app playback is offered.
-  bool get isUnverifiedThirdPartyAudio =>
-      type == 'audio' &&
-      (rightsNote?.toLowerCase().contains(
-            'third-party rights not independently verified',
-          ) ??
-          false);
-
-  Uri? get verifiedPublisherPage {
-    if (!isUnverifiedThirdPartyAudio) return null;
-    final url = Uri.tryParse(sourceUrl ?? '');
-    if (url?.scheme != 'https' || url?.host != 'ruqyahbd.org') return null;
-    return url;
+  /// Use publisher provenance only for a concise listener-facing credit.
+  /// Rights/authorization details belong in the Admin CMS, never this page.
+  bool get isRuqyahBdAudio {
+    final uri = Uri.tryParse(mediaUrl ?? '');
+    return type == 'audio' &&
+        uri?.scheme == 'https' &&
+        uri?.host == 'files.ruqyahbd.org';
   }
 
   LinkedResource get linkedResource => LinkedResource(
