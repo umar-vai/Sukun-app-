@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -13,6 +14,8 @@ import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/domain/resource_material_packet.dart';
+import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
@@ -150,6 +153,77 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
       '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/new',
     );
     if (mounted && changed == true) context.pop(true);
+  }
+
+  Future<void> _previewMaterialDraft() async {
+    final selected =
+        _drafts
+            ?.where((draft) => draft.selected && !draft.imported)
+            .toList(growable: false) ??
+        const <_EditableSuggestion>[];
+    if (selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('উপকরণের খসড়া তৈরি করতে আগে কাজ নির্বাচন করুন।'),
+        ),
+      );
+      return;
+    }
+    try {
+      final library = ref.read(resourcesRepositoryProvider);
+      final actions = <MaterialPacketAction>[];
+      for (final draft in selected) {
+        final resource = draft.contentItemId.isEmpty
+            ? null
+            : await library.getResource(draft.contentItemId);
+        actions.add(
+          MaterialPacketAction(
+            title: draft.title,
+            instruction: draft.instruction,
+            countTarget: int.tryParse(draft.count.trim()),
+            durationMinutes: int.tryParse(draft.duration.trim()),
+            resource: resource,
+          ),
+        );
+      }
+      final markdown = ResourceMaterialPacket.draftMarkdown(actions);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('উপকরণের খসড়া — Admin Review'),
+          content: SizedBox(
+            width: 660,
+            height: 440,
+            child: SingleChildScrollView(child: SelectableText(markdown)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('বন্ধ করুন'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: markdown));
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              icon: const Icon(Icons.copy_all_outlined),
+              label: const Text('খসড়া কপি করুন'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'উপকরণের খসড়া এখন তৈরি করা যায়নি। '
+            'Resource Library ও সংযোগ যাচাই করুন।',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _import(_ReviewData data) async {
@@ -341,6 +415,12 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                         const SizedBox(height: 12),
                       ],
                     const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _importing ? null : _previewMaterialDraft,
+                      icon: const Icon(Icons.description_outlined),
+                      label: const Text('প্রস্তুত উপকরণের Draft দেখুন'),
+                    ),
+                    const SizedBox(height: 10),
                     OutlinedButton.icon(
                       onPressed: _importing ? null : _openManualBuilder,
                       icon: const Icon(Icons.edit_note_outlined),

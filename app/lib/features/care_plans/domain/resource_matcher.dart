@@ -54,9 +54,16 @@ List<ResourceMatch> matchResources(
   return List.unmodifiable(matches.take(limit));
 }
 
+// Preserve Bengali vowel signs and Arabic letters rather than stripping all
+// combining marks. Normalize Bengali ya variants for consistent suggestions.
+// This only ranks existing published resources; it never creates religious text
+// or automatically assigns a content ID to a patient.
 String _normalize(String value) => value
     .toLowerCase()
-    .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ')
+    .replaceAll('য়', 'য়')
+    .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '')
+    .replaceAll(RegExp(r'[^\p{L}\p{N}\p{M}]+', unicode: true), ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
 
 Set<String> _tokens(String value) =>

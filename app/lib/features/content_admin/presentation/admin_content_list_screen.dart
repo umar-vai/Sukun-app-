@@ -5,6 +5,9 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/features/content_admin/domain/private_resource_draft_batch.dart';
+import 'package:sukun_life/features/content_admin/presentation/private_resource_draft_import_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
@@ -94,6 +97,21 @@ class _AdminContentListScreenState
       _status = 'all';
       _search = '';
     });
+  }
+
+  Future<void> _importPrivateCatalog() async {
+    if (!PrivateResourceDraftBatch.mayImport(
+      environment: AppEnvironment.name,
+      supabaseUrl: AppEnvironment.supabaseUrl,
+    )) {
+      return;
+    }
+    final imported = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const PrivateResourceDraftImportDialog(),
+    );
+    if (mounted && imported == true) await _refresh();
   }
 
   Future<void> _create() async {
@@ -258,6 +276,17 @@ class _AdminContentListScreenState
           child: Center(child: CircularProgressIndicator()),
         ),
       const SizedBox(height: 12),
+      if (PrivateResourceDraftBatch.mayImport(
+        environment: AppEnvironment.name,
+        supabaseUrl: AppEnvironment.supabaseUrl,
+      )) ...[
+        OutlinedButton.icon(
+          onPressed: _importPrivateCatalog,
+          icon: const Icon(Icons.upload_file_outlined),
+          label: const Text('Private Dua/Amal Draft Catalog Import (Staging)'),
+        ),
+        const SizedBox(height: 12),
+      ],
       OutlinedButton.icon(
         onPressed: () => context.push('/admin/content/collections'),
         icon: const Icon(Icons.collections_bookmark_outlined),
