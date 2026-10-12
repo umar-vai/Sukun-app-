@@ -328,7 +328,10 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                                         context,
                                                         playing
                                                             ? controller.pause
-                                                            : controller.play,
+                                                            : () => controller.play(
+                                                                expectedResource:
+                                                                    widget.resource,
+                                                              ),
                                                       ),
                                                   icon: Icon(
                                                     playing
