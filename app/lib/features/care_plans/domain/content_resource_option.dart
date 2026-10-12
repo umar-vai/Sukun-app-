@@ -6,6 +6,12 @@ class ContentResourceOption {
     required this.visibility,
     required this.status,
     this.titleBn,
+    this.surahNumber,
+    this.ayahNumber,
+    this.ayahEndNumber,
+    this.verificationStatus,
+    this.mediaSourceType,
+    this.mediaUrl,
     this.categoryId,
     this.categoryName,
     this.categoryNameBn,
@@ -24,6 +30,12 @@ class ContentResourceOption {
       id: json['id'] as String,
       title: json['title'] as String,
       titleBn: json['title_bn'] as String?,
+      surahNumber: json['surah_number'] as int?,
+      ayahNumber: json['ayah_number'] as int?,
+      ayahEndNumber: json['ayah_end_number'] as int?,
+      verificationStatus: json['verification_status'] as String?,
+      mediaSourceType: json['media_source_type'] as String?,
+      mediaUrl: json['media_url'] as String?,
       type: json['type'] as String,
       visibility: json['visibility'] as String,
       status: json['status'] as String? ?? 'draft',
@@ -38,6 +50,12 @@ class ContentResourceOption {
   final String id;
   final String title;
   final String? titleBn;
+  final int? surahNumber;
+  final int? ayahNumber;
+  final int? ayahEndNumber;
+  final String? verificationStatus;
+  final String? mediaSourceType;
+  final String? mediaUrl;
   final String type;
   final String visibility;
   final String status;
@@ -52,7 +70,10 @@ class ContentResourceOption {
       visibility == 'patient_only' ||
       visibility == 'assigned_only';
 
-  bool get isLinkable => status == 'published' && isPatientAccessible;
+  bool get isLinkable =>
+      status == 'published' &&
+      isPatientAccessible &&
+      (type != 'quran' || verificationStatus == 'verified');
 
   String get displayTitle {
     final bangla = titleBn?.trim();
