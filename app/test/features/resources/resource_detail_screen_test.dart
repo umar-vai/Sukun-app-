@@ -37,6 +37,57 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Bangla pronunciation expands directly beneath Arabic', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            const _FakeResourcesRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: ResourceDetailScreen(resourceId: 'resource-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('বাংলা উচ্চারণ দেখুন'), findsOneWidget);
+    expect(find.text('পরীক্ষামূলক বাংলা উচ্চারণ'), findsNothing);
+    await tester.ensureVisible(find.text('বাংলা উচ্চারণ দেখুন'));
+    await tester.tap(find.text('বাংলা উচ্চারণ দেখুন'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('পরীক্ষামূলক বাংলা উচ্চারণ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('missing checked pronunciation has an honest empty state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            const _FakeResourcesRepository(missingPronunciation: true),
+          ),
+        ],
+        child: const MaterialApp(
+          home: ResourceDetailScreen(resourceId: 'resource-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('বাংলা উচ্চারণ দেখুন'));
+    await tester.tap(find.text('বাংলা উচ্চারণ দেখুন'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('যাচাইকৃত বাংলা উচ্চারণ এখনো যুক্ত হয়নি।'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Arabic resource text fits a narrow scaled mobile viewport', (
     tester,
   ) async {
@@ -127,10 +178,12 @@ final class _FakeResourcesRepository implements ResourcesRepository {
   const _FakeResourcesRepository({
     this.invalidMedia = false,
     this.unverifiedAudio = false,
+    this.missingPronunciation = false,
   });
 
   final bool invalidMedia;
   final bool unverifiedAudio;
+  final bool missingPronunciation;
 
   @override
   Future<List<ContentResource>> browseResources({
@@ -159,6 +212,7 @@ final class _FakeResourcesRepository implements ResourcesRepository {
         : null,
     title: 'Ayatul Kursi',
     arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
+    transliteration: missingPronunciation ? null : 'পরীক্ষামূলক বাংলা উচ্চারণ',
     referenceText: 'Surah Al-Baqarah 2:255',
     visibility: 'assigned_only',
     status: 'published',
