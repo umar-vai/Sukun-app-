@@ -40,7 +40,10 @@ void main() {
       isFalse,
     );
     expect(canBulkPublishReviewedResource(resource(type: 'quran')), isFalse);
-    expect(canBulkPublishReviewedResource(resource(rights: 'Unverified')), isFalse);
+    expect(
+      canBulkPublishReviewedResource(resource(rights: 'Unverified')),
+      isFalse,
+    );
     expect(canBulkPublishReviewedResource(resource(rights: null)), isFalse);
     expect(canBulkPublishReviewedResource(resource(source: null)), isFalse);
     expect(
