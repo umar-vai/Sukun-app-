@@ -13,6 +13,7 @@ import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/domain/reviewed_bulk_publication.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Final admin content workspace. Existing draft/review/publish RPCs and RLS
 /// remain authoritative; this screen only simplifies navigation.
@@ -142,7 +143,7 @@ class _AdminContentListScreenState
     });
     try {
       final result = await publishReviewedResourceBatch(
-        repository: ref.read(contentAdminRepositoryProvider),
+        client: Supabase.instance.client,
         candidates: candidates,
         onProgress: (processed, total) {
           if (mounted) {
@@ -160,7 +161,18 @@ class _AdminContentListScreenState
           content: Text(
             '${result.published}টি প্রকাশিত, '
             '${result.failed}টি ব্যর্থ/যাচাই প্রয়োজন। '
-            'বাকি খসড়াগুলো অপরিবর্তিত আছে।',
+            'ব্যর্থ হলে Draft/Review অবস্থা থেকে পুনরায় চেষ্টা করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'প্রকাশ করা যায়নি। Super Admin লগইন ও Server Update '
+            'যাচাই করুন; খসড়াগুলো পুনরায় লোড করে চেষ্টা করুন।',
           ),
         ),
       );
