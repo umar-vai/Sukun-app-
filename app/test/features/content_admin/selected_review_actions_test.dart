@@ -20,11 +20,14 @@ AdminContentItem reviewItem({
 );
 
 void main() {
-  test('unsourced Quran editorial articles can return to draft for correction', () {
-    expect(canManageSelectedReview(reviewItem()), isTrue);
-    expect(canManageSelectedReview(reviewItem(type: 'quran')), isTrue);
-    expect(canManageSelectedReview(reviewItem(type: 'dua')), isTrue);
-  });
+  test(
+    'unsourced Quran editorial articles can return to draft for correction',
+    () {
+      expect(canManageSelectedReview(reviewItem()), isTrue);
+      expect(canManageSelectedReview(reviewItem(type: 'quran')), isTrue);
+      expect(canManageSelectedReview(reviewItem(type: 'dua')), isTrue);
+    },
+  );
 
   test('protected patient and QA records are never bulk edited', () {
     expect(
@@ -39,11 +42,14 @@ void main() {
     expect(canManageSelectedReview(reviewItem(title: 'QA TEST ONLY')), isFalse);
   });
 
-  test('published, draft, archived and verified content cannot be selected', () {
-    for (final status in ['published', 'draft', 'archived', 'verified']) {
-      expect(canManageSelectedReview(reviewItem(status: status)), isFalse);
-    }
-  });
+  test(
+    'published, draft, archived and verified content cannot be selected',
+    () {
+      for (final status in ['published', 'draft', 'archived', 'verified']) {
+        expect(canManageSelectedReview(reviewItem(status: status)), isFalse);
+      }
+    },
+  );
 
   test('batch selection includes only eligible review records', () {
     final selected = selectedReviewCandidates([
