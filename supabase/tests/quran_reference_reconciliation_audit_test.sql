@@ -1,7 +1,17 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(8);
 
+select has_column(
+  'public','content_items','editorial_ayah_end_number',
+  'editorial ayah ranges do not violate canonical Quran schema guard'
+);
+select ok(
+  exists(select 1 from pg_constraint
+    where conrelid='public.content_items'::regclass
+      and conname='content_items_editorial_ayah_bounds'),
+  'editorial end range has a separate database check constraint'
+);
 select has_table(
   'public',
   'quran_reference_reconciliation_audit',
