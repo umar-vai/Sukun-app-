@@ -244,6 +244,50 @@ void main() {
     expect(find.text('ডিলিট / আর্কাইভ (1)'), findsNothing);
   });
 
+  testWidgets('review queue shows selection, bulk return, archive and edit', (
+    tester,
+  ) async {
+    const reviewItem = AdminContentItem(
+      id: 'review-1',
+      type: 'article',
+      title: 'জিনের আয়াত — সূত্র যাচাই প্রয়োজন',
+      slug: 'srg2024-qur-ayat-review-1',
+      visibility: 'staff_only',
+      status: 'review',
+      verificationStatus: 'not_required',
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(content: reviewItem),
+          ),
+        ],
+        child: const MaterialApp(home: AdminContentListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('যাচাইয়ের অপেক্ষায়').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('0টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
+    expect(find.byKey(const ValueKey('review-edit-review-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('draft-select-review-1')), findsOneWidget);
+
+    await tester.tap(find.text('সব নির্বাচন'));
+    await tester.pumpAndSettle();
+    expect(find.text('1টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
+    expect(find.text('খসড়ায় ফেরত (1)'), findsOneWidget);
+    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
+    expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
+    expect(find.text('সম্পাদনা করুন'), findsOneWidget);
+
+    await tester.tap(find.text('সব বাতিল'));
+    await tester.pumpAndSettle();
+    expect(find.text('0টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
+    expect(find.text('খসড়ায় ফেরত (1)'), findsNothing);
+  });
+
   testWidgets('category card opens matching preselected editor form', (
     tester,
   ) async {

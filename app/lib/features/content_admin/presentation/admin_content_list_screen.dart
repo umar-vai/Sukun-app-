@@ -13,6 +13,7 @@ import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/domain/reviewed_bulk_publication.dart';
 import 'package:sukun_life/features/content_admin/domain/selected_draft_actions.dart';
 import 'package:sukun_life/features/content_admin/domain/selected_draft_review.dart';
+import 'package:sukun_life/features/content_admin/domain/selected_review_actions.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,9 +39,13 @@ class _AdminContentListScreenState
   bool _publishingBatch = false;
   bool _archivingBatch = false;
   bool _submittingReviewBatch = false;
-  final Set<String> _selectedDraftIds = <String>{};
+  bool _managingReviewBatch = false;
+  final Set<String> _selectedContentIds = <String>{};
   bool get _bulkBusy =>
-      _publishingBatch || _archivingBatch || _submittingReviewBatch;
+      _publishingBatch ||
+      _archivingBatch ||
+      _submittingReviewBatch ||
+      _managingReviewBatch;
   int _batchProcessed = 0;
   int _batchTotal = 0;
 
@@ -86,7 +91,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = kind;
-      _selectedDraftIds.clear();
+      _selectedContentIds.clear();
       _allDrafts = false;
       _status = 'all';
       _search = '';
@@ -97,7 +102,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = null;
-      _selectedDraftIds.clear();
+      _selectedContentIds.clear();
       _allDrafts = true;
       _status = 'draft';
       _search = '';
@@ -111,7 +116,7 @@ class _AdminContentListScreenState
       // Source snippets are deliberately ARTICLE drafts until their exact
       // Surah/Ayah boundaries and canonical readings are verified.
       _selectedKind = AdminResourceKind.articleGuide;
-      _selectedDraftIds.clear();
+      _selectedContentIds.clear();
       _allDrafts = false;
       _status = 'draft';
       _search = query;
@@ -122,7 +127,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = null;
-      _selectedDraftIds.clear();
+      _selectedContentIds.clear();
       _allDrafts = false;
       _status = 'all';
       _search = '';
@@ -176,7 +181,7 @@ class _AdminContentListScreenState
           ),
         ),
       );
-      setState(() => _selectedDraftIds.clear());
+      setState(() => _selectedContentIds.clear());
       await _refresh();
     } catch (_) {
       if (!mounted) return;
@@ -238,7 +243,7 @@ class _AdminContentListScreenState
           ),
         ),
       );
-      setState(() => _selectedDraftIds.clear());
+      setState(() => _selectedContentIds.clear());
       await _refresh();
     } catch (_) {
       if (!mounted) return;
@@ -303,7 +308,7 @@ class _AdminContentListScreenState
           ),
         ),
       );
-      setState(() => _selectedDraftIds.clear());
+      setState(() => _selectedContentIds.clear());
       await _refresh();
     } catch (_) {
       if (!mounted) return;
@@ -321,15 +326,215 @@ class _AdminContentListScreenState
     }
   }
 
+  Future<void> _editReviewItem(AdminContentItem item) async {
+    if (_bulkBusy || item.status != 'review') return;
+    final updated = await context.push<AdminContentItem>(
+      '/admin/content/${item.id}/edit',
+    );
+    if (!mounted) return;
+    if (updated != null) {
+      setState(() => _selectedContentIds.clear());
+      await _refresh();
+    }
+  }
+
+  Future<void> _manageSelectedReviews(
+    List<AdminContentItem> selected,
+    String action,
+  ) async {
+    if (_bulkBusy || selected.isEmpty) return;
+    final archive = action == 'archive';
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: archive
+          ? '${selected.length}টি যাচাইয়ের উপকরণ আর্কাইভ করবেন?'
+          : '${selected.length}টি উপকরণ সংশোধনের জন্য খসড়ায় ফেরত পাঠাবেন?',
+      message: archive
+          ? 'নির্বাচিত Review উপকরণগুলো Archive-এ যাবে; স্থায়ীভাবে মুছবে না। '
+                'অন্য Admin পরিবর্তন করলে সেই আইটেম বাদ থাকবে।'
+          : 'নির্বাচিত Review উপকরণগুলো Draft-এ ফিরে যাবে। '
+                'প্রতিটি উপকরণ আলাদাভাবে সম্পাদনা করে পুনরায় যাচাইয়ের জন্য পাঠাতে পারবেন। '
+                'কোনো আয়াত যাচাইকৃত বা প্রকাশিত হবে না।',
+      confirmLabel: archive ? 'আর্কাইভ করুন' : 'খসড়ায় ফেরত পাঠান',
+      icon: archive ? Icons.archive_outlined : Icons.edit_note_outlined,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() {
+      _managingReviewBatch = true;
+      _batchTotal = selected.length;
+      _batchProcessed = 0;
+    });
+    try {
+      final result = await manageSelectedReviews(
+        client: Supabase.instance.client,
+        selected: selected,
+        action: action,
+        onProgress: (processed, total) {
+          if (mounted) {
+            setState(() {
+              _batchProcessed = processed;
+              _batchTotal = total;
+            });
+          }
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 12),
+          content: Text(
+            '${result.changed}টি ${archive ? 'আর্কাইভ' : 'খসড়ায় ফেরত'} হয়েছে, '
+            '${result.skipped}টি বাদ, ${result.failed}টি ব্যর্থ।',
+          ),
+        ),
+      );
+      setState(() => _selectedContentIds.clear());
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'নির্বাচিত উপকরণ পরিবর্তন করা যায়নি। '
+            'তালিকা রিফ্রেশ করে Super Admin অনুমতি যাচাই করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _managingReviewBatch = false);
+    }
+  }
+
+  Widget _reviewSelectionToolbar(List<AdminContentItem> visibleItems) {
+    final eligible = selectedReviewCandidates(visibleItems);
+    final selected = eligible
+        .where((item) => _selectedContentIds.contains(item.id))
+        .toList(growable: false);
+    final publishable = reviewedBulkPublishCandidates(selected);
+    final allSelected =
+        eligible.isNotEmpty &&
+        eligible.every((item) => _selectedContentIds.contains(item.id));
+
+    return SukunSurface(
+      tone: SukunSurfaceTone.soft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                '${selected.length}টি নির্বাচিত · ${eligible.length}টি Review উপকরণ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              TextButton.icon(
+                onPressed: _bulkBusy || eligible.isEmpty
+                    ? null
+                    : () => setState(() {
+                        if (allSelected) {
+                          _selectedContentIds.removeAll(
+                            eligible.map((item) => item.id),
+                          );
+                        } else {
+                          _selectedContentIds.addAll(
+                            eligible.map((item) => item.id),
+                          );
+                        }
+                      }),
+                icon: Icon(
+                  allSelected
+                      ? Icons.deselect_outlined
+                      : Icons.select_all_rounded,
+                ),
+                label: Text(allSelected ? 'নির্বাচন সরান' : 'সব নির্বাচন'),
+              ),
+              if (selected.isNotEmpty)
+                TextButton(
+                  onPressed: _bulkBusy
+                      ? null
+                      : () => setState(() => _selectedContentIds.clear()),
+                  child: const Text('সব বাতিল'),
+                ),
+            ],
+          ),
+          if (selected.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (selected.length == 1)
+                  OutlinedButton.icon(
+                    onPressed: _bulkBusy
+                        ? null
+                        : () => _editReviewItem(selected.first),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('সম্পাদনা করুন'),
+                  ),
+                FilledButton.icon(
+                  onPressed: _bulkBusy
+                      ? null
+                      : () =>
+                            _manageSelectedReviews(selected, 'return_to_draft'),
+                  icon: const Icon(Icons.edit_note_outlined),
+                  label: Text('খসড়ায় ফেরত (${selected.length})'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _bulkBusy || publishable.isEmpty
+                      ? null
+                      : () => _publishReviewedBatch(selected),
+                  icon: const Icon(Icons.publish_outlined),
+                  label: Text('প্রকাশ করুন (${publishable.length})'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _bulkBusy
+                      ? null
+                      : () => _manageSelectedReviews(selected, 'archive'),
+                  icon: const Icon(Icons.archive_outlined),
+                  label: Text('ডিলিট / আর্কাইভ (${selected.length})'),
+                ),
+              ],
+            ),
+            if (publishable.length < selected.length) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${selected.length - publishable.length}টি উপকরণের উৎস যাচাই '
+                'বা প্রকাশের অনুমোদন বাকি। এগুলো Bulk Publish হবে না।',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+          if (_bulkBusy) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: _batchTotal == 0 ? null : _batchProcessed / _batchTotal,
+            ),
+            Text('প্রক্রিয়াধীন: $_batchProcessed / $_batchTotal'),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            'যাচাইরত প্রতিটি উপকরণ আলাদাভাবে সম্পাদনা করা যায়। '
+            'সংশোধন করলে আবার যাচাই করতে হবে; কোনো পরিবর্তন স্বয়ংক্রিয়ভাবে প্রকাশ হয় না।',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _draftSelectionToolbar(List<AdminContentItem> visibleItems) {
     final selected = visibleItems
-        .where((item) => _selectedDraftIds.contains(item.id))
+        .where((item) => _selectedContentIds.contains(item.id))
         .toList(growable: false);
     final publishable = reviewedBulkPublishCandidates(selected);
     final reviewable = bulkReviewCandidates(selected);
     final allVisibleSelected =
         visibleItems.isNotEmpty &&
-        visibleItems.every((item) => _selectedDraftIds.contains(item.id));
+        visibleItems.every((item) => _selectedContentIds.contains(item.id));
 
     return SukunSurface(
       tone: SukunSurfaceTone.soft,
@@ -351,11 +556,11 @@ class _AdminContentListScreenState
                     : () {
                         setState(() {
                           if (allVisibleSelected) {
-                            _selectedDraftIds.removeAll(
+                            _selectedContentIds.removeAll(
                               visibleItems.map((item) => item.id),
                             );
                           } else {
-                            _selectedDraftIds.addAll(
+                            _selectedContentIds.addAll(
                               visibleItems.map((item) => item.id),
                             );
                           }
@@ -374,7 +579,7 @@ class _AdminContentListScreenState
                 TextButton(
                   onPressed: _bulkBusy
                       ? null
-                      : () => setState(() => _selectedDraftIds.clear()),
+                      : () => setState(() => _selectedContentIds.clear()),
                   child: const Text('সব বাতিল'),
                 ),
             ],
@@ -723,7 +928,9 @@ class _AdminContentListScreenState
       const SizedBox(height: 6),
       Text(
         _allDrafts
-            ? 'এখান থেকে অসম্পূর্ণ উপকরণ আবার খুলে সম্পাদনা করুন।'
+            ? (_status == 'review'
+                  ? 'যাচাইরত উপকরণ বেছে সংশোধনের জন্য খসড়ায় ফেরত পাঠান অথবা সম্পাদনা করুন।'
+                  : 'এখান থেকে অসম্পূর্ণ উপকরণ আবার খুলে সম্পাদনা করুন।')
             : 'এই বিভাগের উপকরণ দেখুন, নতুন যোগ করুন অথবা আগের কাজ শেষ করুন।',
         style: Theme.of(context).textTheme.bodyMedium,
       ),
@@ -740,14 +947,14 @@ class _AdminContentListScreenState
         hintText: 'নাম বা বিষয় লিখে খুঁজুন',
         onChanged: (value) => setState(() {
           _search = value;
-          _selectedDraftIds.clear();
+          _selectedContentIds.clear();
         }),
         onSubmitted: (value) => setState(() => _search = value),
         onClear: () {
           _searchController.clear();
           setState(() {
             _search = '';
-            _selectedDraftIds.clear();
+            _selectedContentIds.clear();
           });
         },
       ),
@@ -771,7 +978,7 @@ class _AdminContentListScreenState
                   label: tab.$2,
                   onTap: () => setState(() {
                     _status = tab.$1;
-                    _selectedDraftIds.clear();
+                    _selectedContentIds.clear();
                   }),
                 ),
               ),
@@ -780,6 +987,8 @@ class _AdminContentListScreenState
       ),
       const SizedBox(height: 10),
       if (_status == 'draft' && snapshot.hasData) _draftSelectionToolbar(items),
+      if (_status == 'review' && snapshot.hasData)
+        _reviewSelectionToolbar(items),
       const SizedBox(height: 10),
       if (snapshot.connectionState == ConnectionState.waiting)
         const AppLoadingState(label: 'উপকরণগুলো আনা হচ্ছে…')
@@ -799,13 +1008,20 @@ class _AdminContentListScreenState
           _ContentCard(
             item: item,
             onTap: () => _openItem(item),
-            selected: _selectedDraftIds.contains(item.id),
-            onSelected: _status == 'draft' && !_bulkBusy
+            selected: _selectedContentIds.contains(item.id),
+            onEdit: _status == 'review' && canManageSelectedReview(item)
+                ? () => _editReviewItem(item)
+                : null,
+            onSelected:
+                (_status == 'draft' ||
+                        (_status == 'review' &&
+                            canManageSelectedReview(item))) &&
+                    !_bulkBusy
                 ? (checked) => setState(() {
                     if (checked) {
-                      _selectedDraftIds.add(item.id);
+                      _selectedContentIds.add(item.id);
                     } else {
-                      _selectedDraftIds.remove(item.id);
+                      _selectedContentIds.remove(item.id);
                     }
                   })
                 : null,
@@ -923,12 +1139,14 @@ class _ContentCard extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.onSelected,
+    this.onEdit,
   });
 
   final AdminContentItem item;
   final VoidCallback onTap;
   final bool selected;
   final ValueChanged<bool>? onSelected;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) => SukunSurface(
@@ -973,6 +1191,13 @@ class _ContentCard extends StatelessWidget {
             ],
           ),
         ),
+        if (onEdit != null)
+          IconButton(
+            key: ValueKey('review-edit-${item.id}'),
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'সম্পাদনা করুন',
+          ),
         const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
       ],
     ),
