@@ -1,4 +1,4 @@
-import 'package:sukun_life/features/content_admin/data/content_admin_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,6 +20,8 @@ bool canBulkPublishReviewedResource(AdminContentItem item) {
     return false;
   }
   if (item.title.toLowerCase().contains('qa test only')) return false;
+  if (item.type == 'article' &&
+      item.arabicText?.trim().isNotEmpty == true) return false;
   if (item.sourceReference?.trim().isNotEmpty != true ||
       item.rightsNote?.trim().isNotEmpty != true) {
     return false;
@@ -28,12 +30,23 @@ bool canBulkPublishReviewedResource(AdminContentItem item) {
 
   final approvedBookDraft =
       item.slug.startsWith('srg2024-') &&
-      (item.type == 'article' || item.type == 'dua' || item.type == 'amal');
+      (item.type == 'article' || item.type == 'dua' || item.type == 'amal') &&
+      (item.rightsNote?.startsWith(
+            'Sukun Life owner attested app-use rights on 2026-10-12.',
+          ) ??
+          false);
+  final uri = Uri.tryParse(item.mediaUrl ?? '');
   final approvedAudio =
       item.slug.startsWith('sukun-ruqyahbd-') &&
       item.type == 'audio' &&
       item.mediaSourceType == 'direct_audio_url' &&
-      (Uri.tryParse(item.mediaUrl ?? '')?.scheme == 'https');
+      uri?.scheme == 'https' &&
+      uri?.host == 'files.ruqyahbd.org' &&
+      (uri?.path.startsWith('/audio/') ?? false) &&
+      (item.rightsNote?.startsWith(
+            'Owner-attested Sukun Life audio authorization (2026-10-12).',
+          ) ??
+          false);
   return approvedBookDraft || approvedAudio;
 }
 
@@ -55,111 +68,34 @@ class ReviewedBulkPublishResult {
   final List<String> failedTitles;
 }
 
-/// Called exclusively from the logged-in Super Admin CMS.
-/// Every state mutation calls the existing RLS/role-checked RPCs, each of which
-/// records a server-side audit event. No service key, SQL impersonation, or
-/// privileged client field is involved.
-///
-/// On a partial network failure, reloading the CMS lets the Super Admin resume
-/// a saved public draft or a reviewed item without losing original content.
+/// Uses one authorized database RPC. The SQL function obtains fresh
+/// row locks, checks publisher-specific provenance and publishes each item
+/// atomically with server-side audit logs. No stale client-side saves.
 Future<ReviewedBulkPublishResult> publishReviewedResourceBatch({
-  required ContentAdminRepository repository,
+  required SupabaseClient client,
   required List<AdminContentItem> candidates,
   required void Function(int processed, int total) onProgress,
 }) async {
   final approved = reviewedBulkPublishCandidates(candidates);
-  final failures = <String>[];
-  var published = 0;
-  var processed = 0;
-  for (final original in approved) {
-    try {
-      var item = original;
-      if (item.status == 'draft' && item.visibility == 'staff_only') {
-        item = await repository.saveContent(
-          SaveContentInput(
-            contentItemId: item.id,
-            type: item.type,
-            title: item.title,
-            titleBn: item.titleBn,
-            slug: item.slug,
-            categoryId: item.categoryId,
-            parentContentId: item.parentContentId,
-            summary: item.summary,
-            body: item.body,
-            arabicText: item.arabicText,
-            banglaText: item.banglaText,
-            transliteration: item.transliteration,
-            translation: item.translation,
-            referenceText: item.referenceText,
-            sourceType: item.sourceType,
-            sourceReference: item.sourceReference,
-            sourceUrl: item.sourceUrl,
-            sourceEdition: item.sourceEdition,
-            translationSource: item.translationSource,
-            surahNumber: item.surahNumber,
-            surahName: item.surahName,
-            surahNameBn: item.surahNameBn,
-            ayahNumber: item.ayahNumber,
-            ayahEndNumber: item.ayahEndNumber,
-            collectionName: item.collectionName,
-            bookName: item.bookName,
-            hadithNumber: item.hadithNumber,
-            narrator: item.narrator,
-            grade: item.grade,
-            author: item.author,
-            publisher: item.publisher,
-            chapterNumber: item.chapterNumber,
-            languageCode: item.languageCode,
-            rightsNote: item.rightsNote,
-            thumbnailUrl: item.thumbnailUrl,
-            mediaSourceType: item.mediaSourceType,
-            mediaUrl: item.mediaUrl,
-            youtubeVideoId: item.youtubeVideoId,
-            visibility: 'public',
-            status: 'draft',
-            requestId: const Uuid().v4(),
-          ),
-        );
-      }
-      if (item.status == 'review' && item.visibility != 'public') {
-        // Never automatically reclassify previously reviewed private data.
-        throw const ContentAdminException(
-          'Private reviewed content requires individual review.',
-        );
-      }
-      if (item.status == 'draft') {
-        item = await repository.transitionContent(
-          contentItemId: item.id,
-          transition: 'submit',
-          requestId: const Uuid().v4(),
-          notes: 'Super Admin reviewed batch: submitted for publication.',
-        );
-      }
-      if (item.status != 'review' || item.visibility != 'public') {
-        throw const ContentAdminException('Invalid publication state.');
-      }
-      final publishedItem = await repository.transitionContent(
-        contentItemId: item.id,
-        transition: 'publish',
-        requestId: const Uuid().v4(),
-        notes: 'Super Admin confirmed reviewed Sukun Life resource batch.',
-      );
-      if (publishedItem.status != 'published' ||
-          publishedItem.visibility != 'public') {
-        throw const ContentAdminException('Publish was not confirmed.');
-      }
-      published++;
-    } catch (_) {
-      // Keep a tally but never show backend exceptions to the UI.
-      failures.add(original.titleBn ?? original.title);
-    } finally {
-      processed++;
-      onProgress(processed, approved.length);
-    }
+  if (approved.isEmpty) {
+    return const ReviewedBulkPublishResult(
+      published: 0,
+      failed: 0,
+      failedTitles: [],
+    );
   }
+  final response = await client.rpc(
+    'publish_reviewed_resource_batch',
+    params: {
+      'p_content_item_ids': approved.map((item) => item.id).toList(),
+      'p_request_id': const Uuid().v4(),
+    },
+  );
+  final result = response as Map<String, dynamic>;
+  onProgress(approved.length, approved.length);
   return ReviewedBulkPublishResult(
-    published: published,
-    failed: failures.length,
-    failedTitles: List.unmodifiable(failures),
+    published: result['published'] as int? ?? 0,
+    failed: result['failed'] as int? ?? 0,
+    failedTitles: const [],
   );
 }
