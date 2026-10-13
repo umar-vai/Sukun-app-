@@ -20,40 +20,34 @@ AdminContentItem item({
 );
 
 void main() {
-  test('unverified source drafts may be sent for human review, not published', () {
-    expect(canBulkSubmitDraftForReview(item()), isTrue);
-    expect(canBulkSubmitDraftForReview(item(type: 'quran')), isTrue);
-    expect(canBulkSubmitDraftForReview(item(type: 'dua')), isTrue);
-    expect(canBulkSubmitDraftForReview(item(type: 'audio')), isTrue);
-    expect(canBulkSubmitDraftForReview(item(type: 'hadith')), isTrue);
-  });
+  test(
+    'unverified source drafts may be sent for human review, not published',
+    () {
+      expect(canBulkSubmitDraftForReview(item()), isTrue);
+      expect(canBulkSubmitDraftForReview(item(type: 'quran')), isTrue);
+      expect(canBulkSubmitDraftForReview(item(type: 'dua')), isTrue);
+      expect(canBulkSubmitDraftForReview(item(type: 'audio')), isTrue);
+      expect(canBulkSubmitDraftForReview(item(type: 'hadith')), isTrue);
+    },
+  );
 
   test('selection excludes private QA and non-draft resources', () {
     expect(
       canBulkSubmitDraftForReview(item(visibility: 'patient_only')),
       isFalse,
     );
-    expect(canBulkSubmitDraftForReview(item(visibility: 'assigned_only')), isFalse);
+    expect(
+      canBulkSubmitDraftForReview(item(visibility: 'assigned_only')),
+      isFalse,
+    );
     expect(
       canBulkSubmitDraftForReview(item(slug: 'qa-test-internal')),
       isFalse,
     );
-    expect(
-      canBulkSubmitDraftForReview(item(title: 'QA TEST ONLY')),
-      isFalse,
-    );
-    expect(
-      canBulkSubmitDraftForReview(item(status: 'review')),
-      isFalse,
-    );
-    expect(
-      canBulkSubmitDraftForReview(item(status: 'published')),
-      isFalse,
-    );
-    expect(
-      canBulkSubmitDraftForReview(item(status: 'archived')),
-      isFalse,
-    );
+    expect(canBulkSubmitDraftForReview(item(title: 'QA TEST ONLY')), isFalse);
+    expect(canBulkSubmitDraftForReview(item(status: 'review')), isFalse);
+    expect(canBulkSubmitDraftForReview(item(status: 'published')), isFalse);
+    expect(canBulkSubmitDraftForReview(item(status: 'archived')), isFalse);
   });
 
   test('batch review candidates retain only explicitly selected draft IDs', () {
