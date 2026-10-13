@@ -52,7 +52,7 @@ begin
     -- Unsourced Qur'an editorial drafts may be SUBMITTED for human review;
     -- they are NOT source-verified or published by this function.
     if item.status <> 'draft'
-       or item.visibility = 'patient_only'
+       or item.visibility not in ('staff_only', 'public')
        or item.slug ~* '(^|[-_])(qa|test|fixture|sample|synthetic)([-_]|$)'
        or item.title ilike '%QA TEST%'
     then
