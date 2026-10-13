@@ -258,7 +258,8 @@ class _AdminContentListScreenState
         .where((item) => _selectedDraftIds.contains(item.id))
         .toList(growable: false);
     final publishable = reviewedBulkPublishCandidates(selected);
-    final allVisibleSelected = visibleItems.isNotEmpty &&
+    final allVisibleSelected =
+        visibleItems.isNotEmpty &&
         visibleItems.every((item) => _selectedDraftIds.contains(item.id));
 
     return SukunSurface(
@@ -296,7 +297,9 @@ class _AdminContentListScreenState
                       ? Icons.deselect_outlined
                       : Icons.select_all_rounded,
                 ),
-                label: Text(allVisibleSelected ? 'নির্বাচন সরান' : 'সব নির্বাচন'),
+                label: Text(
+                  allVisibleSelected ? 'নির্বাচন সরান' : 'সব নির্বাচন',
+                ),
               ),
               if (selected.isNotEmpty)
                 TextButton(
@@ -692,8 +695,7 @@ class _AdminContentListScreenState
         ),
       ),
       const SizedBox(height: 10),
-      if (_status == 'draft' && snapshot.hasData)
-        _draftSelectionToolbar(items),
+      if (_status == 'draft' && snapshot.hasData) _draftSelectionToolbar(items),
       const SizedBox(height: 10),
       if (snapshot.connectionState == ConnectionState.waiting)
         const AppLoadingState(label: 'উপকরণগুলো আনা হচ্ছে…')
