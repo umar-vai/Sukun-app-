@@ -227,6 +227,37 @@ void main() {
     expect(find.text('Ayatul Kursi'), findsOneWidget);
   });
 
+  testWidgets('all-drafts bulk select only acts on checked draft IDs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: AdminContentListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সংরক্ষিত খসড়া'));
+    await tester.pumpAndSettle();
+    expect(find.text('সব নির্বাচন'), findsOneWidget);
+    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+
+    await tester.tap(find.text('সব নির্বাচন'));
+    await tester.pumpAndSettle();
+    expect(find.text('1টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
+    expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
+
+    await tester.tap(find.text('সব বাতিল'));
+    await tester.pumpAndSettle();
+    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsNothing);
+  });
+
   testWidgets('category card opens matching preselected editor form', (
     tester,
   ) async {
