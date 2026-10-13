@@ -19,11 +19,10 @@ bool canManageSelectedReview(AdminContentItem item) {
   return !item.title.toLowerCase().contains('qa test');
 }
 
-List<AdminContentItem> selectedReviewCandidates(
-  List<AdminContentItem> items,
-) => List.unmodifiable(
-  items.where(canManageSelectedReview).toList(growable: false),
-);
+List<AdminContentItem> selectedReviewCandidates(List<AdminContentItem> items) =>
+    List.unmodifiable(
+      items.where(canManageSelectedReview).toList(growable: false),
+    );
 
 class ManagedReviewResult {
   const ManagedReviewResult({
