@@ -20,8 +20,8 @@ bool canBulkPublishReviewedResource(AdminContentItem item) {
     return false;
   }
   if (item.title.toLowerCase().contains('qa test only')) return false;
-  if (item.type == 'article' &&
-      item.arabicText?.trim().isNotEmpty == true) return false;
+  if (item.type == 'article' && item.arabicText?.trim().isNotEmpty == true)
+    return false;
   if (item.sourceReference?.trim().isNotEmpty != true ||
       item.rightsNote?.trim().isNotEmpty != true) {
     return false;
