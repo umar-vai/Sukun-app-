@@ -11,6 +11,7 @@ import 'package:sukun_life/features/content_admin/presentation/private_resource_
 import 'package:sukun_life/features/content_admin/presentation/book_audio_source_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/domain/reviewed_bulk_publication.dart';
+import 'package:sukun_life/features/content_admin/domain/selected_draft_actions.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +35,9 @@ class _AdminContentListScreenState
   String _status = 'all';
   String _search = '';
   bool _publishingBatch = false;
+  bool _archivingBatch = false;
+  final Set<String> _selectedDraftIds = <String>{};
+  bool get _bulkBusy => _publishingBatch || _archivingBatch;
   int _batchProcessed = 0;
   int _batchTotal = 0;
 
@@ -79,6 +83,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = kind;
+      _selectedDraftIds.clear();
       _allDrafts = false;
       _status = 'all';
       _search = '';
@@ -89,6 +94,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = null;
+      _selectedDraftIds.clear();
       _allDrafts = true;
       _status = 'draft';
       _search = '';
@@ -102,6 +108,7 @@ class _AdminContentListScreenState
       // Source snippets are deliberately ARTICLE drafts until their exact
       // Surah/Ayah boundaries and canonical readings are verified.
       _selectedKind = AdminResourceKind.articleGuide;
+      _selectedDraftIds.clear();
       _allDrafts = false;
       _status = 'draft';
       _search = query;
@@ -112,6 +119,7 @@ class _AdminContentListScreenState
     _searchController.clear();
     setState(() {
       _selectedKind = null;
+      _selectedDraftIds.clear();
       _allDrafts = false;
       _status = 'all';
       _search = '';
@@ -119,7 +127,7 @@ class _AdminContentListScreenState
   }
 
   Future<void> _publishReviewedBatch(List<AdminContentItem> items) async {
-    if (_publishingBatch) return;
+    if (_bulkBusy) return;
     final candidates = reviewedBulkPublishCandidates(items);
     if (candidates.isEmpty) return;
 
@@ -165,13 +173,14 @@ class _AdminContentListScreenState
           ),
         ),
       );
+      setState(() => _selectedDraftIds.clear());
       await _refresh();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'প্রকাশ করা যায়নি। Super Admin লগইন ও Server Update '
+            'প্রকাশ করা যায়নি. Super Admin লগইন ও Server Update '
             'যাচাই করুন; খসড়াগুলো পুনরায় লোড করে চেষ্টা করুন।',
           ),
         ),
@@ -184,34 +193,162 @@ class _AdminContentListScreenState
     }
   }
 
-  Widget _reviewedBatchAction(List<AdminContentItem> items) {
-    final candidates = reviewedBulkPublishCandidates(items);
-    if (candidates.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          OutlinedButton.icon(
-            onPressed: _publishingBatch
-                ? null
-                : () => _publishReviewedBatch(items),
-            icon: const Icon(Icons.fact_check_outlined),
-            label: Text(
-              '${candidates.length}টি পর্যালোচিত উপকরণ একসঙ্গে প্রকাশ',
-            ),
+  Future<void> _archiveSelectedDrafts(List<AdminContentItem> selected) async {
+    if (_bulkBusy || selected.isEmpty) return;
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: '${selected.length}টি খসড়া আর্কাইভ করবেন?',
+      message:
+          'এটি স্থায়ীভাবে ডিলিট করবে না। নির্বাচিত খসড়াগুলো '
+          'খসড়া তালিকা থেকে সরিয়ে সংরক্ষিত (Archive) ট্যাবে রাখবে। '
+          'অন্য অ্যাডমিন ইতিমধ্যে প্রকাশ করে থাকলে সেই রেকর্ড বাদ যাবে।',
+      confirmLabel: 'আর্কাইভ করুন',
+      icon: Icons.archive_outlined,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() {
+      _archivingBatch = true;
+      _batchTotal = selected.length;
+      _batchProcessed = 0;
+    });
+    try {
+      final result = await archiveSelectedDrafts(
+        client: Supabase.instance.client,
+        ids: selected.map((item) => item.id).toList(growable: false),
+        onProgress: (processed, total) {
+          if (mounted) {
+            setState(() {
+              _batchProcessed = processed;
+              _batchTotal = total;
+            });
+          }
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 12),
+          content: Text(
+            '${result.archived}টি আর্কাইভ হয়েছে, '
+            '${result.skipped}টি অবস্থা বদলে যাওয়ায় বাদ, '
+            '${result.failed}টি ব্যর্থ।',
           ),
-          if (_publishingBatch) ...[
+        ),
+      );
+      setState(() => _selectedDraftIds.clear());
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'আর্কাইভ সম্পন্ন হয়নি। তালিকা রিফ্রেশ করে বাকি খসড়া '
+            'আবার নির্বাচন করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _archivingBatch = false);
+    }
+  }
+
+  Widget _draftSelectionToolbar(List<AdminContentItem> visibleItems) {
+    final selected = visibleItems
+        .where((item) => _selectedDraftIds.contains(item.id))
+        .toList(growable: false);
+    final publishable = reviewedBulkPublishCandidates(selected);
+    final allVisibleSelected = visibleItems.isNotEmpty &&
+        visibleItems.every((item) => _selectedDraftIds.contains(item.id));
+
+    return SukunSurface(
+      tone: SukunSurfaceTone.soft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                '${selected.length}টি নির্বাচিত · ${visibleItems.length}টি দৃশ্যমান',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              TextButton.icon(
+                onPressed: _bulkBusy || visibleItems.isEmpty
+                    ? null
+                    : () {
+                        setState(() {
+                          if (allVisibleSelected) {
+                            _selectedDraftIds.removeAll(
+                              visibleItems.map((item) => item.id),
+                            );
+                          } else {
+                            _selectedDraftIds.addAll(
+                              visibleItems.map((item) => item.id),
+                            );
+                          }
+                        });
+                      },
+                icon: Icon(
+                  allVisibleSelected
+                      ? Icons.deselect_outlined
+                      : Icons.select_all_rounded,
+                ),
+                label: Text(allVisibleSelected ? 'নির্বাচন সরান' : 'সব নির্বাচন'),
+              ),
+              if (selected.isNotEmpty)
+                TextButton(
+                  onPressed: _bulkBusy
+                      ? null
+                      : () => setState(() => _selectedDraftIds.clear()),
+                  child: const Text('সব বাতিল'),
+                ),
+            ],
+          ),
+          if (selected.isNotEmpty) ...[
             const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: _bulkBusy || publishable.isEmpty
+                      ? null
+                      : () => _publishReviewedBatch(selected),
+                  icon: const Icon(Icons.publish_outlined),
+                  label: Text('প্রকাশ করুন (${publishable.length})'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _bulkBusy
+                      ? null
+                      : () => _archiveSelectedDrafts(selected),
+                  icon: const Icon(Icons.archive_outlined),
+                  label: Text('ডিলিট / আর্কাইভ (${selected.length})'),
+                ),
+              ],
+            ),
+            if (publishable.length < selected.length) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${selected.length - publishable.length}টি খসড়ার '
+                'উৎস/অনুমোদন যাচাই বাকি; এগুলো Bulk Publish হবে না।',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+          if (_bulkBusy) ...[
+            const SizedBox(height: 10),
             LinearProgressIndicator(
               value: _batchTotal == 0 ? null : _batchProcessed / _batchTotal,
             ),
-            Text('প্রকাশ করা হচ্ছে: $_batchProcessed / $_batchTotal'),
+            Text('প্রক্রিয়াধীন: $_batchProcessed / $_batchTotal'),
           ],
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
-            'যাচাইহীন আয়াত ও Private/QA তথ্য অন্তর্ভুক্ত নয়। '
-            'প্রকাশিত উপকরণ Public হবে।',
+            'ডিলিট মানে নিরাপদ আর্কাইভ। প্রতিটি পরিবর্তনে '
+            'Super Admin অনুমোদন ও অডিট হিস্ট্রি সংরক্ষিত হবে।',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -350,7 +487,6 @@ class _AdminContentListScreenState
             : '$draftsটি খসড়া · পরে আবার কাজ করতে পারবেন',
         onTap: _openDrafts,
       ),
-      if (data != null) _reviewedBatchAction(items),
       const SizedBox(height: 10),
       _DashboardShortcut(
         icon: Icons.fact_check_outlined,
@@ -505,7 +641,6 @@ class _AdminContentListScreenState
         style: Theme.of(context).textTheme.bodyMedium,
       ),
       const SizedBox(height: 16),
-      if (_allDrafts && data != null) _reviewedBatchAction(data.items),
       if (!_allDrafts)
         FilledButton.icon(
           onPressed: _create,
@@ -516,11 +651,17 @@ class _AdminContentListScreenState
       SukunSearchField(
         controller: _searchController,
         hintText: 'নাম বা বিষয় লিখে খুঁজুন',
-        onChanged: (value) => setState(() => _search = value),
+        onChanged: (value) => setState(() {
+          _search = value;
+          _selectedDraftIds.clear();
+        }),
         onSubmitted: (value) => setState(() => _search = value),
         onClear: () {
           _searchController.clear();
-          setState(() => _search = '');
+          setState(() {
+            _search = '';
+            _selectedDraftIds.clear();
+          });
         },
       ),
       const SizedBox(height: 14),
@@ -541,12 +682,18 @@ class _AdminContentListScreenState
                 child: SukunFilterPill(
                   selected: _status == tab.$1,
                   label: tab.$2,
-                  onTap: () => setState(() => _status = tab.$1),
+                  onTap: () => setState(() {
+                    _status = tab.$1;
+                    _selectedDraftIds.clear();
+                  }),
                 ),
               ),
           ],
         ),
       ),
+      const SizedBox(height: 10),
+      if (_status == 'draft' && snapshot.hasData)
+        _draftSelectionToolbar(items),
       const SizedBox(height: 10),
       if (snapshot.connectionState == ConnectionState.waiting)
         const AppLoadingState(label: 'উপকরণগুলো আনা হচ্ছে…')
@@ -563,7 +710,20 @@ class _AdminContentListScreenState
         )
       else
         for (final item in items) ...[
-          _ContentCard(item: item, onTap: () => _openItem(item)),
+          _ContentCard(
+            item: item,
+            onTap: () => _openItem(item),
+            selected: _selectedDraftIds.contains(item.id),
+            onSelected: _status == 'draft' && !_bulkBusy
+                ? (checked) => setState(() {
+                    if (checked) {
+                      _selectedDraftIds.add(item.id);
+                    } else {
+                      _selectedDraftIds.remove(item.id);
+                    }
+                  })
+                : null,
+          ),
           const SizedBox(height: 10),
         ],
       const SizedBox(height: 40),
@@ -672,10 +832,17 @@ class _DashboardShortcut extends StatelessWidget {
 }
 
 class _ContentCard extends StatelessWidget {
-  const _ContentCard({required this.item, required this.onTap});
+  const _ContentCard({
+    required this.item,
+    required this.onTap,
+    this.selected = false,
+    this.onSelected,
+  });
 
   final AdminContentItem item;
   final VoidCallback onTap;
+  final bool selected;
+  final ValueChanged<bool>? onSelected;
 
   @override
   Widget build(BuildContext context) => SukunSurface(
@@ -683,6 +850,15 @@ class _ContentCard extends StatelessWidget {
     onTap: onTap,
     child: Row(
       children: [
+        if (onSelected != null) ...[
+          Checkbox(
+            key: ValueKey('draft-select-${item.id}'),
+            value: selected,
+            onChanged: (value) => onSelected!(value ?? false),
+            semanticLabel: '${item.titleBn ?? item.title} নির্বাচন',
+          ),
+          const SizedBox(width: 4),
+        ],
         SukunIconBadge(icon: _typeIcon(item.type), size: 42),
         const SizedBox(width: 12),
         Expanded(
