@@ -41,10 +41,7 @@ Future<DraftArchiveResult> archiveSelectedDrafts({
   for (final chunk in splitDraftBatch(uniqueIds)) {
     final raw = await client.rpc(
       'archive_selected_content_drafts',
-      params: {
-        'p_content_item_ids': chunk,
-        'p_request_id': const Uuid().v4(),
-      },
+      params: {'p_content_item_ids': chunk, 'p_request_id': const Uuid().v4()},
     );
     final result = raw as Map<String, dynamic>;
     archived += result['archived'] as int? ?? 0;
