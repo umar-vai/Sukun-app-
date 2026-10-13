@@ -1,0 +1,38 @@
+# Quran excerpt reference mapping — 14 October 2026
+
+## Scope and origin
+
+The staging Content CMS contains 101 editorial excerpts under `srg2024-qur-001` through `srg2024-qur-101`: 100 in Review, and `015` Staff-only Published. They were transcribed from **সেলফ রুকইয়াহ গাইড** and retain their original source references, scripts, status, and visibility.
+
+Research cross-checked the excerpts against:
+- Quran.com ayah pages: https://quran.com/2/255, https://quran.com/23/115, https://quran.com/37/1, https://quran.com/27/54, https://quran.com/84/1, https://quran.com/99/2, https://quran.com/17/49, https://quran.com/17/81.
+- An indexed full 6,236-verse Hafs corpus, `ara-quranuthmanihaf1.txt` (Arabic without diacritics), from the public `fawazahmed0/quran-api` GitHub repository, originally credited to King Fahad Quran Complex.
+- Text-specific first/last Arabic phrase matching, explicit end-of-ayah number markers from the source booklet, and targeted Quran.com cross-checks for boundary exceptions.
+
+This procedure identifies **referenced verses**, not proof that a third-party editorial Arabic excerpt is a fully correct canonical Quran edition. Some records are partial ayahs, not complete canonical verses.
+
+## Safeguarded staging change
+
+Migration `20261014093000_quran_ayat_reference_mapping.sql` supplies **99** exact editorial-reference mappings. It changes only `surah_number`, `ayah_number`, `ayah_end_number`, `source_url`, `verification_status='pending'`, and `updated_at`. It:
+- Checks MD5 of each original Arabic text, the original staff-only visibility, expected editorial title, and existing Review/Staff-only Published status before touching a row.
+- Leaves raw Arabic, title, original book source, rights, content type, publication status, role visibility, audio, Bengali translation/pronunciation, and patient plans entirely unchanged.
+- Does **not** mark any excerpt `verified`, publish any text, or create canonical `quran` records.
+- Is staging-only until further release approval and QA. A GitHub commit is not a live database migration.
+
+## Explicit exclusions
+
+- `srg2024-qur-001`: begins with Isti'adhah followed by Basmala. Neither is an unambiguous single canonical ayah reference *for this editorial record*. Treat as preparation text, not a matched Quran passage.
+- `srg2024-qur-047`: isolated incomplete Basmala excerpt within a section. Do not infer that this excerpt represents a complete surah/ayah merely from the phrase.
+- `srg2024-qur-015` (Ar-Rahman 55:33–36) is **already staff-only published**, not a new Review draft. Matching its reference does not change its publication state.
+
+## Canonical Quran and AI gates still outstanding
+
+1. An authorized Quran editor must confirm each excerpt's complete and accurate Arabic against the edition, not just its verse range.
+2. Create distinct, appropriately licensed canonical Quran records with verified text and scoped collections; do not relabel booklet `article` fragments as `quran`.
+3. Validate recitation coverage and permissions; the current Staging audio recordings have no verse range metadata.
+4. Test explicit prescription citation → exact approved resource → Admin Review → Plan → Patient playback and reminder in the real Flutter Web app.
+5. Do not automatically publish or assign any patient action from this source lookup.
+
+## License boundary
+
+Tanzil Arabic text is CC BY 3.0 with attribution/unchanged-text conditions: https://tanzil.net/docs/Text_License . Quran.com displays third-party authored translations and recitations subject to separate conditions. This metadata lookup does **not** copy those translations, recordings, or site UI; all links are references.
