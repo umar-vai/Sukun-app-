@@ -32,31 +32,16 @@ void main() {
       isFalse,
     );
     expect(
-      canBulkPublishReviewedResource(
-        resource(visibility: 'patient_only'),
-      ),
+      canBulkPublishReviewedResource(resource(visibility: 'patient_only')),
       isFalse,
     );
     expect(
-      canBulkPublishReviewedResource(
-        resource(slug: 'test-only-resource'),
-      ),
+      canBulkPublishReviewedResource(resource(slug: 'test-only-resource')),
       isFalse,
     );
-    expect(
-      canBulkPublishReviewedResource(
-        resource(type: 'quran'),
-      ),
-      isFalse,
-    );
-    expect(
-      canBulkPublishReviewedResource(resource(rights: null)),
-      isFalse,
-    );
-    expect(
-      canBulkPublishReviewedResource(resource(source: null)),
-      isFalse,
-    );
+    expect(canBulkPublishReviewedResource(resource(type: 'quran')), isFalse);
+    expect(canBulkPublishReviewedResource(resource(rights: null)), isFalse);
+    expect(canBulkPublishReviewedResource(resource(source: null)), isFalse);
     expect(
       canBulkPublishReviewedResource(resource(status: 'published')),
       isFalse,
