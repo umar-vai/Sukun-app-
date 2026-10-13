@@ -150,6 +150,46 @@ jobs:
             exit 1
           fi
 
+  hosted-staging-auth-smoke:
+    name: Security / Hosted staging login (synthetic only)
+    # Never run hosted tests from untrusted forks or from push to main.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: edge-functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      SUKUN_TARGET_PROJECT_REF: qacklgqvxvjjzsimjoip
+      # Existing public staging key from the functional-web-pages workflow;
+      # this is NOT a secret and is safe to include in a browser build.
+      SUKUN_STAGING_PUBLIC_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check hosted synthetic login errors and spoofed header behavior
+        run: python3 docs/security/hosted_staging_login_smoke.py
+
+  synthetic-backup-restore:
+    name: Recovery / Encrypted Synthetic Restore
+    # Never send production credentials/data to GitHub Actions.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Validate security shell scripts (no production connection)
+        run: |
+          bash -n scripts/security/production_encrypted_backup.sh
+          bash -n scripts/security/test_synthetic_encrypted_restore.sh
+      - name: Install public-key encryption utility
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+      - name: Rehearse encrypted backup and isolated restore with fake fixture
+        run: bash scripts/security/test_synthetic_encrypted_restore.sh
+
   database-security:
     name: Database / Supabase RLS Tests
     runs-on: ubuntu-latest
@@ -163,6 +203,32 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: 2.120.0
+
+      - name: Prepare ephemeral local function secret
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import secrets
+          target = Path("supabase/functions/.env")
+          target.write_text("SIGN_IN_RATE_LIMIT_SECRET=" + secrets.token_hex(32) + "\n")
+          os.chmod(target, 0o600)
+          # The committed local config disables email authentication.
+          # For disposable synthetic login HTTP tests ONLY, enable it in
+          # this runner's working copy. Never push this runtime override.
+          config_path = Path("supabase/config.toml")
+          config = config_path.read_text()
+          start = config.index("[auth.email]")
+          end = config.index("[auth.sms]", start)
+          section = config[start:end]
+          assert "enable_signup = false" in section
+          config_path.write_text(
+              config[:start] + section.replace(
+                  "enable_signup = false", "enable_signup = true", 1
+              ) + config[end:]
+          )
+          PY
 
       - name: Start local Supabase stack
         run: supabase start
@@ -189,6 +255,10 @@ jobs:
             -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_staging.sql
           psql -X -h 127.0.0.1 -p 54322 -U postgres -d postgres \
             -v ON_ERROR_STOP=1 -f docs/security/patient_sign_in_rate_limit_verify.sql
+
+      - name: Exercise synthetic HTTP patient sign-in in disposable local backend
+        shell: bash
+        run: python3 docs/security/patient_sign_in_local_http_e2e.py
 
       - name: Stop local Supabase stack
         if: always()
