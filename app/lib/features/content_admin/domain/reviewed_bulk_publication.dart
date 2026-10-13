@@ -13,9 +13,10 @@ bool canBulkPublishReviewedResource(AdminContentItem item) {
   if (item.isCanonical || item.type == 'hadith') return false;
   if (item.slug.startsWith('srg2024-qur-')) return false;
   if (item.title.contains('সূত্র যাচাই প্রয়োজন')) return false;
-  if (RegExp(r'(^|[-_])(?:qa|test|fixture|sample|synthetic)(?:[-_]|$)',
-          caseSensitive: false)
-      .hasMatch(item.slug)) {
+  if (RegExp(
+    r'(^|[-_])(?:qa|test|fixture|sample|synthetic)(?:[-_]|$)',
+    caseSensitive: false,
+  ).hasMatch(item.slug)) {
     return false;
   }
   if (item.title.toLowerCase().contains('qa test only')) return false;
@@ -25,11 +26,11 @@ bool canBulkPublishReviewedResource(AdminContentItem item) {
   }
   if (item.publicationValidationError() != null) return false;
 
-  final approvedBookDraft = item.slug.startsWith('srg2024-') &&
-      (item.type == 'article' ||
-          item.type == 'dua' ||
-          item.type == 'amal');
-  final approvedAudio = item.slug.startsWith('sukun-ruqyahbd-') &&
+  final approvedBookDraft =
+      item.slug.startsWith('srg2024-') &&
+      (item.type == 'article' || item.type == 'dua' || item.type == 'amal');
+  final approvedAudio =
+      item.slug.startsWith('sukun-ruqyahbd-') &&
       item.type == 'audio' &&
       item.mediaSourceType == 'direct_audio_url' &&
       (Uri.tryParse(item.mediaUrl ?? '')?.scheme == 'https');
