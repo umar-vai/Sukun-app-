@@ -11,6 +11,10 @@ Research cross-checked the excerpts against:
 
 This procedure identifies **referenced verses**, not proof that a third-party editorial Arabic excerpt is a fully correct canonical Quran edition. Some records are partial ayahs, not complete canonical verses.
 
+## Verse-boundary cross-check
+
+Cross-checked end-of-ayah number markers in all 101 source excerpts against the proposed reference ranges. This caught and corrected two cases a phrase matcher had shortened: `027` is **14:49–50** (not merely 49), and `095` is **36:78–79** (not merely 79). The source booklet numbers the opening Al-Fatihah excerpt differently: it begins with *Alhamdulillah* marked as 1, whereas Quran.com counts Basmala as 1 and *Alhamdulillah* as 1:2; the applicable standardized mapping for `002` is **1:2–7**. All other present source end-of-ayah markers fit their mapped range.
+
 ## Safeguarded staging change
 
 Migration `20261014093000_quran_ayat_reference_mapping.sql` supplies **99** exact editorial-reference mappings. It changes only `surah_number`, `ayah_number`, `ayah_end_number`, `source_url`, `verification_status='pending'`, and `updated_at`. It:
