@@ -10,8 +10,10 @@ import 'package:sukun_life/features/content_admin/domain/private_resource_draft_
 import 'package:sukun_life/features/content_admin/presentation/private_resource_draft_import_dialog.dart';
 import 'package:sukun_life/features/content_admin/presentation/book_audio_source_dialog.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
+import 'package:sukun_life/features/content_admin/domain/reviewed_bulk_publication.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Final admin content workspace. Existing draft/review/publish RPCs and RLS
 /// remain authoritative; this screen only simplifies navigation.
@@ -31,6 +33,9 @@ class _AdminContentListScreenState
   bool _allDrafts = false;
   String _status = 'all';
   String _search = '';
+  bool _publishingBatch = false;
+  int _batchProcessed = 0;
+  int _batchTotal = 0;
 
   bool get _onDashboard => _selectedKind == null && !_allDrafts;
 
@@ -111,6 +116,107 @@ class _AdminContentListScreenState
       _status = 'all';
       _search = '';
     });
+  }
+
+  Future<void> _publishReviewedBatch(List<AdminContentItem> items) async {
+    if (_publishingBatch) return;
+    final candidates = reviewedBulkPublishCandidates(items);
+    if (candidates.isEmpty) return;
+
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: '${candidates.length}টি যাচাইকৃত খসড়া প্রকাশ করবেন?',
+      message:
+          'শুধু অনুমোদিত উৎস ও প্রকাশের তথ্য থাকা উপকরণগুলো সবার জন্য '
+          'দৃশ্যমান করা হবে। Draft → Review → Published ধাপে '
+          'প্রতিটি পরিবর্তনের Admin audit history থাকবে। '
+          'যেসব আয়াতে “সূত্র যাচাই প্রয়োজন” লেখা আছে এবং '
+          'Private/QA খসড়া এই Batch থেকে বাদ থাকবে।',
+      confirmLabel: 'প্রকাশ শুরু করুন',
+      icon: Icons.publish_rounded,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() {
+      _publishingBatch = true;
+      _batchTotal = candidates.length;
+      _batchProcessed = 0;
+    });
+    try {
+      final result = await publishReviewedResourceBatch(
+        client: Supabase.instance.client,
+        candidates: candidates,
+        onProgress: (processed, total) {
+          if (mounted) {
+            setState(() {
+              _batchProcessed = processed;
+              _batchTotal = total;
+            });
+          }
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 12),
+          content: Text(
+            '${result.published}টি প্রকাশিত, '
+            '${result.failed}টি ব্যর্থ/যাচাই প্রয়োজন। '
+            'ব্যর্থ হলে Draft/Review অবস্থা থেকে পুনরায় চেষ্টা করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'প্রকাশ করা যায়নি। Super Admin লগইন ও Server Update '
+            'যাচাই করুন; খসড়াগুলো পুনরায় লোড করে চেষ্টা করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } finally {
+      if (mounted) {
+        setState(() => _publishingBatch = false);
+      }
+    }
+  }
+
+  Widget _reviewedBatchAction(List<AdminContentItem> items) {
+    final candidates = reviewedBulkPublishCandidates(items);
+    if (candidates.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _publishingBatch
+                ? null
+                : () => _publishReviewedBatch(items),
+            icon: const Icon(Icons.fact_check_outlined),
+            label: Text(
+              '${candidates.length}টি পর্যালোচিত উপকরণ একসঙ্গে প্রকাশ',
+            ),
+          ),
+          if (_publishingBatch) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: _batchTotal == 0 ? null : _batchProcessed / _batchTotal,
+            ),
+            Text('প্রকাশ করা হচ্ছে: $_batchProcessed / $_batchTotal'),
+          ],
+          const SizedBox(height: 5),
+          Text(
+            'যাচাইহীন আয়াত ও Private/QA তথ্য অন্তর্ভুক্ত নয়। '
+            'প্রকাশিত উপকরণ Public হবে।',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openAudioReferences() async {
@@ -244,6 +350,7 @@ class _AdminContentListScreenState
             : '$draftsটি খসড়া · পরে আবার কাজ করতে পারবেন',
         onTap: _openDrafts,
       ),
+      if (data != null) _reviewedBatchAction(items),
       const SizedBox(height: 10),
       _DashboardShortcut(
         icon: Icons.fact_check_outlined,
@@ -398,6 +505,7 @@ class _AdminContentListScreenState
         style: Theme.of(context).textTheme.bodyMedium,
       ),
       const SizedBox(height: 16),
+      if (_allDrafts && data != null) _reviewedBatchAction(data.items),
       if (!_allDrafts)
         FilledButton.icon(
           onPressed: _create,
