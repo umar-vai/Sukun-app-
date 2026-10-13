@@ -19,7 +19,7 @@ select set_config('request.jwt.claim.sub',
 select lives_ok(
   $$select public.save_content_item(
     p_type => 'article', p_title => 'Reviewed Guide Fixture',
-    p_slug => 'srg2024-guide-safe-fixture',
+    p_slug => 'srg2024-guide-approved-reference',
     p_visibility => 'staff_only', p_status => 'draft',
     p_source_reference => 'Source guide fixture',
     p_rights_note => 'Sukun Life owner attested app-use rights on 2026-10-12. Attribution preserved.',
@@ -61,7 +61,7 @@ select set_config('request.jwt.claim.sub',
 select throws_ok(
   $$select public.publish_reviewed_resource_batch(
     array[(select id from public.content_items
-      where slug='srg2024-guide-safe-fixture')],
+      where slug='srg2024-guide-approved-reference')],
     '00000000-0000-4000-8000-000000009736'
   )$$,
   '42501', 'Super Admin access is required.',
@@ -77,7 +77,7 @@ select results_eq(
   $$select (public.publish_reviewed_resource_batch(
       array(
         select id from public.content_items
-        where slug in ('srg2024-guide-safe-fixture',
+        where slug in ('srg2024-guide-approved-reference',
                        'srg2024-qur-unverified-fixture',
                        'sukun-ruqyahbd-wrong-host-fixture')
       ),
@@ -89,7 +89,7 @@ select results_eq(
 
 select results_eq(
   $$select status::text, visibility::text
-    from public.content_items where slug = 'srg2024-guide-safe-fixture'$$,
+    from public.content_items where slug = 'srg2024-guide-approved-reference'$$,
   $$values ('published'::text, 'public'::text)$$,
   'atomic publication also changes guest visibility'
 );
@@ -106,7 +106,7 @@ select results_eq(
 select results_eq(
   $$select count(*) from public.admin_audit_logs
     where entity_id=(select id from public.content_items
-      where slug='srg2024-guide-safe-fixture')$$,
+      where slug='srg2024-guide-approved-reference')$$,
   array[4::bigint],
   'content save, visibility change, submit and publish are all audited'
 );
@@ -114,7 +114,7 @@ select results_eq(
 select results_eq(
   $$select count(*) from public.content_reviews
     where content_item_id=(select id from public.content_items
-      where slug='srg2024-guide-safe-fixture')$$,
+      where slug='srg2024-guide-approved-reference')$$,
   array[2::bigint],
   'submission and publication decisions are retained'
 );
