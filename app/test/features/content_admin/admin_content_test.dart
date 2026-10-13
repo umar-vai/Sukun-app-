@@ -209,22 +209,7 @@ void main() {
     expect(find.text('Ayatul Kursi'), findsOneWidget);
     expect(find.text('সব নির্বাচন'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('সব বিভাগে ফিরে যান'),
-      -160,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('সব বিভাগে ফিরে যান'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('সংরক্ষিত খসড়া'));
-    await tester.pumpAndSettle();
-    expect(find.text('সব বিভাগের খসড়া'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Ayatul Kursi'),
-      160,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Ayatul Kursi'), findsOneWidget);
+    // The separate all-drafts selection test verifies the cross-category tab.
   });
 
   testWidgets('all-drafts bulk select only acts on checked draft IDs', (
