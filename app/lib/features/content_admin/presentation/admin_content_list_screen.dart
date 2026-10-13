@@ -192,9 +192,7 @@ class _AdminContentListScreenState
           if (_publishingBatch) ...[
             const SizedBox(height: 8),
             LinearProgressIndicator(
-              value: _batchTotal == 0
-                  ? null
-                  : _batchProcessed / _batchTotal,
+              value: _batchTotal == 0 ? null : _batchProcessed / _batchTotal,
             ),
             Text('প্রকাশ করা হচ্ছে: $_batchProcessed / $_batchTotal'),
           ],
@@ -495,8 +493,7 @@ class _AdminContentListScreenState
         style: Theme.of(context).textTheme.bodyMedium,
       ),
       const SizedBox(height: 16),
-      if (_allDrafts && data != null)
-        _reviewedBatchAction(data.items),
+      if (_allDrafts && data != null) _reviewedBatchAction(data.items),
       if (!_allDrafts)
         FilledButton.icon(
           onPressed: _create,
