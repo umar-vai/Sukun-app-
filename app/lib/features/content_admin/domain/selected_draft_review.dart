@@ -7,7 +7,8 @@ import 'package:uuid/uuid.dart';
 /// Unverified scripture can enter the human review queue; protected patient
 /// records and QA fixtures must never enter a bulk editorial workflow.
 bool canBulkSubmitDraftForReview(AdminContentItem item) {
-  if (item.status != 'draft' || item.visibility == 'patient_only') {
+  if (item.status != 'draft' ||
+      (item.visibility != 'staff_only' && item.visibility != 'public')) {
     return false;
   }
   if (RegExp(
