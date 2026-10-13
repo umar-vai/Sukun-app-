@@ -236,6 +236,7 @@ void main() {
     expect(find.text('1টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
     expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
     expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
+    expect(find.text('যাচাইয়ের জন্য পাঠান (1)'), findsOneWidget);
 
     await tester.tap(find.text('সব বাতিল'));
     await tester.pumpAndSettle();

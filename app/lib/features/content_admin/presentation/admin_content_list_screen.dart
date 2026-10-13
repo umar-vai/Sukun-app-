@@ -12,6 +12,7 @@ import 'package:sukun_life/features/content_admin/presentation/book_audio_source
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/domain/reviewed_bulk_publication.dart';
 import 'package:sukun_life/features/content_admin/domain/selected_draft_actions.dart';
+import 'package:sukun_life/features/content_admin/domain/selected_draft_review.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -36,8 +37,10 @@ class _AdminContentListScreenState
   String _search = '';
   bool _publishingBatch = false;
   bool _archivingBatch = false;
+  bool _submittingReviewBatch = false;
   final Set<String> _selectedDraftIds = <String>{};
-  bool get _bulkBusy => _publishingBatch || _archivingBatch;
+  bool get _bulkBusy =>
+      _publishingBatch || _archivingBatch || _submittingReviewBatch;
   int _batchProcessed = 0;
   int _batchTotal = 0;
 
@@ -253,11 +256,77 @@ class _AdminContentListScreenState
     }
   }
 
+  Future<void> _submitSelectedDraftsForReview(
+    List<AdminContentItem> items,
+  ) async {
+    if (_bulkBusy) return;
+    final candidates = bulkReviewCandidates(items);
+    if (candidates.isEmpty) return;
+
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: '${candidates.length}টি খসড়া যাচাইয়ের জন্য পাঠাবেন?',
+      message:
+          'শুধুমাত্র নির্বাচিত খসড়াগুলো Draft থেকে Review তালিকায় যাবে। '
+          'এতে কোনো উপকরণ প্রকাশিত বা কুরআনের আয়াত যাচাইকৃত বলে গণ্য হবে না। '
+          'Private/QA খসড়া বাদ থাকবে এবং প্রতিটি পরিবর্তনে Admin audit থাকবে।',
+      confirmLabel: 'যাচাইয়ের জন্য পাঠান',
+      icon: Icons.fact_check_outlined,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() {
+      _submittingReviewBatch = true;
+      _batchTotal = candidates.length;
+      _batchProcessed = 0;
+    });
+    try {
+      final result = await submitSelectedDraftsForReview(
+        client: Supabase.instance.client,
+        selected: candidates,
+        onProgress: (processed, total) {
+          if (mounted) {
+            setState(() {
+              _batchProcessed = processed;
+              _batchTotal = total;
+            });
+          }
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 12),
+          content: Text(
+            '${result.submitted}টি যাচাইয়ের তালিকায় পাঠানো হয়েছে, '
+            '${result.skipped}টি বাদ, ${result.failed}টি ব্যর্থ।',
+          ),
+        ),
+      );
+      setState(() => _selectedDraftIds.clear());
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'যাচাইয়ের জন্য পাঠানো সম্পন্ন হয়নি। '
+            'তালিকা রিফ্রেশ করে বাকি খসড়া আবার নির্বাচন করুন।',
+          ),
+        ),
+      );
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _submittingReviewBatch = false);
+    }
+  }
+
   Widget _draftSelectionToolbar(List<AdminContentItem> visibleItems) {
     final selected = visibleItems
         .where((item) => _selectedDraftIds.contains(item.id))
         .toList(growable: false);
     final publishable = reviewedBulkPublishCandidates(selected);
+    final reviewable = bulkReviewCandidates(selected);
     final allVisibleSelected =
         visibleItems.isNotEmpty &&
         visibleItems.every((item) => _selectedDraftIds.contains(item.id));
@@ -324,6 +393,13 @@ class _AdminContentListScreenState
                   label: Text('প্রকাশ করুন (${publishable.length})'),
                 ),
                 OutlinedButton.icon(
+                  onPressed: _bulkBusy || reviewable.isEmpty
+                      ? null
+                      : () => _submitSelectedDraftsForReview(selected),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: Text('যাচাইয়ের জন্য পাঠান (${reviewable.length})'),
+                ),
+                OutlinedButton.icon(
                   onPressed: _bulkBusy
                       ? null
                       : () => _archiveSelectedDrafts(selected),
@@ -332,6 +408,14 @@ class _AdminContentListScreenState
                 ),
               ],
             ),
+            if (reviewable.length < selected.length) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${selected.length - reviewable.length}টি Private/QA খসড়া '
+                'এই Review ব্যাচ থেকে বাদ থাকবে।',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             if (publishable.length < selected.length) ...[
               const SizedBox(height: 8),
               Text(
