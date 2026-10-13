@@ -42,7 +42,10 @@ class _AdminContentListScreenState
   bool _managingReviewBatch = false;
   final Set<String> _selectedContentIds = <String>{};
   bool get _bulkBusy =>
-      _publishingBatch || _archivingBatch || _submittingReviewBatch || _managingReviewBatch;
+      _publishingBatch ||
+      _archivingBatch ||
+      _submittingReviewBatch ||
+      _managingReviewBatch;
   int _batchProcessed = 0;
   int _batchTotal = 0;
 
@@ -348,10 +351,10 @@ class _AdminContentListScreenState
           : '${selected.length}টি উপকরণ সংশোধনের জন্য খসড়ায় ফেরত পাঠাবেন?',
       message: archive
           ? 'নির্বাচিত Review উপকরণগুলো Archive-এ যাবে; স্থায়ীভাবে মুছবে না। '
-            'অন্য Admin পরিবর্তন করলে সেই আইটেম বাদ থাকবে।'
+                'অন্য Admin পরিবর্তন করলে সেই আইটেম বাদ থাকবে।'
           : 'নির্বাচিত Review উপকরণগুলো Draft-এ ফিরে যাবে। '
-            'প্রতিটি উপকরণ আলাদাভাবে সম্পাদনা করে পুনরায় যাচাইয়ের জন্য পাঠাতে পারবেন। '
-            'কোনো আয়াত যাচাইকৃত বা প্রকাশিত হবে না।',
+                'প্রতিটি উপকরণ আলাদাভাবে সম্পাদনা করে পুনরায় যাচাইয়ের জন্য পাঠাতে পারবেন। '
+                'কোনো আয়াত যাচাইকৃত বা প্রকাশিত হবে না।',
       confirmLabel: archive ? 'আর্কাইভ করুন' : 'খসড়ায় ফেরত পাঠান',
       icon: archive ? Icons.archive_outlined : Icons.edit_note_outlined,
     );
@@ -410,7 +413,8 @@ class _AdminContentListScreenState
         .where((item) => _selectedContentIds.contains(item.id))
         .toList(growable: false);
     final publishable = reviewedBulkPublishCandidates(selected);
-    final allSelected = eligible.isNotEmpty &&
+    final allSelected =
+        eligible.isNotEmpty &&
         eligible.every((item) => _selectedContentIds.contains(item.id));
 
     return SukunSurface(
@@ -474,7 +478,8 @@ class _AdminContentListScreenState
                 FilledButton.icon(
                   onPressed: _bulkBusy
                       ? null
-                      : () => _manageSelectedReviews(selected, 'return_to_draft'),
+                      : () =>
+                            _manageSelectedReviews(selected, 'return_to_draft'),
                   icon: const Icon(Icons.edit_note_outlined),
                   label: Text('খসড়ায় ফেরত (${selected.length})'),
                 ),
@@ -924,8 +929,8 @@ class _AdminContentListScreenState
       Text(
         _allDrafts
             ? (_status == 'review'
-                ? 'যাচাইরত উপকরণ বেছে সংশোধনের জন্য খসড়ায় ফেরত পাঠান অথবা সম্পাদনা করুন।'
-                : 'এখান থেকে অসম্পূর্ণ উপকরণ আবার খুলে সম্পাদনা করুন।')
+                  ? 'যাচাইরত উপকরণ বেছে সংশোধনের জন্য খসড়ায় ফেরত পাঠান অথবা সম্পাদনা করুন।'
+                  : 'এখান থেকে অসম্পূর্ণ উপকরণ আবার খুলে সম্পাদনা করুন।')
             : 'এই বিভাগের উপকরণ দেখুন, নতুন যোগ করুন অথবা আগের কাজ শেষ করুন।',
         style: Theme.of(context).textTheme.bodyMedium,
       ),
@@ -982,7 +987,8 @@ class _AdminContentListScreenState
       ),
       const SizedBox(height: 10),
       if (_status == 'draft' && snapshot.hasData) _draftSelectionToolbar(items),
-      if (_status == 'review' && snapshot.hasData) _reviewSelectionToolbar(items),
+      if (_status == 'review' && snapshot.hasData)
+        _reviewSelectionToolbar(items),
       const SizedBox(height: 10),
       if (snapshot.connectionState == ConnectionState.waiting)
         const AppLoadingState(label: 'উপকরণগুলো আনা হচ্ছে…')
@@ -1006,8 +1012,10 @@ class _AdminContentListScreenState
             onEdit: _status == 'review' && canManageSelectedReview(item)
                 ? () => _editReviewItem(item)
                 : null,
-            onSelected: (_status == 'draft' ||
-                        (_status == 'review' && canManageSelectedReview(item))) &&
+            onSelected:
+                (_status == 'draft' ||
+                        (_status == 'review' &&
+                            canManageSelectedReview(item))) &&
                     !_bulkBusy
                 ? (checked) => setState(() {
                     if (checked) {
