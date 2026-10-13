@@ -201,14 +201,46 @@ void main() {
 
     await tester.tap(find.text('খসড়া').first);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Ayatul Kursi'),
+      160,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Ayatul Kursi'), findsOneWidget);
+    expect(find.text('সব নির্বাচন'), findsOneWidget);
 
-    await tester.tap(find.text('সব বিভাগে ফিরে যান'));
+    // The separate all-drafts selection test verifies the cross-category tab.
+  });
+
+  testWidgets('all-drafts bulk select only acts on checked draft IDs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentAdminRepositoryProvider.overrideWithValue(
+            const _FakeContentAdminRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: AdminContentListScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষিত খসড়া'));
     await tester.pumpAndSettle();
-    expect(find.text('সব বিভাগের খসড়া'), findsOneWidget);
-    expect(find.text('Ayatul Kursi'), findsOneWidget);
+    expect(find.text('সব নির্বাচন'), findsOneWidget);
+    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+
+    await tester.tap(find.text('সব নির্বাচন'));
+    await tester.pumpAndSettle();
+    expect(find.text('1টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
+    expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
+
+    await tester.tap(find.text('সব বাতিল'));
+    await tester.pumpAndSettle();
+    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
+    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsNothing);
   });
 
   testWidgets('category card opens matching preselected editor form', (

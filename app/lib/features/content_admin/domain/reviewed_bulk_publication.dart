@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
+import 'package:sukun_life/features/content_admin/domain/selected_draft_actions.dart';
 import 'package:uuid/uuid.dart';
 
 /// Only the publisher-attested, independently reviewable 2024 source catalog
@@ -85,18 +86,28 @@ Future<ReviewedBulkPublishResult> publishReviewedResourceBatch({
       failedTitles: [],
     );
   }
-  final response = await client.rpc(
-    'publish_reviewed_resource_batch',
-    params: {
-      'p_content_item_ids': approved.map((item) => item.id).toList(),
-      'p_request_id': const Uuid().v4(),
-    },
-  );
-  final result = response as Map<String, dynamic>;
-  onProgress(approved.length, approved.length);
+  var processed = 0;
+  var published = 0;
+  var failed = 0;
+  for (final chunk in splitDraftBatch(approved)) {
+    final response = await client.rpc(
+      'publish_reviewed_resource_batch',
+      params: {
+        'p_content_item_ids': chunk.map((item) => item.id).toList(),
+        'p_request_id': const Uuid().v4(),
+      },
+    );
+    final result = response as Map<String, dynamic>;
+    published += result['published'] as int? ?? 0;
+    failed += result['failed'] as int? ?? 0;
+    // The server can skip a stale/review-changed item; never count as published.
+    failed += result['skipped'] as int? ?? 0;
+    processed += chunk.length;
+    onProgress(processed, approved.length);
+  }
   return ReviewedBulkPublishResult(
-    published: result['published'] as int? ?? 0,
-    failed: result['failed'] as int? ?? 0,
+    published: published,
+    failed: failed,
     failedTitles: const [],
   );
 }
