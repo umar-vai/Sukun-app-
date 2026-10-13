@@ -3,6 +3,33 @@
 -- at nuqayah/quran-text GitHub blob fcc214311897921d08bbc56879b82aa38328a5f3.
 -- IMPORTANT: Normalized script/partial-verse matching is not byte-perfect
 -- canonical verification. Do NOT publish, change Arabic, or clear review state.
+-- The existing canonical ayah_end_number is intentionally restricted to
+-- content_type='quran'. These records are ARTICLE excerpts, not canonical.
+-- Provide a separately named end-ayah field that cannot be confused with
+-- published canonical Quran content.
+ALTER TABLE public.content_items
+  ADD COLUMN IF NOT EXISTS editorial_ayah_end_number integer;
+DO $bounds$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'public.content_items'::regclass
+      AND conname = 'content_items_editorial_ayah_bounds'
+  ) THEN
+    ALTER TABLE public.content_items
+      ADD CONSTRAINT content_items_editorial_ayah_bounds
+      CHECK (
+        editorial_ayah_end_number IS NULL
+        OR (
+          type = 'article'
+          AND ayah_number IS NOT NULL
+          AND editorial_ayah_end_number >= ayah_number
+        )
+      );
+  END IF;
+END
+$bounds$;
+
 CREATE TABLE IF NOT EXISTS public.quran_reference_reconciliation_audit (
   content_item_id uuid NOT NULL REFERENCES public.content_items(id),
   audit_version text NOT NULL,
@@ -158,11 +185,12 @@ BEGIN
     RAISE EXCEPTION 'Qur''an source rows changed since preflight; abort';
   END IF;
 
-  -- Adjust reference metadata only. Original Arabic bytes, source edition,
+  -- Adjust editorial reference metadata only (NOT canonical ayah_end_number).
+  -- Original Arabic bytes, source edition,
   -- publication status, visibility, roles, and patient plans are untouched.
   UPDATE public.content_items ci
   SET
-    ayah_end_number = CASE
+    editorial_ayah_end_number = CASE
       WHEN v.last_ayah > v.ayah THEN v.last_ayah
       ELSE NULL
     END,
