@@ -9,7 +9,9 @@ Research cross-checked the excerpts against:
 - An indexed full 6,236-verse Hafs corpus, `ara-quranuthmanihaf1.txt` (Arabic without diacritics), from the public `fawazahmed0/quran-api` GitHub repository, originally credited to King Fahad Quran Complex.
 - Text-specific first/last Arabic phrase matching, explicit end-of-ayah number markers from the source booklet, and targeted Quran.com cross-checks for boundary exceptions.
 
-This procedure identifies **referenced verses**, not proof that a third-party editorial Arabic excerpt is a fully correct canonical Quran edition. Some records are partial ayahs, not complete canonical verses.
+This procedure identifies **referenced verses**, not proof that a third-party editorial Arabic excerpt is a fully correct canonical Quran edition.
+
+A first staging deployment attempt was correctly blocked by the existing `content_items_ayah_range` CHECK constraint: `ayah_end_number` is only permitted on `type=quran`. The migration was amended without weakening the constraint or relabeling editorial articles. No records were changed by the rejected transaction. Some records are partial ayahs, not complete canonical verses.
 
 ## Verse-boundary cross-check
 
@@ -17,7 +19,7 @@ Cross-checked end-of-ayah number markers in all 101 source excerpts against the 
 
 ## Safeguarded staging change
 
-Migration `20261014093000_quran_ayat_reference_mapping.sql` supplies **99** exact editorial-reference mappings. It changes only `surah_number`, `ayah_number`, `ayah_end_number`, `source_url`, `verification_status='pending'`, and `updated_at`. It:
+Migration `20261014093000_quran_ayat_reference_mapping.sql` supplies **99** exact editorial-reference mappings. It changes only `surah_number`, `ayah_number`, the annotated `reference_text` (preserving its original book citation and adding the explicit full ayah range), `source_url`, `verification_status='pending'`, and `updated_at`. It deliberately leaves `ayah_end_number` **NULL**: the existing `content_items_ayah_range` constraint correctly reserves that structured field for verified-type canonical `quran` items, not these `article` excerpts. It:
 - Checks MD5 of each original Arabic text, the original staff-only visibility, expected editorial title, and existing Review/Staff-only Published status before touching a row.
 - Leaves raw Arabic, title, original book source, rights, content type, publication status, role visibility, audio, Bengali translation/pronunciation, and patient plans entirely unchanged.
 - Does **not** mark any excerpt `verified`, publish any text, or create canonical `quran` records.
