@@ -33,6 +33,7 @@ void main() {
       canBulkSubmitDraftForReview(item(visibility: 'patient_only')),
       isFalse,
     );
+    expect(canBulkSubmitDraftForReview(item(visibility: 'assigned_only')), isFalse);
     expect(
       canBulkSubmitDraftForReview(item(slug: 'qa-test-internal')),
       isFalse,
