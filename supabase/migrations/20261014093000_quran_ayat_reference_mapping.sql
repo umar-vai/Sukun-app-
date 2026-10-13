@@ -2,6 +2,7 @@
 -- Source: Quran.com reference pages, cross-checked with complete 6,236-verse
 -- Hafs no-diacritic corpus (fawazahmed0/quran-api, King Fahad Quran Complex).
 -- 99 source excerpts: do NOT modify Arabic, editorial title, rights, status or visibility.
+-- ayah_end_number intentionally untouched for editorial article records.
 -- 001 (Isti'adhah + Basmala) and 047 (isolated Basmala) deliberately excluded.
 -- Rows are protected by original text MD5 so concurrent edits are not overwritten.
 -- Review remains human-required; not a religious/publication verification.
@@ -111,7 +112,13 @@ update public.content_items as ci
 set
   surah_number = r.surah,
   ayah_number = r.first_ayah,
-  ayah_end_number = r.last_ayah,
+  -- Article excerpts are NOT canonical quran records. Keep the strict
+  -- content_items_ayah_range constraint: only type=quran may use
+  -- ayah_end_number. Preserve the full editorial reference in reference_text.
+  reference_text = coalesce(nullif(btrim(ci.reference_text), ''), ci.source_reference, '') ||
+    ' | Quran.com ayah reference (editorial metadata; verification pending): ' ||
+    r.surah::text || ':' || r.first_ayah::text ||
+    case when r.last_ayah > r.first_ayah then '-' || r.last_ayah::text else '' end,
   source_url = coalesce(ci.source_url, 'https://quran.com/' || r.surah || '/' || r.first_ayah),
   verification_status = 'pending',
   updated_at = now()
@@ -123,4 +130,6 @@ where ci.slug = r.slug
   and ci.title like '%সূত্র যাচাই প্রয়োজন%'
   and ci.surah_number is null
   and ci.ayah_number is null
+  and ci.ayah_end_number is null
+  and coalesce(ci.reference_text, '') not like '%Quran.com ayah reference (editorial metadata;%'
   and md5(ci.arabic_text) = r.original_arabic_md5;
