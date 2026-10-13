@@ -8,7 +8,7 @@ AdminContentItem resource({
   String visibility = 'staff_only',
   String title = 'Reviewed material',
   String status = 'draft',
-  String? rights = 'Owner approved',
+  String? rights = 'Sukun Life owner attested app-use rights on 2026-10-12. Attribution preserved.',
   String? source = 'Book source',
 }) => AdminContentItem(
   id: 'item',
@@ -40,6 +40,7 @@ void main() {
       isFalse,
     );
     expect(canBulkPublishReviewedResource(resource(type: 'quran')), isFalse);
+    expect(canBulkPublishReviewedResource(resource(rights: 'Unverified')), isFalse);
     expect(canBulkPublishReviewedResource(resource(rights: null)), isFalse);
     expect(canBulkPublishReviewedResource(resource(source: null)), isFalse);
     expect(
