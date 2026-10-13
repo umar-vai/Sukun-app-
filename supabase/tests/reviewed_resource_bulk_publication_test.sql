@@ -43,7 +43,7 @@ select lives_ok(
 select lives_ok(
   $$select public.save_content_item(
     p_type => 'audio', p_title => 'Untrusted Host Fixture',
-    p_slug => 'sukun-ruqyahbd-wrong-host-fixture',
+    p_slug => 'sukun-ruqyahbd-external-host',
     p_visibility => 'staff_only', p_status => 'draft',
     p_source_reference => 'Audio fixture source',
     p_rights_note => 'Owner-attested Sukun Life audio authorization (2026-10-12). Synthetic fixture.',
@@ -79,7 +79,7 @@ select results_eq(
         select id from public.content_items
         where slug in ('srg2024-guide-approved-reference',
                        'srg2024-qur-unverified-fixture',
-                       'sukun-ruqyahbd-wrong-host-fixture')
+                       'sukun-ruqyahbd-external-host')
       ),
       '00000000-0000-4000-8000-000000009737'
     )->>'published')::int$$,
@@ -97,7 +97,7 @@ select results_eq(
 select results_eq(
   $$select count(*) from public.content_items
     where slug in ('srg2024-qur-unverified-fixture',
-                   'sukun-ruqyahbd-wrong-host-fixture')
+                   'sukun-ruqyahbd-external-host')
       and status='draft' and visibility='staff_only'$$,
   array[2::bigint],
   'incomplete Ayat and untrusted audio host remain private drafts'
