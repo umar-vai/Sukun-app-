@@ -21,11 +21,10 @@ bool canBulkSubmitDraftForReview(AdminContentItem item) {
   return true;
 }
 
-List<AdminContentItem> bulkReviewCandidates(
-  List<AdminContentItem> items,
-) => List.unmodifiable(
-  items.where(canBulkSubmitDraftForReview).toList(growable: false),
-);
+List<AdminContentItem> bulkReviewCandidates(List<AdminContentItem> items) =>
+    List.unmodifiable(
+      items.where(canBulkSubmitDraftForReview).toList(growable: false),
+    );
 
 class BulkReviewResult {
   const BulkReviewResult({
