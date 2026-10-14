@@ -381,7 +381,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     final bangla = translations
         .where(
           (item) =>
-              String(item['language_name'] ?? '').toLowerCase() == 'bengali',
+              (item['language_name'] ?? '').toString().toLowerCase() == 'bengali',
         )
         .toList();
     final latin = translations
@@ -448,7 +448,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   }
 
   String _plainText(Object? value) =>
-      String(value ?? '')
+      (value ?? '').toString()
           .replaceAll(RegExp(r'<[^>]*>'), '')
           .replaceAll('&nbsp;', ' ')
           .replaceAll('&amp;', '&')
