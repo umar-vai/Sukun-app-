@@ -123,7 +123,6 @@ void main() {
 
   testWidgets('dock icon button keeps accessible action name', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -137,6 +136,7 @@ void main() {
     );
     expect(find.bySemanticsLabel('অডিও বন্ধ করুন'), findsOneWidget);
     expect(find.byType(Tooltip, skipOffstage: false), findsNothing);
+    semantics.dispose();
   });
 
   test('inline speed presets cycle without a PopupMenu route', () {
