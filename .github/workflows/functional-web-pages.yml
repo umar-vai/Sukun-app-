@@ -116,6 +116,36 @@ jobs:
           assert first.get('translations') and first['translations'][0].get('text'), 'Bengali meaning missing'
           assert first.get('audio', {}).get('url', '').startswith('https://'), 'Recitation unavailable'
           PY
+          # Verify the final chapter and a noninitial page instead of relying
+          # only on Al-Fatihah as a representative sample.
+          sleep 1
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
+            --header "apikey: $PUBLIC_STAGING_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"verses","chapter":114,"page":1}' "$endpoint" > /tmp/quran-annas.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/quran-annas.json'))
+          verses = data.get('verses', [])
+          assert len(verses) == 6, 'An-Nas must have 6 verses'
+          assert verses[0]['verse_key'] == '114:1'
+          assert verses[-1]['verse_key'] == '114:6'
+          assert all(v.get('text_uthmani') and v.get('translations', [{}])[0].get('text') for v in verses)
+          PY
+          sleep 1
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
+            --header "apikey: $PUBLIC_STAGING_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"verses","chapter":2,"page":2}' "$endpoint" > /tmp/quran-baqarah-page2.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/quran-baqarah-page2.json'))
+          verses = data.get('verses', [])
+          assert len(verses) == 50, 'Al-Baqarah page 2 must have 50 verses'
+          assert verses[0]['verse_key'] == '2:51'
+          assert verses[-1]['verse_key'] == '2:100'
+          assert data['pagination']['next_page'] == 3
+          PY
       - name: Validate full Flutter source and browser-compatible tests
         run: |
           dart format --output=none --set-exit-if-changed lib test

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
@@ -269,7 +271,9 @@ class QuranApiSurahScreen extends StatefulWidget {
 
 class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   final AudioPlayer _audio = AudioPlayer();
+  StreamSubscription<PlayerState>? _audioStateSubscription;
   final List<Map<String, dynamic>> _verses = [];
+  bool _audioLoading = false;
   String? _provider;
   String? _translationEdition;
   String? _recitationEdition;
@@ -282,6 +286,15 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   @override
   void initState() {
     super.initState();
+    _audioStateSubscription = _audio.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        if (_playingKey != null) setState(() => _playingKey = null);
+      } else if (_playingKey != null) {
+        // Reflect play/pause and buffering transitions in the verse button.
+        setState(() {});
+      }
+    });
     _nextPage();
   }
 
@@ -297,6 +310,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       _page = 0;
       _more = true;
       _playingKey = null;
+      _audioLoading = false;
       _nextPage();
     }
   }
@@ -335,6 +349,19 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     }
   }
 
+  void _startPlayback() {
+    // Awaiting play() would keep the tap handler pending for the entire ayah.
+    unawaited(
+      _audio.play().catchError((Object _, StackTrace _) {
+        if (!mounted) return;
+        setState(() => _playingKey = null);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
+      }),
+    );
+  }
+
   Future<void> _play(String verseKey, String audioUrl) async {
     final uri = Uri.tryParse(audioUrl);
     if (uri == null ||
@@ -347,24 +374,42 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
         }.contains(uri.host)) {
       return;
     }
+    if (_audioLoading) return;
+
+    setState(() => _audioLoading = true);
     try {
+      if (_playingKey == verseKey) {
+        if (_audio.playing) {
+          await _audio.pause();
+        } else {
+          // Resume the current ayah from where it was paused.
+          _startPlayback();
+        }
+        return;
+      }
+
       await _audio.stop();
       if (!mounted) return;
-      setState(() => _playingKey = verseKey);
       await _audio.setUrl(audioUrl);
-      _audio.play();
+      if (!mounted) return;
+      setState(() => _playingKey = verseKey);
+      _startPlayback();
     } catch (_) {
       if (mounted) {
+        setState(() => _playingKey = null);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
       }
+    } finally {
+      if (mounted) setState(() => _audioLoading = false);
     }
   }
 
   @override
   void dispose() {
-    _audio.dispose();
+    unawaited(_audioStateSubscription?.cancel());
+    unawaited(_audio.dispose());
     super.dispose();
   }
 
@@ -429,11 +474,15 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
                 const Spacer(),
                 if (audioUrl != null)
                   IconButton(
-                    tooltip: 'তিলাওয়াত শুনুন',
-                    onPressed: () => _play(key, audioUrl),
+                    tooltip: _playingKey == key && _audio.playing
+                        ? 'তিলাওয়াত বিরতি দিন'
+                        : 'তিলাওয়াত শুনুন',
+                    onPressed: _audioLoading
+                        ? null
+                        : () => _play(key, audioUrl),
                     icon: Icon(
-                      _playingKey == key
-                          ? Icons.replay
+                      _playingKey == key && _audio.playing
+                          ? Icons.pause_circle_outline
                           : Icons.play_circle_outline,
                     ),
                   ),
