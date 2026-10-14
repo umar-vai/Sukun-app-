@@ -114,7 +114,7 @@ void main() {
       of: find.byType(AudioDockPositioner),
       matching: find.byType(Align),
     );
-    expect(tester.getSize(align).height, lessThan(70));
+    expect(tester.getSize(align.first).height, lessThan(70));
 
     await tester.tap(find.text('Under dock'));
     expect(clickedUnderDock, isTrue);
