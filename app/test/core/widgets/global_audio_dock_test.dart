@@ -69,6 +69,111 @@ void main() {
     expect(tester.getRect(layout).bottom, 766);
   });
 
+  testWidgets(
+    'expanded seek slider stays compact instead of filling viewport',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      Duration? seekTarget;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                const SizedBox.expand(),
+                AudioDockPositioner(
+                  child: Material(
+                    color: Colors.white,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          height: 56,
+                          child: Text('Playing audio'),
+                        ),
+                        AudioDockSeekSlider(
+                          duration: const Duration(seconds: 120),
+                          position: const Duration(seconds: 30),
+                          onSeek: (value) => seekTarget = value,
+                        ),
+                        const SizedBox(
+                          height: 54,
+                          child: Text('Previous · Speed · Next'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final outerAlign = find.descendant(
+        of: find.byType(AudioDockPositioner),
+        matching: find.byType(Align),
+      );
+      expect(tester.getSize(outerAlign.first).height, 150);
+      expect(tester.getSize(find.byType(Slider)).height, 40);
+      expect(tester.getRect(outerAlign.first).top, greaterThan(700));
+
+      await tester.drag(find.byType(Slider), const Offset(100, 0));
+      await tester.pump();
+      expect(seekTarget, isNotNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('expanded seek slider stays bounded on a mobile viewport', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MediaQuery(
+            data: const MediaQueryData(size: Size(390, 844)),
+            child: Stack(
+              children: [
+                const SizedBox.expand(),
+                AudioDockPositioner(
+                  child: Material(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          height: 56,
+                          child: Text('Playing audio'),
+                        ),
+                        AudioDockSeekSlider(
+                          duration: Duration.zero,
+                          position: Duration.zero,
+                          onSeek: (_) {},
+                        ),
+                        const SizedBox(height: 54, child: Text('Controls')),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.getSize(find.byType(Slider)).height, 40);
+    final outerAlign = find.descendant(
+      of: find.byType(AudioDockPositioner),
+      matching: find.byType(Align),
+    );
+    expect(tester.getSize(outerAlign.first).height, 150);
+    expect(tester.getRect(outerAlign.first).bottom, 766);
+  });
+
   testWidgets('hovering dock controls never creates a tooltip overlay', (
     tester,
   ) async {
