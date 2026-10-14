@@ -45,13 +45,16 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: Stack(
-            children: [
-              SizedBox.expand(),
-              AudioDockPositioner(
-                child: SizedBox(height: 160, child: Text('Expanded audio')),
-              ),
-            ],
+          body: MediaQuery(
+            data: MediaQueryData(size: Size(390, 844)),
+            child: Stack(
+              children: [
+                SizedBox.expand(),
+                AudioDockPositioner(
+                  child: SizedBox(height: 160, child: Text('Expanded audio')),
+                ),
+              ],
+            ),
           ),
         ),
       ),
