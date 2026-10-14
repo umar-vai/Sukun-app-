@@ -6,6 +6,35 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
 
+/// Keep the player constrained to its *content height*. A Positioned widget
+/// anchored only by bottom/left/right gives its child almost the full screen
+/// height; a default Center expands to that height and can cover the app with
+/// a giant invisible/grey overlay around the small audio controls.
+class AudioDockPositioner extends StatelessWidget {
+  const AudioDockPositioner({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom +
+        (MediaQuery.sizeOf(context).width < 700 ? 78.0 : 12.0);
+    return Positioned(
+      bottom: bottom,
+      left: 12,
+      right: 12,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// Mounted above the router so playback survives navigation (including when
 /// the original audio/ayah screen is disposed). Stays above mobile bottom nav.
 class GlobalAudioDock extends ConsumerStatefulWidget {
@@ -29,17 +58,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
         unawaited(controller.stopAndClear());
       }
     });
-    final size = MediaQuery.sizeOf(context);
-    final bottom =
-        MediaQuery.paddingOf(context).bottom + (size.width < 700 ? 78.0 : 12.0);
-    return Positioned(
-      bottom: bottom,
-      left: 12,
-      right: 12,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: AnimatedBuilder(
+    return AudioDockPositioner(
+      child: AnimatedBuilder(
             animation: controller,
             builder: (context, _) {
               if (!controller.hasSelection) return const SizedBox.shrink();
@@ -192,39 +212,13 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                           Icons.skip_previous_rounded,
                                         ),
                                       ),
-                                      PopupMenuButton<double>(
-                                        tooltip: 'প্লেব্যাক গতি',
-                                        onSelected: (speed) => unawaited(
-                                          controller.setSpeed(speed),
+                                      TextButton(
+                                        onPressed: () => unawaited(
+                                          controller.setSpeed(
+                                            nextAudioPlaybackSpeed(player.speed),
+                                          ),
                                         ),
-                                        itemBuilder: (_) => const [
-                                          PopupMenuItem(
-                                            value: 0.75,
-                                            child: Text('0.75×'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 1.0,
-                                            child: Text('1×'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 1.25,
-                                            child: Text('1.25×'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 1.5,
-                                            child: Text('1.5×'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 2.0,
-                                            child: Text('2×'),
-                                          ),
-                                        ],
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                          ),
-                                          child: Text('${player.speed}×'),
-                                        ),
+                                        child: Text('${player.speed}×'),
                                       ),
                                       IconButton(
                                         tooltip: isSequence
@@ -258,12 +252,18 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                 ),
               );
             },
-          ),
-        ),
       ),
     );
   }
 
   String _format(Duration d) =>
       '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+}
+
+/// A compact, keyboard-accessible speed action with no floating popup menu.
+/// Cycling presets avoids creating a second full-screen overlay on Flutter Web.
+double nextAudioPlaybackSpeed(double current) {
+  const presets = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
+  final index = presets.indexWhere((speed) => (speed - current).abs() < 0.01);
+  return presets[(index + 1) % presets.length];
 }
