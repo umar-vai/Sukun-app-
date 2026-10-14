@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
@@ -17,9 +20,16 @@ import 'package:sukun_life/features/resources/domain/video_navigation.dart';
 /// A separate destination for a published-resource category, not an inline
 /// filter below the hub's grid. The same surface works for guests and patients.
 class ResourceCategoryScreen extends ConsumerStatefulWidget {
-  const ResourceCategoryScreen({super.key, required this.section});
+  const ResourceCategoryScreen({
+    super.key,
+    required this.section,
+    this.loadAudioResource,
+  });
 
   final ResourceSection section;
+
+  /// Lets widget tests verify navigation without requesting remote audio.
+  final Future<void> Function(LinkedResource)? loadAudioResource;
 
   @override
   ConsumerState<ResourceCategoryScreen> createState() =>
@@ -83,6 +93,22 @@ class _ResourceCategoryScreenState
   }
 
   void _openResource(ContentResource resource) {
+    // A playable audio tile opens the existing full player immediately,
+    // without visiting the source/listen intermediary. Only resources
+    // returned by this role-filtered repository list reach this action.
+    if (resource.type == 'audio' &&
+        resolveResourceMedia(resource.linkedResource)?.kind ==
+            ResourceMediaKind.audio) {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => AudioPlayerScreen(
+            resource: resource.linkedResource,
+            loadResource: widget.loadAudioResource,
+          ),
+        ),
+      );
+      return;
+    }
     // A video tile is itself the playback action. Do not route through an
     // intermediate resource detail page that requires a second tap.
     if (opensYoutubePlayerDirectly(resource)) {
