@@ -264,6 +264,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   bool _more = true;
   String? _error;
   String? _playingKey;
+  int? _bengaliTranslationId;
   int _page = 0;
 
   @override
@@ -306,6 +307,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       final nextPage = pagination is Map ? pagination['next_page'] : null;
       setState(() {
         _verses.addAll(next);
+        _bengaliTranslationId = result['translation_id'] as int?;
         _page += 1;
         _more = nextPage is num && nextPage > _page;
       });
@@ -381,8 +383,10 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     final bangla = translations
         .where(
           (item) =>
+              item['resource_id'] == _bengaliTranslationId &&
+                  _bengaliTranslationId != null ||
               (item['language_name'] ?? '').toString().toLowerCase() ==
-              'bengali',
+                  'bengali',
         )
         .toList();
     final latin = translations
