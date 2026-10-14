@@ -248,6 +248,10 @@ Deno.serve(async (request: Request) => {
       );
     }
     const { auth, api, env } = upstreamEnvironment();
+    // Type narrowing at the point of the production-only QF request.
+    if (!id || !secret) {
+      throw new Error("Quran Foundation credentials missing");
+    }
     const c = { id, secret, auth, api };
     if (data?.action === "chapters") {
       const response = await contentGet("chapters?language=bn", c);
