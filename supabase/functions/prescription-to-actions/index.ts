@@ -95,10 +95,16 @@ Deno.serve(async (request) => {
     });
     const { data: existing } = await adminClient
       .from("ai_generation_requests")
-      .select("requested_by,status,normalized_result")
+      .select(
+        "requested_by,care_plan_id,prescription_id,status,normalized_result",
+      )
       .eq("request_id", input.requestId).maybeSingle();
     if (existing) {
-      if (existing.requested_by !== user.id) {
+      if (
+        existing.requested_by !== user.id ||
+        existing.care_plan_id !== input.carePlanId ||
+        existing.prescription_id !== input.prescriptionId
+      ) {
         return jsonResponse({ code: "request_conflict" }, 409);
       }
       if (existing.status === "processing") {

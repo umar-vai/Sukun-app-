@@ -31,7 +31,10 @@ const timeWindows = new Set([
   "anytime",
 ]);
 
-export function normalizeSuggestedActions(value: unknown): unknown {
+export function normalizeSuggestedActions(
+  value: unknown,
+  originalPrescriptionText?: string,
+): unknown {
   if (!isObject(value) || !Array.isArray(value.actions)) return value;
 
   return {
@@ -61,10 +64,12 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         missing.push("title");
       }
 
-      const sourceEvidence = typeof action.source_evidence === "string" &&
-          action.source_evidence.trim()
-        ? action.source_evidence
-        : "[verify against original prescription]";
+      const quotedEvidence = typeof action.source_evidence === "string"
+        ? action.source_evidence.trim()
+        : "";
+      const sourceEvidence = quotedEvidence ||
+        "[verify against original prescription]";
+      if (!quotedEvidence) missing.push("source_evidence");
 
       const normalized = {
         ...action,
@@ -95,7 +100,7 @@ export function normalizeSuggestedActions(value: unknown): unknown {
           : 0,
         needs_review: action.needs_review === true || missing.length > 0,
         ambiguities: Array.isArray(action.ambiguities)
-          ? [...action.ambiguities]
+          ? action.ambiguities.filter((item) => typeof item === "string")
           : [],
       } as Record<string, unknown>;
 
@@ -117,22 +122,46 @@ export function normalizeSuggestedActions(value: unknown): unknown {
         if (!Object.hasOwn(action, key)) missing.push(key);
       }
 
+      const reviewReasons = normalized.ambiguities as string[];
       if (missing.length > 0) {
         normalized.needs_review = true;
-        const ambiguities = Array.isArray(normalized.ambiguities)
-          ? normalized.ambiguities.filter((item) => typeof item === "string")
-          : [];
-        ambiguities.push(
-          `AI omitted metadata fields: ${
+        reviewReasons.push(
+          `AI omitted or left empty metadata fields: ${
             [...new Set(missing)].join(", ")
           }. Verify against the original prescription.`,
         );
-        normalized.ambiguities = ambiguities;
       }
-
+      // Model-provided excerpts are never a substitute for source evidence.
+      // Keep the suggestion usable as a draft, but flag any unsupported quote
+      // rather than pretending it was present in the clinical instruction.
+      if (
+        originalPrescriptionText !== undefined && quotedEvidence &&
+        !normalizedEvidence(originalPrescriptionText).includes(
+          normalizedEvidence(quotedEvidence),
+        )
+      ) {
+        normalized.needs_review = true;
+        normalized.confidence = Math.min(
+          typeof normalized.confidence === "number" ? normalized.confidence : 0,
+          0.5,
+        );
+        reviewReasons.push(
+          "AI source quotation was not found in the original prescription. Verify this action before approval.",
+        );
+      }
+      if (action.needs_review === true && reviewReasons.length === 0) {
+        reviewReasons.push(
+          "AI marked this action uncertain. Verify against the original prescription.",
+        );
+      }
+      normalized.ambiguities = [...new Set(reviewReasons)];
       return normalized;
     }),
   };
+}
+
+function normalizedEvidence(value: string): string {
+  return value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 export function parseSuggestedActions(value: unknown): SuggestedActions {
