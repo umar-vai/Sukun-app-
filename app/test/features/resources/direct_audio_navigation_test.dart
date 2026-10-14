@@ -26,30 +26,37 @@ void main() {
     expect(isDirectPlayableAudio(audio), isTrue);
   });
 
-  test('valid audio attachment also opens the player for another content type', () {
-    final audio = exampleResource(
-      type: 'guide',
-      mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://files.ruqyahbd.org/test.mp3',
-    );
-    expect(isDirectPlayableAudio(audio), isTrue);
-  });
+  test(
+    'valid audio attachment also opens the player for another content type',
+    () {
+      final audio = exampleResource(
+        type: 'guide',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://files.ruqyahbd.org/test.mp3',
+      );
+      expect(isDirectPlayableAudio(audio), isTrue);
+    },
+  );
 
   test('PDF, invalid or insecure links still use the normal detail page', () {
     expect(
-      isDirectPlayableAudio(exampleResource(
-        type: 'guide',
-        mediaSourceType: 'external_pdf',
-        mediaUrl: 'https://example.org/file.pdf',
-      )),
+      isDirectPlayableAudio(
+        exampleResource(
+          type: 'guide',
+          mediaSourceType: 'external_pdf',
+          mediaUrl: 'https://example.org/file.pdf',
+        ),
+      ),
       isFalse,
     );
     expect(
-      isDirectPlayableAudio(exampleResource(
-        type: 'audio',
-        mediaSourceType: 'direct_audio_url',
-        mediaUrl: 'http://example.org/audio.mp3',
-      )),
+      isDirectPlayableAudio(
+        exampleResource(
+          type: 'audio',
+          mediaSourceType: 'direct_audio_url',
+          mediaUrl: 'http://example.org/audio.mp3',
+        ),
+      ),
       isFalse,
     );
     expect(isDirectPlayableAudio(exampleResource(type: 'audio')), isFalse);
