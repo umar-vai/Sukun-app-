@@ -90,6 +90,7 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
             .map((item) => Map<String, dynamic>.from(item))
             .toList(growable: false);
         final isPrelive = snapshot.data?['environment'] == 'prelive';
+        final openSource = snapshot.data?['provider'] == 'Al Quran Cloud';
         return RefreshIndicator(
           onRefresh: () async {
             _retry();
@@ -104,9 +105,18 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'কুরআন Foundation থেকে সূরার নাম, আরবি আয়াত, অনুবাদ ও অনুমোদিত অডিও আনা হয়।',
+                'সূরার নাম ও আয়াত API থেকে আনা হয়; কুরআন পাঠ বা অডিও এই অ্যাপে সংরক্ষণ করা হয় না।',
               ),
               const SizedBox(height: 16),
+              if (openSource)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Text(
+                      '১১৪টি সূরার জন্য আপাতত Al Quran Cloud-এর API ব্যবহার করা হচ্ছে। আরবি পাঠ, মুহিউদ্দীন খানের বাংলা অনুবাদ এবং মিশারী আল-আফাসীর তিলাওয়াতের উৎস ও স্বত্ব তাঁদের নিজ নিজ প্রকাশক ও রিসাইটারের। Quran Foundation-এর পূর্ণ Production API অনুমোদন পাওয়া গেলে সেটি ব্যবহার করা যাবে।',
+                    ),
+                  ),
+                ),
               if (isPrelive)
                 const Card(
                   child: Padding(
@@ -260,6 +270,9 @@ class QuranApiSurahScreen extends StatefulWidget {
 class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   final AudioPlayer _audio = AudioPlayer();
   final List<Map<String, dynamic>> _verses = [];
+  String? _provider;
+  String? _translationEdition;
+  String? _recitationEdition;
   bool _loading = false;
   bool _more = true;
   String? _error;
@@ -278,6 +291,9 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     if (oldWidget.surahNumber != widget.surahNumber) {
       _audio.stop();
       _verses.clear();
+      _provider = null;
+      _translationEdition = null;
+      _recitationEdition = null;
       _page = 0;
       _more = true;
       _playingKey = null;
@@ -306,6 +322,9 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       final nextPage = pagination is Map ? pagination['next_page'] : null;
       setState(() {
         _verses.addAll(next);
+        _provider = result['provider'] as String? ?? 'Quran Foundation';
+        _translationEdition = result['translation_name'] as String?;
+        _recitationEdition = result['recitation_name'] as String?;
         _page += 1;
         _more = nextPage is num && nextPage > _page;
       });
@@ -320,7 +339,12 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     final uri = Uri.tryParse(audioUrl);
     if (uri == null ||
         uri.scheme != 'https' ||
-        !{'verses.quran.foundation', 'audio.qurancdn.com'}.contains(uri.host)) {
+        !{
+          'verses.quran.foundation',
+          'audio.qurancdn.com',
+          'cdn.islamic.network',
+          'cdn.alquran.cloud',
+        }.contains(uri.host)) {
       return;
     }
     try {
@@ -350,10 +374,13 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     body: ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
       children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
           child: Text(
-            'আরবি মূল পাঠ ও বাংলা অনুবাদ Quran Foundation থেকে আসে। যাচাইকৃত বাংলা হরফের উচ্চারণ পাওয়া না গেলে অনুমান করে যোগ করা হয় না।',
+            'উৎস: ${_provider ?? 'API সংযোগ'}। '
+            '${_translationEdition == null ? '' : 'অনুবাদ: $_translationEdition। '}'
+            '${_recitationEdition == null ? '' : 'তিলাওয়াত: $_recitationEdition। '}'
+            'যাচাইকৃত বাংলা হরফের উচ্চারণ পাওয়া না গেলে অনুমান করে যোগ করা হয় না।',
           ),
         ),
         for (final verse in _verses) _verseCard(context, verse),
@@ -384,9 +411,6 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
               (item['language_name'] ?? '').toString().toLowerCase() ==
               'bengali',
         )
-        .toList();
-    final latin = translations
-        .where((item) => item['resource_id'] == 57)
         .toList();
     final arabic = verse['text_uthmani'] as String? ?? '';
     final audio = verse['audio'];
@@ -434,13 +458,6 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
                   'অনুবাদ: ${bangla.first['resource_name']}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-            ],
-            if (latin.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                'ল্যাটিন উচ্চারণ: ${_plainText(latin.first['text'])}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
             ],
           ],
         ),
