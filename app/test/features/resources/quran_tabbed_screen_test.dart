@@ -14,7 +14,7 @@ void main() {
     expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
 
     await tester.tap(find.text('রুকইয়াহ আয়াত'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('রুকইয়াহ আয়াত ও অংশ'), findsOneWidget);
   });
 }
