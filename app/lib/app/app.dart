@@ -19,7 +19,7 @@ class SukunLifeApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) =>
-          Stack(children: [if (child != null) child, const GlobalAudioDock()]),
+          Stack(children: [?child, const GlobalAudioDock()]),
     );
   }
 }
