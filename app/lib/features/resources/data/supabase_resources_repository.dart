@@ -32,7 +32,11 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
           var request = _client
               .from('content_items')
               .select(_browseSelection)
-              .eq('status', 'published');
+              // Book-derived ayah excerpts are shown exclusively under the
+              // Quran > Ruqyah Ayat tab. Preserve original item IDs and Admin
+              // CMS editing; this is presentation filtering, not data deletion.
+              .eq('status', 'published')
+              .not('slug', 'like', 'srg2024-qur-%');
           if (types.isNotEmpty) {
             request = request.inFilter('type', types.toList(growable: false));
           }
