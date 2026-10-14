@@ -41,6 +41,7 @@ import 'package:sukun_life/features/resources/presentation/resource_detail_scree
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
+import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -142,7 +143,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'quran',
-            builder: (context, state) => const QuranBrowserScreen(),
+            builder: (context, state) => const QuranTabbedScreen(),
             routes: [
               GoRoute(
                 path: 'collections',
@@ -158,7 +159,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: ':surahNumber',
-                builder: (context, state) => QuranSurahScreen(
+                builder: (context, state) => QuranApiSurahScreen(
                   surahNumber: int.parse(state.pathParameters['surahNumber']!),
                 ),
               ),
