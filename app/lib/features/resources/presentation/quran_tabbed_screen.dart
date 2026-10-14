@@ -352,7 +352,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   void _startPlayback() {
     // Awaiting play() would keep the tap handler pending for the entire ayah.
     unawaited(
-      _audio.play().catchError((Object _, StackTrace __) {
+      _audio.play().catchError((Object _, StackTrace _) {
         if (!mounted) return;
         setState(() => _playingKey = null);
         ScaffoldMessenger.of(
