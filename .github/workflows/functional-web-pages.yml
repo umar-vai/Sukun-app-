@@ -81,6 +81,41 @@ jobs:
         shell: bash
         run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
 
+      - name: Smoke test 114 Quran surahs and streamed Bengali verses in STAGING
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PUBLIC_STAGING_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+        run: |
+          set -euo pipefail
+          endpoint=https://qacklgqvxvjjzsimjoip.supabase.co/functions/v1/quran-content
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
+            --header "apikey: $PUBLIC_STAGING_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"chapters"}' "$endpoint" > /tmp/quran-chapters.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/quran-chapters.json'))
+          chapters = data.get('chapters', [])
+          assert data.get('provider') == 'Al Quran Cloud', 'Staging source attribution is missing'
+          assert len(chapters) == 114, f'Expected 114 surahs, got {len(chapters)}'
+          assert chapters[0]['id'] == 1 and chapters[-1]['id'] == 114
+          PY
+          sleep 1
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
+            --header "apikey: $PUBLIC_STAGING_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"verses","chapter":1,"page":1}' "$endpoint" > /tmp/quran-fatiha.json
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/quran-fatiha.json'))
+          verses = data.get('verses', [])
+          assert len(verses) == 7, f'Expected 7 verses in Al-Fatihah, got {len(verses)}'
+          first = verses[0]
+          assert first.get('text_uthmani'), 'Arabic text is missing'
+          assert first.get('translations') and first['translations'][0].get('text'), 'Bengali meaning missing'
+          assert first.get('audio', {}).get('url', '').startswith('https://'), 'Recitation unavailable'
+          PY
       - name: Validate full Flutter source and browser-compatible tests
         run: |
           dart format --output=none --set-exit-if-changed lib test
@@ -100,6 +135,7 @@ jobs:
             test/features/home/member_session_logout_layout_test.dart \
             test/features/islamic_utilities/compass_web_fallback_test.dart \
             test/features/resources/resources_home_screen_test.dart \
+            test/features/resources/quran_tabbed_screen_test.dart \
             test/features/resources/resource_category_search_test.dart \
             test/features/resources/resource_preview_unavailable_test.dart \
             test/features/patient_care/patient_notifications_screen_test.dart \

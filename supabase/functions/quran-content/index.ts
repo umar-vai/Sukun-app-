@@ -106,6 +106,117 @@ async function contentGet(
   }
   throw new Error("Quran Foundation authorization failed");
 }
+
+/** Staging fallback until Quran Foundation grants full production access.
+ * Text, translation and recitation are streamed from Al Quran Cloud;
+ * edition credits must be presented by the Flutter client.
+ * https://alquran.cloud/terms-and-conditions
+ */
+async function openQuranGet(path: string): Promise<any> {
+  const response = await fetch("https://api.alquran.cloud/v1/" + path, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(18000),
+  });
+  if (!response.ok) {
+    throw new Error("Open Quran upstream HTTP " + response.status);
+  }
+  const json = await response.json();
+  if (json?.code !== 200 || json?.status !== "OK") {
+    throw new Error("Invalid open Quran upstream response");
+  }
+  return json.data;
+}
+
+async function openQuranResponse(body: any) {
+  if (body?.action === "chapters") {
+    const chapters = await openQuranGet("surah");
+    if (!Array.isArray(chapters) || chapters.length !== 114) {
+      throw new Error("Open Quran service did not return all 114 chapters");
+    }
+    return {
+      chapters: chapters.map((c: any) => ({
+        id: Number(c.number),
+        name_simple: String(c.englishName ?? ""),
+        name_arabic: String(c.name ?? ""),
+        verses_count: Number(c.numberOfAyahs),
+      })),
+      environment: "staging-public-source",
+      provider: "Al Quran Cloud",
+    };
+  }
+  if (body?.action === "verses") {
+    const chapter = Number(body.chapter);
+    const page = Number(body.page ?? 1);
+    if (
+      !Number.isInteger(chapter) || chapter < 1 || chapter > 114 ||
+      !Number.isInteger(page) || page < 1 || page > 20
+    ) {
+      return { error: "Invalid surah or page", code: "bad_input" };
+    }
+    const editions = await openQuranGet(
+      "surah/" + chapter + "/editions/quran-uthmani,bn.bengali,ar.alafasy",
+    );
+    if (!Array.isArray(editions) || editions.length !== 3) {
+      throw new Error("Quran editions are unavailable");
+    }
+    const [ar, bn, rec] = editions;
+    const a = ar?.ayahs, b = bn?.ayahs, c = rec?.ayahs;
+    if (
+      !Array.isArray(a) || !Array.isArray(b) ||
+      !Array.isArray(c) || !a.length ||
+      a.length !== b.length || a.length !== c.length
+    ) {
+      throw new Error("Quran editions have mismatched verse counts");
+    }
+    const start = (page - 1) * 50;
+    const stop = Math.min(a.length, start + 50);
+    const translationName = String(bn?.edition?.name ?? "Bengali translation");
+    const recitationName = String(rec?.edition?.name ?? "Mishary Alafasy");
+    const verses = [];
+    for (let i = start; i < stop; i++) {
+      const n = Number(a[i]?.numberInSurah);
+      if (
+        !Number.isInteger(n) || n !== Number(b[i]?.numberInSurah) ||
+        n !== Number(c[i]?.numberInSurah)
+      ) {
+        throw new Error("Quran verses are not aligned");
+      }
+      let audio: { url: string } | null = null;
+      if (typeof c[i]?.audio === "string") {
+        const u = new URL(c[i].audio);
+        if (
+          u.protocol === "https:" &&
+          ["cdn.islamic.network", "cdn.alquran.cloud"].includes(u.hostname)
+        ) {
+          audio = { url: u.toString() };
+        }
+      }
+      verses.push({
+        verse_key: chapter + ":" + n,
+        text_uthmani: String(a[i]?.text ?? ""),
+        translations: [{
+          language_name: "Bengali",
+          resource_name: translationName,
+          text: String(b[i]?.text ?? ""),
+        }],
+        audio,
+      });
+    }
+    return {
+      verses,
+      pagination: {
+        current_page: page,
+        next_page: stop < a.length ? page + 1 : null,
+      },
+      translation_name: translationName,
+      recitation_name: recitationName,
+      environment: "staging-public-source",
+      provider: "Al Quran Cloud",
+    };
+  }
+  return { error: "Unsupported action", code: "bad_input" };
+}
+
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("origin");
   if (request.method === "OPTIONS") {
@@ -116,7 +227,7 @@ Deno.serve(async (request: Request) => {
   }
   const id = Deno.env.get("QF_CLIENT_ID");
   const secret = Deno.env.get("QF_CLIENT_SECRET");
-  if (!id || !secret) {
+  if (Deno.env.get("QF_ENV") === "production" && (!id || !secret)) {
     return respond(503, {
       error: "Quran Foundation integration not configured",
       code: "qf_not_configured",
@@ -125,7 +236,32 @@ Deno.serve(async (request: Request) => {
 
   try {
     const data = await request.json();
+    // Quran Foundation prelive exposes only two chapters. Use the explicit
+    // attributed public provider for the full 114-chapter staging reader.
+    // Production mode always uses Quran Foundation credentials instead.
+    if (Deno.env.get("QF_ENV") !== "production") {
+      // Do not allow the development-only public provider in the live patient
+      // production project even if someone deploys this function by mistake.
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      if (supabaseUrl.includes("vydfafumxptanpkmtrpr")) {
+        return respond(
+          503,
+          { error: "Production Quran API is not configured" },
+          origin,
+        );
+      }
+      const dataOut = await openQuranResponse(data);
+      return respond(
+        dataOut?.code === "bad_input" ? 400 : 200,
+        dataOut,
+        origin,
+      );
+    }
     const { auth, api, env } = upstreamEnvironment();
+    // Type narrowing at the point of the production-only QF request.
+    if (!id || !secret) {
+      throw new Error("Quran Foundation credentials missing");
+    }
     const c = { id, secret, auth, api };
     if (data?.action === "chapters") {
       const response = await contentGet("chapters?language=bn", c);
