@@ -60,188 +60,187 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
       }
     });
     return AudioDockPositioner(
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          if (!controller.hasSelection) return const SizedBox.shrink();
-          final player = controller.player;
-          final playing = player.playing;
-          final isSequence = controller.isQuranSequence;
-          final verse = controller.currentVerseKey;
-          return Material(
-            elevation: 12,
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: SukunColors.deepTide.withValues(alpha: 0.18),
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(
-                    value:
-                        player.duration == null ||
-                            player.duration!.inMilliseconds == 0
-                        ? null
-                        : (player.position.inMilliseconds /
-                                  player.duration!.inMilliseconds)
-                              .clamp(0, 1),
-                    minHeight: 3,
-                    color: SukunColors.deepTide,
-                    backgroundColor: SukunColors.softBlue,
+      child: TooltipVisibility(
+        visible: false,
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            if (!controller.hasSelection) return const SizedBox.shrink();
+            final player = controller.player;
+            final playing = player.playing;
+            final isSequence = controller.isQuranSequence;
+            final verse = controller.currentVerseKey;
+            return Material(
+              elevation: 12,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: SukunColors.deepTide.withValues(alpha: 0.18),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.graphic_eq_rounded,
-                          color: SukunColors.deepTide,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                controller.currentTitle ?? 'অডিও',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                verse == null
-                                    ? 'শুনছেন'
-                                    : (isSequence
-                                          ? '$verse · ${controller.currentVerseIndex + 1}/${controller.quranVerseCount}'
-                                          : verse),
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(
+                      value:
+                          player.duration == null ||
+                              player.duration!.inMilliseconds == 0
+                          ? null
+                          : (player.position.inMilliseconds /
+                                    player.duration!.inMilliseconds)
+                                .clamp(0, 1),
+                      minHeight: 3,
+                      color: SukunColors.deepTide,
+                      backgroundColor: SukunColors.softBlue,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.graphic_eq_rounded,
+                            color: SukunColors.deepTide,
                           ),
-                        ),
-                        IconButton(
-                          tooltip: playing ? 'বিরতি' : 'চালু করুন',
-                          onPressed: playing
-                              ? () => unawaited(controller.pause())
-                              : controller.resumeCurrent,
-                          icon: Icon(
-                            playing
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  controller.currentTitle ?? 'অডিও',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  verse == null
+                                      ? 'শুনছেন'
+                                      : (isSequence
+                                            ? '$verse · ${controller.currentVerseIndex + 1}/${controller.quranVerseCount}'
+                                            : verse),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          AudioDockIconAction(
+                            label: playing ? 'বিরতি' : 'চালু করুন',
+                            onPressed: playing
+                                ? () => unawaited(controller.pause())
+                                : controller.resumeCurrent,
+                            icon: playing
                                 ? Icons.pause_circle_filled_rounded
                                 : Icons.play_circle_fill_rounded,
+                            color: SukunColors.deepTide,
+                            iconSize: 34,
                           ),
-                          color: SukunColors.deepTide,
-                          iconSize: 34,
-                        ),
-                        IconButton(
-                          tooltip: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
-                          onPressed: () =>
-                              setState(() => _expanded = !_expanded),
-                          icon: Icon(
-                            _expanded
+                          AudioDockIconAction(
+                            label: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
+                            onPressed: () =>
+                                setState(() => _expanded = !_expanded),
+                            icon: _expanded
                                 ? Icons.keyboard_arrow_down_rounded
                                 : Icons.keyboard_arrow_up_rounded,
                           ),
-                        ),
-                        IconButton(
-                          tooltip: 'অডিও বন্ধ করুন',
-                          icon: const Icon(Icons.close_rounded, size: 19),
-                          onPressed: () => unawaited(controller.stopAndClear()),
-                        ),
-                      ],
+                          AudioDockIconAction(
+                            label: 'অডিও বন্ধ করুন',
+                            icon: Icons.close_rounded,
+                            iconSize: 19,
+                            onPressed: () =>
+                                unawaited(controller.stopAndClear()),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (_expanded)
-                    StreamBuilder<Duration>(
-                      stream: player.positionStream,
-                      initialData: player.position,
-                      builder: (context, snapshot) {
-                        final duration = player.duration ?? Duration.zero;
-                        final position = snapshot.data ?? Duration.zero;
-                        final max = duration.inMilliseconds.toDouble();
-                        final value = position.inMilliseconds
-                            .clamp(0, duration.inMilliseconds)
-                            .toDouble();
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Slider(
-                                value: max <= 0 ? 0 : value,
-                                max: max <= 0 ? 1 : max,
-                                onChanged: max <= 0
-                                    ? null
-                                    : (v) => unawaited(
-                                        controller.seek(
-                                          Duration(milliseconds: v.round()),
+                    if (_expanded)
+                      StreamBuilder<Duration>(
+                        stream: player.positionStream,
+                        initialData: player.position,
+                        builder: (context, snapshot) {
+                          final duration = player.duration ?? Duration.zero;
+                          final position = snapshot.data ?? Duration.zero;
+                          final max = duration.inMilliseconds.toDouble();
+                          final value = position.inMilliseconds
+                              .clamp(0, duration.inMilliseconds)
+                              .toDouble();
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Slider(
+                                  value: max <= 0 ? 0 : value,
+                                  max: max <= 0 ? 1 : max,
+                                  onChanged: max <= 0
+                                      ? null
+                                      : (v) => unawaited(
+                                          controller.seek(
+                                            Duration(milliseconds: v.round()),
+                                          ),
+                                        ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(_format(position)),
+                                    const Spacer(),
+                                    AudioDockIconAction(
+                                      label: isSequence
+                                          ? 'আগের আয়াত'
+                                          : '১০ সেকেন্ড পেছনে',
+                                      onPressed: () => unawaited(
+                                        isSequence
+                                            ? controller.previous()
+                                            : controller.seek(
+                                                position -
+                                                    const Duration(seconds: 10),
+                                              ),
+                                      ),
+                                      icon: Icons.skip_previous_rounded,
+                                    ),
+                                    TextButton(
+                                      onPressed: () => unawaited(
+                                        controller.setSpeed(
+                                          nextAudioPlaybackSpeed(player.speed),
                                         ),
                                       ),
-                              ),
-                              Row(
-                                children: [
-                                  Text(_format(position)),
-                                  const Spacer(),
-                                  IconButton(
-                                    tooltip: isSequence
-                                        ? 'আগের আয়াত'
-                                        : '১০ সেকেন্ড পেছনে',
-                                    onPressed: () => unawaited(
-                                      isSequence
-                                          ? controller.previous()
-                                          : controller.seek(
-                                              position -
-                                                  const Duration(seconds: 10),
-                                            ),
+                                      child: Text('${player.speed}×'),
                                     ),
-                                    icon: const Icon(
-                                      Icons.skip_previous_rounded,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => unawaited(
-                                      controller.setSpeed(
-                                        nextAudioPlaybackSpeed(player.speed),
+                                    AudioDockIconAction(
+                                      label: isSequence
+                                          ? 'পরের আয়াত'
+                                          : '১০ সেকেন্ড সামনে',
+                                      onPressed: () => unawaited(
+                                        isSequence
+                                            ? controller.next()
+                                            : controller.seek(
+                                                position +
+                                                    const Duration(seconds: 10),
+                                              ),
                                       ),
+                                      icon: Icons.skip_next_rounded,
                                     ),
-                                    child: Text('${player.speed}×'),
-                                  ),
-                                  IconButton(
-                                    tooltip: isSequence
-                                        ? 'পরের আয়াত'
-                                        : '১০ সেকেন্ড সামনে',
-                                    onPressed: () => unawaited(
-                                      isSequence
-                                          ? controller.next()
-                                          : controller.seek(
-                                              position +
-                                                  const Duration(seconds: 10),
-                                            ),
-                                    ),
-                                    icon: const Icon(Icons.skip_next_rounded),
-                                  ),
-                                  const Spacer(),
-                                  Text(_format(duration)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                ],
+                                    const Spacer(),
+                                    Text(_format(duration)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -256,4 +255,38 @@ double nextAudioPlaybackSpeed(double current) {
   const presets = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
   final index = presets.indexWhere((speed) => (speed - current).abs() < 0.01);
   return presets[(index + 1) % presets.length];
+}
+
+/// The global dock must not create a visual Tooltip/OverlayEntry on mouse
+/// hover. Keep the button available to screen readers and keyboard users.
+class AudioDockIconAction extends StatelessWidget {
+  const AudioDockIconAction({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.color,
+    this.iconSize,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final Color? color;
+  final double? iconSize;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    button: true,
+    enabled: onPressed != null,
+    child: ExcludeSemantics(
+      child: IconButton(
+        icon: Icon(icon),
+        onPressed: onPressed,
+        color: color,
+        iconSize: iconSize,
+      ),
+    ),
+  );
 }
