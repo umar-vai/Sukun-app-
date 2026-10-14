@@ -240,6 +240,15 @@ Deno.serve(async (request: Request) => {
     // attributed public provider for the full 114-chapter staging reader.
     // Production mode always uses Quran Foundation credentials instead.
     if (Deno.env.get("QF_ENV") !== "production") {
+      // Do not allow the development-only public provider in the live patient
+      // production project even if someone deploys this function by mistake.
+      if (
+        (Deno.env.get("SUPABASE_URL") ?? "").includes(
+          "vydfafumxptanpkmtrpr",
+        )
+      ) {
+        return respond(503, { error: "Production Quran API is not configured" }, origin);
+      }
       const dataOut = await openQuranResponse(data);
       return respond(
         dataOut?.code === "bad_input" ? 400 : 200,
