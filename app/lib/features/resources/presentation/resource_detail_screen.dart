@@ -116,8 +116,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       future: _resource,
       builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              appBar: AppBar(title: Text('ইসলামিক উপকরণ')),
+            return Scaffold(
+              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
               body: AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…'),
             );
           }
@@ -132,8 +132,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           }
           final resource = snapshot.data;
           if (resource == null) {
-            return const Scaffold(
-              appBar: AppBar(title: Text('ইসলামিক উপকরণ')),
+            return Scaffold(
+              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
               body: AppEmptyState(
                 title: 'উপকরণটি পাওয়া যায়নি',
                 message:
