@@ -166,25 +166,16 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                         builder: (context, snapshot) {
                           final duration = player.duration ?? Duration.zero;
                           final position = snapshot.data ?? Duration.zero;
-                          final max = duration.inMilliseconds.toDouble();
-                          final value = position.inMilliseconds
-                              .clamp(0, duration.inMilliseconds)
-                              .toDouble();
                           return Padding(
                             padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Slider(
-                                  value: max <= 0 ? 0 : value,
-                                  max: max <= 0 ? 1 : max,
-                                  onChanged: max <= 0
-                                      ? null
-                                      : (v) => unawaited(
-                                          controller.seek(
-                                            Duration(milliseconds: v.round()),
-                                          ),
-                                        ),
+                                AudioDockSeekSlider(
+                                  duration: duration,
+                                  position: position,
+                                  onSeek: (target) =>
+                                      unawaited(controller.seek(target)),
                                 ),
                                 Row(
                                   children: [
@@ -289,4 +280,40 @@ class AudioDockIconAction extends StatelessWidget {
       ),
     ),
   );
+}
+
+/* The parent floating dock is in a Positioned/Align above the route. A raw
+ * Flutter Slider uses all available vertical space when handed loose,
+ * bounded-height constraints, rendering as a page-tall blank grey region.
+ * Give the real slider a tight height, independent of desktop viewport size.
+ */
+class AudioDockSeekSlider extends StatelessWidget {
+  const AudioDockSeekSlider({
+    required this.duration,
+    required this.position,
+    required this.onSeek,
+    super.key,
+  });
+
+  final Duration duration;
+  final Duration position;
+  final ValueChanged<Duration> onSeek;
+
+  @override
+  Widget build(BuildContext context) {
+    final max = duration.inMilliseconds.toDouble();
+    final value = position.inMilliseconds
+        .clamp(0, duration.inMilliseconds)
+        .toDouble();
+    return SizedBox(
+      height: 40,
+      child: Slider(
+        value: max <= 0 ? 0 : value,
+        max: max <= 0 ? 1 : max,
+        onChanged: max <= 0
+            ? null
+            : (v) => onSeek(Duration(milliseconds: v.round())),
+      ),
+    );
+  }
 }
