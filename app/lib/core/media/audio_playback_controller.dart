@@ -102,7 +102,8 @@ class AudioPlaybackController extends ChangeNotifier {
   LinkedResource? get resource => _resource;
   bool get hasSelection => _resource != null || _quranTitle != null;
   bool get isQuranSequence => _quranTitle != null && _quranQueue.length > 1;
-  String? get currentTitle => _quranTitle ??
+  String? get currentTitle =>
+      _quranTitle ??
       (_resource?.titleBn?.trim().isNotEmpty == true
           ? _resource!.titleBn
           : _resource?.title);
@@ -112,9 +113,9 @@ class AudioPlaybackController extends ChangeNotifier {
         ? _quranQueue[index].key
         : null;
   }
+
   int get quranVerseCount => _quranQueue.length;
   int get currentVerseIndex => _player.currentIndex ?? 0;
-
 
   /// Serialize changes of audio sources: a previous asynchronous load must
   /// never install its old stream after the listener selected another track.
@@ -246,11 +247,16 @@ class AudioPlaybackController extends ChangeNotifier {
           const AudioPlaybackException('অডিওর নিরাপদ লিংক পাওয়া যায়নি।'),
         );
       }
-      sources.add(AudioSource.uri(uri, tag: MediaItem(
-        id: verse.key,
-        title: '$title · ${verse.key}',
-        album: 'Sukun Life',
-      )));
+      sources.add(
+        AudioSource.uri(
+          uri,
+          tag: MediaItem(
+            id: verse.key,
+            title: '$title · ${verse.key}',
+            album: 'Sukun Life',
+          ),
+        ),
+      );
     }
 
     final previous = _loadQueue;
@@ -292,7 +298,9 @@ class AudioPlaybackController extends ChangeNotifier {
   void resumeCurrent() {
     if (!hasSelection) return;
     if (_player.processingState == ProcessingState.completed) {
-      unawaited(_player.seek(Duration.zero, index: 0).then((_) => _player.play()));
+      unawaited(
+        _player.seek(Duration.zero, index: 0).then((_) => _player.play()),
+      );
     } else {
       unawaited(_player.play());
     }
