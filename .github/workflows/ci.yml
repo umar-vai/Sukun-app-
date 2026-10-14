@@ -57,6 +57,27 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Temporary formatted Flutter source snapshot
+        shell: bash
+        run: |
+          dart format lib/features/resources/presentation/quran_tabbed_screen.dart lib/app/router/app_router.dart lib/features/resources/data/supabase_resources_repository.dart test/features/resources/quran_tabbed_screen_test.dart
+          echo 'FORMAT_FILE_0_BEGIN'
+          base64 -w0 lib/features/resources/presentation/quran_tabbed_screen.dart
+          echo
+          echo 'FORMAT_FILE_0_END'
+          echo 'FORMAT_FILE_1_BEGIN'
+          base64 -w0 lib/app/router/app_router.dart
+          echo
+          echo 'FORMAT_FILE_1_END'
+          echo 'FORMAT_FILE_2_BEGIN'
+          base64 -w0 lib/features/resources/data/supabase_resources_repository.dart
+          echo
+          echo 'FORMAT_FILE_2_END'
+          echo 'FORMAT_FILE_3_BEGIN'
+          base64 -w0 test/features/resources/quran_tabbed_screen_test.dart
+          echo
+          echo 'FORMAT_FILE_3_END'
+
       - name: Check formatting
         shell: bash
         run: |
@@ -111,6 +132,15 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+
+      - name: Temporary formatted Deno source snapshot
+        shell: bash
+        run: |
+          deno fmt supabase/functions/quran-content/index.ts
+          echo 'FORMAT_DENO_BEGIN'
+          base64 -w0 supabase/functions/quran-content/index.ts
+          echo
+          echo 'FORMAT_DENO_END'
 
       - name: Check Edge Function formatting
         run: deno fmt --check supabase/functions
