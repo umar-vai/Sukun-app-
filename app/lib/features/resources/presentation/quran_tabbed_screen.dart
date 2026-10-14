@@ -99,8 +99,7 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
           final number = chapter['id'];
           if (number is int) {
             _surahTitles[number] = _chapterTitle(chapter);
-            _surahArabicNames[number] =
-                chapter['name_arabic'] as String? ?? '';
+            _surahArabicNames[number] = chapter['name_arabic'] as String? ?? '';
           }
         }
         final isPrelive = snapshot.data?['environment'] == 'prelive';
@@ -323,7 +322,9 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
   Future<void> _loadTitle() async {
     if (_surahTitles.containsKey(widget.surahNumber)) return;
     try {
-      final result = await const _QuranContentApi().fetch({'action': 'chapters'});
+      final result = await const _QuranContentApi().fetch({
+        'action': 'chapters',
+      });
       final chapters = result['chapters'] as List? ?? const [];
       for (final raw in chapters) {
         if (raw is! Map) continue;
@@ -335,8 +336,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
         _surahTitles[number] = bn != null && bn.isNotEmpty
             ? bn
             : chapter['name_simple'] as String? ?? 'কুরআন';
-        _surahArabicNames[number] =
-            chapter['name_arabic'] as String? ?? '';
+        _surahArabicNames[number] = chapter['name_arabic'] as String? ?? '';
       }
       if (mounted) {
         setState(() {
@@ -367,17 +367,17 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
             curve: Curves.easeOut,
           );
         } else if (_scroll.hasClients && _verses.isNotEmpty) {
-          final index = _verses.indexWhere(
-            (v) => v['verse_key'] == playingKey,
-          );
+          final index = _verses.indexWhere((v) => v['verse_key'] == playingKey);
           if (index >= 0) {
-            final approximate = _scroll.position.maxScrollExtent *
-                index / _verses.length;
-            unawaited(_scroll.animateTo(
-              approximate.clamp(0.0, _scroll.position.maxScrollExtent),
-              duration: const Duration(milliseconds: 320),
-              curve: Curves.easeOut,
-            ));
+            final approximate =
+                _scroll.position.maxScrollExtent * index / _verses.length;
+            unawaited(
+              _scroll.animateTo(
+                approximate.clamp(0.0, _scroll.position.maxScrollExtent),
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOut,
+              ),
+            );
           }
         }
       });
@@ -518,7 +518,9 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
       await controller.loadQuran(title: _surahTitle, verses: playlist);
       if (mounted) {
         setState(() {
-          _verses..clear()..addAll(allVerses);
+          _verses
+            ..clear()
+            ..addAll(allVerses);
           _more = false;
           _page = (allVerses.length / 50).ceil();
         });
@@ -556,7 +558,9 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               if (_recitationEdition != null)
                 Text('তিলাওয়াত: $_recitationEdition'),
               const SizedBox(height: 8),
-              const Text('সকল অনুবাদ ও তিলাওয়াতের স্বত্ব সংশ্লিষ্ট প্রকাশক ও কারির।'),
+              const Text(
+                'সকল অনুবাদ ও তিলাওয়াতের স্বত্ব সংশ্লিষ্ট প্রকাশক ও কারির।',
+              ),
             ],
           ),
         ),
@@ -574,8 +578,10 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(audioPlaybackControllerProvider);
-    final sameSurahPlaying = controller.isQuranSequence &&
-        controller.currentVerseKey?.startsWith('${widget.surahNumber}:') == true &&
+    final sameSurahPlaying =
+        controller.isQuranSequence &&
+        controller.currentVerseKey?.startsWith('${widget.surahNumber}:') ==
+            true &&
         controller.player.playing;
     return Scaffold(
       appBar: AppBar(
@@ -601,18 +607,23 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_surahTitle,
-                          style: Theme.of(context).textTheme.headlineSmall),
+                        Text(
+                          _surahTitle,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                         if (_arabicTitle.isNotEmpty)
-                          Text(_arabicTitle,
-                              textDirection: TextDirection.rtl,
-                              style: const TextStyle(fontSize: 23)),
+                          Text(
+                            _arabicTitle,
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(fontSize: 23),
+                          ),
                       ],
                     ),
                   ),
                   if (_masterLoading)
                     const SizedBox(
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       child: CircularProgressIndicator(strokeWidth: 3),
                     )
                   else
@@ -622,9 +633,11 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                           : 'সম্পূর্ণ সূরা শুনুন',
                       onPressed: _verses.isEmpty ? null : _playEntireSurah,
                       iconSize: 30,
-                      icon: Icon(sameSurahPlaying
-                          ? Icons.pause_circle_filled_rounded
-                          : Icons.play_circle_fill_rounded),
+                      icon: Icon(
+                        sameSurahPlaying
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_fill_rounded,
+                      ),
                     ),
                 ],
               ),
@@ -652,16 +665,21 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
 
   Widget _verseCard(BuildContext context, Map<String, dynamic> verse) {
     final translations = (verse['translations'] as List? ?? const [])
-        .whereType<Map>().toList();
-    final bangla = translations.where((item) =>
-        (item['language_name'] ?? '').toString().toLowerCase() == 'bengali')
+        .whereType<Map>()
+        .toList();
+    final bangla = translations
+        .where(
+          (item) =>
+              (item['language_name'] ?? '').toString().toLowerCase() ==
+              'bengali',
+        )
         .toList();
     final arabic = verse['text_uthmani'] as String? ?? '';
     final audioUrl = _audioUrl(verse);
     final key = verse['verse_key'] as String? ?? '';
     final controller = ref.read(audioPlaybackControllerProvider);
-    final highlighted = controller.currentVerseKey == key &&
-        controller.player.playing;
+    final highlighted =
+        controller.currentVerseKey == key && controller.player.playing;
     return Container(
       key: _verseKeys.putIfAbsent(key, GlobalKey.new),
       child: Card(
@@ -684,8 +702,10 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                   Text(key, style: Theme.of(context).textTheme.titleMedium),
                   const Spacer(),
                   if (highlighted)
-                    const Icon(Icons.equalizer_rounded,
-                        color: Color(0xFF0A70A8)),
+                    const Icon(
+                      Icons.equalizer_rounded,
+                      color: Color(0xFF0A70A8),
+                    ),
                   if (audioUrl != null)
                     IconButton(
                       tooltip: highlighted && !controller.isQuranSequence
@@ -694,9 +714,11 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                       onPressed: _verseLoading || _masterLoading
                           ? null
                           : () => _playVerse(verse),
-                      icon: Icon(highlighted && !controller.isQuranSequence
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline),
+                      icon: Icon(
+                        highlighted && !controller.isQuranSequence
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                      ),
                     ),
                 ],
               ),
@@ -710,8 +732,10 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               ),
               if (bangla.isNotEmpty) ...[
                 const SizedBox(height: 14),
-                Text(_plainText(bangla.first['text']),
-                  style: const TextStyle(fontSize: 15, height: 1.7)),
+                Text(
+                  _plainText(bangla.first['text']),
+                  style: const TextStyle(fontSize: 15, height: 1.7),
+                ),
               ],
             ],
           ),
