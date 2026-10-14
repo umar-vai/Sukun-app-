@@ -30,10 +30,7 @@ void main() {
     );
 
     final frame = find.byType(AudioDockPositioner);
-    final layout = find.descendant(
-      of: frame,
-      matching: find.byType(Align),
-    );
+    final layout = find.descendant(of: frame, matching: find.byType(Align));
     expect(tester.getSize(layout).height, 76);
     expect(tester.getRect(layout).bottom, 888);
     expect(tester.getSize(find.byKey(const Key('mini-player'))).width, 550);
