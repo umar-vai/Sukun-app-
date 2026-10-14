@@ -60,7 +60,9 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
       }
     });
     return AudioDockPositioner(
-      child: AnimatedBuilder(
+      child: TooltipVisibility(
+        visible: false,
+        child: AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
           if (!controller.hasSelection) return const SizedBox.shrink();
@@ -128,32 +130,29 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                             ],
                           ),
                         ),
-                        IconButton(
-                          tooltip: playing ? 'বিরতি' : 'চালু করুন',
+                        AudioDockIconAction(
+                          label: playing ? 'বিরতি' : 'চালু করুন',
                           onPressed: playing
                               ? () => unawaited(controller.pause())
                               : controller.resumeCurrent,
-                          icon: Icon(
-                            playing
-                                ? Icons.pause_circle_filled_rounded
-                                : Icons.play_circle_fill_rounded,
-                          ),
+                          icon: playing
+                              ? Icons.pause_circle_filled_rounded
+                              : Icons.play_circle_fill_rounded,
                           color: SukunColors.deepTide,
                           iconSize: 34,
                         ),
-                        IconButton(
-                          tooltip: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
+                        AudioDockIconAction(
+                          label: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
                           onPressed: () =>
                               setState(() => _expanded = !_expanded),
-                          icon: Icon(
-                            _expanded
-                                ? Icons.keyboard_arrow_down_rounded
-                                : Icons.keyboard_arrow_up_rounded,
-                          ),
+                          icon: _expanded
+                              ? Icons.keyboard_arrow_down_rounded
+                              : Icons.keyboard_arrow_up_rounded,
                         ),
-                        IconButton(
-                          tooltip: 'অডিও বন্ধ করুন',
-                          icon: const Icon(Icons.close_rounded, size: 19),
+                        AudioDockIconAction(
+                          label: 'অডিও বন্ধ করুন',
+                          icon: Icons.close_rounded,
+                          iconSize: 19,
                           onPressed: () => unawaited(controller.stopAndClear()),
                         ),
                       ],
@@ -190,8 +189,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                 children: [
                                   Text(_format(position)),
                                   const Spacer(),
-                                  IconButton(
-                                    tooltip: isSequence
+                                  AudioDockIconAction(
+                                    label: isSequence
                                         ? 'আগের আয়াত'
                                         : '১০ সেকেন্ড পেছনে',
                                     onPressed: () => unawaited(
@@ -202,9 +201,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                   const Duration(seconds: 10),
                                             ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.skip_previous_rounded,
-                                    ),
+                                    icon: Icons.skip_previous_rounded,
                                   ),
                                   TextButton(
                                     onPressed: () => unawaited(
@@ -214,8 +211,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                     ),
                                     child: Text('${player.speed}×'),
                                   ),
-                                  IconButton(
-                                    tooltip: isSequence
+                                  AudioDockIconAction(
+                                    label: isSequence
                                         ? 'পরের আয়াত'
                                         : '১০ সেকেন্ড সামনে',
                                     onPressed: () => unawaited(
@@ -226,7 +223,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                   const Duration(seconds: 10),
                                             ),
                                     ),
-                                    icon: const Icon(Icons.skip_next_rounded),
+                                    icon: Icons.skip_next_rounded,
                                   ),
                                   const Spacer(),
                                   Text(_format(duration)),
@@ -242,6 +239,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -256,4 +254,38 @@ double nextAudioPlaybackSpeed(double current) {
   const presets = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
   final index = presets.indexWhere((speed) => (speed - current).abs() < 0.01);
   return presets[(index + 1) % presets.length];
+}
+
+/// The global dock must not create a visual Tooltip/OverlayEntry on mouse
+/// hover. Keep the button available to screen readers and keyboard users.
+class AudioDockIconAction extends StatelessWidget {
+  const AudioDockIconAction({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.color,
+    this.iconSize,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final Color? color;
+  final double? iconSize;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    button: true,
+    enabled: onPressed != null,
+    child: ExcludeSemantics(
+      child: IconButton(
+        icon: Icon(icon),
+        onPressed: onPressed,
+        color: color,
+        iconSize: iconSize,
+      ),
+    ),
+  );
 }
