@@ -158,7 +158,10 @@ void main() {
       expect(find.text('উপকরণটি খুলুন'), findsNothing);
       expect(find.text('অডিও শুনুন'), findsNothing);
       expect(find.text('রুকইয়াহ সাপোর্ট বিডি'), findsNothing);
-      expect(find.textContaining('Third-party rights not independently'), findsNothing);
+      expect(
+        find.textContaining('Third-party rights not independently'),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     },
   );
