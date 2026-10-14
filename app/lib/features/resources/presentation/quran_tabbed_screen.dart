@@ -355,9 +355,9 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       _audio.play().catchError((Object _, StackTrace __) {
         if (!mounted) return;
         setState(() => _playingKey = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
       }),
     );
   }
@@ -397,9 +397,9 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _playingKey = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
       }
     } finally {
       if (mounted) setState(() => _audioLoading = false);
