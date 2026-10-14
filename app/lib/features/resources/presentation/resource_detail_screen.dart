@@ -11,14 +11,22 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
 class ResourceDetailScreen extends ConsumerStatefulWidget {
-  const ResourceDetailScreen({super.key, required this.resourceId});
+  const ResourceDetailScreen({
+    super.key,
+    required this.resourceId,
+    this.loadAudioResource,
+  });
 
   final String resourceId;
+
+  /// Test seam: the production player uses the existing shared audio engine.
+  final Future<void> Function(LinkedResource)? loadAudioResource;
 
   @override
   ConsumerState<ResourceDetailScreen> createState() =>
@@ -104,29 +112,49 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         _reload();
       }
     });
-    return Scaffold(
-      appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-      body: FutureBuilder<ContentResource?>(
-        future: _resource,
-        builder: (context, snapshot) {
+    return FutureBuilder<ContentResource?>(
+      future: _resource,
+      builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…');
+            return const Scaffold(
+              appBar: AppBar(title: Text('ইসলামিক উপকরণ')),
+              body: AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…'),
+            );
           }
           if (snapshot.hasError) {
-            return AppErrorState(
-              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
-              onRetry: _reload,
+            return Scaffold(
+              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+              body: AppErrorState(
+                message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+                onRetry: _reload,
+              ),
             );
           }
           final resource = snapshot.data;
           if (resource == null) {
-            return const AppEmptyState(
-              title: 'উপকরণটি পাওয়া যায়নি',
-              message:
-                  'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
+            return const Scaffold(
+              appBar: AppBar(title: Text('ইসলামিক উপকরণ')),
+              body: AppEmptyState(
+                title: 'উপকরণটি পাওয়া যায়নি',
+                message:
+                    'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
+              ),
             );
           }
-          return ListView(
+          // A playable audio item goes straight to its full player. Retain
+          // the existing resource route so deep links, Guest/Patient RLS
+          // checks, refreshes and browser back all keep working.
+          if (resource.type == 'audio' &&
+              resolveResourceMedia(resource.linkedResource)?.kind ==
+                  ResourceMediaKind.audio) {
+            return AudioPlayerScreen(
+              resource: resource.linkedResource,
+              loadResource: widget.loadAudioResource,
+            );
+          }
+          return Scaffold(
+            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+            body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
               Wrap(
@@ -228,9 +256,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 ),
               ],
             ],
+            ),
           );
-        },
-      ),
+      },
     );
   }
 }
