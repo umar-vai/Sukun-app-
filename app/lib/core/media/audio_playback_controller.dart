@@ -381,6 +381,7 @@ class AudioPlaybackController extends ChangeNotifier {
     await _positions.write(resourceId, _player.position);
   }
 
+  @override
   Future<void> dispose() async {
     await _persistCurrentPosition();
     await _positionSubscription.cancel();
