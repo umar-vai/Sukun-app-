@@ -95,7 +95,9 @@ Deno.serve(async (request) => {
     });
     const { data: existing } = await adminClient
       .from("ai_generation_requests")
-      .select("requested_by,care_plan_id,prescription_id,status,normalized_result")
+      .select(
+        "requested_by,care_plan_id,prescription_id,status,normalized_result",
+      )
       .eq("request_id", input.requestId).maybeSingle();
     if (existing) {
       if (
