@@ -7,6 +7,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
+import 'package:sukun_life/features/resources/presentation/audio_resource_navigation.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -639,7 +640,10 @@ class _ResourceListTile extends StatelessWidget {
     return SukunSurface(
       radius: 20,
       padding: const EdgeInsets.all(16),
-      onTap: () => context.push('/resources/${resource.id}'),
+      onTap: () {
+        if (openAudioResourceDirectly(context, resource)) return;
+        context.push('/resources/${resource.id}');
+      },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
