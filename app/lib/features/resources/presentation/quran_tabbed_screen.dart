@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -53,6 +54,9 @@ class _QuranContentApi {
   }
 }
 
+final Map<int, String> _surahTitles = {};
+final Map<int, String> _surahArabicNames = {};
+
 class _CanonicalSurahCatalog extends StatefulWidget {
   const _CanonicalSurahCatalog();
 
@@ -91,6 +95,13 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
             .whereType<Map>()
             .map((item) => Map<String, dynamic>.from(item))
             .toList(growable: false);
+        for (final chapter in chapters) {
+          final number = chapter['id'];
+          if (number is int) {
+            _surahTitles[number] = _chapterTitle(chapter);
+            _surahArabicNames[number] = chapter['name_arabic'] as String? ?? '';
+          }
+        }
         final isPrelive = snapshot.data?['environment'] == 'prelive';
         final openSource = snapshot.data?['provider'] == 'Al Quran Cloud';
         return RefreshIndicator(
@@ -260,57 +271,133 @@ class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
   }
 }
 
-class QuranApiSurahScreen extends StatefulWidget {
+class QuranApiSurahScreen extends ConsumerStatefulWidget {
   const QuranApiSurahScreen({required this.surahNumber, super.key});
 
   final int surahNumber;
 
   @override
-  State<QuranApiSurahScreen> createState() => _QuranApiSurahScreenState();
+  ConsumerState<QuranApiSurahScreen> createState() =>
+      _QuranApiSurahScreenState();
 }
 
-class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
-  final AudioPlayer _audio = AudioPlayer();
-  StreamSubscription<PlayerState>? _audioStateSubscription;
+class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
   final List<Map<String, dynamic>> _verses = [];
-  bool _audioLoading = false;
+  final ScrollController _scroll = ScrollController();
+  final Map<String, GlobalKey> _verseKeys = {};
+  AudioPlaybackController? _controller;
+  String? _lastAutoScrolled;
+  String _surahTitle = 'কুরআন';
+  String _arabicTitle = '';
   String? _provider;
   String? _translationEdition;
   String? _recitationEdition;
   bool _loading = false;
+  bool _masterLoading = false;
+  bool _verseLoading = false;
   bool _more = true;
   String? _error;
-  String? _playingKey;
   int _page = 0;
 
   @override
   void initState() {
     super.initState();
-    _audioStateSubscription = _audio.playerStateStream.listen((state) {
-      if (!mounted) return;
-      if (state.processingState == ProcessingState.completed) {
-        if (_playingKey != null) setState(() => _playingKey = null);
-      } else if (_playingKey != null) {
-        // Reflect play/pause and buffering transitions in the verse button.
-        setState(() {});
-      }
-    });
+    _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
+    _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
+    _loadTitle();
     _nextPage();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = ref.read(audioPlaybackControllerProvider);
+    if (!identical(next, _controller)) {
+      _controller?.removeListener(_onAudioChanged);
+      _controller = next;
+      next.addListener(_onAudioChanged);
+    }
+  }
+
+  Future<void> _loadTitle() async {
+    if (_surahTitles.containsKey(widget.surahNumber)) return;
+    try {
+      final result = await const _QuranContentApi().fetch({
+        'action': 'chapters',
+      });
+      final chapters = result['chapters'] as List? ?? const [];
+      for (final raw in chapters) {
+        if (raw is! Map) continue;
+        final chapter = Map<String, dynamic>.from(raw);
+        final number = chapter['id'];
+        if (number is! int) continue;
+        final translated = chapter['translated_name'];
+        final bn = translated is Map ? translated['name'] as String? : null;
+        _surahTitles[number] = bn != null && bn.isNotEmpty
+            ? bn
+            : chapter['name_simple'] as String? ?? 'কুরআন';
+        _surahArabicNames[number] = chapter['name_arabic'] as String? ?? '';
+      }
+      if (mounted) {
+        setState(() {
+          _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
+          _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
+        });
+      }
+    } catch (_) {
+      // The verse reader remains usable if chapter-label lookup fails.
+    }
+  }
+
+  void _onAudioChanged() {
+    if (!mounted) return;
+    final playingKey = _controller?.currentVerseKey;
+    if (playingKey != null &&
+        playingKey.startsWith('${widget.surahNumber}:') &&
+        _lastAutoScrolled != playingKey) {
+      _lastAutoScrolled = playingKey;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final target = _verseKeys[playingKey]?.currentContext;
+        if (target != null) {
+          Scrollable.ensureVisible(
+            target,
+            alignment: 0.22,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOut,
+          );
+        } else if (_scroll.hasClients && _verses.isNotEmpty) {
+          final index = _verses.indexWhere((v) => v['verse_key'] == playingKey);
+          if (index >= 0) {
+            final approximate =
+                _scroll.position.maxScrollExtent * index / _verses.length;
+            unawaited(
+              _scroll.animateTo(
+                approximate.clamp(0.0, _scroll.position.maxScrollExtent),
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOut,
+              ),
+            );
+          }
+        }
+      });
+    }
+    setState(() {});
   }
 
   @override
   void didUpdateWidget(covariant QuranApiSurahScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.surahNumber != widget.surahNumber) {
-      _audio.stop();
       _verses.clear();
-      _provider = null;
-      _translationEdition = null;
-      _recitationEdition = null;
+      _verseKeys.clear();
       _page = 0;
       _more = true;
-      _playingKey = null;
-      _audioLoading = false;
+      _error = null;
+      _lastAutoScrolled = null;
+      _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
+      _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
+      _loadTitle();
       _nextPage();
     }
   }
@@ -339,7 +426,7 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
         _provider = result['provider'] as String? ?? 'Quran Foundation';
         _translationEdition = result['translation_name'] as String?;
         _recitationEdition = result['recitation_name'] as String?;
-        _page += 1;
+        _page++;
         _more = nextPage is num && nextPage > _page;
       });
     } catch (_) {
@@ -349,102 +436,232 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     }
   }
 
-  void _startPlayback() {
-    // Awaiting play() would keep the tap handler pending for the entire ayah.
-    unawaited(
-      _audio.play().catchError((Object _, StackTrace _) {
-        if (!mounted) return;
-        setState(() => _playingKey = null);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
-      }),
+  String? _audioUrl(Map<String, dynamic> verse) {
+    final audio = verse['audio'];
+    return audio is Map ? audio['url'] as String? : null;
+  }
+
+  Future<void> _playVerse(Map<String, dynamic> verse) async {
+    if (_verseLoading || _masterLoading) return;
+    final url = _audioUrl(verse);
+    final key = verse['verse_key'] as String?;
+    if (key == null || url == null) return;
+    final controller = ref.read(audioPlaybackControllerProvider);
+    if (controller.currentVerseKey == key && !controller.isQuranSequence) {
+      if (controller.player.playing) {
+        await controller.pause();
+      } else {
+        controller.resumeCurrent();
+      }
+      return;
+    }
+    setState(() => _verseLoading = true);
+    try {
+      await controller.loadQuran(
+        title: _surahTitle,
+        verses: [QuranVerseAudio(key: key, url: url)],
+      );
+      controller.resumeCurrent();
+    } catch (_) {
+      if (mounted) _showPlaybackError();
+    } finally {
+      if (mounted) setState(() => _verseLoading = false);
+    }
+  }
+
+  Future<void> _playEntireSurah() async {
+    if (_masterLoading || _verseLoading || _loading) return;
+    final controller = ref.read(audioPlaybackControllerProvider);
+    if (controller.isQuranSequence &&
+        controller.currentVerseKey?.startsWith('${widget.surahNumber}:') ==
+            true) {
+      if (controller.player.playing) {
+        await controller.pause();
+      } else {
+        controller.resumeCurrent();
+      }
+      return;
+    }
+    if (_verses.isEmpty) return;
+    setState(() => _masterLoading = true);
+    try {
+      // Fetch all pages once so one just_audio playlist can handle transitions
+      // while other routes remain open. No permanent on-device verse corpus.
+      final allVerses = List<Map<String, dynamic>>.from(_verses);
+      var nextPage = _more ? _page + 1 : null;
+      while (nextPage != null) {
+        final result = await const _QuranContentApi().fetch({
+          'action': 'verses',
+          'chapter': widget.surahNumber,
+          'page': nextPage,
+        });
+        final extra = (result['verses'] as List? ?? const [])
+            .whereType<Map>()
+            .map((v) => Map<String, dynamic>.from(v));
+        allVerses.addAll(extra);
+        final pagination = result['pagination'];
+        final candidate = pagination is Map ? pagination['next_page'] : null;
+        nextPage = candidate is num ? candidate.toInt() : null;
+        if (nextPage != null && nextPage > 20) {
+          throw const FormatException('Invalid Quran pagination');
+        }
+      }
+      final playlist = <QuranVerseAudio>[];
+      for (final verse in allVerses) {
+        final key = verse['verse_key'] as String?;
+        final url = _audioUrl(verse);
+        if (key == null || url == null) {
+          throw const FormatException('Missing Quran verse audio');
+        }
+        playlist.add(QuranVerseAudio(key: key, url: url));
+      }
+      await controller.loadQuran(title: _surahTitle, verses: playlist);
+      if (mounted) {
+        setState(() {
+          _verses
+            ..clear()
+            ..addAll(allVerses);
+          _more = false;
+          _page = (allVerses.length / 50).ceil();
+        });
+      }
+      controller.resumeCurrent();
+    } catch (_) {
+      if (mounted) _showPlaybackError();
+    } finally {
+      if (mounted) setState(() => _masterLoading = false);
+    }
+  }
+
+  void _showPlaybackError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('তিলাওয়াত চালু হয়নি। আবার চেষ্টা করুন।')),
     );
   }
 
-  Future<void> _play(String verseKey, String audioUrl) async {
-    final uri = Uri.tryParse(audioUrl);
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        !{
-          'verses.quran.foundation',
-          'audio.qurancdn.com',
-          'cdn.islamic.network',
-          'cdn.alquran.cloud',
-        }.contains(uri.host)) {
-      return;
-    }
-    if (_audioLoading) return;
-
-    setState(() => _audioLoading = true);
-    try {
-      if (_playingKey == verseKey) {
-        if (_audio.playing) {
-          await _audio.pause();
-        } else {
-          // Resume the current ayah from where it was paused.
-          _startPlayback();
-        }
-        return;
-      }
-
-      await _audio.stop();
-      if (!mounted) return;
-      await _audio.setUrl(audioUrl);
-      if (!mounted) return;
-      setState(() => _playingKey = verseKey);
-      _startPlayback();
-    } catch (_) {
-      if (mounted) {
-        setState(() => _playingKey = null);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
-      }
-    } finally {
-      if (mounted) setState(() => _audioLoading = false);
-    }
+  void _showSourceDetails() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('উৎস তথ্য', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              Text('কুরআন পাঠ: ${_provider ?? 'Quran Content API'}'),
+              if (_translationEdition != null)
+                Text('বাংলা অনুবাদ: $_translationEdition'),
+              if (_recitationEdition != null)
+                Text('তিলাওয়াত: $_recitationEdition'),
+              const SizedBox(height: 8),
+              const Text(
+                'সকল অনুবাদ ও তিলাওয়াতের স্বত্ব সংশ্লিষ্ট প্রকাশক ও কারির।',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    unawaited(_audioStateSubscription?.cancel());
-    unawaited(_audio.dispose());
+    _controller?.removeListener(_onAudioChanged);
+    _scroll.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('সূরা ${widget.surahNumber}')),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            'উৎস: ${_provider ?? 'API সংযোগ'}। '
-            '${_translationEdition == null ? '' : 'অনুবাদ: $_translationEdition। '}'
-            '${_recitationEdition == null ? '' : 'তিলাওয়াত: $_recitationEdition। '}'
-            'যাচাইকৃত বাংলা হরফের উচ্চারণ পাওয়া না গেলে অনুমান করে যোগ করা হয় না।',
+  Widget build(BuildContext context) {
+    final controller = ref.watch(audioPlaybackControllerProvider);
+    final sameSurahPlaying =
+        controller.isQuranSequence &&
+        controller.currentVerseKey?.startsWith('${widget.surahNumber}:') ==
+            true &&
+        controller.player.playing;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_surahTitle),
+        actions: [
+          IconButton(
+            tooltip: 'উৎস তথ্য',
+            onPressed: _showSourceDetails,
+            icon: const Icon(Icons.info_outline_rounded),
           ),
-        ),
-        for (final verse in _verses) _verseCard(context, verse),
-        if (_error != null)
-          _ConnectionNotice(message: _error!, onRetry: _nextPage),
-        if (_loading)
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator()),
+        ],
+      ),
+      body: ListView(
+        controller: _scroll,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 210),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _surahTitle,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        if (_arabicTitle.isNotEmpty)
+                          Text(
+                            _arabicTitle,
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(fontSize: 23),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (_masterLoading)
+                    const SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    )
+                  else
+                    IconButton.filledTonal(
+                      tooltip: sameSurahPlaying
+                          ? 'পূর্ণ সূরা বিরতি দিন'
+                          : 'সম্পূর্ণ সূরা শুনুন',
+                      onPressed: _verses.isEmpty ? null : _playEntireSurah,
+                      iconSize: 30,
+                      icon: Icon(
+                        sameSurahPlaying
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_fill_rounded,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        if (!_loading && _more && _error == null)
-          OutlinedButton.icon(
-            onPressed: _nextPage,
-            icon: const Icon(Icons.expand_more),
-            label: const Text('পরের আয়াতগুলো দেখুন'),
-          ),
-      ],
-    ),
-  );
+          const SizedBox(height: 10),
+          for (final verse in _verses) _verseCard(context, verse),
+          if (_error != null)
+            _ConnectionNotice(message: _error!, onRetry: _nextPage),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          if (!_loading && _more && _error == null)
+            OutlinedButton.icon(
+              onPressed: _nextPage,
+              icon: const Icon(Icons.expand_more),
+              label: const Text('পরের আয়াতগুলো দেখুন'),
+            ),
+        ],
+      ),
+    );
+  }
 
   Widget _verseCard(BuildContext context, Map<String, dynamic> verse) {
     final translations = (verse['translations'] as List? ?? const [])
@@ -458,57 +675,70 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
         )
         .toList();
     final arabic = verse['text_uthmani'] as String? ?? '';
-    final audio = verse['audio'];
-    final audioUrl = audio is Map ? audio['url'] as String? : null;
+    final audioUrl = _audioUrl(verse);
     final key = verse['verse_key'] as String? ?? '';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(key, style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                if (audioUrl != null)
-                  IconButton(
-                    tooltip: _playingKey == key && _audio.playing
-                        ? 'তিলাওয়াত বিরতি দিন'
-                        : 'তিলাওয়াত শুনুন',
-                    onPressed: _audioLoading
-                        ? null
-                        : () => _play(key, audioUrl),
-                    icon: Icon(
-                      _playingKey == key && _audio.playing
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
+    final controller = ref.read(audioPlaybackControllerProvider);
+    final highlighted =
+        controller.currentVerseKey == key && controller.player.playing;
+    return Container(
+      key: _verseKeys.putIfAbsent(key, GlobalKey.new),
+      child: Card(
+        color: highlighted ? const Color(0xFFE1F3FC) : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: highlighted ? const Color(0xFF0A70A8) : Colors.transparent,
+            width: highlighted ? 2 : 0,
+          ),
+        ),
+        margin: const EdgeInsets.only(bottom: 14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(key, style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  if (highlighted)
+                    const Icon(
+                      Icons.equalizer_rounded,
+                      color: Color(0xFF0A70A8),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Directionality(
-              textDirection: TextDirection.rtl,
-              child: SelectableText(
-                arabic,
-                style: const TextStyle(fontSize: 28, height: 2.2),
+                  if (audioUrl != null)
+                    IconButton(
+                      tooltip: highlighted && !controller.isQuranSequence
+                          ? 'আয়াত বিরতি দিন'
+                          : 'শুধু এই আয়াত শুনুন',
+                      onPressed: _verseLoading || _masterLoading
+                          ? null
+                          : () => _playVerse(verse),
+                      icon: Icon(
+                        highlighted && !controller.isQuranSequence
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                      ),
+                    ),
+                ],
               ),
-            ),
-            if (bangla.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Text(
-                _plainText(bangla.first['text']),
-                style: const TextStyle(fontSize: 15, height: 1.7),
-              ),
-              if (bangla.first['resource_name'] != null)
-                Text(
-                  'অনুবাদ: ${bangla.first['resource_name']}',
-                  style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(height: 12),
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: SelectableText(
+                  arabic,
+                  style: const TextStyle(fontSize: 28, height: 2.2),
                 ),
+              ),
+              if (bangla.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  _plainText(bangla.first['text']),
+                  style: const TextStyle(fontSize: 15, height: 1.7),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

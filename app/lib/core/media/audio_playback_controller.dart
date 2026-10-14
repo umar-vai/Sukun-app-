@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,7 +65,13 @@ bool audioResourceNeedsReload(LinkedResource? current, LinkedResource next) =>
     current.mediaSourceType != next.mediaSourceType ||
     current.mediaUrl?.trim() != next.mediaUrl?.trim();
 
-class AudioPlaybackController {
+class QuranVerseAudio {
+  const QuranVerseAudio({required this.key, required this.url});
+  final String key;
+  final String url;
+}
+
+class AudioPlaybackController extends ChangeNotifier {
   AudioPlaybackController(this._player, this._positions) {
     _positionSubscription = _player.positionStream.listen(_rememberPosition);
     _stateSubscription = _player.playerStateStream.listen((state) {
@@ -72,6 +79,10 @@ class AudioPlaybackController {
         final resourceId = _resource?.id;
         if (resourceId != null) unawaited(_positions.clear(resourceId));
       }
+      notifyListeners();
+    });
+    _indexSubscription = _player.currentIndexStream.listen((_) {
+      notifyListeners();
     });
   }
 
@@ -79,13 +90,32 @@ class AudioPlaybackController {
   final PlaybackPositionStore _positions;
   late final StreamSubscription<Duration> _positionSubscription;
   late final StreamSubscription<PlayerState> _stateSubscription;
+  late final StreamSubscription<int?> _indexSubscription;
   LinkedResource? _resource;
+  String? _quranTitle;
+  List<QuranVerseAudio> _quranQueue = const [];
   int _lastSavedSecond = -1;
   Future<void> _loadQueue = Future<void>.value();
   int _requestedLoad = 0;
 
   AudioPlayer get player => _player;
   LinkedResource? get resource => _resource;
+  bool get hasSelection => _resource != null || _quranTitle != null;
+  bool get isQuranSequence => _quranTitle != null && _quranQueue.length > 1;
+  String? get currentTitle =>
+      _quranTitle ??
+      (_resource?.titleBn?.trim().isNotEmpty == true
+          ? _resource!.titleBn
+          : _resource?.title);
+  String? get currentVerseKey {
+    final index = _player.currentIndex ?? 0;
+    return _quranTitle != null && index >= 0 && index < _quranQueue.length
+        ? _quranQueue[index].key
+        : null;
+  }
+
+  int get quranVerseCount => _quranQueue.length;
+  int get currentVerseIndex => _player.currentIndex ?? 0;
 
   /// Serialize changes of audio sources: a previous asynchronous load must
   /// never install its old stream after the listener selected another track.
@@ -129,7 +159,10 @@ class AudioPlaybackController {
     // The player is shared across routes. Immediately stop the old stream
     // before loading the new URL, including on web/mobile browsers.
     _resource = null;
+    _quranTitle = null;
+    _quranQueue = const [];
     _lastSavedSecond = -1;
+    notifyListeners();
     try {
       await _player.stop();
       if (request != _requestedLoad) {
@@ -163,6 +196,7 @@ class AudioPlaybackController {
         throw const AudioPlaybackException('Audio selection was changed.');
       }
       _resource = resource;
+      notifyListeners();
       if (duration != null && savedPosition >= duration) {
         await _player.seek(Duration.zero);
         await _positions.clear(resource.id);
@@ -184,6 +218,110 @@ class AudioPlaybackController {
         'Audio loading failed. Check the link and try again.',
       );
     }
+  }
+
+  /// Uses one shared engine for individual ayat, complete surahs and CMS audio.
+  /// just_audio prepares the next playlist items; browsers/network quality can
+  /// still introduce a small transition, so zero-gap is not guaranteed.
+  Future<void> loadQuran({
+    required String title,
+    required List<QuranVerseAudio> verses,
+  }) {
+    if (verses.isEmpty) {
+      return Future<void>.error(
+        const AudioPlaybackException('এই সূরার জন্য তিলাওয়াত পাওয়া যায়নি।'),
+      );
+    }
+    final sources = <AudioSource>[];
+    for (final verse in verses) {
+      final uri = Uri.tryParse(verse.url);
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          !{
+            'verses.quran.foundation',
+            'audio.qurancdn.com',
+            'cdn.islamic.network',
+            'cdn.alquran.cloud',
+          }.contains(uri.host)) {
+        return Future<void>.error(
+          const AudioPlaybackException('অডিওর নিরাপদ লিংক পাওয়া যায়নি।'),
+        );
+      }
+      sources.add(
+        AudioSource.uri(
+          uri,
+          tag: MediaItem(
+            id: verse.key,
+            title: '$title · ${verse.key}',
+            album: 'Sukun Life',
+          ),
+        ),
+      );
+    }
+
+    final previous = _loadQueue;
+    final completion = Completer<void>();
+    _loadQueue = completion.future;
+    final request = ++_requestedLoad;
+    return () async {
+      try {
+        await previous;
+        if (request != _requestedLoad) return;
+        try {
+          await _persistCurrentPosition();
+        } on Exception {
+          // Optional history must not prevent switching to the Quran.
+        }
+        _resource = null;
+        _quranTitle = null;
+        _quranQueue = const [];
+        notifyListeners();
+        await _player.stop();
+        if (request != _requestedLoad) return;
+        await _player.setLoopMode(LoopMode.off);
+        await _player.setAudioSources(sources, preload: true);
+        if (request != _requestedLoad) return;
+        _quranTitle = title;
+        _quranQueue = List.unmodifiable(verses);
+        notifyListeners();
+      } on PlayerException {
+        throw const AudioPlaybackException('কুরআনের তিলাওয়াত লোড করা যায়নি।');
+      } on PlayerInterruptedException {
+        throw const AudioPlaybackException('অডিও লোড বন্ধ হয়ে গেছে।');
+      } finally {
+        completion.complete();
+      }
+    }();
+  }
+
+  /// This returns immediately; a play Future itself completes when audio ends.
+  void resumeCurrent() {
+    if (!hasSelection) return;
+    if (_player.processingState == ProcessingState.completed) {
+      unawaited(
+        _player.seek(Duration.zero, index: 0).then((_) => _player.play()),
+      );
+    } else {
+      unawaited(_player.play());
+    }
+  }
+
+  Future<void> previous() => _player.seekToPrevious();
+  Future<void> next() => _player.seekToNext();
+
+  Future<void> stopAndClear() async {
+    ++_requestedLoad;
+    await _loadQueue;
+    try {
+      await _persistCurrentPosition();
+    } on Exception {
+      // No-op if local persistence is not available.
+    }
+    await _player.stop();
+    _resource = null;
+    _quranTitle = null;
+    _quranQueue = const [];
+    notifyListeners();
   }
 
   Future<void> play({LinkedResource? expectedResource}) async {
@@ -243,11 +381,14 @@ class AudioPlaybackController {
     await _positions.write(resourceId, _player.position);
   }
 
+  @override
   Future<void> dispose() async {
     await _persistCurrentPosition();
     await _positionSubscription.cancel();
     await _stateSubscription.cancel();
+    await _indexSubscription.cancel();
     await _player.dispose();
+    super.dispose();
   }
 }
 
