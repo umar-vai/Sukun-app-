@@ -6,6 +6,7 @@ import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 void main() {
   testWidgets('assigned resource detail renders canonical text and reference', (
@@ -131,7 +132,7 @@ void main() {
   });
 
   testWidgets(
-    'owner-licensed audio has working player and no internal rights notices',
+    'published audio opens the full player without a source/listen page',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -140,17 +141,23 @@ void main() {
               const _FakeResourcesRepository(unverifiedAudio: true),
             ),
           ],
-          child: const MaterialApp(
-            home: ResourceDetailScreen(resourceId: 'source-audio'),
+          child: MaterialApp(
+            home: ResourceDetailScreen(
+              resourceId: 'source-audio',
+              loadAudioResource: (_) async {},
+            ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('উৎস উল্লেখ আছে'), findsNothing);
-      expect(find.text('তথ্যসূত্র দেওয়া আছে'), findsNothing);
-      expect(find.text('অডিও শুনুন'), findsOneWidget);
-      expect(find.text('রুকইয়াহ সাপোর্ট বিডি'), findsOneWidget);
+      expect(find.byType(AudioPlayerScreen), findsOneWidget);
+      expect(find.text('Ayatul Kursi'), findsWidgets);
+      expect(find.text('অডিও উৎস'), findsNothing);
+      expect(find.text('উপকরণটি খুলুন'), findsNothing);
+      expect(find.text('অডিও শুনুন'), findsNothing);
+      expect(find.text('রুকইয়াহ সাপোর্ট বিডি'), findsNothing);
       expect(
         find.textContaining('Third-party rights not independently'),
         findsNothing,
