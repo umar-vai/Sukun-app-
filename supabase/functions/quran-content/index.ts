@@ -183,6 +183,7 @@ Deno.serve(async (request: Request) => {
         verses: response.verses ?? [],
         pagination: response.pagination ?? {},
         translation_name: bengali?.name ?? bengali?.translated_name ?? null,
+        translation_id: bengali?.id ?? null,
         environment: env,
       }, origin);
     }
