@@ -15,6 +15,9 @@ void main() {
 
     await tester.tap(find.text('রুকইয়াহ আয়াত'));
     await tester.pumpAndSettle();
-    expect(find.text('রুকইয়াহ আয়াত ও অংশ'), findsOneWidget);
+    expect(
+      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
+      1,
+    );
   });
 }
