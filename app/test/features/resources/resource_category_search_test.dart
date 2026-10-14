@@ -7,8 +7,46 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 void main() {
+  testWidgets('audio list tap goes directly to the full player', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            _SearchResourcesRepository(playableAudio: true),
+          ),
+        ],
+        child: MaterialApp(
+          home: ResourceCategoryScreen(
+            section: resourceSectionBySlug('audio')!,
+            loadAudioResource: (_) async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Result for all'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byType(AudioPlayerScreen), findsOneWidget);
+    expect(find.text('অডিও উৎস'), findsNothing);
+    expect(find.text('অডিও শুনুন'), findsNothing);
+    expect(find.text('উপকরণটি খুলুন'), findsNothing);
+    expect(find.text('শোনার গতি'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('category hides outdated results while search is debouncing', (
     tester,
   ) async {
@@ -62,6 +100,9 @@ void main() {
 }
 
 final class _SearchResourcesRepository implements ResourcesRepository {
+  _SearchResourcesRepository({this.playableAudio = false});
+
+  final bool playableAudio;
   int calls = 0;
 
   @override
@@ -79,6 +120,10 @@ final class _SearchResourcesRepository implements ResourcesRepository {
         id: 'qa-result',
         type: 'audio',
         title: 'Result for ${query.isEmpty ? 'all' : query}',
+        mediaSourceType: playableAudio ? 'direct_audio_url' : null,
+        mediaUrl: playableAudio
+            ? 'https://files.ruqyahbd.org/audio/example.mp3'
+            : null,
         visibility: 'public',
         status: 'published',
       ),
