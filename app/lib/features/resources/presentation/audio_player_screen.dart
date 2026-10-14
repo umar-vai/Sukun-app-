@@ -64,7 +64,15 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('অডিও শুনুন')),
+      appBar: AppBar(
+        title: Text(
+          widget.resource.titleBn?.trim().isNotEmpty == true
+              ? widget.resource.titleBn!
+              : widget.resource.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
       body: FutureBuilder<bool>(
         future: _loadFuture,
         builder: (context, snapshot) {
