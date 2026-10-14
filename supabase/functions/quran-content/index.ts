@@ -117,7 +117,9 @@ async function openQuranGet(path: string): Promise<any> {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(18000),
   });
-  if (!response.ok) throw new Error("Open Quran upstream HTTP " + response.status);
+  if (!response.ok) {
+    throw new Error("Open Quran upstream HTTP " + response.status);
+  }
   const json = await response.json();
   if (json?.code !== 200 || json?.status !== "OK") {
     throw new Error("Invalid open Quran upstream response");
@@ -145,8 +147,10 @@ async function openQuranResponse(body: any) {
   if (body?.action === "verses") {
     const chapter = Number(body.chapter);
     const page = Number(body.page ?? 1);
-    if (!Number.isInteger(chapter) || chapter < 1 || chapter > 114 ||
-        !Number.isInteger(page) || page < 1 || page > 20) {
+    if (
+      !Number.isInteger(chapter) || chapter < 1 || chapter > 114 ||
+      !Number.isInteger(page) || page < 1 || page > 20
+    ) {
       return { error: "Invalid surah or page", code: "bad_input" };
     }
     const editions = await openQuranGet(
@@ -157,9 +161,11 @@ async function openQuranResponse(body: any) {
     }
     const [ar, bn, rec] = editions;
     const a = ar?.ayahs, b = bn?.ayahs, c = rec?.ayahs;
-    if (!Array.isArray(a) || !Array.isArray(b) ||
-        !Array.isArray(c) || !a.length ||
-        a.length !== b.length || a.length !== c.length) {
+    if (
+      !Array.isArray(a) || !Array.isArray(b) ||
+      !Array.isArray(c) || !a.length ||
+      a.length !== b.length || a.length !== c.length
+    ) {
       throw new Error("Quran editions have mismatched verse counts");
     }
     const start = (page - 1) * 50;
@@ -169,15 +175,19 @@ async function openQuranResponse(body: any) {
     const verses = [];
     for (let i = start; i < stop; i++) {
       const n = Number(a[i]?.numberInSurah);
-      if (!Number.isInteger(n) || n !== Number(b[i]?.numberInSurah) ||
-          n !== Number(c[i]?.numberInSurah)) {
+      if (
+        !Number.isInteger(n) || n !== Number(b[i]?.numberInSurah) ||
+        n !== Number(c[i]?.numberInSurah)
+      ) {
         throw new Error("Quran verses are not aligned");
       }
       let audio: { url: string } | null = null;
       if (typeof c[i]?.audio === "string") {
         const u = new URL(c[i].audio);
-        if (u.protocol === "https:" &&
-            ["cdn.islamic.network", "cdn.alquran.cloud"].includes(u.hostname)) {
+        if (
+          u.protocol === "https:" &&
+          ["cdn.islamic.network", "cdn.alquran.cloud"].includes(u.hostname)
+        ) {
           audio = { url: u.toString() };
         }
       }
@@ -194,7 +204,10 @@ async function openQuranResponse(body: any) {
     }
     return {
       verses,
-      pagination: { current_page: page, next_page: stop < a.length ? page + 1 : null },
+      pagination: {
+        current_page: page,
+        next_page: stop < a.length ? page + 1 : null,
+      },
       translation_name: translationName,
       recitation_name: recitationName,
       environment: "staging-public-source",
@@ -228,7 +241,11 @@ Deno.serve(async (request: Request) => {
     // Production mode always uses Quran Foundation credentials instead.
     if (Deno.env.get("QF_ENV") !== "production") {
       const dataOut = await openQuranResponse(data);
-      return respond(dataOut?.code === "bad_input" ? 400 : 200, dataOut, origin);
+      return respond(
+        dataOut?.code === "bad_input" ? 400 : 200,
+        dataOut,
+        origin,
+      );
     }
     const { auth, api, env } = upstreamEnvironment();
     const c = { id, secret, auth, api };
