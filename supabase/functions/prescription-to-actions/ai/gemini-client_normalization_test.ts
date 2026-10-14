@@ -56,7 +56,8 @@ const completeAction = {
 
 function mockClient(response: Record<string, unknown>): RestGeminiClient {
   return new RestGeminiClient(
-    () => Promise.resolve(Response.json({ output_text: JSON.stringify(response) })),
+    () =>
+      Promise.resolve(Response.json({ output_text: JSON.stringify(response) })),
   );
 }
 
@@ -108,12 +109,13 @@ Deno.test("missing evidence and unexplained uncertainty do not abort parsing", a
 
 Deno.test("model returning no actions fails closed to manual handling", async () => {
   await assertRejects(
-    () => mockClient({ actions: [] }).generate({
-      apiKey: "fake-key",
-      model: "test-model",
-      prescriptionText: "সকাল ৩ বার পড়বেন",
-      timeoutMs: 1000,
-    }),
+    () =>
+      mockClient({ actions: [] }).generate({
+        apiKey: "fake-key",
+        model: "test-model",
+        prescriptionText: "সকাল ৩ বার পড়বেন",
+        timeoutMs: 1000,
+      }),
     GeminiMalformedOutputError,
   );
 });
