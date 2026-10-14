@@ -115,46 +115,46 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     return FutureBuilder<ContentResource?>(
       future: _resource,
       builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-              body: AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…'),
-            );
-          }
-          if (snapshot.hasError) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-              body: AppErrorState(
-                message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
-                onRetry: _reload,
-              ),
-            );
-          }
-          final resource = snapshot.data;
-          if (resource == null) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-              body: AppEmptyState(
-                title: 'উপকরণটি পাওয়া যায়নি',
-                message:
-                    'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
-              ),
-            );
-          }
-          // A playable audio item goes straight to its full player. Retain
-          // the existing resource route so deep links, Guest/Patient RLS
-          // checks, refreshes and browser back all keep working.
-          if (resource.type == 'audio' &&
-              resolveResourceMedia(resource.linkedResource)?.kind ==
-                  ResourceMediaKind.audio) {
-            return AudioPlayerScreen(
-              resource: resource.linkedResource,
-              loadResource: widget.loadAudioResource,
-            );
-          }
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-            body: ListView(
+            body: AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…'),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+            body: AppErrorState(
+              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+              onRetry: _reload,
+            ),
+          );
+        }
+        final resource = snapshot.data;
+        if (resource == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+            body: AppEmptyState(
+              title: 'উপকরণটি পাওয়া যায়নি',
+              message:
+                  'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
+            ),
+          );
+        }
+        // A playable audio item goes straight to its full player. Retain
+        // the existing resource route so deep links, Guest/Patient RLS
+        // checks, refreshes and browser back all keep working.
+        if (resource.type == 'audio' &&
+            resolveResourceMedia(resource.linkedResource)?.kind ==
+                ResourceMediaKind.audio) {
+          return AudioPlayerScreen(
+            resource: resource.linkedResource,
+            loadResource: widget.loadAudioResource,
+          );
+        }
+        return Scaffold(
+          appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+          body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
               Wrap(
@@ -256,8 +256,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 ),
               ],
             ],
-            ),
-          );
+          ),
+        );
       },
     );
   }
