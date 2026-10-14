@@ -9,10 +9,7 @@ bool isDirectPlayableAudio(ContentResource resource) =>
     resolveResourceMedia(resource.linkedResource)?.kind ==
     ResourceMediaKind.audio;
 
-bool openAudioResourceDirectly(
-  BuildContext context,
-  ContentResource resource,
-) {
+bool openAudioResourceDirectly(BuildContext context, ContentResource resource) {
   if (!isDirectPlayableAudio(resource)) return false;
   Navigator.of(context).push<void>(
     MaterialPageRoute(
