@@ -381,7 +381,8 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     final bangla = translations
         .where(
           (item) =>
-              (item['language_name'] ?? '').toString().toLowerCase() == 'bengali',
+              (item['language_name'] ?? '').toString().toLowerCase() ==
+              'bengali',
         )
         .toList();
     final latin = translations
@@ -447,12 +448,12 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     );
   }
 
-  String _plainText(Object? value) =>
-      (value ?? '').toString()
-          .replaceAll(RegExp(r'<[^>]*>'), '')
-          .replaceAll('&nbsp;', ' ')
-          .replaceAll('&amp;', '&')
-          .trim();
+  String _plainText(Object? value) => (value ?? '')
+      .toString()
+      .replaceAll(RegExp(r'<[^>]*>'), '')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .trim();
 }
 
 class _ConnectionNotice extends StatelessWidget {
