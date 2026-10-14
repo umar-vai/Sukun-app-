@@ -144,9 +144,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         // A playable audio item goes straight to its full player. Retain
         // the existing resource route so deep links, Guest/Patient RLS
         // checks, refreshes and browser back all keep working.
-        if (resource.type == 'audio' &&
-            resolveResourceMedia(resource.linkedResource)?.kind ==
-                ResourceMediaKind.audio) {
+        if (resolveResourceMedia(resource.linkedResource)?.kind ==
+            ResourceMediaKind.audio) {
           return AudioPlayerScreen(
             resource: resource.linkedResource,
             loadResource: widget.loadAudioResource,
