@@ -63,182 +63,183 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
       child: TooltipVisibility(
         visible: false,
         child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          if (!controller.hasSelection) return const SizedBox.shrink();
-          final player = controller.player;
-          final playing = player.playing;
-          final isSequence = controller.isQuranSequence;
-          final verse = controller.currentVerseKey;
-          return Material(
-            elevation: 12,
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: SukunColors.deepTide.withValues(alpha: 0.18),
+          animation: controller,
+          builder: (context, _) {
+            if (!controller.hasSelection) return const SizedBox.shrink();
+            final player = controller.player;
+            final playing = player.playing;
+            final isSequence = controller.isQuranSequence;
+            final verse = controller.currentVerseKey;
+            return Material(
+              elevation: 12,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: SukunColors.deepTide.withValues(alpha: 0.18),
+                  ),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(
-                    value:
-                        player.duration == null ||
-                            player.duration!.inMilliseconds == 0
-                        ? null
-                        : (player.position.inMilliseconds /
-                                  player.duration!.inMilliseconds)
-                              .clamp(0, 1),
-                    minHeight: 3,
-                    color: SukunColors.deepTide,
-                    backgroundColor: SukunColors.softBlue,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.graphic_eq_rounded,
-                          color: SukunColors.deepTide,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                controller.currentTitle ?? 'অডিও',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                verse == null
-                                    ? 'শুনছেন'
-                                    : (isSequence
-                                          ? '$verse · ${controller.currentVerseIndex + 1}/${controller.quranVerseCount}'
-                                          : verse),
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        AudioDockIconAction(
-                          label: playing ? 'বিরতি' : 'চালু করুন',
-                          onPressed: playing
-                              ? () => unawaited(controller.pause())
-                              : controller.resumeCurrent,
-                          icon: playing
-                              ? Icons.pause_circle_filled_rounded
-                              : Icons.play_circle_fill_rounded,
-                          color: SukunColors.deepTide,
-                          iconSize: 34,
-                        ),
-                        AudioDockIconAction(
-                          label: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
-                          onPressed: () =>
-                              setState(() => _expanded = !_expanded),
-                          icon: _expanded
-                              ? Icons.keyboard_arrow_down_rounded
-                              : Icons.keyboard_arrow_up_rounded,
-                        ),
-                        AudioDockIconAction(
-                          label: 'অডিও বন্ধ করুন',
-                          icon: Icons.close_rounded,
-                          iconSize: 19,
-                          onPressed: () => unawaited(controller.stopAndClear()),
-                        ),
-                      ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(
+                      value:
+                          player.duration == null ||
+                              player.duration!.inMilliseconds == 0
+                          ? null
+                          : (player.position.inMilliseconds /
+                                    player.duration!.inMilliseconds)
+                                .clamp(0, 1),
+                      minHeight: 3,
+                      color: SukunColors.deepTide,
+                      backgroundColor: SukunColors.softBlue,
                     ),
-                  ),
-                  if (_expanded)
-                    StreamBuilder<Duration>(
-                      stream: player.positionStream,
-                      initialData: player.position,
-                      builder: (context, snapshot) {
-                        final duration = player.duration ?? Duration.zero;
-                        final position = snapshot.data ?? Duration.zero;
-                        final max = duration.inMilliseconds.toDouble();
-                        final value = position.inMilliseconds
-                            .clamp(0, duration.inMilliseconds)
-                            .toDouble();
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Slider(
-                                value: max <= 0 ? 0 : value,
-                                max: max <= 0 ? 1 : max,
-                                onChanged: max <= 0
-                                    ? null
-                                    : (v) => unawaited(
-                                        controller.seek(
-                                          Duration(milliseconds: v.round()),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.graphic_eq_rounded,
+                            color: SukunColors.deepTide,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  controller.currentTitle ?? 'অডিও',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  verse == null
+                                      ? 'শুনছেন'
+                                      : (isSequence
+                                            ? '$verse · ${controller.currentVerseIndex + 1}/${controller.quranVerseCount}'
+                                            : verse),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          AudioDockIconAction(
+                            label: playing ? 'বিরতি' : 'চালু করুন',
+                            onPressed: playing
+                                ? () => unawaited(controller.pause())
+                                : controller.resumeCurrent,
+                            icon: playing
+                                ? Icons.pause_circle_filled_rounded
+                                : Icons.play_circle_fill_rounded,
+                            color: SukunColors.deepTide,
+                            iconSize: 34,
+                          ),
+                          AudioDockIconAction(
+                            label: _expanded ? 'কন্ট্রোল বন্ধ' : 'আরও কন্ট্রোল',
+                            onPressed: () =>
+                                setState(() => _expanded = !_expanded),
+                            icon: _expanded
+                                ? Icons.keyboard_arrow_down_rounded
+                                : Icons.keyboard_arrow_up_rounded,
+                          ),
+                          AudioDockIconAction(
+                            label: 'অডিও বন্ধ করুন',
+                            icon: Icons.close_rounded,
+                            iconSize: 19,
+                            onPressed: () =>
+                                unawaited(controller.stopAndClear()),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_expanded)
+                      StreamBuilder<Duration>(
+                        stream: player.positionStream,
+                        initialData: player.position,
+                        builder: (context, snapshot) {
+                          final duration = player.duration ?? Duration.zero;
+                          final position = snapshot.data ?? Duration.zero;
+                          final max = duration.inMilliseconds.toDouble();
+                          final value = position.inMilliseconds
+                              .clamp(0, duration.inMilliseconds)
+                              .toDouble();
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Slider(
+                                  value: max <= 0 ? 0 : value,
+                                  max: max <= 0 ? 1 : max,
+                                  onChanged: max <= 0
+                                      ? null
+                                      : (v) => unawaited(
+                                          controller.seek(
+                                            Duration(milliseconds: v.round()),
+                                          ),
+                                        ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(_format(position)),
+                                    const Spacer(),
+                                    AudioDockIconAction(
+                                      label: isSequence
+                                          ? 'আগের আয়াত'
+                                          : '১০ সেকেন্ড পেছনে',
+                                      onPressed: () => unawaited(
+                                        isSequence
+                                            ? controller.previous()
+                                            : controller.seek(
+                                                position -
+                                                    const Duration(seconds: 10),
+                                              ),
+                                      ),
+                                      icon: Icons.skip_previous_rounded,
+                                    ),
+                                    TextButton(
+                                      onPressed: () => unawaited(
+                                        controller.setSpeed(
+                                          nextAudioPlaybackSpeed(player.speed),
                                         ),
                                       ),
-                              ),
-                              Row(
-                                children: [
-                                  Text(_format(position)),
-                                  const Spacer(),
-                                  AudioDockIconAction(
-                                    label: isSequence
-                                        ? 'আগের আয়াত'
-                                        : '১০ সেকেন্ড পেছনে',
-                                    onPressed: () => unawaited(
-                                      isSequence
-                                          ? controller.previous()
-                                          : controller.seek(
-                                              position -
-                                                  const Duration(seconds: 10),
-                                            ),
+                                      child: Text('${player.speed}×'),
                                     ),
-                                    icon: Icons.skip_previous_rounded,
-                                  ),
-                                  TextButton(
-                                    onPressed: () => unawaited(
-                                      controller.setSpeed(
-                                        nextAudioPlaybackSpeed(player.speed),
+                                    AudioDockIconAction(
+                                      label: isSequence
+                                          ? 'পরের আয়াত'
+                                          : '১০ সেকেন্ড সামনে',
+                                      onPressed: () => unawaited(
+                                        isSequence
+                                            ? controller.next()
+                                            : controller.seek(
+                                                position +
+                                                    const Duration(seconds: 10),
+                                              ),
                                       ),
+                                      icon: Icons.skip_next_rounded,
                                     ),
-                                    child: Text('${player.speed}×'),
-                                  ),
-                                  AudioDockIconAction(
-                                    label: isSequence
-                                        ? 'পরের আয়াত'
-                                        : '১০ সেকেন্ড সামনে',
-                                    onPressed: () => unawaited(
-                                      isSequence
-                                          ? controller.next()
-                                          : controller.seek(
-                                              position +
-                                                  const Duration(seconds: 10),
-                                            ),
-                                    ),
-                                    icon: Icons.skip_next_rounded,
-                                  ),
-                                  const Spacer(),
-                                  Text(_format(duration)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                ],
+                                    const Spacer(),
+                                    Text(_format(duration)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
         ),
       ),
     );
