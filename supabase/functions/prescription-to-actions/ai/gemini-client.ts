@@ -125,8 +125,19 @@ export class RestGeminiClient implements GeminiClient {
         report("output_json_invalid");
         throw new GeminiMalformedOutputError();
       }
+      if (
+        parsed && typeof parsed === "object" &&
+        Array.isArray((parsed as Record<string, unknown>).actions) &&
+        (parsed as { actions: unknown[] }).actions.length === 0
+      ) {
+        report("action_list_empty");
+        throw new GeminiMalformedOutputError();
+      }
       try {
-        const normalized = normalizeSuggestedActions(parsed);
+        const normalized = normalizeSuggestedActions(
+          parsed,
+          request.prescriptionText,
+        );
         const result = parseSuggestedActions(normalized);
         report("valid");
         return result;
