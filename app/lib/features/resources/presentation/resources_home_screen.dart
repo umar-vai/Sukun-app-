@@ -13,6 +13,7 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
+import 'package:sukun_life/features/resources/presentation/audio_resource_navigation.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -105,6 +106,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
   }
 
   void _openSearchResult(ContentResource resource) {
+    if (openAudioResourceDirectly(context, resource)) return;
     if (opensYoutubePlayerDirectly(resource)) {
       Navigator.of(context).push<void>(
         MaterialPageRoute(
