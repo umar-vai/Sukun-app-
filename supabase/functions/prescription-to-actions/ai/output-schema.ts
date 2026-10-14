@@ -142,9 +142,7 @@ export function normalizeSuggestedActions(
       ) {
         normalized.needs_review = true;
         normalized.confidence = Math.min(
-          typeof normalized.confidence === "number"
-            ? normalized.confidence
-            : 0,
+          typeof normalized.confidence === "number" ? normalized.confidence : 0,
           0.5,
         );
         reviewReasons.push(
