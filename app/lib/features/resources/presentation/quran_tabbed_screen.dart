@@ -98,15 +98,22 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
             children: [
-              Text('কুরআনের সূরাসমূহ', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'কুরআনের সূরাসমূহ',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 6),
-              const Text('কুরআন Foundation থেকে সূরার নাম, আরবি আয়াত, অনুবাদ ও অনুমোদিত অডিও আনা হয়।'),
+              const Text(
+                'কুরআন Foundation থেকে সূরার নাম, আরবি আয়াত, অনুবাদ ও অনুমোদিত অডিও আনা হয়।',
+              ),
               const SizedBox(height: 16),
               if (isPrelive)
                 const Card(
                   child: Padding(
                     padding: EdgeInsets.all(14),
-                    child: Text('API পরীক্ষামূলক অবস্থায় আছে। বর্তমানে শুধুমাত্র সূরা ফাতিহা ও বাকারা পাওয়া যেতে পারে; পূর্ণ ১১৪ সূরার জন্য Quran Foundation-এর Production API অনুমোদন প্রয়োজন।'),
+                    child: Text(
+                      'API পরীক্ষামূলক অবস্থায় আছে। বর্তমানে শুধুমাত্র সূরা ফাতিহা ও বাকারা পাওয়া যেতে পারে; পূর্ণ ১১৪ সূরার জন্য Quran Foundation-এর Production API অনুমোদন প্রয়োজন।',
+                    ),
                   ),
                 ),
               if (chapters.isEmpty)
@@ -115,7 +122,9 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
                 Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: CircleAvatar(child: Text('${chapter['id'] ?? ''}')),
+                    leading: CircleAvatar(
+                      child: Text('${chapter['id'] ?? ''}'),
+                    ),
                     title: Text(_chapterTitle(chapter)),
                     subtitle: Text('${chapter['verses_count'] ?? '—'} আয়াত'),
                     trailing: const Icon(Icons.chevron_right),
@@ -138,7 +147,9 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
     final translated = chapter['translated_name'];
     final bangla = translated is Map ? translated['name'] : null;
     final simple = chapter['name_simple'] ?? 'সূরা ${chapter['id']}';
-    return bangla is String && bangla.isNotEmpty ? '$simple — $bangla' : '$simple';
+    return bangla is String && bangla.isNotEmpty
+        ? '$simple — $bangla'
+        : '$simple';
   }
 }
 
@@ -164,7 +175,9 @@ class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
     }
     final response = await Supabase.instance.client
         .from('content_items')
-        .select('id,type,title,title_bn,summary,reference_text,source_reference,visibility,status,surah_number,ayah_number')
+        .select(
+          'id,type,title,title_bn,summary,reference_text,source_reference,visibility,status,surah_number,ayah_number',
+        )
         .eq('status', 'published')
         .like('slug', 'srg2024-qur-%')
         .order('slug');
@@ -182,7 +195,10 @@ class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return _ConnectionNotice(message: 'রুকইয়াহ আয়াতের তালিকা লোড হয়নি।', onRetry: _retry);
+          return _ConnectionNotice(
+            message: 'রুকইয়াহ আয়াতের তালিকা লোড হয়নি।',
+            onRetry: _retry,
+          );
         }
         final items = snapshot.data ?? const <ContentResource>[];
         return RefreshIndicator(
@@ -193,14 +209,21 @@ class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
             children: [
-              Text('রুকইয়াহ আয়াত ও অংশ', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'রুকইয়াহ আয়াত ও অংশ',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 5),
-              Text('${items.length}টি নির্বাচিত বইভিত্তিক রেকর্ড • মূল কুরআনের সূরা তালিকা থেকে আলাদা'),
+              Text(
+                '${items.length}টি নির্বাচিত বইভিত্তিক রেকর্ড • মূল কুরআনের সূরা তালিকা থেকে আলাদা',
+              ),
               const SizedBox(height: 12),
               if (items.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Text('এই পরিবেশে নির্বাচিত রুকইয়াহ আয়াত এখনো প্রকাশ করা হয়নি।'),
+                  child: Text(
+                    'এই পরিবেশে নির্বাচিত রুকইয়াহ আয়াত এখনো প্রকাশ করা হয়নি।',
+                  ),
                 ),
               for (var index = 0; index < items.length; index++)
                 Card(
@@ -295,7 +318,8 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
 
   Future<void> _play(String verseKey, String audioUrl) async {
     final uri = Uri.tryParse(audioUrl);
-    if (uri == null || uri.scheme != 'https' ||
+    if (uri == null ||
+        uri.scheme != 'https' ||
         !{'verses.quran.foundation', 'audio.qurancdn.com'}.contains(uri.host)) {
       return;
     }
@@ -307,9 +331,9 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       _audio.play();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('অডিও চালানো যাচ্ছে না।')));
       }
     }
   }
@@ -328,15 +352,18 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
       children: [
         const Padding(
           padding: EdgeInsets.only(bottom: 12),
-          child: Text('আরবি মূল পাঠ ও বাংলা অনুবাদ Quran Foundation থেকে আসে। যাচাইকৃত বাংলা হরফের উচ্চারণ পাওয়া না গেলে অনুমান করে যোগ করা হয় না।'),
+          child: Text(
+            'আরবি মূল পাঠ ও বাংলা অনুবাদ Quran Foundation থেকে আসে। যাচাইকৃত বাংলা হরফের উচ্চারণ পাওয়া না গেলে অনুমান করে যোগ করা হয় না।',
+          ),
         ),
         for (final verse in _verses) _verseCard(context, verse),
         if (_error != null)
           _ConnectionNotice(message: _error!, onRetry: _nextPage),
-        if (_loading) const Padding(
-          padding: EdgeInsets.all(20),
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          ),
         if (!_loading && _more && _error == null)
           OutlinedButton.icon(
             onPressed: _nextPage,
@@ -348,10 +375,18 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
   );
 
   Widget _verseCard(BuildContext context, Map<String, dynamic> verse) {
-    final translations = (verse['translations'] as List? ?? const []).whereType<Map>().toList();
-    final bangla = translations.where((item) =>
-        String(item['language_name'] ?? '').toLowerCase() == 'bengali').toList();
-    final latin = translations.where((item) => item['resource_id'] == 57).toList();
+    final translations = (verse['translations'] as List? ?? const [])
+        .whereType<Map>()
+        .toList();
+    final bangla = translations
+        .where(
+          (item) =>
+              String(item['language_name'] ?? '').toLowerCase() == 'bengali',
+        )
+        .toList();
+    final latin = translations
+        .where((item) => item['resource_id'] == 57)
+        .toList();
     final arabic = verse['text_uthmani'] as String? ?? '';
     final audio = verse['audio'];
     final audioUrl = audio is Map ? audio['url'] as String? : null;
@@ -371,25 +406,40 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
                   IconButton(
                     tooltip: 'তিলাওয়াত শুনুন',
                     onPressed: () => _play(key, audioUrl),
-                    icon: Icon(_playingKey == key ? Icons.replay : Icons.play_circle_outline),
+                    icon: Icon(
+                      _playingKey == key
+                          ? Icons.replay
+                          : Icons.play_circle_outline,
+                    ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
             Directionality(
               textDirection: TextDirection.rtl,
-              child: SelectableText(arabic, style: const TextStyle(fontSize: 28, height: 2.2)),
+              child: SelectableText(
+                arabic,
+                style: const TextStyle(fontSize: 28, height: 2.2),
+              ),
             ),
             if (bangla.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Text(_plainText(bangla.first['text']), style: const TextStyle(fontSize: 15, height: 1.7)),
+              Text(
+                _plainText(bangla.first['text']),
+                style: const TextStyle(fontSize: 15, height: 1.7),
+              ),
               if (bangla.first['resource_name'] != null)
-                Text('অনুবাদ: ${bangla.first['resource_name']}', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'অনুবাদ: ${bangla.first['resource_name']}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
             ],
             if (latin.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text('ল্যাটিন উচ্চারণ: ${_plainText(latin.first['text'])}',
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                'ল্যাটিন উচ্চারণ: ${_plainText(latin.first['text'])}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ],
         ),
@@ -397,11 +447,12 @@ class _QuranApiSurahScreenState extends State<QuranApiSurahScreen> {
     );
   }
 
-  String _plainText(Object? value) => String(value ?? '')
-      .replaceAll(RegExp(r'<[^>]*>'), '')
-      .replaceAll('&nbsp;', ' ')
-      .replaceAll('&amp;', '&')
-      .trim();
+  String _plainText(Object? value) =>
+      String(value ?? '')
+          .replaceAll(RegExp(r'<[^>]*>'), '')
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll('&amp;', '&')
+          .trim();
 }
 
 class _ConnectionNotice extends StatelessWidget {
@@ -421,7 +472,10 @@ class _ConnectionNotice extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 14),
-          OutlinedButton(onPressed: onRetry, child: const Text('আবার চেষ্টা করুন')),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: const Text('আবার চেষ্টা করুন'),
+          ),
           TextButton(
             onPressed: () => launchUrl(Uri.parse('https://quran.com/')),
             child: const Text('Quran.com খুলুন'),
