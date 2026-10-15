@@ -68,7 +68,7 @@ for spec in \
   user_roles:user_id \
   notification_events:id \
   notification_devices:id \
-  ai_generation_requests:id \
+  ai_generation_requests:request_id \
   admin_audit_logs:id; do
   IFS=: read -r table column <<< "$spec"
   code="$(get_public_status "$table" "$column")"
