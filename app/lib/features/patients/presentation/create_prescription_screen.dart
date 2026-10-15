@@ -209,8 +209,12 @@ class _CreatePrescriptionScreenState
       if (!result.isReadyForReview) {
         setState(() => _storedDocumentAttachmentId = result.attachmentId);
         _showMessage(
-          'AI দিয়ে করণীয় তৈরি হয়নি। আপলোড করা PDF সংরক্ষিত আছে; '
-          'আবার চেষ্টা করুন অথবা নিজে লিখুন।',
+          result.aiResult.failureCode == 'ai_configuration_missing'
+              ? 'Staging-এ Gemini API key configure করা নেই। '
+                    'Admin/Developer-কে server-side AI keys যোগ করতে হবে। '
+                    'আপনার PDF নিরাপদে সংরক্ষিত আছে।'
+              : 'AI দিয়ে করণীয় তৈরি হয়নি। আপলোড করা PDF সংরক্ষিত আছে; '
+                    'আবার চেষ্টা করুন অথবা নিজে লিখুন।',
         );
         return;
       }
