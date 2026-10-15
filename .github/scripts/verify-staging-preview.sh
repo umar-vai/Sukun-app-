@@ -1,26 +1,33 @@
 #!/usr/bin/env bash
-# Anonymous Data API smoke gate for the isolated, public Flutter Web staging build.
+# Anonymous Data API smoke gate for the role-aware public Flutter Web build.
 # This is a release safeguard, not a substitute for authenticated cross-patient
 # pgTAP/E2E tests. Never print an API key or a private response body.
 set -euo pipefail
 
-: "${SUPABASE_URL:?staging URL required}"
-: "${SUPABASE_PUBLISHABLE_KEY:?public staging publishable key required}"
+: "${SUPABASE_URL:?Supabase URL required}"
+: "${SUPABASE_PUBLISHABLE_KEY:?public publishable key required}"
 : "${APP_ENVIRONMENT:?environment required}"
-[[ "$APP_ENVIRONMENT" == "staging" ]] || {
-  echo "This check only runs against an isolated staging environment." >&2
-  exit 1
-}
-[[ "$SUPABASE_URL" == https://*.supabase.co ]] || {
-  echo "Invalid staging Supabase host." >&2
-  exit 1
-}
-[[ "$SUPABASE_URL" != "https://vydfafumxptanpkmtrpr.supabase.co" ]] || {
-  echo "Production Supabase is forbidden for Pages QA." >&2
-  exit 1
-}
+case "$APP_ENVIRONMENT" in
+  production)
+    [[ "$SUPABASE_URL" == "https://vydfafumxptanpkmtrpr.supabase.co" ]] || {
+      echo "Wrong approved Production Supabase project." >&2
+      exit 1
+    }
+    ;;
+  staging)
+    [[ "$SUPABASE_URL" == https://*.supabase.co &&
+       "$SUPABASE_URL" != "https://vydfafumxptanpkmtrpr.supabase.co" ]] || {
+      echo "Staging must use an isolated Supabase project." >&2
+      exit 1
+    }
+    ;;
+  *)
+    echo "Real backend isolation gate requires staging or production." >&2
+    exit 1
+    ;;
+esac
 [[ "$SUPABASE_PUBLISHABLE_KEY" == sb_publishable_* ]] || {
-  echo "Only the public staging publishable key may be used." >&2
+  echo "Only a public Supabase publishable key may be bundled." >&2
   exit 1
 }
 
@@ -41,7 +48,7 @@ get_public_status() {
 # The public Resources API should be reachable with a browser publishable key.
 code="$(get_public_status content_items)"
 if [[ "$code" != "200" ]] || ! jq -e 'type == "array"' "$tmp" >/dev/null; then
-  echo "Staging public resources API is not available (HTTP $code)." >&2
+  echo "Public resources API unavailable (HTTP $code)." >&2
   exit 1
 fi
 echo "PASS: public resources API available."
@@ -61,7 +68,7 @@ for spec in patients:id prescriptions:id care_plans:id profiles:id user_roles:us
     401|403)
       ;;
     *)
-      echo "Staging privacy gate returned unexpected HTTP $code for $table." >&2
+      echo "Privacy gate returned unexpected HTTP $code for $table." >&2
       exit 1
       ;;
   esac
@@ -78,10 +85,10 @@ if [[ "${ENABLE_GOOGLE_OAUTH:-false}" == "true" ]]; then
     "$SUPABASE_URL/auth/v1/settings")"
   if [[ "$google_code" != "200" ]] ||
      ! jq -e '.external.google == true' "$tmp" >/dev/null; then
-    echo "Google OAuth is not enabled on the isolated staging Supabase provider." >&2
+    echo "Google OAuth provider is disabled on this Supabase project." >&2
     exit 1
   fi
-  echo "PASS: Google provider enabled on isolated staging Auth."
+  echo "PASS: Google OAuth provider is enabled."
 fi
 
-echo "Anonymous staging smoke gate passed. Run authenticated RLS/E2E tests separately."
+echo "Anonymous privacy gate passed. Run authenticated RLS/E2E separately."
