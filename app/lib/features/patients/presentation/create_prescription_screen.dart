@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
+import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/data/prescription_documents_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient_inputs.dart';
@@ -33,6 +35,11 @@ class _CreatePrescriptionScreenState
   bool _submitting = false;
   _PrescriptionSourceMode _mode = _PrescriptionSourceMode.typed;
   PrescriptionDocumentFile? _documentFile;
+  // Stable IDs and the saved result prevent duplicate prescription inserts
+  // when draft creation fails and the Admin retries.
+  final _typedPrescriptionRequestId = const Uuid().v4();
+  final _typedPlanRequestId = const Uuid().v4();
+  Prescription? _savedTypedPrescription;
 
   @override
   void dispose() {
@@ -89,21 +96,56 @@ class _CreatePrescriptionScreenState
     await _submitDocumentPrescription();
   }
 
-  Future<void> _submitTypedPrescription() async {
+  Future<void> _submitTypedPrescription({bool generateActions = false}) async {
+    if (_submitting || !_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     try {
-      await ref
-          .read(patientsRepositoryProvider)
-          .createPrescription(
-            CreatePrescriptionInput(
-              patientId: widget.patientId,
-              rawText: _textController.text,
-              visibility: _visibility,
-              sessionDate: _sessionDate,
-              requestId: const Uuid().v4(),
-            ),
+      final prescription =
+          _savedTypedPrescription ??
+          await ref
+              .read(patientsRepositoryProvider)
+              .createPrescription(
+                CreatePrescriptionInput(
+                  patientId: widget.patientId,
+                  rawText: _textController.text,
+                  visibility: _visibility,
+                  sessionDate: _sessionDate,
+                  requestId: _typedPrescriptionRequestId,
+                ),
+              );
+      _savedTypedPrescription = prescription;
+      if (!mounted) return;
+      if (!generateActions) {
+        context.pop(true);
+        return;
+      }
+
+      // Keep the existing Admin review/approval and plan publish gates.
+      try {
+        final draft = await ref
+            .read(carePlansRepositoryProvider)
+            .createDraft(
+              CreateCarePlanInput(
+                patientId: widget.patientId,
+                name: 'প্রেসক্রিপশনভিত্তিক করণীয়',
+                startDate: DateUtils.dateOnly(DateTime.now()),
+                prescriptionId: prescription.id,
+                requestId: _typedPlanRequestId,
+              ),
+            );
+        if (!mounted) return;
+        context.pushReplacement(
+          '/admin/patients/${widget.patientId}/plans/${draft.id}/actions/suggest'
+          '?prescriptionId=${Uri.encodeQueryComponent(prescription.id)}',
+        );
+      } catch (_) {
+        if (mounted) {
+          _showMessage(
+            'প্রেসক্রিপশন সংরক্ষিত হয়েছে, কিন্তু খসড়া পরিকল্পনা তৈরি হয়নি। '
+            'আবার চেষ্টা করুন; প্রেসক্রিপশন দ্বিতীয়বার সংরক্ষণ হবে না।',
           );
-      if (mounted) context.pop(true);
+        }
+      }
     } catch (_) {
       if (mounted) _showMessage('প্রেসক্রিপশন সংরক্ষণ করা যায়নি।');
     } finally {
@@ -190,7 +232,7 @@ class _CreatePrescriptionScreenState
                   const SizedBox(height: 20),
                   _SourceModeSelector(
                     value: _mode,
-                    enabled: !_submitting,
+                    enabled: !_submitting && _savedTypedPrescription == null,
                     onChanged: (value) => setState(() => _mode = value),
                   ),
                   const SizedBox(height: 20),
@@ -229,6 +271,8 @@ class _CreatePrescriptionScreenState
                               alignLabelWithHint: true,
                             ),
                             validator: validatePrescriptionText,
+                            readOnly:
+                                _submitting || _savedTypedPrescription != null,
                           )
                         else
                           _DocumentPicker(
@@ -240,8 +284,11 @@ class _CreatePrescriptionScreenState
                         const SizedBox(height: 18),
                         _SessionDateTile(
                           date: _sessionDate,
-                          onPick: _submitting ? null : _pickDate,
-                          onClear: _submitting
+                          onPick: _submitting || _savedTypedPrescription != null
+                              ? null
+                              : _pickDate,
+                          onClear:
+                              _submitting || _savedTypedPrescription != null
                               ? null
                               : () => setState(() => _sessionDate = null),
                         ),
@@ -249,7 +296,8 @@ class _CreatePrescriptionScreenState
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           value: _patientVisible,
-                          onChanged: _submitting
+                          onChanged:
+                              _submitting || _savedTypedPrescription != null
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
@@ -261,6 +309,20 @@ class _CreatePrescriptionScreenState
                           ),
                         ),
                         const SizedBox(height: 24),
+                        if (_mode == _PrescriptionSourceMode.typed) ...[
+                          FilledButton.icon(
+                            onPressed: _submitting
+                                ? null
+                                : () => _submitTypedPrescription(
+                                    generateActions: true,
+                                  ),
+                            icon: const Icon(Icons.auto_awesome_outlined),
+                            label: const Text(
+                              'সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         FilledButton.icon(
                           onPressed: _submitting ? null : _submit,
                           icon: _submitting
@@ -281,7 +343,7 @@ class _CreatePrescriptionScreenState
                                       ? 'Saving…'
                                       : 'Reading securely…'
                                 : _mode == _PrescriptionSourceMode.typed
-                                ? 'Save prescription'
+                                ? 'শুধু প্রেসক্রিপশন সংরক্ষণ করুন'
                                 : 'Upload & generate draft actions',
                           ),
                         ),

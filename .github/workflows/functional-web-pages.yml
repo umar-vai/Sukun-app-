@@ -167,6 +167,7 @@ jobs:
             test/features/resources/resources_home_screen_test.dart \
             test/features/resources/quran_tabbed_screen_test.dart \
             test/features/resources/resource_category_search_test.dart \
+            test/features/patients/prescription_ai_entry_test.dart \
             test/features/resources/resource_preview_unavailable_test.dart \
             test/features/patient_care/patient_notifications_screen_test.dart \
             test/features/resources/resource_detail_screen_test.dart \
