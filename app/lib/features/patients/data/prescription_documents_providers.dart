@@ -23,4 +23,12 @@ final class UnavailablePrescriptionDocumentsRepository
   ) => throw const PrescriptionDocumentException(
     'Connect Supabase to import prescription documents.',
   );
+
+  @override
+  Future<PrescriptionDocumentImportResult> retryDocumentExtraction({
+    required String attachmentId,
+    required String requestId,
+  }) => throw const PrescriptionDocumentException(
+    'Connect Supabase to import prescription documents.',
+  );
 }

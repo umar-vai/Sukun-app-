@@ -59,29 +59,9 @@ final class SupabasePrescriptionDocumentsRepository
             ),
           );
 
-      final response = await _client.functions.invoke(
-        'prescription-document-to-actions',
-        body: {
-          'attachment_id': attachmentId,
-          'request_id': input.extractionRequestId,
-        },
-      );
-      final body = response.data;
-      if (body is! Map) {
-        throw const PrescriptionDocumentException(
-          prescriptionDocumentManualMessage,
-        );
-      }
-      final json = Map<String, dynamic>.from(body);
-      final aiResult = AiActionGenerationResult.fromJson(
-        json,
-        expectedRequestId: input.extractionRequestId,
-      );
-      return PrescriptionDocumentImportResult(
+      return await _extractStoredDocument(
         attachmentId: attachmentId,
-        prescriptionId: json['prescription_id'] as String?,
-        carePlanId: json['care_plan_id'] as String?,
-        aiResult: aiResult,
+        requestId: input.extractionRequestId,
       );
     } on PrescriptionDocumentException {
       rethrow;
@@ -100,6 +80,62 @@ final class SupabasePrescriptionDocumentsRepository
     } catch (_) {
       throw const PrescriptionDocumentException(
         prescriptionDocumentManualMessage,
+      );
+    }
+  }
+
+  @override
+  Future<PrescriptionDocumentImportResult> retryDocumentExtraction({
+    required String attachmentId,
+    required String requestId,
+  }) =>
+      _extractStoredDocument(attachmentId: attachmentId, requestId: requestId);
+
+  Future<PrescriptionDocumentImportResult> _extractStoredDocument({
+    required String attachmentId,
+    required String requestId,
+  }) async {
+    try {
+      final response = await _client.functions.invoke(
+        'prescription-document-to-actions',
+        body: {'attachment_id': attachmentId, 'request_id': requestId},
+      );
+      final body = response.data;
+      if (body is! Map) {
+        throw PrescriptionDocumentException(
+          prescriptionDocumentManualMessage,
+          attachmentId: attachmentId,
+        );
+      }
+      final json = Map<String, dynamic>.from(body);
+      final aiResult = AiActionGenerationResult.fromJson(
+        json,
+        expectedRequestId: requestId,
+      );
+      return PrescriptionDocumentImportResult(
+        attachmentId: attachmentId,
+        prescriptionId: json['prescription_id'] as String?,
+        carePlanId: json['care_plan_id'] as String?,
+        aiResult: aiResult,
+      );
+    } on PrescriptionDocumentException {
+      rethrow;
+    } on FunctionException catch (error) {
+      throw PrescriptionDocumentException(
+        _safeFunctionMessage(error.status),
+        attachmentId: error.status == 400 || error.status == 404
+            ? null
+            : attachmentId,
+      );
+    } on AiActionSchemaException {
+      throw PrescriptionDocumentException(
+        prescriptionDocumentManualMessage,
+        attachmentId: attachmentId,
+      );
+    } catch (_) {
+      throw PrescriptionDocumentException(
+        prescriptionDocumentManualMessage,
+        attachmentId: attachmentId,
       );
     }
   }

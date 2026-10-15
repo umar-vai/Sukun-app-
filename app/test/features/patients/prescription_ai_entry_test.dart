@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,10 +8,14 @@ import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
+import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
+import 'package:sukun_life/features/patients/data/prescription_documents_providers.dart';
+import 'package:sukun_life/features/patients/data/prescription_documents_repository.dart';
 import 'package:sukun_life/features/patients/data/patients_repository.dart';
 import 'package:sukun_life/features/patients/domain/patient_inputs.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
+import 'package:sukun_life/features/patients/domain/prescription_document.dart';
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
 
 void main() {
@@ -98,13 +104,60 @@ void main() {
     expect(find.text('AI review: prescription-1'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('preserved PDF AI retry does not create a second attachment', (
+    tester,
+  ) async {
+    final documents = _PdfRetryRepository();
+    final router = _testRouter(
+      initialDocument: PrescriptionDocumentFile(
+        filename: 'synthetic-prescription.pdf',
+        mimeType: 'application/pdf',
+        bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
+      ),
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          prescriptionDocumentsRepositoryProvider.overrideWithValue(documents),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.ensureVisible(find.text('Upload & generate draft actions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Upload & generate draft actions'));
+    await tester.pumpAndSettle();
+
+    expect(documents.importCalls, 1);
+    expect(documents.retryCalls, 0);
+    expect(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'), findsOneWidget);
+    expect(find.text('নিজে প্রেসক্রিপশন লিখুন'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'));
+    await tester.pumpAndSettle();
+
+    expect(documents.importCalls, 1);
+    expect(documents.retryCalls, 1);
+    expect(documents.retriedAttachmentId, 'attachment-1');
+    expect(find.text('AI review: prescription-1'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-GoRouter _testRouter() => GoRouter(
+GoRouter _testRouter({PrescriptionDocumentFile? initialDocument}) => GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (_, _) => const CreatePrescriptionScreen(patientId: 'patient-1'),
+      builder: (_, _) => CreatePrescriptionScreen(
+        patientId: 'patient-1',
+        initialDocument: initialDocument,
+      ),
     ),
     GoRoute(
       path: '/admin/patients/:patientId/plans/:planId/actions/suggest',
@@ -166,4 +219,44 @@ class _DraftPlans implements CarePlansRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _PdfRetryRepository implements PrescriptionDocumentsRepository {
+  int importCalls = 0;
+  int retryCalls = 0;
+  String? retriedAttachmentId;
+
+  @override
+  Future<PrescriptionDocumentImportResult> importDocument(
+    PrescriptionDocumentImportInput input,
+  ) async {
+    importCalls += 1;
+    return PrescriptionDocumentImportResult(
+      attachmentId: 'attachment-1',
+      aiResult: AiActionGenerationResult(
+        requestId: input.extractionRequestId,
+        status: AiActionGenerationStatus.manualRequired,
+        actions: const [],
+      ),
+    );
+  }
+
+  @override
+  Future<PrescriptionDocumentImportResult> retryDocumentExtraction({
+    required String attachmentId,
+    required String requestId,
+  }) async {
+    retryCalls += 1;
+    retriedAttachmentId = attachmentId;
+    return PrescriptionDocumentImportResult(
+      attachmentId: attachmentId,
+      prescriptionId: 'prescription-1',
+      carePlanId: 'plan-1',
+      aiResult: AiActionGenerationResult(
+        requestId: requestId,
+        status: AiActionGenerationStatus.generated,
+        actions: const [],
+      ),
+    );
+  }
 }

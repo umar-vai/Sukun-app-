@@ -59,9 +59,11 @@ class PrescriptionDocumentImportResult {
 }
 
 class PrescriptionDocumentException implements Exception {
-  const PrescriptionDocumentException(this.message);
+  const PrescriptionDocumentException(this.message, {this.attachmentId});
 
   final String message;
+  // Present only after the private file was uploaded successfully.
+  final String? attachmentId;
 
   @override
   String toString() => message;
