@@ -4,6 +4,7 @@
 // required before the 114-chapter catalog can be enabled.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { useAttributedPublicQuran } from "./provider-selection.ts";
+import { openQuranGet } from "./upstream-resilience.ts";
 
 const origins = new Set([
   "https://umar-vai.github.io",
@@ -113,20 +114,7 @@ async function contentGet(
  * edition credits must be presented by the Flutter client.
  * https://alquran.cloud/terms-and-conditions
  */
-async function openQuranGet(path: string): Promise<any> {
-  const response = await fetch("https://api.alquran.cloud/v1/" + path, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(18000),
-  });
-  if (!response.ok) {
-    throw new Error("Open Quran upstream HTTP " + response.status);
-  }
-  const json = await response.json();
-  if (json?.code !== 200 || json?.status !== "OK") {
-    throw new Error("Invalid open Quran upstream response");
-  }
-  return json.data;
-}
+
 
 async function openQuranResponse(body: any) {
   if (body?.action === "chapters") {
