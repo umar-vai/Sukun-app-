@@ -11,7 +11,7 @@ void main() {
       expect(section, isNotNull, reason: 'Missing editorial excerpt $id');
       counts[section!] += 1;
     }
-    expect(counts, [13, 41, 0, 10, 11, 6, 8, 6]);
+    expect(counts, [13, 47, 0, 10, 11, 6, 8, 6]);
   });
 
   test('23 Ruqyah/health/mercy Dua records remain in their own section', () {
