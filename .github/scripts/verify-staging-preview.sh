@@ -55,7 +55,21 @@ echo "PASS: public resources API available."
 
 # An anonymous preview must not return clinical, role or notification rows.
 # Explicit HTTP 401/403 is also a valid fail-closed state for private tables.
-for spec in patients:id prescriptions:id care_plans:id profiles:id user_roles:user_id notification_events:id; do
+for spec in \
+  patients:id \
+  prescriptions:id \
+  prescription_versions:id \
+  prescription_attachments:id \
+  care_plans:id \
+  plan_actions:id \
+  task_instances:id \
+  task_completions:id \
+  profiles:id \
+  user_roles:user_id \
+  notification_events:id \
+  notification_devices:id \
+  ai_generation_requests:id \
+  admin_audit_logs:id; do
   IFS=: read -r table column <<< "$spec"
   code="$(get_public_status "$table" "$column")"
   case "$code" in
