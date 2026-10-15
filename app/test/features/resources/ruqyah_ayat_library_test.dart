@@ -17,9 +17,7 @@ void main() {
   test('23 Ruqyah/health/mercy Dua records remain in their own section', () {
     for (var id = 1; id <= 23; id++) {
       expect(
-        ruqyahSectionForSlug(
-          'srg2024-dua-${id.toString().padLeft(3, '0')}',
-        ),
+        ruqyahSectionForSlug('srg2024-dua-${id.toString().padLeft(3, '0')}'),
         2,
       );
     }
@@ -35,13 +33,7 @@ void main() {
 
   test('section audio is described only as a full section recording', () {
     expect(ruqyahSections[2].audioSlug, isNull);
-    expect(
-      ruqyahSections[6].audioSlug,
-      'sukun-ruqyahbd-harq',
-    );
-    expect(
-      ruqyahSections[7].audioSlug,
-      'sukun-ruqyahbd-shifa-sakina',
-    );
+    expect(ruqyahSections[6].audioSlug, 'sukun-ruqyahbd-harq');
+    expect(ruqyahSections[7].audioSlug, 'sukun-ruqyahbd-shifa-sakina');
   });
 }
