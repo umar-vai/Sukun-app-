@@ -70,5 +70,4 @@ void main() {
     expect(ruqyahBanglaNumber(255), '২৫৫');
     expect(ruqyahBanglaNumber(114), '১১৪');
   });
-
 }
