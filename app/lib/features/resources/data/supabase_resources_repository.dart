@@ -52,11 +52,8 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
       if (categoryPrefixes.isNotEmpty) {
         resources = resources
             .where(
-              (resource) => categoryPrefixes.any(
-                (prefix) =>
-                    resource.categorySlug == prefix ||
-                    resource.categorySlug?.startsWith('$prefix-') == true,
-              ),
+              (resource) =>
+                  resourceMatchesCategoryFilter(resource, categoryPrefixes),
             )
             .toList(growable: false);
       }
@@ -239,4 +236,23 @@ bool _matchesEveryTerm(ContentResource resource, Set<String> terms) {
     resource.sourceReference,
   ].whereType<String>().join(' ').toLowerCase();
   return terms.every(searchable.contains);
+}
+
+bool resourceMatchesCategoryFilter(
+  ContentResource resource,
+  Set<String> categoryPrefixes,
+) {
+  if (categoryPrefixes.isEmpty) return true;
+  final slug = resource.categorySlug;
+  if (slug != null &&
+      categoryPrefixes.any(
+        (prefix) => slug == prefix || slug.startsWith('$prefix-'),
+      )) {
+    return true;
+  }
+  // Imported, source-verified duas and amals lack category IDs. Keep their
+  // published cards visible only in Dua & Azkar; never weaken Supabase RLS.
+  return slug == null &&
+      categoryPrefixes.contains('dua') &&
+      (resource.type == 'dua' || resource.type == 'amal');
 }

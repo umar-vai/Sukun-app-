@@ -126,7 +126,7 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
                   child: Padding(
                     padding: EdgeInsets.all(14),
                     child: Text(
-                      '১১৪টি সূরার জন্য আপাতত Al Quran Cloud-এর API ব্যবহার করা হচ্ছে। আরবি পাঠ, মুহিউদ্দীন খানের বাংলা অনুবাদ এবং মিশারী আল-আফাসীর তিলাওয়াতের উৎস ও স্বত্ব তাঁদের নিজ নিজ প্রকাশক ও রিসাইটারের। Quran Foundation-এর পূর্ণ Production API অনুমোদন পাওয়া গেলে সেটি ব্যবহার করা যাবে।',
+                      '১১৪টি সূরার জন্য Al Quran Cloud API থেকে আরবি পাঠ, বাংলা অনুবাদ ও তিলাওয়াত স্ট্রিম করা হচ্ছে। অনুবাদক, প্রকাশক ও রিসাইটারের স্বত্ব তাঁদের নিজস্ব; উৎসের নাম সূরার পাঠক স্ক্রিনে দেখানো হয়। এটি Sukun-এর নিজস্ব সংরক্ষিত কুরআন ডেটাবেস নয়।',
                     ),
                   ),
                 ),
@@ -194,7 +194,7 @@ class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
 
   Future<List<ContentResource>> _load() async {
     if (!AppEnvironment.isSupabaseConfigured) {
-      throw const FormatException('Supabase staging এখনো সংযুক্ত নয়।');
+      throw const FormatException('Supabase এখনো সংযুক্ত নয়।');
     }
     final response = await Supabase.instance.client
         .from('content_items')

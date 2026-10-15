@@ -3,6 +3,7 @@
 // Quran Foundation prelive only supplies chapters 1-2. Production access is
 // required before the 114-chapter catalog can be enabled.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { useAttributedPublicQuran } from "./provider-selection.ts";
 
 const origins = new Set([
   "https://umar-vai.github.io",
@@ -107,7 +108,7 @@ async function contentGet(
   throw new Error("Quran Foundation authorization failed");
 }
 
-/** Staging fallback until Quran Foundation grants full production access.
+/** Attributed streaming until Quran Foundation grants full production access.
  * Text, translation and recitation are streamed from Al Quran Cloud;
  * edition credits must be presented by the Flutter client.
  * https://alquran.cloud/terms-and-conditions
@@ -140,7 +141,7 @@ async function openQuranResponse(body: any) {
         name_arabic: String(c.name ?? ""),
         verses_count: Number(c.numberOfAyahs),
       })),
-      environment: "staging-public-source",
+      environment: "attributed-public-source",
       provider: "Al Quran Cloud",
     };
   }
@@ -210,7 +211,7 @@ async function openQuranResponse(body: any) {
       },
       translation_name: translationName,
       recitation_name: recitationName,
-      environment: "staging-public-source",
+      environment: "attributed-public-source",
       provider: "Al Quran Cloud",
     };
   }
@@ -227,29 +228,13 @@ Deno.serve(async (request: Request) => {
   }
   const id = Deno.env.get("QF_CLIENT_ID");
   const secret = Deno.env.get("QF_CLIENT_SECRET");
-  if (Deno.env.get("QF_ENV") === "production" && (!id || !secret)) {
-    return respond(503, {
-      error: "Quran Foundation integration not configured",
-      code: "qf_not_configured",
-    }, origin);
-  }
 
   try {
     const data = await request.json();
-    // Quran Foundation prelive exposes only two chapters. Use the explicit
-    // attributed public provider for the full 114-chapter staging reader.
-    // Production mode always uses Quran Foundation credentials instead.
-    if (Deno.env.get("QF_ENV") !== "production") {
-      // Do not allow the development-only public provider in the live patient
-      // production project even if someone deploys this function by mistake.
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      if (supabaseUrl.includes("vydfafumxptanpkmtrpr")) {
-        return respond(
-          503,
-          { error: "Production Quran API is not configured" },
-          origin,
-        );
-      }
+    // When Quran Foundation credentials are unavailable, use the attributed
+    // keyless 114-surah source in Production and staging alike.
+    // No Quran corpus or private keys are bundled in Flutter.
+    if (useAttributedPublicQuran(Deno.env.get("QF_ENV"), id, secret)) {
       const dataOut = await openQuranResponse(data);
       return respond(
         dataOut?.code === "bad_input" ? 400 : 200,
