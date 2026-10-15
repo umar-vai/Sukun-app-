@@ -11,6 +11,7 @@ class AiActionGenerationResult {
     required this.status,
     required this.actions,
     this.sourceText,
+    this.failureCode,
   });
 
   factory AiActionGenerationResult.fromJson(
@@ -54,6 +55,9 @@ class AiActionGenerationResult {
       status: status,
       actions: List.unmodifiable(actions),
       sourceText: _optionalText(json['source_text'], maxLength: 50000),
+      failureCode: json['failure_code'] == 'ai_configuration_missing'
+          ? 'ai_configuration_missing'
+          : null,
     );
   }
 
@@ -61,6 +65,8 @@ class AiActionGenerationResult {
   final AiActionGenerationStatus status;
   final List<SuggestedPlanAction> actions;
   final String? sourceText;
+  // Backend-controlled allowlisted diagnostic; not a provider error or secret.
+  final String? failureCode;
 
   bool get requiresManualBuilder =>
       status == AiActionGenerationStatus.manualRequired || actions.isEmpty;

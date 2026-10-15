@@ -214,9 +214,16 @@ Deno.serve(async (request) => {
       });
 
     if (!transcription?.trim()) {
+      // A missing server-side Gemini configuration cannot be fixed by
+      // re-uploading a patient file. Expose only an allowlisted status to
+      // the authenticated Super Admin; never log key names or values.
+      const failureCode = slots.length === 0
+        ? "ai_configuration_missing"
+        : "transcription_failed";
       const fallback = {
         request_id: input.requestId,
         ...manualRequired(),
+        failure_code: failureCode,
         attachment_id: attachment.id,
       };
       await adminClient.from("prescription_attachments").update({
@@ -231,7 +238,7 @@ Deno.serve(async (request) => {
         attachment.patient_id,
         attachment.id,
         input.requestId,
-        "transcription_failed",
+        failureCode,
       );
       return jsonResponse(fallback);
     }
