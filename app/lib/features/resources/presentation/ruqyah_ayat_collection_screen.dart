@@ -97,7 +97,7 @@ class RuqyahEntry {
         !RegExp(r'^[0-9]+_[0-9]+$').hasMatch(value)) {
       return null;
     }
-    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/${value}.mp3';
+    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/$value.mp3';
   }
 }
 
