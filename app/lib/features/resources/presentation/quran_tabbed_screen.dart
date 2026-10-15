@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
-import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/resources/presentation/ruqyah_ayat_library.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,7 +29,7 @@ class QuranTabbedScreen extends StatelessWidget {
         ),
       ),
       body: const TabBarView(
-        children: [_CanonicalSurahCatalog(), _RuqyahAyatCatalog()],
+        children: [_CanonicalSurahCatalog(), RuqyahAyatLibrary()],
       ),
     ),
   );
@@ -173,101 +173,6 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
     return bangla is String && bangla.isNotEmpty
         ? '$simple — $bangla'
         : '$simple';
-  }
-}
-
-class _RuqyahAyatCatalog extends StatefulWidget {
-  const _RuqyahAyatCatalog();
-
-  @override
-  State<_RuqyahAyatCatalog> createState() => _RuqyahAyatCatalogState();
-}
-
-class _RuqyahAyatCatalogState extends State<_RuqyahAyatCatalog> {
-  late Future<List<ContentResource>> _result;
-
-  @override
-  void initState() {
-    super.initState();
-    _result = _load();
-  }
-
-  Future<List<ContentResource>> _load() async {
-    if (!AppEnvironment.isSupabaseConfigured) {
-      throw const FormatException('Supabase এখনো সংযুক্ত নয়।');
-    }
-    final response = await Supabase.instance.client
-        .from('content_items')
-        .select(
-          'id,type,title,title_bn,summary,reference_text,source_reference,visibility,status,surah_number,ayah_number',
-        )
-        .eq('status', 'published')
-        .like('slug', 'srg2024-qur-%')
-        .order('slug');
-    return response.map(ContentResource.fromJson).toList(growable: false);
-  }
-
-  void _retry() => setState(() => _result = _load());
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<ContentResource>>(
-      future: _result,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return _ConnectionNotice(
-            message: 'রুকইয়াহ আয়াতের তালিকা লোড হয়নি।',
-            onRetry: _retry,
-          );
-        }
-        final items = snapshot.data ?? const <ContentResource>[];
-        return RefreshIndicator(
-          onRefresh: () async {
-            _retry();
-            await _result;
-          },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
-            children: [
-              Text(
-                'রুকইয়াহ আয়াত ও অংশ',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                '${items.length}টি নির্বাচিত বইভিত্তিক রেকর্ড • মূল কুরআনের সূরা তালিকা থেকে আলাদা',
-              ),
-              const SizedBox(height: 12),
-              if (items.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'এই পরিবেশে নির্বাচিত রুকইয়াহ আয়াত এখনো প্রকাশ করা হয়নি।',
-                  ),
-                ),
-              for (var index = 0; index < items.length; index++)
-                Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(child: Text('${index + 1}')),
-                    title: Text(items[index].titleBn ?? items[index].title),
-                    subtitle: Text(
-                      items[index].surahNumber == null
-                          ? 'ভূমিকা / স্বতন্ত্র আয়াত নয়'
-                          : 'সূরা ${items[index].surahNumber} : ${items[index].ayahNumber} • বইয়ের আয়াত/অংশ',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/resources/${items[index].id}'),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }
 
