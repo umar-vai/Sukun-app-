@@ -136,7 +136,47 @@ def main():
                json.dumps(audio,ensure_ascii=False,indent=2),encoding="utf-8")
     except Exception as exc:
         print("SPA_BUNDLE_INVENTORY_ERROR="+str(exc)[:145],flush=True)
+    # Exact API paths were found in the authorized app bundle itself.
+    try:
+        api_root="https://ayat.ruqyahbd.org"
+        groups_resp=requests.get(api_root+"/data/ayah_group.json",
+                                headers=HEADERS,timeout=35)
+        entries_resp=requests.get(api_root+"/data/ruqyah_ayah.json",
+                                 headers=HEADERS,timeout=35)
+        groups_resp.raise_for_status()
+        entries_resp.raise_for_status()
+        groups=groups_resp.json()
+        entries=entries_resp.json()
+        assert isinstance(groups,list) and len(groups)==8
+        assert isinstance(entries,list) and len(entries)>70
+        assert all(all(k in x for k in ["id","title","subtitle"]) for x in groups)
+        assert all(all(k in x for k in ["id","group_id","ayah_arabic","ayah_bangla","ayah_title","audiopath"]) for x in entries)
+        allowed_group_ids={x["id"] for x in groups}
+        assert all(x["group_id"] in allowed_group_ids for x in entries)
+        assert len({x["id"] for x in entries})==len(entries)
+        assert all(isinstance(x["ayah_arabic"],str) and x["ayah_arabic"].strip() for x in entries)
+        full={"source":"authorized-ruqyah-ayat-2026-10-15",
+              "groups":groups,"entries":entries}
+        exact=json.dumps(full,ensure_ascii=False,indent=2)
+        (ROOT/"verified-source-data.json").write_text(exact,encoding="utf-8")
+        audio_ids=sorted({str(x.get("audiopath","0")) for x in entries
+                          if x.get("audiopath") and str(x["audiopath"])!="0"})
+        print("EXACT_DATA groups="+str(len(groups))+" entries="+str(len(entries))+
+              " audio_ids="+str(len(audio_ids))+
+              " sha256="+hashlib.sha256(exact.encode()).hexdigest(),flush=True)
+        print("SECTION_COUNTS "+str([(x["id"],x["title"],sum(i["group_id"]==x["id"] for i in entries)) for x in groups]),flush=True)
+        for audio_id in audio_ids[:3]:
+            url="https://files.ruqyahbd.org/appfiles/ruqyah-ayat/"+audio_id+".mp3"
+            try:
+                resp=requests.head(url,timeout=16,allow_redirects=True)
+                print(f"MP3_SAMPLE id={audio_id} status={resp.status_code} type={resp.headers.get('content-type')} cors={resp.headers.get('access-control-allow-origin')}",flush=True)
+            except Exception as err:
+                print(f"MP3_SAMPLE id={audio_id} network={type(err).__name__}",flush=True)
+    except Exception as exc:
+        print("EXACT_DATA_FAILURE="+str(exc)[:240],flush=True)
+        sys.exit(1)
     print(f"EXTRACTED_SECTIONS={sum(x['ok'] and x['chars']>1000 for x in summary)}")
+
 
     # Inventory is allowed to be partial but must be recorded honestly.
     if not any(x['ok'] for x in summary):
