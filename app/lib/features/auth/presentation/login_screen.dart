@@ -232,10 +232,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   if (AppEnvironment.isProduction &&
                       !AppEnvironment.googleOAuthEnabled) ...[
                     const SizedBox(height: 8),
-                    const OutlinedButton.icon(
+                    OutlinedButton.icon(
                       onPressed: null,
-                      icon: Icon(Icons.login_rounded),
-                      label: Text('Google লগইন — সেটআপ প্রয়োজন'),
+                      icon: const Icon(Icons.login_rounded),
+                      label: const Text('Google লগইন — সেটআপ প্রয়োজন'),
                     ),
                     const SizedBox(height: 6),
                     Text(
