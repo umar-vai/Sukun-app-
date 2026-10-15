@@ -17,9 +17,15 @@ import 'package:uuid/uuid.dart';
 enum _PrescriptionSourceMode { typed, document }
 
 class CreatePrescriptionScreen extends ConsumerStatefulWidget {
-  const CreatePrescriptionScreen({super.key, required this.patientId});
+  const CreatePrescriptionScreen({
+    super.key,
+    required this.patientId,
+    this.initialDocument,
+  });
 
   final String patientId;
+  // Allows deterministic PDF retry testing without invoking the native picker.
+  final PrescriptionDocumentFile? initialDocument;
 
   @override
   ConsumerState<CreatePrescriptionScreen> createState() =>
@@ -42,6 +48,15 @@ class _CreatePrescriptionScreenState
   final _typedPrescriptionRequestId = const Uuid().v4();
   final _typedPlanRequestId = const Uuid().v4();
   Prescription? _savedTypedPrescription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDocument != null) {
+      _mode = _PrescriptionSourceMode.document;
+      _documentFile = widget.initialDocument;
+    }
+  }
 
   @override
   void dispose() {
