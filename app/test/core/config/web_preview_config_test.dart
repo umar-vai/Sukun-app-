@@ -112,20 +112,23 @@ void main() {
       }
     });
 
-    test('configured staging accepts explicitly enabled auth feature flags', () {
-      expect(
-        () => validateWebPreviewConfiguration(
-          environment: 'staging',
-          url: 'https://isolated-preview.supabase.co',
-          publishableKey: 'sb_publishable_fixture',
-          publicMemberSignupEnabled: true,
-          emailOtpEnabled: true,
-          phoneOtpEnabled: true,
-          googleOAuthEnabled: true,
-        ),
-        returnsNormally,
-      );
-    });
+    test(
+      'configured staging accepts explicitly enabled auth feature flags',
+      () {
+        expect(
+          () => validateWebPreviewConfiguration(
+            environment: 'staging',
+            url: 'https://isolated-preview.supabase.co',
+            publishableKey: 'sb_publishable_fixture',
+            publicMemberSignupEnabled: true,
+            emailOtpEnabled: true,
+            phoneOtpEnabled: true,
+            googleOAuthEnabled: true,
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
     test('staging cannot silently downgrade to guest', () {
       expect(
