@@ -327,15 +327,16 @@ class _CreatePrescriptionScreenState
                         const SizedBox(height: 18),
                         _SessionDateTile(
                           date: _sessionDate,
-                          onPick: _submitting ||
+                          onPick:
+                              _submitting ||
                                   _savedTypedPrescription != null ||
                                   _storedDocumentAttachmentId != null
                               ? null
                               : _pickDate,
                           onClear:
                               _submitting ||
-                                      _savedTypedPrescription != null ||
-                                      _storedDocumentAttachmentId != null
+                                  _savedTypedPrescription != null ||
+                                  _storedDocumentAttachmentId != null
                               ? null
                               : () => setState(() => _sessionDate = null),
                         ),
@@ -345,8 +346,8 @@ class _CreatePrescriptionScreenState
                           value: _patientVisible,
                           onChanged:
                               _submitting ||
-                                      _savedTypedPrescription != null ||
-                                      _storedDocumentAttachmentId != null
+                                  _savedTypedPrescription != null ||
+                                  _storedDocumentAttachmentId != null
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
@@ -410,7 +411,8 @@ class _CreatePrescriptionScreenState
                               onPressed: _submitting
                                   ? null
                                   : () => setState(
-                                      () => _mode = _PrescriptionSourceMode.typed,
+                                      () =>
+                                          _mode = _PrescriptionSourceMode.typed,
                                     ),
                               icon: const Icon(Icons.edit_note_outlined),
                               label: const Text('নিজে প্রেসক্রিপশন লিখুন'),
