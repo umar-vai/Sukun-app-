@@ -44,6 +44,9 @@ void validateWebPreviewConfiguration({
     }
     return;
   }
+  if (environment == 'local') {
+    throw StateError('Local browser mode cannot connect to live Supabase.');
+  }
   final host = Uri.parse(url).host;
   if (!host.endsWith('.supabase.co')) {
     throw StateError('Web app requires a Supabase project host.');
