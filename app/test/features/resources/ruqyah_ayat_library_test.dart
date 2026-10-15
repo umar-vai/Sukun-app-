@@ -36,4 +36,39 @@ void main() {
     expect(ruqyahSections[6].audioSlug, 'sukun-ruqyahbd-harq');
     expect(ruqyahSections[7].audioSlug, 'sukun-ruqyahbd-shifa-sakina');
   });
+
+  test('editorial indexes are not passed off as canonical ayah numbers', () {
+    expect(
+      ruqyahDisplayTitle('প্রাথমিক রুকইয়াহ আয়াত — আয়াত/অংশ 13'),
+      'প্রাথমিক রুকইয়াহ আয়াত',
+    );
+    expect(
+      ruqyahDisplayTitle('আউযুবিল্লাহ ও বিসমিল্লাহ (ভূমিকা)'),
+      'আউযুবিল্লাহ ও বিসমিল্লাহ (ভূমিকা)',
+    );
+  });
+
+  test('a real source reference uses Bengali surah and ayah names', () {
+    expect(
+      ruqyahCitation(surahNumber: 114, ayahNumber: 1),
+      'সূরা আন-নাস · আয়াত ১ থেকে নির্বাচিত পাঠ',
+    );
+    expect(
+      ruqyahCitation(surahNumber: 113, ayahNumber: 1, ayahEndNumber: 5),
+      'সূরা আল-ফালাক · আয়াত ১–৫',
+    );
+  });
+
+  test('missing/unknown references never create a false surah title', () {
+    expect(ruqyahCitation(surahNumber: null, ayahNumber: null), isNull);
+    expect(ruqyahCitation(surahNumber: 2, ayahNumber: null), isNull);
+    expect(ruqyahCitation(surahNumber: 0, ayahNumber: 1), isNull);
+    expect(ruqyahCitation(surahNumber: 11, ayahNumber: 1), isNull);
+  });
+
+  test('Bengali numerals are derived from references, not card order', () {
+    expect(ruqyahBanglaNumber(255), '২৫৫');
+    expect(ruqyahBanglaNumber(114), '১১৪');
+  });
+
 }
