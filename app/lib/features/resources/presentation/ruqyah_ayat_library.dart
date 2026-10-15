@@ -149,8 +149,8 @@ String? ruqyahCitation({
   final start = ruqyahBanglaNumber(ayahNumber);
   if (ayahEndNumber != null && ayahEndNumber >= ayahNumber) {
     final end = ruqyahBanglaNumber(ayahEndNumber);
-    return 'সূরা $surah · আয়াত $start' +
-        (ayahEndNumber == ayahNumber ? '' : '–$end');
+    final suffix = ayahEndNumber == ayahNumber ? '' : '–$end';
+    return 'সূরা $surah · আয়াত $start$suffix';
   }
   return 'সূরা $surah · আয়াত $start থেকে নির্বাচিত পাঠ';
 }
@@ -745,10 +745,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                 SelectableText(result.translation),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'অনুবাদ: ' +
-                                      result.edition +
-                                      ' · উৎস: ' +
-                                      result.provider,
+                                  'অনুবাদ: ${result.edition} · উৎস: ${result.provider}',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 const SizedBox(height: 8),
@@ -761,8 +758,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                               const SizedBox(height: 8),
                               TextButton.icon(
                                 onPressed: () => context.push(
-                                  '/resources/quran/' +
-                                      item.surahNumber.toString(),
+                                  '/resources/quran/${item.surahNumber}',
                                 ),
                                 icon: const Icon(Icons.menu_book_outlined),
                                 label: const Text(
