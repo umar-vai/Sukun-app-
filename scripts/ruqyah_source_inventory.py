@@ -110,7 +110,34 @@ def main():
             print(f"SECTION_{i} status=unavailable reason={str(error)[:140]}",flush=True)
         time.sleep(0.3)
     (ROOT/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
-    print(f"EXTRACTED_SECTIONS={sum(x['ok'] for x in summary)}")
+    # Vite SPA: the HTML is only an app shell. Inspect referenced source assets
+    # separately; do not fabricate "extracted" content from an empty DOM.
+    try:
+        first=(ROOT/"01-source.html").read_text(encoding="utf-8")
+        soup=BeautifulSoup(first,"html.parser")
+        app_scripts=[x["src"] for x in soup.select("script[src]")
+                     if x["src"].startswith("/assets/")]
+        print("SPA_BUNDLES="+str(len(app_scripts)))
+        for index,script in enumerate(app_scripts[:4]):
+            url=urljoin("https://ayat.ruqyahbd.org",script)
+            response=requests.get(url,headers=HEADERS,timeout=55)
+            if response.status_code != 200:
+                print("SPA_BUNDLE_FETCH_STATUS="+str(response.status_code))
+                continue
+            content=response.text
+            (ROOT/f"bundle-{index}.js").write_text(content,encoding="utf-8")
+            arabic=len(re.findall("[\\u0600-\\u06ff]",content))
+            urls=sorted(set(re.findall(r'https?://[^\\s"\\x27<>]{4,180}',content)))
+            audio=[x for x in urls if re.search(r'mp3|m4a|audio|\.ogg',x,re.I)]
+            markers={phrase:content.count(phrase) for phrase in
+                     ("بেসিক রুকইয়াহ","رَبِّ","arabicText","audioUrl","mp3","firebase")}
+            print(f"SPA_BUNDLE_{index} bytes={len(content)} arabic_chars={arabic} audio_candidate_count={len(audio)} markers={markers}",flush=True)
+            (ROOT/f"bundle-{index}-audio-candidates.json").write_text(
+               json.dumps(audio,ensure_ascii=False,indent=2),encoding="utf-8")
+    except Exception as exc:
+        print("SPA_BUNDLE_INVENTORY_ERROR="+str(exc)[:145],flush=True)
+    print(f"EXTRACTED_SECTIONS={sum(x['ok'] and x['chars']>1000 for x in summary)}")
+
     # Inventory is allowed to be partial but must be recorded honestly.
     if not any(x['ok'] for x in summary):
         sys.exit(1)
