@@ -5,7 +5,10 @@ Deno.test("uses attributed public Quran source when QF keys are missing", () => 
   assertEquals(useAttributedPublicQuran(undefined, undefined, undefined), true);
   assertEquals(useAttributedPublicQuran("production", "", ""), true);
   assertEquals(useAttributedPublicQuran("production", "id", ""), true);
-  assertEquals(useAttributedPublicQuran("production", undefined, "secret"), true);
+  assertEquals(
+    useAttributedPublicQuran("production", undefined, "secret"),
+    true,
+  );
 });
 
 Deno.test("retains approved Quran Foundation when both credentials exist", () => {
