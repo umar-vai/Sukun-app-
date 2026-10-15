@@ -97,7 +97,7 @@ class RuqyahEntry {
         !RegExp(r'^[0-9]+_[0-9]+$').hasMatch(value)) {
       return null;
     }
-    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/' + value + '.mp3';
+    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/${value}.mp3';
   }
 }
 
@@ -229,8 +229,7 @@ class _RuqyahAyatCollectionScreenState
                                             .bodySmall,
                                       ),
                                       Text(
-                                        items.length.toString() +
-                                            'টি আয়াত ও দোয়া',
+                                        '${items.length}টি আয়াত ও দোয়া',
                                         style: const TextStyle(
                                           color: _blue,
                                           fontSize: 11,
@@ -387,10 +386,7 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        widget.group.subtitle +
-                            ' · ' +
-                            widget.entries.length.toString() +
-                            'টি আয়াত ও দোয়া',
+                        '${widget.group.subtitle} · ${widget.entries.length}টি আয়াত ও দোয়া',
                       ),
                     ],
                   ),
@@ -443,7 +439,7 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                           children: [
                             Expanded(
                               child: Text(
-                                entry.number.toString() + '. ' + entry.title,
+                                '${entry.number}. ${entry.title}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   color: _navy,
@@ -464,7 +460,7 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                               onPressed: () {
                                 Clipboard.setData(
                                   ClipboardData(
-                                    text: entry.arabic + '\n\n' + entry.bangla,
+                                    text: '${entry.arabic}\n\n${entry.bangla}',
                                   ),
                                 );
                                 ScaffoldMessenger.of(context).showSnackBar(
