@@ -35,6 +35,8 @@ class _CreatePrescriptionScreenState
   bool _submitting = false;
   _PrescriptionSourceMode _mode = _PrescriptionSourceMode.typed;
   PrescriptionDocumentFile? _documentFile;
+  // For manual-required extraction, retry the private stored file only.
+  String? _storedDocumentAttachmentId;
   // Stable IDs and the saved result prevent duplicate prescription inserts
   // when draft creation fails and the Admin retries.
   final _typedPrescriptionRequestId = const Uuid().v4();
@@ -83,7 +85,10 @@ class _CreatePrescriptionScreenState
       return;
     }
 
-    setState(() => _documentFile = file);
+    setState(() {
+      _documentFile = file;
+      _storedDocumentAttachmentId = null;
+    });
   }
 
   Future<void> _submit() async {
@@ -162,23 +167,32 @@ class _CreatePrescriptionScreenState
 
     setState(() => _submitting = true);
     try {
-      final result = await ref
-          .read(prescriptionDocumentsRepositoryProvider)
-          .importDocument(
-            PrescriptionDocumentImportInput(
-              patientId: widget.patientId,
-              file: file,
-              visibility: _visibility,
-              sessionDate: _sessionDate,
-              createRequestId: const Uuid().v4(),
-              extractionRequestId: const Uuid().v4(),
-            ),
-          );
+      final documents = ref.read(prescriptionDocumentsRepositoryProvider);
+      final requestId = const Uuid().v4();
+      final existingAttachmentId = _storedDocumentAttachmentId;
+      final result = existingAttachmentId == null
+          ? await documents.importDocument(
+              PrescriptionDocumentImportInput(
+                patientId: widget.patientId,
+                file: file,
+                visibility: _visibility,
+                sessionDate: _sessionDate,
+                createRequestId: const Uuid().v4(),
+                extractionRequestId: requestId,
+              ),
+            )
+          : await documents.retryDocumentExtraction(
+              attachmentId: existingAttachmentId,
+              requestId: requestId,
+            );
 
       if (!mounted) return;
       if (!result.isReadyForReview) {
-        setState(() => _mode = _PrescriptionSourceMode.typed);
-        _showMessage(prescriptionDocumentManualMessage);
+        setState(() => _storedDocumentAttachmentId = result.attachmentId);
+        _showMessage(
+          'AI দিয়ে করণীয় তৈরি হয়নি। আপলোড করা PDF সংরক্ষিত আছে; '
+          'আবার চেষ্টা করুন অথবা নিজে লিখুন।',
+        );
         return;
       }
 
@@ -193,7 +207,12 @@ class _CreatePrescriptionScreenState
         ),
       );
     } on PrescriptionDocumentException catch (error) {
-      if (mounted) _showMessage(error.message);
+      if (mounted) {
+        if (error.attachmentId != null) {
+          setState(() => _storedDocumentAttachmentId = error.attachmentId);
+        }
+        _showMessage(error.message);
+      }
     } catch (_) {
       if (mounted) _showMessage(prescriptionDocumentManualMessage);
     } finally {
@@ -279,16 +298,23 @@ class _CreatePrescriptionScreenState
                             file: _documentFile,
                             enabled: !_submitting,
                             onPick: _pickDocument,
-                            onClear: () => setState(() => _documentFile = null),
+                            onClear: () => setState(() {
+                              _documentFile = null;
+                              _storedDocumentAttachmentId = null;
+                            }),
                           ),
                         const SizedBox(height: 18),
                         _SessionDateTile(
                           date: _sessionDate,
-                          onPick: _submitting || _savedTypedPrescription != null
+                          onPick: _submitting ||
+                                  _savedTypedPrescription != null ||
+                                  _storedDocumentAttachmentId != null
                               ? null
                               : _pickDate,
                           onClear:
-                              _submitting || _savedTypedPrescription != null
+                              _submitting ||
+                                      _savedTypedPrescription != null ||
+                                      _storedDocumentAttachmentId != null
                               ? null
                               : () => setState(() => _sessionDate = null),
                         ),
@@ -297,7 +323,9 @@ class _CreatePrescriptionScreenState
                           contentPadding: EdgeInsets.zero,
                           value: _patientVisible,
                           onChanged:
-                              _submitting || _savedTypedPrescription != null
+                              _submitting ||
+                                      _savedTypedPrescription != null ||
+                                      _storedDocumentAttachmentId != null
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
@@ -344,10 +372,29 @@ class _CreatePrescriptionScreenState
                                       : 'Reading securely…'
                                 : _mode == _PrescriptionSourceMode.typed
                                 ? 'শুধু প্রেসক্রিপশন সংরক্ষণ করুন'
-                                : 'Upload & generate draft actions',
+                                : _storedDocumentAttachmentId == null
+                                ? 'Upload & generate draft actions'
+                                : 'সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন',
                           ),
                         ),
                         if (_mode == _PrescriptionSourceMode.document) ...[
+                          if (_storedDocumentAttachmentId != null) ...[
+                            const SizedBox(height: 12),
+                            const Text(
+                              'PDF আগেই নিরাপদে আপলোড হয়েছে। আবার চেষ্টা করলে নতুন ফাইল আপলোড হবে না।',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: _submitting
+                                  ? null
+                                  : () => setState(
+                                      () => _mode = _PrescriptionSourceMode.typed,
+                                    ),
+                              icon: const Icon(Icons.edit_note_outlined),
+                              label: const Text('নিজে প্রেসক্রিপশন লিখুন'),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           const Text(
                             'The original file stays private. Generated actions remain drafts until a Super Admin reviews them.',
