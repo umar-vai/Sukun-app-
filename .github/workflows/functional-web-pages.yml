@@ -81,6 +81,26 @@ jobs:
         shell: bash
         run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
 
+      - name: Inspect Production Google OAuth provider readiness (read-only)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PUBLIC_API_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 20 \
+            --header "apikey: $PUBLIC_API_KEY" \
+            "https://vydfafumxptanpkmtrpr.supabase.co/auth/v1/settings" \
+            > /tmp/sukun-auth-public-settings.json
+          jq -e '.external.google | type == "boolean"' \
+            /tmp/sukun-auth-public-settings.json > /dev/null
+          if jq -e '.external.google == true' \
+            /tmp/sukun-auth-public-settings.json > /dev/null; then
+            echo 'Production Google OAuth provider: enabled; redirect and account-flow verification still required.'
+          else
+            echo 'Production Google OAuth provider: disabled; do not expose an unusable sign-in button.'
+          fi
+
       - name: Verify Production anonymous data isolation before merging
         if: github.event_name == 'pull_request'
         shell: bash
