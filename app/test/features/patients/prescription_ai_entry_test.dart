@@ -34,6 +34,8 @@ void main() {
       find.byType(TextFormField).first,
       'সকালে আয়াতুল কুরসি ৩ বার পড়বেন।',
     );
+    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
     await tester.pumpAndSettle();
 
@@ -66,6 +68,8 @@ void main() {
       find.byType(TextFormField).first,
       'সকালে আয়াতুল কুরসি ৩ বার পড়বেন।',
     );
+    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
     await tester.pumpAndSettle();
 
@@ -73,6 +77,8 @@ void main() {
     expect(plans.calls, 1);
     expect(find.textContaining('প্রেসক্রিপশন দ্বিতীয়বার সংরক্ষণ হবে না'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
     await tester.pumpAndSettle();
 
