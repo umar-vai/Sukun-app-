@@ -3,7 +3,7 @@ import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/config/web_preview_config.dart';
 
 void main() {
-  group('public Pages preview isolation', () {
+  group('public Pages web backend isolation', () {
     test('unconfigured local mode shows guest UI safely', () {
       expect(
         () => validateWebPreviewConfiguration(
@@ -37,17 +37,47 @@ void main() {
       );
     });
 
-    test('a configured local or production preview is forbidden', () {
-      for (final environment in ['local', 'production']) {
+    test('unconfigured local cannot silently target a backend', () {
+      expect(
+        () => validateWebPreviewConfiguration(
+          environment: 'local',
+          url: 'https://isolated-preview.supabase.co',
+          publishableKey: 'sb_publishable_fixture',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('approved production backend accepts public browser key only', () {
+      expect(
+        () => validateWebPreviewConfiguration(
+          environment: 'production',
+          url: AppEnvironment.productionSupabaseUrl,
+          publishableKey: 'sb_publishable_fixture',
+        ),
+        returnsNormally,
+      );
+      for (final key in ['sb_secret_not_allowed', 'eyJ.legacy_anon']) {
         expect(
           () => validateWebPreviewConfiguration(
-            environment: environment,
-            url: 'https://isolated-preview.supabase.co',
-            publishableKey: 'sb_publishable_fixture',
+            environment: 'production',
+            url: AppEnvironment.productionSupabaseUrl,
+            publishableKey: key,
           ),
           throwsA(isA<StateError>()),
         );
       }
+    });
+
+    test('production mode rejects any other project', () {
+      expect(
+        () => validateWebPreviewConfiguration(
+          environment: 'production',
+          url: 'https://isolated-preview.supabase.co',
+          publishableKey: 'sb_publishable_fixture',
+        ),
+        throwsA(isA<StateError>()),
+      );
     });
 
     test('local Pages rejects each enabled authentication feature', () {
@@ -82,7 +112,7 @@ void main() {
       }
     });
 
-    test('isolated staging accepts explicitly enabled auth feature flags', () {
+    test('configured staging accepts explicitly enabled auth feature flags', () {
       expect(
         () => validateWebPreviewConfiguration(
           environment: 'staging',
