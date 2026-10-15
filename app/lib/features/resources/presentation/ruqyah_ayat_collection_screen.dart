@@ -32,8 +32,12 @@ class RuqyahCollection {
         entries.length != 105 ||
         groups.map((x) => x.id).toSet().length != 8 ||
         entries.map((x) => x.id).toSet().length != 105 ||
-        entries.any((e) => e.arabic.trim().isEmpty || e.bangla.trim().isEmpty)) {
-      throw const FormatException('Ruqyah source integrity verification failed');
+        entries.any(
+          (e) => e.arabic.trim().isEmpty || e.bangla.trim().isEmpty,
+        )) {
+      throw const FormatException(
+        'Ruqyah source integrity verification failed',
+      );
     }
     return RuqyahCollection(groups, entries);
   }
@@ -46,14 +50,22 @@ class RuqyahGroup {
   final String subtitle;
 
   factory RuqyahGroup.fromJson(Map<String, dynamic> x) => RuqyahGroup(
-    x['id'] as int, x['title'] as String, x['subtitle'] as String,
+    x['id'] as int,
+    x['title'] as String,
+    x['subtitle'] as String,
   );
 }
 
 class RuqyahEntry {
   const RuqyahEntry(
-    this.id, this.groupId, this.number, this.title,
-    this.arabic, this.bangla, this.note, this.audioPath,
+    this.id,
+    this.groupId,
+    this.number,
+    this.title,
+    this.arabic,
+    this.bangla,
+    this.note,
+    this.audioPath,
   );
 
   final int id;
@@ -80,12 +92,12 @@ class RuqyahEntry {
   /// Render the audio inside Sukun's player without redirecting to another site.
   String? get audioUrl {
     final value = audioPath;
-    if (value == null || value == '0' ||
+    if (value == null ||
+        value == '0' ||
         !RegExp(r'^[0-9]+_[0-9]+$').hasMatch(value)) {
       return null;
     }
-    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/' +
-        value + '.mp3';
+    return 'https://files.ruqyahbd.org/appfiles/ruqyah-ayat/' + value + '.mp3';
   }
 }
 
@@ -142,9 +154,8 @@ class _RuqyahAyatCollectionScreenState
                   const SizedBox(height: 10),
                   Text(
                     'রুকইয়াহ আয়াত',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: _navy, fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(color: _navy, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 6),
                   const Text('প্রয়োজনীয় রুকইয়াহ আয়াত ও দোয়ার সংকলন'),
@@ -175,7 +186,8 @@ class _RuqyahAyatCollectionScreenState
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => RuqyahGroupReader(
-                                group: group, entries: items,
+                                group: group,
+                                entries: items,
                               ),
                             ),
                           ),
@@ -185,36 +197,52 @@ class _RuqyahAyatCollectionScreenState
                               children: [
                                 CircleAvatar(
                                   backgroundColor: const Color(0xFFE8F5FC),
-                                  child: Text(group.id.toString(),
-                                      style: const TextStyle(color: _navy)),
+                                  child: Text(
+                                    group.id.toString(),
+                                    style: const TextStyle(color: _navy),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(group.title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                              fontSize: 16,
-                                              color: _navy,
-                                              fontWeight: FontWeight.w700)),
-                                      const SizedBox(height: 4),
-                                      Text(group.subtitle,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context).textTheme.bodySmall),
                                       Text(
-                                        items.length.toString() + 'টি আয়াত ও দোয়া',
+                                        group.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                            color: _blue, fontSize: 11),
+                                          fontSize: 16,
+                                          color: _navy,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        group.subtitle,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                      Text(
+                                        items.length.toString() +
+                                            'টি আয়াত ও দোয়া',
+                                        style: const TextStyle(
+                                          color: _blue,
+                                          fontSize: 11,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.chevron_right_rounded, color: _navy),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: _navy,
+                                ),
                               ],
                             ),
                           ),
@@ -234,7 +262,9 @@ class _RuqyahAyatCollectionScreenState
 
 class RuqyahGroupReader extends StatefulWidget {
   const RuqyahGroupReader({
-    required this.group, required this.entries, super.key,
+    required this.group,
+    required this.entries,
+    super.key,
   });
 
   final RuqyahGroup group;
@@ -264,10 +294,13 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
   Future<void> _loadFavorites() async {
     final p = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _favoriteIds.addAll(
-      (p.getStringList('sukun.ruqyah.favorites.v1') ?? const [])
-          .map(int.tryParse).whereType<int>(),
-    ));
+    setState(
+      () => _favoriteIds.addAll(
+        (p.getStringList('sukun.ruqyah.favorites.v1') ?? const [])
+            .map(int.tryParse)
+            .whereType<int>(),
+      ),
+    );
   }
 
   Future<void> _toggleFavorite(int id) async {
@@ -320,13 +353,17 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
   @override
   Widget build(BuildContext context) {
     final search = _search.text.trim().toLowerCase();
-    final entries = widget.entries.where((entry) {
-      final matches = search.isEmpty ||
-          entry.title.toLowerCase().contains(search) ||
-          entry.bangla.toLowerCase().contains(search) ||
-          entry.arabic.contains(search);
-      return matches && (!_onlyFavorites || _favoriteIds.contains(entry.id));
-    }).toList(growable: false);
+    final entries = widget.entries
+        .where((entry) {
+          final matches =
+              search.isEmpty ||
+              entry.title.toLowerCase().contains(search) ||
+              entry.bangla.toLowerCase().contains(search) ||
+              entry.arabic.contains(search);
+          return matches &&
+              (!_onlyFavorites || _favoriteIds.contains(entry.id));
+        })
+        .toList(growable: false);
     return Scaffold(
       appBar: AppBar(title: Text(widget.group.title)),
       body: Center(
@@ -341,13 +378,20 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.group.title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: _navy, fontWeight: FontWeight.bold,
-                          )),
+                      Text(
+                        widget.group.title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: _navy,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text(widget.group.subtitle + ' · ' +
-                          widget.entries.length.toString() + 'টি আয়াত ও দোয়া'),
+                      Text(
+                        widget.group.subtitle +
+                            ' · ' +
+                            widget.entries.length.toString() +
+                            'টি আয়াত ও দোয়া',
+                      ),
                     ],
                   ),
                 ),
@@ -370,9 +414,9 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                     tooltip: _onlyFavorites ? 'সব দেখুন' : 'ফেভারিট দেখুন',
                     onPressed: () =>
                         setState(() => _onlyFavorites = !_onlyFavorites),
-                    icon: Icon(_onlyFavorites
-                        ? Icons.favorite
-                        : Icons.favorite_border),
+                    icon: Icon(
+                      _onlyFavorites ? Icons.favorite : Icons.favorite_border,
+                    ),
                   ),
                 ],
               ),
@@ -380,8 +424,10 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
               if (entries.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(30),
-                  child: Text('কোনো আয়াত বা দোয়া পাওয়া যায়নি।',
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    'কোনো আয়াত বা দোয়া পাওয়া যায়নি।',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               for (final entry in entries)
                 Card(
@@ -407,18 +453,24 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                             IconButton(
                               tooltip: 'ফেভারিট',
                               onPressed: () => _toggleFavorite(entry.id),
-                              icon: Icon(_favoriteIds.contains(entry.id)
-                                  ? Icons.favorite
-                                  : Icons.favorite_border),
+                              icon: Icon(
+                                _favoriteIds.contains(entry.id)
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                              ),
                             ),
                             IconButton(
                               tooltip: 'আরবি ও বাংলা কপি',
                               onPressed: () {
-                                Clipboard.setData(ClipboardData(
-                                  text: entry.arabic + '\n\n' + entry.bangla,
-                                ));
+                                Clipboard.setData(
+                                  ClipboardData(
+                                    text: entry.arabic + '\n\n' + entry.bangla,
+                                  ),
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('কপি করা হয়েছে')),
+                                  const SnackBar(
+                                    content: Text('কপি করা হয়েছে'),
+                                  ),
                                 );
                               },
                               icon: const Icon(Icons.copy_rounded),
@@ -456,17 +508,28 @@ class _RuqyahGroupReaderState extends State<RuqyahGroupReader> {
                       ),
                       const Divider(height: 1),
                       ExpansionTile(
-                        title: const Text('বাংলা অর্থ দেখুন',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: _navy)),
-                        childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                        title: const Text(
+                          'বাংলা অর্থ দেখুন',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: _navy),
+                        ),
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          18,
+                          0,
+                          18,
+                          18,
+                        ),
                         children: [
-                          SelectableText(entry.bangla,
-                              style: Theme.of(context).textTheme.bodyLarge),
+                          SelectableText(
+                            entry.bangla,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                           if (entry.note?.trim().isNotEmpty == true) ...[
                             const SizedBox(height: 10),
-                            Text(entry.note!,
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Text(
+                              entry.note!,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ],
                       ),
