@@ -230,6 +230,17 @@ jobs:
             echo "Explicit emergency guest-only web build."
           fi
 
+      - name: Verify 114 Production Quran surahs, Bengali verses and audio
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$APP_ENVIRONMENT" == production ]]; then
+            bash "$GITHUB_WORKSPACE/.github/scripts/verify-production-quran.sh"
+          else
+            echo "Emergency guest-only build: Production Quran smoke not applicable."
+          fi
+
       - name: Build role-aware Flutter Web (approved production or emergency guest)
         shell: bash
         run: |
