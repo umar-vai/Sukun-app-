@@ -83,14 +83,13 @@ final class SupabasePrescriptionDocumentsRepository
       );
     }
   }
+
   @override
   Future<PrescriptionDocumentImportResult> retryDocumentExtraction({
     required String attachmentId,
     required String requestId,
-  }) => _extractStoredDocument(
-    attachmentId: attachmentId,
-    requestId: requestId,
-  );
+  }) =>
+      _extractStoredDocument(attachmentId: attachmentId, requestId: requestId);
 
   Future<PrescriptionDocumentImportResult> _extractStoredDocument({
     required String attachmentId,
@@ -99,10 +98,7 @@ final class SupabasePrescriptionDocumentsRepository
     try {
       final response = await _client.functions.invoke(
         'prescription-document-to-actions',
-        body: {
-          'attachment_id': attachmentId,
-          'request_id': requestId,
-        },
+        body: {'attachment_id': attachmentId, 'request_id': requestId},
       );
       final body = response.data;
       if (body is! Map) {
@@ -143,7 +139,6 @@ final class SupabasePrescriptionDocumentsRepository
       );
     }
   }
-
 }
 
 String _safeDatabaseMessage(PostgrestException error) {
