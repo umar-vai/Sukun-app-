@@ -128,9 +128,8 @@ String ruqyahBanglaNumber(int number) {
 }
 
 /// The source book's "আয়াত/অংশ 13" is NOT a Quran ayah number.
-String ruqyahDisplayTitle(String title) => title
-    .replaceFirst(RegExp(r'\s*—\s*আয়াত/অংশ\s*[0-9০-৯]+\s*$'), '')
-    .trim();
+String ruqyahDisplayTitle(String title) =>
+    title.replaceFirst(RegExp(r'\s*—\s*আয়াত/অংশ\s*[0-9০-৯]+\s*$'), '').trim();
 
 /// A source-book start reference never establishes the end of the excerpt.
 String? ruqyahCitation({
@@ -717,7 +716,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                 child: meaning.isNotEmpty
                     ? Text(meaning)
                     : item.citation == null
-                    ? const Text('এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।')
+                    ? const Text(
+                        'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
+                      )
                     : FutureBuilder<_FirstAyahBangla?>(
                         future: _banglaRequests.putIfAbsent(
                           item.slug,
