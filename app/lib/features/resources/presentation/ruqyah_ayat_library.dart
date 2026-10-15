@@ -732,11 +732,18 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                               if (snapshot.connectionState !=
                                   ConnectionState.done)
                                 const LinearProgressIndicator()
-                              else if (result == null)
+                              else if (result == null) ...[
                                 const Text(
                                   'এই সূত্রের বাংলা অনুবাদ এখন পাওয়া যাচ্ছে না।',
-                                )
-                              else ...[
+                                ),
+                                TextButton.icon(
+                                  onPressed: () => setState(() {
+                                    _banglaRequests.remove(item.slug);
+                                  }),
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('আবার চেষ্টা করুন'),
+                                ),
+                              ] else ...[
                                 Text(
                                   'উল্লেখিত শুরুর আয়াতের বাংলা অর্থ',
                                   style: Theme.of(context).textTheme.titleSmall,
