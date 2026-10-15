@@ -89,6 +89,9 @@ class _RuqyahEntry {
     return '';
   }
 
+  bool get hasQuranReference =>
+      json['surah_number'] is int && json['ayah_number'] is int;
+
   String get reference {
     final surah = json['surah_number'];
     final ayah = json['ayah_number'];
@@ -99,7 +102,9 @@ class _RuqyahEntry {
           ? 'সূরা $surah · আয়াত $ayah–$end'
           : 'সূরা $surah · আয়াত $ayah থেকে নির্বাচিত অংশ';
     }
-    return 'সংকলিত দোয়া / পাঠ';
+    // Do not manufacture a citation for dua or unmapped excerpts.
+    return '';
+
   }
 }
 
@@ -501,7 +506,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                     child: Text('এই বিভাগে যাচাইকৃত পাঠ এখনও যোগ করা হয়নি।'),
                   ),
                 for (var i = 0; i < entries.length; i++) ...[
-                  _entryCard(context, entries[i], i + 1),
+                  _entryCard(context, entries[i]),
                   const SizedBox(height: 10),
                 ],
               ],
@@ -512,7 +517,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     );
   }
 
-  Widget _entryCard(BuildContext context, _RuqyahEntry item, int number) {
+  Widget _entryCard(BuildContext context, _RuqyahEntry item) {
     final meaning = item.meaning;
     final expanded = _expandedMeanings.contains(item.slug);
     return Card(
@@ -525,7 +530,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               children: [
                 Expanded(
                   child: Text(
-                    '$number. ${item.title}',
+                    item.hasQuranReference ? item.title : 'দোয়া ও পাঠ',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -562,8 +567,10 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(item.reference, style: Theme.of(context).textTheme.bodySmall),
-            const Divider(),
+            if (item.hasQuranReference) ...[
+              Text(item.reference, style: Theme.of(context).textTheme.bodySmall),
+              const Divider(),
+            ],
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
               label: Text(
