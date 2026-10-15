@@ -132,13 +132,12 @@ void main() {
 
     expect(documents.importCalls, 1);
     expect(documents.retryCalls, 0);
-    expect(
-      find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'),
-      findsOneWidget,
-    );
+    expect(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'), findsOneWidget);
     expect(find.text('নিজে প্রেসক্রিপশন লিখুন'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'));
+    await tester.ensureVisible(
+      find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'));
     await tester.pumpAndSettle();
@@ -149,7 +148,6 @@ void main() {
     expect(find.text('AI review: prescription-1'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
-
 }
 
 GoRouter _testRouter({PrescriptionDocumentFile? initialDocument}) => GoRouter(
