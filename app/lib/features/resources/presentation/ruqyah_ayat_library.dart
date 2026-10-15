@@ -381,12 +381,13 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       }
       if (mounted) setState(() {});
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('অডিও চালু হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।'),
           ),
         );
+      }
     } finally {
       if (mounted) setState(() => _loadingAudio = false);
     }
@@ -443,7 +444,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               children: [
                 if (!showSidebar)
                   DropdownButtonFormField<int>(
-                    value: _section,
+                    initialValue: _section,
                     decoration: const InputDecoration(
                       labelText: 'আয়াত বিভাগ',
                       border: OutlineInputBorder(),
@@ -542,10 +543,11 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                   icon: const Icon(Icons.copy_outlined),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: item.arabic));
-                    if (context.mounted)
+                    if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('আরবি পাঠ কপি হয়েছে')),
                       );
+                    }
                   },
                 ),
               ],
