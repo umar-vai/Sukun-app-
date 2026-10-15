@@ -77,75 +77,21 @@ jobs:
       - name: Resolve Flutter dependencies
         run: flutter pub get
 
-      - name: Check isolated staging API gate syntax
+      - name: Check anonymous production privacy gate syntax
         shell: bash
         run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
 
-      - name: Smoke test 114 Quran surahs and streamed Bengali verses in STAGING
+      - name: Verify Production anonymous data isolation before merging
         if: github.event_name == 'pull_request'
         shell: bash
         env:
-          PUBLIC_STAGING_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          APP_ENVIRONMENT: production
+          SUPABASE_URL: https://vydfafumxptanpkmtrpr.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
         run: |
           set -euo pipefail
-          endpoint=https://qacklgqvxvjjzsimjoip.supabase.co/functions/v1/quran-content
-          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
-            --header "apikey: $PUBLIC_STAGING_KEY" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"chapters"}' "$endpoint" > /tmp/quran-chapters.json
-          python3 - <<'PY'
-          import json
-          data = json.load(open('/tmp/quran-chapters.json'))
-          chapters = data.get('chapters', [])
-          assert data.get('provider') == 'Al Quran Cloud', 'Staging source attribution is missing'
-          assert len(chapters) == 114, f'Expected 114 surahs, got {len(chapters)}'
-          assert chapters[0]['id'] == 1 and chapters[-1]['id'] == 114
-          PY
-          sleep 1
-          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
-            --header "apikey: $PUBLIC_STAGING_KEY" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"verses","chapter":1,"page":1}' "$endpoint" > /tmp/quran-fatiha.json
-          python3 - <<'PY'
-          import json
-          data = json.load(open('/tmp/quran-fatiha.json'))
-          verses = data.get('verses', [])
-          assert len(verses) == 7, f'Expected 7 verses in Al-Fatihah, got {len(verses)}'
-          first = verses[0]
-          assert first.get('text_uthmani'), 'Arabic text is missing'
-          assert first.get('translations') and first['translations'][0].get('text'), 'Bengali meaning missing'
-          assert first.get('audio', {}).get('url', '').startswith('https://'), 'Recitation unavailable'
-          PY
-          # Verify the final chapter and a noninitial page instead of relying
-          # only on Al-Fatihah as a representative sample.
-          sleep 1
-          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
-            --header "apikey: $PUBLIC_STAGING_KEY" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"verses","chapter":114,"page":1}' "$endpoint" > /tmp/quran-annas.json
-          python3 - <<'PY'
-          import json
-          data = json.load(open('/tmp/quran-annas.json'))
-          verses = data.get('verses', [])
-          assert len(verses) == 6, 'An-Nas must have 6 verses'
-          assert verses[0]['verse_key'] == '114:1'
-          assert verses[-1]['verse_key'] == '114:6'
-          assert all(v.get('text_uthmani') and v.get('translations', [{}])[0].get('text') for v in verses)
-          PY
-          sleep 1
-          curl --fail-with-body --silent --show-error --retry 2 --max-time 35 \
-            --header "apikey: $PUBLIC_STAGING_KEY" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"verses","chapter":2,"page":2}' "$endpoint" > /tmp/quran-baqarah-page2.json
-          python3 - <<'PY'
-          import json
-          data = json.load(open('/tmp/quran-baqarah-page2.json'))
-          verses = data.get('verses', [])
-          assert len(verses) == 50, 'Al-Baqarah page 2 must have 50 verses'
-          assert verses[0]['verse_key'] == '2:51'
-          assert verses[-1]['verse_key'] == '2:100'
-          assert data['pagination']['next_page'] == 3
-          PY
+          bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
+
       - name: Validate full Flutter source and browser-compatible tests
         run: |
           dart format --output=none --set-exit-if-changed lib test
@@ -191,22 +137,20 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Configure safely isolated preview build
+      - name: Configure approved production backend for existing Pages URL
         id: preview-config
         shell: bash
         env:
-          PREVIEW_URL: ${{ vars.SUKUN_PREVIEW_SUPABASE_URL }}
-          PREVIEW_KEY: ${{ vars.SUKUN_PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
-          PREVIEW_REF: ${{ vars.SUKUN_PREVIEW_SUPABASE_PROJECT_REF }}
-          # Staging-only, intentionally PUBLIC browser credential; never use sb_secret/service_role.
-          PUBLIC_STAGING_BOOTSTRAP_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          # Supabase publishable keys are intentionally public. Never put
+          # service-role or Gemini secrets into a Flutter Web artifact.
+          PUBLIC_PRODUCTION_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
           PREVIEW_FORCE_GUEST_ONLY: ${{ vars.SUKUN_PREVIEW_FORCE_GUEST_ONLY }}
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           EVENT_NAME: ${{ github.event_name }}
-          PREVIEW_ENABLE_MEMBER_SIGNUP: ${{ vars.SUKUN_PREVIEW_ENABLE_MEMBER_SIGNUP }}
-          PREVIEW_ENABLE_EMAIL_OTP: ${{ vars.SUKUN_PREVIEW_ENABLE_EMAIL_OTP }}
-          PREVIEW_ENABLE_PHONE_OTP: ${{ vars.SUKUN_PREVIEW_ENABLE_PHONE_OTP }}
-          PREVIEW_ENABLE_GOOGLE_OAUTH: ${{ vars.SUKUN_PREVIEW_ENABLE_GOOGLE_OAUTH }}
+          ENABLE_PROD_MEMBER_SIGNUP: ${{ vars.SUKUN_PRODUCTION_ENABLE_MEMBER_SIGNUP }}
+          ENABLE_PROD_EMAIL_OTP: ${{ vars.SUKUN_PRODUCTION_ENABLE_EMAIL_OTP }}
+          ENABLE_PROD_PHONE_OTP: ${{ vars.SUKUN_PRODUCTION_ENABLE_PHONE_OTP }}
+          ENABLE_PROD_GOOGLE_OAUTH: ${{ vars.SUKUN_PRODUCTION_ENABLE_GOOGLE_OAUTH }}
         run: |
           set -euo pipefail
           environment=local
@@ -216,53 +160,25 @@ jobs:
           email_otp=false
           phone_otp=false
           google_oauth=false
-          public_staging_bootstrap=false
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
-            for flag in PREVIEW_FORCE_GUEST_ONLY PREVIEW_ENABLE_MEMBER_SIGNUP PREVIEW_ENABLE_EMAIL_OTP PREVIEW_ENABLE_PHONE_OTP PREVIEW_ENABLE_GOOGLE_OAUTH; do
+            for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
               case "${!flag}" in
                 ''|true|false) ;;
-                *) echo 'Preview auth flags must be true, false or unset.' >&2; exit 1 ;;
+                *) echo 'Production web feature flag must be true, false or unset.' >&2; exit 1 ;;
               esac
             done
-            if [[ "${PREVIEW_FORCE_GUEST_ONLY:-false}" == "true" ]]; then
-              PREVIEW_URL=
-              PREVIEW_KEY=
-              PREVIEW_REF=
-            elif [[ -z "$PREVIEW_URL" && -z "$PREVIEW_KEY" && -z "$PREVIEW_REF" ]]; then
-              # Deploy the same actual Flutter app against a verified CLEAN staging project.
-              # This is an anonymous public key, already inherently visible in the built JS.
-              # Staging Google OAuth is enabled only after live provider health gate.
-              # Password signup, email OTP and SMS OTP remain disabled.
-              PREVIEW_REF=qacklgqvxvjjzsimjoip
-              PREVIEW_URL=https://qacklgqvxvjjzsimjoip.supabase.co
-              PREVIEW_KEY="$PUBLIC_STAGING_BOOTSTRAP_KEY"
-              public_staging_bootstrap=true
-            fi
-            if [[ -n "$PREVIEW_URL" || -n "$PREVIEW_KEY" || -n "$PREVIEW_REF" ]]; then
-              test -n "$PREVIEW_URL"
-              test -n "$PREVIEW_KEY"
-              test -n "$PREVIEW_REF"
-              [[ "$PREVIEW_REF" =~ ^[a-z0-9]+$ ]]
-              [[ "$PREVIEW_REF" != "vydfafumxptanpkmtrpr" ]]
-              [[ "$PREVIEW_URL" == "https://${PREVIEW_REF}.supabase.co" ]]
-              [[ "$PREVIEW_KEY" == sb_publishable_* ]]
-              environment=staging
-              url="$PREVIEW_URL"
-              key="$PREVIEW_KEY"
-              if [[ "$public_staging_bootstrap" == "true" ]]; then
-                if [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" ]]; then
-                  echo 'Public staging bootstrap permits Google OAuth only.' >&2
-                  exit 1
-                fi
-                google_oauth=true
-              else
-                member_signup="${PREVIEW_ENABLE_MEMBER_SIGNUP:-false}"
-                email_otp="${PREVIEW_ENABLE_EMAIL_OTP:-false}"
-                phone_otp="${PREVIEW_ENABLE_PHONE_OTP:-false}"
-                google_oauth="${PREVIEW_ENABLE_GOOGLE_OAUTH:-false}"
-              fi
-            elif [[ "$PREVIEW_ENABLE_MEMBER_SIGNUP" == "true" || "$PREVIEW_ENABLE_EMAIL_OTP" == "true" || "$PREVIEW_ENABLE_PHONE_OTP" == "true" || "$PREVIEW_ENABLE_GOOGLE_OAUTH" == "true" ]]; then
-              echo 'Cannot enable authentication without an isolated staging backend.' >&2
+            if [[ "${PREVIEW_FORCE_GUEST_ONLY:-false}" != "true" ]]; then
+              # Source is ALWAYS the verified real Production project.
+              # Old SUKUN_PREVIEW_SUPABASE_* STAGING variables are ignored.
+              environment=production
+              url=https://vydfafumxptanpkmtrpr.supabase.co
+              key="$PUBLIC_PRODUCTION_KEY"
+              member_signup="${ENABLE_PROD_MEMBER_SIGNUP:-false}"
+              email_otp="${ENABLE_PROD_EMAIL_OTP:-false}"
+              phone_otp="${ENABLE_PROD_PHONE_OTP:-false}"
+              google_oauth="${ENABLE_PROD_GOOGLE_OAUTH:-false}"
+            elif [[ "${ENABLE_PROD_MEMBER_SIGNUP:-false}" == true || "${ENABLE_PROD_EMAIL_OTP:-false}" == true || "${ENABLE_PROD_PHONE_OTP:-false}" == true || "${ENABLE_PROD_GOOGLE_OAUTH:-false}" == true ]]; then
+              echo 'Guest-only emergency mode cannot enable OAuth or signup.' >&2
               exit 1
             fi
           fi
@@ -283,18 +199,18 @@ jobs:
           echo "ENABLE_GOOGLE_OAUTH=$google_oauth" >> "$GITHUB_ENV"
           echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
 
-      - name: Verify anonymous staging API isolation (live backend only)
+      - name: Verify Production anonymous data isolation before Pages deploy
         if: github.event_name == 'workflow_run'
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$APP_ENVIRONMENT" == "staging" ]]; then
+          if [[ "$APP_ENVIRONMENT" == "production" ]]; then
             bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
           else
-            echo "Guest-only preview: no backend exposure to test."
+            echo "Explicit emergency guest-only web build."
           fi
 
-      - name: Build role-aware Flutter Web (staging or guest-safe fallback)
+      - name: Build role-aware Flutter Web (approved production or emergency guest)
         shell: bash
         run: |
           set -euo pipefail

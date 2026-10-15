@@ -8,7 +8,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
 
 /// Browser entrypoint for the ACTUAL Flutter app, including authenticated
-/// Patient/Admin routes where a separate staging Supabase is configured.
+/// Patient/Admin routes where Supabase Auth and RLS grant access.
 /// No Firebase messaging or native audio background service is started here.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +64,7 @@ class _WebBootstrapState extends State<_WebBootstrap> {
             theme: SukunTheme.light(),
             home: Scaffold(
               body: AppErrorState(
-                message: 'Preview could not start securely. Check staging configuration.',
+                message: 'App could not start securely. Check backend configuration.',
                 onRetry: () => setState(() {
                   _initialization = _initialize();
                 }),

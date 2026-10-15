@@ -2,9 +2,13 @@ import 'package:sukun_life/core/config/app_environment.dart';
 
 /// Fail closed before starting the publicly hosted role-aware web client.
 ///
-/// The Pages build can render public resources without Supabase, but private
-/// Patient/Admin workflows are enabled only with an isolated staging backend.
-/// A production backend must never be used for public preview testing.
+/// The Pages build uses the real Flutter app. Private Patient/Admin data remains
+/// protected by Supabase Auth, database RLS and server-side authorization.
+///
+/// After the explicit production cutover, the public Pages bundle may contain
+/// ONLY the production Supabase *publishable* key, never service credentials.
+/// Production builds must target the single approved project and pass the
+/// anonymous-data isolation gate in CI before deployment.
 void validateWebPreviewConfiguration({
   required String environment,
   required String url,
@@ -20,32 +24,41 @@ void validateWebPreviewConfiguration({
     publishableKey: publishableKey,
   );
 
-  if (environment != 'local' && environment != 'staging') {
-    throw StateError('Web preview supports local or staging only.');
+  if (environment != 'local' &&
+      environment != 'staging' &&
+      environment != 'production') {
+    throw StateError('Unsupported web environment.');
   }
-  if (environment != 'staging' &&
+  if (environment == 'local' &&
       (publicMemberSignupEnabled ||
           emailOtpEnabled ||
           phoneOtpEnabled ||
           googleOAuthEnabled)) {
     throw StateError(
-      'Web authentication feature flags require isolated staging.',
+      'Web authentication requires a configured Supabase backend.',
     );
   }
   if (url.isEmpty) {
     if (environment != 'local') {
-      throw StateError('Staging web preview requires backend configuration.');
+      throw StateError('Configured web environment requires Supabase.');
     }
     return;
   }
-  if (environment != 'staging') {
-    throw StateError('Web preview backend requires staging mode.');
+  if (environment == 'local') {
+    throw StateError('Local browser mode cannot connect to live Supabase.');
   }
   final host = Uri.parse(url).host;
-  if (!host.endsWith('.supabase.co') ||
-      host == Uri.parse(AppEnvironment.productionSupabaseUrl).host) {
-    throw StateError(
-      'Web preview must use an isolated Supabase staging project.',
-    );
+  if (!host.endsWith('.supabase.co')) {
+    throw StateError('Web app requires a Supabase project host.');
+  }
+  if (environment == 'production') {
+    if (url != AppEnvironment.productionSupabaseUrl ||
+        !publishableKey.startsWith('sb_publishable_')) {
+      throw StateError(
+        'Production web requires the approved project and a public key.',
+      );
+    }
+  } else if (host == Uri.parse(AppEnvironment.productionSupabaseUrl).host) {
+    throw StateError('Non-production web cannot use Production Supabase.');
   }
 }
