@@ -13,39 +13,42 @@ import 'package:sukun_life/features/patients/domain/prescription.dart';
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
 
 void main() {
-  testWidgets('typed prescription directly opens the existing AI review route', (
-    tester,
-  ) async {
-    final prescriptions = _CountingPrescriptions();
-    final plans = _DraftPlans();
-    final router = _testRouter();
-    addTearDown(router.dispose);
+  testWidgets(
+    'typed prescription directly opens the existing AI review route',
+    (tester) async {
+      final prescriptions = _CountingPrescriptions();
+      final plans = _DraftPlans();
+      final router = _testRouter();
+      addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          patientsRepositoryProvider.overrideWithValue(prescriptions),
-          carePlansRepositoryProvider.overrideWithValue(plans),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'সকালে আয়াতুল কুরসি ৩ বার পড়বেন।',
-    );
-    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            patientsRepositoryProvider.overrideWithValue(prescriptions),
+            carePlansRepositoryProvider.overrideWithValue(plans),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'সকালে আয়াতুল কুরসি ৩ বার পড়বেন।',
+      );
+      await tester.ensureVisible(
+        find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+      await tester.pumpAndSettle();
 
-    expect(prescriptions.calls, 1);
-    expect(plans.calls, 1);
-    expect(plans.inputs.single.patientId, 'patient-1');
-    expect(plans.inputs.single.prescriptionId, 'prescription-1');
-    expect(find.text('AI review: prescription-1'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(prescriptions.calls, 1);
+      expect(plans.calls, 1);
+      expect(plans.inputs.single.patientId, 'patient-1');
+      expect(plans.inputs.single.prescriptionId, 'prescription-1');
+      expect(find.text('AI review: prescription-1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('draft failure retry does not save prescription twice', (
     tester,
@@ -68,16 +71,23 @@ void main() {
       find.byType(TextFormField).first,
       'সকালে আয়াতুল কুরসি ৩ বার পড়বেন।',
     );
-    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+    await tester.ensureVisible(
+      find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
     await tester.pumpAndSettle();
 
     expect(prescriptions.calls, 1);
     expect(plans.calls, 1);
-    expect(find.textContaining('প্রেসক্রিপশন দ্বিতীয়বার সংরক্ষণ হবে না'), findsOneWidget);
+    expect(
+      find.textContaining('প্রেসক্রিপশন দ্বিতীয়বার সংরক্ষণ হবে না'),
+      findsOneWidget,
+    );
 
-    await tester.ensureVisible(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
+    await tester.ensureVisible(
+      find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'));
     await tester.pumpAndSettle();
