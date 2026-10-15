@@ -100,16 +100,19 @@ class _CreatePrescriptionScreenState
     if (_submitting || !_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     try {
-      final prescription = _savedTypedPrescription ??
-          await ref.read(patientsRepositoryProvider).createPrescription(
-            CreatePrescriptionInput(
-              patientId: widget.patientId,
-              rawText: _textController.text,
-              visibility: _visibility,
-              sessionDate: _sessionDate,
-              requestId: _typedPrescriptionRequestId,
-            ),
-          );
+      final prescription =
+          _savedTypedPrescription ??
+          await ref
+              .read(patientsRepositoryProvider)
+              .createPrescription(
+                CreatePrescriptionInput(
+                  patientId: widget.patientId,
+                  rawText: _textController.text,
+                  visibility: _visibility,
+                  sessionDate: _sessionDate,
+                  requestId: _typedPrescriptionRequestId,
+                ),
+              );
       _savedTypedPrescription = prescription;
       if (!mounted) return;
       if (!generateActions) {
@@ -119,15 +122,17 @@ class _CreatePrescriptionScreenState
 
       // Keep the existing Admin review/approval and plan publish gates.
       try {
-        final draft = await ref.read(carePlansRepositoryProvider).createDraft(
-          CreateCarePlanInput(
-            patientId: widget.patientId,
-            name: 'প্রেসক্রিপশনভিত্তিক করণীয়',
-            startDate: DateUtils.dateOnly(DateTime.now()),
-            prescriptionId: prescription.id,
-            requestId: _typedPlanRequestId,
-          ),
-        );
+        final draft = await ref
+            .read(carePlansRepositoryProvider)
+            .createDraft(
+              CreateCarePlanInput(
+                patientId: widget.patientId,
+                name: 'প্রেসক্রিপশনভিত্তিক করণীয়',
+                startDate: DateUtils.dateOnly(DateTime.now()),
+                prescriptionId: prescription.id,
+                requestId: _typedPlanRequestId,
+              ),
+            );
         if (!mounted) return;
         context.pushReplacement(
           '/admin/patients/${widget.patientId}/plans/${draft.id}/actions/suggest'
@@ -266,7 +271,8 @@ class _CreatePrescriptionScreenState
                               alignLabelWithHint: true,
                             ),
                             validator: validatePrescriptionText,
-                            readOnly: _submitting || _savedTypedPrescription != null,
+                            readOnly:
+                                _submitting || _savedTypedPrescription != null,
                           )
                         else
                           _DocumentPicker(
@@ -281,7 +287,8 @@ class _CreatePrescriptionScreenState
                           onPick: _submitting || _savedTypedPrescription != null
                               ? null
                               : _pickDate,
-                          onClear: _submitting || _savedTypedPrescription != null
+                          onClear:
+                              _submitting || _savedTypedPrescription != null
                               ? null
                               : () => setState(() => _sessionDate = null),
                         ),
@@ -289,7 +296,8 @@ class _CreatePrescriptionScreenState
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           value: _patientVisible,
-                          onChanged: _submitting || _savedTypedPrescription != null
+                          onChanged:
+                              _submitting || _savedTypedPrescription != null
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
@@ -306,10 +314,12 @@ class _CreatePrescriptionScreenState
                             onPressed: _submitting
                                 ? null
                                 : () => _submitTypedPrescription(
-                                      generateActions: true,
-                                    ),
+                                    generateActions: true,
+                                  ),
                             icon: const Icon(Icons.auto_awesome_outlined),
-                            label: const Text('সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন'),
+                            label: const Text(
+                              'সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন',
+                            ),
                           ),
                           const SizedBox(height: 12),
                         ],
