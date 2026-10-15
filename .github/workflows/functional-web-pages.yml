@@ -112,6 +112,58 @@ jobs:
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
 
+      - name: Verify 114 Production Quran surahs and translated ayat
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PUBLIC_PRODUCTION_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+        run: |
+          set -euo pipefail
+          endpoint=https://vydfafumxptanpkmtrpr.supabase.co/functions/v1/quran-content
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 40 \
+            --header "apikey: $PUBLIC_PRODUCTION_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"chapters"}' "$endpoint" > /tmp/prod-quran-chapters.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/prod-quran-chapters.json'))
+          chapters=d.get('chapters', [])
+          assert len(chapters)==114, 'Missing Production Quran surahs'
+          assert chapters[0]['id']==1 and chapters[-1]['id']==114
+          print('PASS: Production 114-surah catalog')
+          PY
+          curl --fail-with-body --silent --show-error --retry 2 --max-time 40 \
+            --header "apikey: $PUBLIC_PRODUCTION_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"verses","chapter":1,"page":1}' "$endpoint" > /tmp/prod-quran-fatiha.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/prod-quran-fatiha.json'))
+          verses=d.get('verses', [])
+          assert len(verses)==7, 'Al-Fatihah must return seven ayat'
+          assert all(x.get('text_uthmani') and x.get('translations') and x['translations'][0].get('text') for x in verses)
+          print('PASS: Production Arabic ayat and Bengali translation')
+          PY
+
+      - name: Inspect Production Google OAuth provider readiness
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PUBLIC_PRODUCTION_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
+        run: |
+          set -euo pipefail
+          url=https://vydfafumxptanpkmtrpr.supabase.co/auth/v1/settings
+          status=$(curl --silent --show-error --max-time 25 \
+            --header "apikey: $PUBLIC_PRODUCTION_KEY" \
+            --output /tmp/prod-auth-settings.json --write-out '%{http_code}' "$url")
+          if [[ "$status" != "200" ]]; then
+            echo "Production Google provider readiness unavailable (HTTP $status)"
+          elif jq -e '.external.google == true' /tmp/prod-auth-settings.json >/dev/null; then
+            echo "Production Google provider ENABLED; browser redirect acceptance is still required."
+          else
+            echo "Production Google provider DISABLED; keep active Google button gated."
+          fi
+
       - name: Validate full Flutter source and browser-compatible tests
         run: |
           dart format --output=none --set-exit-if-changed lib test
