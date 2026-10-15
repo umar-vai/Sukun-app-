@@ -43,6 +43,8 @@ class _CreatePrescriptionScreenState
   PrescriptionDocumentFile? _documentFile;
   // For manual-required extraction, retry the private stored file only.
   String? _storedDocumentAttachmentId;
+  String _documentCreateRequestId = const Uuid().v4();
+  String _documentExtractionRequestId = const Uuid().v4();
   // Stable IDs and the saved result prevent duplicate prescription inserts
   // when draft creation fails and the Admin retries.
   final _typedPrescriptionRequestId = const Uuid().v4();
@@ -103,6 +105,8 @@ class _CreatePrescriptionScreenState
     setState(() {
       _documentFile = file;
       _storedDocumentAttachmentId = null;
+      _documentCreateRequestId = const Uuid().v4();
+      _documentExtractionRequestId = const Uuid().v4();
     });
   }
 
@@ -183,7 +187,7 @@ class _CreatePrescriptionScreenState
     setState(() => _submitting = true);
     try {
       final documents = ref.read(prescriptionDocumentsRepositoryProvider);
-      final requestId = const Uuid().v4();
+      final requestId = _documentExtractionRequestId;
       final existingAttachmentId = _storedDocumentAttachmentId;
       final result = existingAttachmentId == null
           ? await documents.importDocument(
@@ -192,7 +196,7 @@ class _CreatePrescriptionScreenState
                 file: file,
                 visibility: _visibility,
                 sessionDate: _sessionDate,
-                createRequestId: const Uuid().v4(),
+                createRequestId: _documentCreateRequestId,
                 extractionRequestId: requestId,
               ),
             )
@@ -316,6 +320,8 @@ class _CreatePrescriptionScreenState
                             onClear: () => setState(() {
                               _documentFile = null;
                               _storedDocumentAttachmentId = null;
+                              _documentCreateRequestId = const Uuid().v4();
+                              _documentExtractionRequestId = const Uuid().v4();
                             }),
                           ),
                         const SizedBox(height: 18),
