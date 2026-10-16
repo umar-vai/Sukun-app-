@@ -165,20 +165,24 @@ void main() {
   test('foreground push opens only its validated care task', () async {
     const taskId = 'a4ba5d60-81df-4688-81c8-b1064f7cf45e';
     await coordinator.initialize();
-    push.emitForeground(const RemotePushMessage(
-      type: 'care_reminder',
-      title: 'Untrusted provider title',
-      body: 'Untrusted patient text',
-      taskId: taskId,
-    ));
+    push.emitForeground(
+      const RemotePushMessage(
+        type: 'care_reminder',
+        title: 'Untrusted provider title',
+        body: 'Untrusted patient text',
+        taskId: taskId,
+      ),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(local.lastRemotePayload, 'care_task:$taskId');
-    push.emitForeground(const RemotePushMessage(
-      type: 'care_reminder',
-      title: 'Ignore',
-      body: 'Ignore',
-      taskId: 'https://evil.test',
-    ));
+    push.emitForeground(
+      const RemotePushMessage(
+        type: 'care_reminder',
+        title: 'Ignore',
+        body: 'Ignore',
+        taskId: 'https://evil.test',
+      ),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(local.lastRemotePayload, isNull);
   });
