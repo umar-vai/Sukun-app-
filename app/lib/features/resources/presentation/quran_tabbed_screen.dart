@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
@@ -526,7 +527,11 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                           Text(
                             _arabicTitle,
                             textDirection: TextDirection.rtl,
-                            style: const TextStyle(fontSize: 23),
+                            style: GoogleFonts.amiriQuran(
+                              fontSize: 27,
+                              height: 1.7,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                       ],
                     ),
@@ -638,7 +643,15 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                 textDirection: TextDirection.rtl,
                 child: SelectableText(
                   arabic,
-                  style: const TextStyle(fontSize: 28, height: 2.2),
+                  textAlign: TextAlign.right,
+                  // Keep the Uthmani text untouched; improve Arabic glyph
+                  // shaping and harakat clarity in the canonical surah reader.
+                  // Bengali translation and other screens retain their fonts.
+                  style: GoogleFonts.amiriQuran(
+                    fontSize: MediaQuery.sizeOf(context).width < 500 ? 28 : 32,
+                    height: 2.15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
               if (bangla.isNotEmpty) ...[
