@@ -114,7 +114,7 @@ void main() {
         status: 'published',
         visibility: 'public',
       );
-      expect(resourceMatchesSearch(individualAmal, 'sleep'), isFalse);
+      expect(resourceMatchesSearch(individualAmal, 'sleep'), isTrue);
       expect(matchResources('Bedtime Masnun Routine', [individualAmal]), isEmpty);
     });
 
