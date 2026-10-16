@@ -156,7 +156,7 @@ export function normalizeSuggestedActions(
       }
       normalized.ambiguities = [...new Set(reviewReasons)];
       return normalized;
-    })), originalPrescriptionText),
+    }), originalPrescriptionText),
   };
 }
 
