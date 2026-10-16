@@ -274,10 +274,16 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
   }
 
   @override
+  String? lastRemotePayload;
+
+  @override
   Future<void> showRemote({
     required String title,
     required String body,
-  }) async {}
+    String? payload,
+  }) async {
+    lastRemotePayload = payload;
+  }
 }
 
 final class _FakePushMessaging implements PushMessagingGateway {
@@ -295,8 +301,13 @@ final class _FakePushMessaging implements PushMessagingGateway {
   @override
   Stream<String> get tokenRefresh => const Stream.empty();
 
+  final StreamController<RemotePushMessage> _foreground =
+      StreamController<RemotePushMessage>.broadcast();
+
+  void emitForeground(RemotePushMessage message) => _foreground.add(message);
+
   @override
-  Stream<RemotePushMessage> get foregroundMessages => const Stream.empty();
+  Stream<RemotePushMessage> get foregroundMessages => _foreground.stream;
 
   final StreamController<RemotePushMessage> _opened =
       StreamController<RemotePushMessage>.broadcast();
