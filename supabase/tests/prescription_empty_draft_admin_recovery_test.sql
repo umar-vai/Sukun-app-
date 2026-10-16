@@ -1,7 +1,7 @@
 -- Synthetic only. The historical prescription and other draft remain intact.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(12);
 
 insert into auth.users (id,email,raw_user_meta_data) values
 ('b0000000-0000-4000-8000-000000000301','recovery-admin@sukun.test','{}'::jsonb),
@@ -71,7 +71,13 @@ select results_eq(
  array['archived'::text],'only the selected empty draft is archived'
 );
 select results_eq(
- $$select count(*) from public.prescriptions
+ $select published_at is null and published_by is null
+   from public.care_plans
+   where id='b3000000-0000-4000-8000-000000000301'$,
+ array[true],'an unapproved draft is not misrepresented as published'
+);
+select results_eq(
+ $select count(*) from public.prescriptions
    where id='b2000000-0000-4000-8000-000000000301' and archived_at is null$$,
  array[1::bigint],'original source prescription stays unchanged'
 );
