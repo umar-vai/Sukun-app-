@@ -71,6 +71,52 @@ export function normalizeSuggestedActions(
         "[verify against original prescription]";
       if (!quotedEvidence) missing.push("source_evidence");
 
+      // Invalid optional model metadata is not evidence. Clear it, preserve
+      // the source quotation, and require explicit Admin review rather than
+      // rejecting every otherwise reviewable action in a PDF.
+      const rejectedFields: string[] = [];
+      const optionalValid = (
+        key: string,
+        valid: (candidate: unknown) => boolean,
+      ): unknown => {
+        const candidate = action[key];
+        if (candidate === null || candidate === undefined) return null;
+        if (valid(candidate)) return candidate;
+        rejectedFields.push(key);
+        return null;
+      };
+      const positiveCount = (candidate: unknown) =>
+        typeof candidate === "number" &&
+        Number.isInteger(candidate) && candidate > 0;
+      const countTarget = optionalValid("count_target", positiveCount);
+      const durationMinutes = optionalValid("duration_minutes", positiveCount);
+      const frequency = optionalValid("frequency", (candidate) => {
+        if (!isObject(candidate)) return false;
+        if (candidate.type === "daily") {
+          return positiveCount(candidate.interval);
+        }
+        if (candidate.type === "weekly") {
+          return Array.isArray(candidate.weekdays) &&
+            candidate.weekdays.length > 0 &&
+            candidate.weekdays.every((day: unknown) =>
+              typeof day === "number" && Number.isInteger(day) &&
+              day >= 1 && day <= 7
+            );
+        }
+        return false;
+      });
+      const timeWindow = optionalValid("time_window", (candidate) =>
+        typeof candidate === "string" && timeWindows.has(candidate)
+      );
+      const exactTime = optionalValid("exact_time", (candidate) =>
+        typeof candidate === "string" &&
+        /^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(candidate)
+      );
+      const validConfidence = typeof action.confidence === "number" &&
+        Number.isFinite(action.confidence) &&
+        action.confidence >= 0 && action.confidence <= 1;
+      if (!validConfidence) rejectedFields.push("confidence");
+
       const normalized = {
         ...action,
         type,
@@ -78,27 +124,18 @@ export function normalizeSuggestedActions(
         instruction: Object.hasOwn(action, "instruction")
           ? action.instruction
           : null,
-        count_target: Object.hasOwn(action, "count_target")
-          ? action.count_target
-          : null,
-        duration_minutes: Object.hasOwn(action, "duration_minutes")
-          ? action.duration_minutes
-          : null,
-        frequency: Object.hasOwn(action, "frequency") ? action.frequency : null,
-        time_window: Object.hasOwn(action, "time_window")
-          ? action.time_window
-          : null,
-        exact_time: Object.hasOwn(action, "exact_time")
-          ? action.exact_time
-          : null,
+        count_target: countTarget,
+        duration_minutes: durationMinutes,
+        frequency,
+        time_window: timeWindow,
+        exact_time: exactTime,
         resource_match_query: Object.hasOwn(action, "resource_match_query")
           ? action.resource_match_query
           : null,
         source_evidence: sourceEvidence,
-        confidence: typeof action.confidence === "number"
-          ? action.confidence
-          : 0,
-        needs_review: action.needs_review === true || missing.length > 0,
+        confidence: validConfidence ? action.confidence : 0,
+        needs_review: action.needs_review === true || missing.length > 0 ||
+          rejectedFields.length > 0,
         ambiguities: Array.isArray(action.ambiguities)
           ? action.ambiguities.filter((item) => typeof item === "string")
           : [],
@@ -128,6 +165,14 @@ export function normalizeSuggestedActions(
         reviewReasons.push(
           `AI omitted or left empty metadata fields: ${
             [...new Set(missing)].join(", ")
+          }. Verify against the original prescription.`,
+        );
+      }
+      if (rejectedFields.length > 0) {
+        normalized.needs_review = true;
+        reviewReasons.push(
+          `Unsupported AI metadata cleared: ${
+            [...new Set(rejectedFields)].join(", ")
           }. Verify against the original prescription.`,
         );
       }
