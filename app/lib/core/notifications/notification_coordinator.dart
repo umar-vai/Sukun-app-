@@ -124,6 +124,14 @@ final class NotificationCoordinator {
       }
 
       final timezone = await _local.configureTimezone();
+      var serverWebPushRegistered = false;
+      if (platform == 'web' && _push.isAvailable) {
+        try {
+          serverWebPushRegistered = await _registerCurrentToken(timezone);
+        } on Object {
+          // Keep active-tab reminders if Web Push registration fails.
+        }
+      }
       final window = await _repository.getReminderTasks(horizonDays: 30);
       final reminders = planCareReminders(tasks: window.tasks, now: _now());
       final precise = await _local.canSchedulePrecisely();
@@ -133,12 +141,14 @@ final class NotificationCoordinator {
       }
 
       final scheduledIds = <int>[];
-      for (final reminder in reminders) {
-        await _local.schedule(reminder, precise: precise);
-        scheduledIds.add(reminder.notificationId);
+      if (!serverWebPushRegistered) {
+        for (final reminder in reminders) {
+          await _local.schedule(reminder, precise: precise);
+          scheduledIds.add(reminder.notificationId);
+        }
       }
       await _store.setScheduledNotificationIds(scheduledIds);
-      await _registerCurrentToken(timezone);
+      if (platform != 'web') await _registerCurrentToken(timezone);
       _lastSyncSucceeded = true;
     } on Object {
       _lastSyncSucceeded = false;
@@ -197,15 +207,16 @@ final class NotificationCoordinator {
     }
   }
 
-  Future<void> _registerCurrentToken(String timezone) async {
+  Future<bool> _registerCurrentToken(String timezone) async {
     final token = await _push.getToken();
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) return false;
     await _repository.registerDevice(
       installationId: await _store.getOrCreateInstallationId(),
       platform: platform,
       pushToken: token,
       timezone: timezone,
     );
+    return true;
   }
 
   Future<void> _registerRefreshedToken(String token) async {

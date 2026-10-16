@@ -9,6 +9,8 @@ import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/supabase_notification_repository.dart';
 import 'package:sukun_life/core/notifications/web_care_reminders_gateway.dart';
+import 'package:sukun_life/core/notifications/web_fcm_push_stub.dart'
+    if (dart.library.html) 'package:sukun_life/core/notifications/web_fcm_push_web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 String get _notificationPlatform {
@@ -38,9 +40,11 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
   final coordinator = NotificationCoordinator(
     repository,
     local,
-    FirebasePushMessagingGateway(
-      isAvailable: !kIsWeb && AppEnvironment.isFirebaseConfigured,
-    ),
+    kIsWeb
+        ? WebFirebasePushMessagingGateway()
+        : FirebasePushMessagingGateway(
+            isAvailable: AppEnvironment.isFirebaseConfigured,
+          ),
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
     onTaskOpened: onOpened,

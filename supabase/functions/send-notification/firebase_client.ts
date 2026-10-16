@@ -4,7 +4,7 @@ export type FirebaseServiceAccount = {
   privateKey: string;
 };
 
-export type FirebaseMessage = {
+export type FirebasePlanUpdatedMessage = {
   token: string;
   notification: { title: string; body: string };
   data: Record<string, string>;
@@ -16,6 +16,16 @@ export type FirebaseMessage = {
     payload: { aps: { sound: "default"; "content-available": number } };
   };
 };
+
+export type FirebaseWebCareReminderMessage = {
+  token: string;
+  data: Record<string, string>;
+  webpush: { headers: { TTL: string } };
+};
+
+export type FirebaseMessage =
+  | FirebasePlanUpdatedMessage
+  | FirebaseWebCareReminderMessage;
 
 export type FirebaseSendResult = {
   ok: boolean;
@@ -41,7 +51,7 @@ export function parseServiceAccount(raw: string): FirebaseServiceAccount {
 export function buildPlanUpdatedMessage(
   token: string,
   carePlanId: string,
-): FirebaseMessage {
+): FirebasePlanUpdatedMessage {
   return {
     token,
     notification: {
@@ -56,6 +66,20 @@ export function buildPlanUpdatedMessage(
     apns: {
       payload: { aps: { sound: "default", "content-available": 1 } },
     },
+  };
+}
+
+export function buildWebCareReminderMessage(
+  token: string,
+  taskId: string,
+): FirebaseWebCareReminderMessage {
+  const uuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuid.test(taskId)) throw new Error("Invalid care task ID.");
+  return {
+    token,
+    data: { type: "care_reminder", task_id: taskId.toLowerCase() },
+    webpush: { headers: { TTL: "600" } },
   };
 }
 
