@@ -1,3 +1,26 @@
+-- Preserve the meaning of publication metadata when an abandoned draft is
+-- explicitly archived without ever being published. The old constraint only
+-- allowed non-draft states with published_at/published_by, so archiving an
+-- unapproved draft otherwise failed or would require fabricating a publish.
+-- Existing published plans still require their original publication fields.
+alter table public.care_plans
+  drop constraint care_plans_publish_consistency;
+alter table public.care_plans
+  add constraint care_plans_publish_consistency check (
+    (status = 'draft' and published_at is null and published_by is null)
+    or (
+      status = 'archived'
+      and archived_at is not null
+      and published_at is null
+      and published_by is null
+    )
+    or (
+      status <> 'draft'
+      and published_at is not null
+      and published_by is not null
+    )
+  );
+
 -- Explicit, non-destructive recovery for an uploaded prescription blocked by
 -- a *different* existing draft. Never replace a linked prescription silently.
 -- Only an authenticated Super Admin can archive an actionless DRAFT,
