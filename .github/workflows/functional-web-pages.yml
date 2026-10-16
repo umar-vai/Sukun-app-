@@ -248,7 +248,23 @@ jobs:
               member_signup="${ENABLE_PROD_MEMBER_SIGNUP:-false}"
               email_otp="${ENABLE_PROD_EMAIL_OTP:-false}"
               phone_otp="${ENABLE_PROD_PHONE_OTP:-false}"
-              google_oauth="${ENABLE_PROD_GOOGLE_OAUTH:-false}"
+              # User approved Google login: enable in the real Pages build
+              # only when Production GoTrue publicly reports Google enabled.
+              # Never let a client-side flag bypass the live provider gate.
+              provider_settings="$(mktemp)"
+              trap 'rm -f "$provider_settings"' EXIT
+              curl --fail-with-body --silent --show-error --retry 2 \
+                --max-time 25 --header "apikey: $PUBLIC_PRODUCTION_KEY" \
+                --header 'Accept: application/json' \
+                "https://vydfafumxptanpkmtrpr.supabase.co/auth/v1/settings" \
+                > "$provider_settings"
+              if jq -e '.external.google == true' "$provider_settings" > /dev/null; then
+                google_oauth=true
+                echo 'Google OAuth provider enabled: turning on the branded Pages login.'
+              else
+                google_oauth=false
+                echo 'Google provider disabled in Production Supabase: login remains safely gated.'
+              fi
             elif [[ "${ENABLE_PROD_MEMBER_SIGNUP:-false}" == true || "${ENABLE_PROD_EMAIL_OTP:-false}" == true || "${ENABLE_PROD_PHONE_OTP:-false}" == true || "${ENABLE_PROD_GOOGLE_OAUTH:-false}" == true ]]; then
               echo 'Guest-only emergency mode cannot enable OAuth or signup.' >&2
               exit 1

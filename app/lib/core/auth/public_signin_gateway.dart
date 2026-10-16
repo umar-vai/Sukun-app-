@@ -23,6 +23,23 @@ class PublicSignInException implements Exception {
   const PublicSignInException();
 }
 
+const approvedGoogleWebCallback = 'https://umar-vai.github.io/Sukun-app-/';
+
+/// Return to the real Flutter app, not the legacy website or a guessed
+/// Supabase Site URL. OAuth sessions are still verified by Supabase Auth.
+String googleOAuthWebRedirectUrl(Uri current) {
+  if (current.scheme == 'https' &&
+      current.host == 'umar-vai.github.io' &&
+      (current.path == '/Sukun-app-' ||
+          current.path.startsWith('/Sukun-app-/'))) {
+    return approvedGoogleWebCallback;
+  }
+  if (current.host == 'localhost' || current.host == '127.0.0.1') {
+    return '${current.origin}/';
+  }
+  throw const PublicSignInException();
+}
+
 final class SupabasePublicSignInGateway implements PublicSignInGateway {
   const SupabasePublicSignInGateway(this._client);
   final SupabaseClient _client;
@@ -79,10 +96,13 @@ final class SupabasePublicSignInGateway implements PublicSignInGateway {
   Future<void> signInWithGoogle() async {
     if (!AppEnvironment.googleOAuthEnabled) throw const PublicSignInException();
     try {
-      await _client.auth.signInWithOAuth(
+      final launched = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? null : AppEnvironment.mobileAuthRedirectUrl,
+        redirectTo: kIsWeb
+            ? googleOAuthWebRedirectUrl(Uri.base)
+            : AppEnvironment.mobileAuthRedirectUrl,
       );
+      if (!launched) throw const PublicSignInException();
       // Browser launch != authenticated. Supabase onAuthStateChange is authoritative.
     } on AuthException {
       throw const PublicSignInException();

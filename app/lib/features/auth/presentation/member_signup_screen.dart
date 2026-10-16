@@ -6,6 +6,7 @@ import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
+import 'package:sukun_life/features/auth/presentation/google_oauth_button.dart';
 
 /// Public registration never links a clinical patient identity automatically.
 class MemberSignUpScreen extends ConsumerStatefulWidget {
@@ -128,15 +129,13 @@ class _MemberSignUpScreenState extends ConsumerState<MemberSignUpScreen> {
                         ),
                         if (AppEnvironment.googleOAuthEnabled) ...[
                           const SizedBox(height: 24),
-                          OutlinedButton.icon(
+                          GoogleOAuthButton(
                             key: const Key('member-google-oauth'),
                             onPressed: _googleStarting ? null : _signInGoogle,
-                            icon: const Icon(Icons.login_rounded),
-                            label: Text(
-                              _googleStarting
-                                  ? 'Google লগইন শুরু হচ্ছে…'
-                                  : 'Google দিয়ে চালিয়ে যান',
-                            ),
+                            starting: _googleStarting,
+                            label: _googleStarting
+                                ? 'Google লগইন শুরু হচ্ছে…'
+                                : 'Google দিয়ে চালিয়ে যান',
                           ),
                         ],
                         if (AppEnvironment.publicMemberSignupEnabled ||
