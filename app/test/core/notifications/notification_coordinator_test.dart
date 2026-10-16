@@ -105,7 +105,10 @@ void main() {
   test('registered Web FCM token suppresses duplicate local timers', () async {
     repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
     final browser = NotificationCoordinator(
-      repository, local, push, store,
+      repository,
+      local,
+      push,
+      store,
       platform: 'web',
       now: () => DateTime(2026, 10, 2, 8),
     );
@@ -119,22 +122,28 @@ void main() {
     }
   });
 
-  test('Web Push token unavailable retains active-tab reminder fallback', () async {
-    push.token = null;
-    repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
-    final browser = NotificationCoordinator(
-      repository, local, push, store,
-      platform: 'web',
-      now: () => DateTime(2026, 10, 2, 8),
-    );
-    try {
-      expect(await browser.enable(), isTrue);
-      expect(local.scheduled.map((r) => r.taskId), ['task-1']);
-      expect(repository.registeredToken, isNull);
-    } finally {
-      await browser.dispose();
-    }
-  });
+  test(
+    'Web Push token unavailable retains active-tab reminder fallback',
+    () async {
+      push.token = null;
+      repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
+      final browser = NotificationCoordinator(
+        repository,
+        local,
+        push,
+        store,
+        platform: 'web',
+        now: () => DateTime(2026, 10, 2, 8),
+      );
+      try {
+        expect(await browser.enable(), isTrue);
+        expect(local.scheduled.map((r) => r.taskId), ['task-1']);
+        expect(repository.registeredToken, isNull);
+      } finally {
+        await browser.dispose();
+      }
+    },
+  );
 
   test('browser coordinator is accepted without native exact alarms', () async {
     final browser = NotificationCoordinator(
