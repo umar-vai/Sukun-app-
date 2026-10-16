@@ -102,6 +102,40 @@ void main() {
     },
   );
 
+  test('registered Web FCM token suppresses duplicate local timers', () async {
+    repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
+    final browser = NotificationCoordinator(
+      repository, local, push, store,
+      platform: 'web',
+      now: () => DateTime(2026, 10, 2, 8),
+    );
+    try {
+      expect(await browser.enable(), isTrue);
+      expect(repository.registeredToken, 'fresh-token');
+      expect(local.scheduled, isEmpty);
+      expect(store.ids, isEmpty);
+    } finally {
+      await browser.dispose();
+    }
+  });
+
+  test('Web Push token unavailable retains active-tab reminder fallback', () async {
+    push.token = null;
+    repository.tasks = [_task('task-1', DateTime(2026, 10, 2, 9))];
+    final browser = NotificationCoordinator(
+      repository, local, push, store,
+      platform: 'web',
+      now: () => DateTime(2026, 10, 2, 8),
+    );
+    try {
+      expect(await browser.enable(), isTrue);
+      expect(local.scheduled.map((r) => r.taskId), ['task-1']);
+      expect(repository.registeredToken, isNull);
+    } finally {
+      await browser.dispose();
+    }
+  });
+
   test('browser coordinator is accepted without native exact alarms', () async {
     final browser = NotificationCoordinator(
       repository,
@@ -312,6 +346,7 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
 
 final class _FakePushMessaging implements PushMessagingGateway {
   bool deleted = false;
+  String? token = 'fresh-token';
 
   @override
   bool get isAvailable => true;
@@ -320,7 +355,7 @@ final class _FakePushMessaging implements PushMessagingGateway {
   Future<void> requestPermission() async {}
 
   @override
-  Future<String?> getToken() async => 'fresh-token';
+  Future<String?> getToken() async => token;
 
   @override
   Stream<String> get tokenRefresh => const Stream.empty();
