@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
+import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
@@ -234,9 +235,9 @@ final class NotificationCoordinator {
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
     if (message.type == 'care_reminder' && message.taskId != null) {
-      // The relay validates the UUID and the Patient Today route resolves it
-      // through authenticated patient-task RLS before displaying material.
-      onTaskOpened?.call('care_task:${message.taskId}');
+      final taskId = careTaskIdFromPayload('care_task:${message.taskId}');
+      if (taskId != null) onTaskOpened?.call('care_task:$taskId');
+      // Patient Today independently enforces ownership through RLS.
     }
     if (message.type == 'plan_updated') await syncIfEnabled();
   }
