@@ -6,6 +6,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
@@ -57,6 +58,10 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
 
   void _reload() {
     _refresh();
+  }
+
+  Future<void> _openQuran(VerifiedQuranLink link) async {
+    await context.push<void>(link.route);
   }
 
   Future<void> _openResource(LinkedResource resource) async {
@@ -114,6 +119,7 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                     onOpenResource: action.linkedResources.isEmpty
                         ? null
                         : _openResource,
+                    onOpenQuran: _openQuran,
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -218,10 +224,15 @@ class _PlanHeader extends StatelessWidget {
 }
 
 class _PlanActionCard extends StatelessWidget {
-  const _PlanActionCard({required this.action, this.onOpenResource});
+  const _PlanActionCard({
+    required this.action,
+    this.onOpenResource,
+    required this.onOpenQuran,
+  });
 
   final PlanAction action;
   final ValueChanged<LinkedResource>? onOpenResource;
+  final ValueChanged<VerifiedQuranLink> onOpenQuran;
 
   @override
   Widget build(BuildContext context) {
@@ -275,6 +286,22 @@ class _PlanActionCard extends StatelessWidget {
               ],
             ),
           ],
+          if (verifiedQuranLinksForAction(action).isNotEmpty) ...[
+            const Divider(height: 26),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final link in verifiedQuranLinksForAction(action))
+                  OutlinedButton.icon(
+                    onPressed: () => onOpenQuran(link),
+                    icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                    label: Text(link.title),
+                  ),
+              ],
+            ),
+          ],
+
         ],
       ),
     );
