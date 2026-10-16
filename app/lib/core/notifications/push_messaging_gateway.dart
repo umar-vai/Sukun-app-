@@ -6,11 +6,13 @@ class RemotePushMessage {
     required this.type,
     required this.title,
     required this.body,
+    this.taskId,
   });
 
   final String? type;
   final String title;
   final String body;
+  final String? taskId;
 }
 
 abstract interface class PushMessagingGateway {
@@ -78,6 +80,7 @@ final class FirebasePushMessagingGateway implements PushMessagingGateway {
 
 RemotePushMessage _mapMessage(RemoteMessage message) => RemotePushMessage(
   type: message.data['type'] as String?,
+  taskId: message.data['task_id'] as String?,
   title: message.notification?.title ?? 'Sukun Life',
   body: message.notification?.body ?? 'Your care plan has been updated.',
 );

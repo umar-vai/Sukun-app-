@@ -8,6 +8,7 @@ import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/supabase_notification_repository.dart';
+import 'package:sukun_life/core/notifications/web_care_reminders_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 String get _notificationPlatform {
@@ -27,17 +28,22 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
   final repository = AppEnvironment.isSupabaseConfigured
       ? SupabaseNotificationRepository(Supabase.instance.client)
       : const UnavailableNotificationRepository();
+  final onOpened = ref.read(notificationTapRelayProvider).accept;
+  final local = kIsWeb
+      ? WebCareRemindersGateway(onNotificationOpened: onOpened)
+      : PluginLocalNotificationsGateway(null, onOpened);
+  if (local is WebCareRemindersGateway) {
+    ref.onDispose(local.dispose);
+  }
   final coordinator = NotificationCoordinator(
     repository,
-    PluginLocalNotificationsGateway(
-      null,
-      ref.read(notificationTapRelayProvider).accept,
-    ),
+    local,
     FirebasePushMessagingGateway(
-      isAvailable: AppEnvironment.isFirebaseConfigured,
+      isAvailable: !kIsWeb && AppEnvironment.isFirebaseConfigured,
     ),
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
+    onTaskOpened: onOpened,
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;

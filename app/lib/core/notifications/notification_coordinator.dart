@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
+import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
@@ -31,9 +32,13 @@ final class NotificationCoordinator {
     this._store, {
     DateTime Function()? now,
     this.platform = 'unknown',
+    this.onTaskOpened,
   }) : _now = now ?? DateTime.now,
        assert(
-         platform == 'android' || platform == 'ios' || platform == 'unknown',
+         platform == 'android' ||
+             platform == 'ios' ||
+             platform == 'web' ||
+             platform == 'unknown',
        );
 
   final NotificationRepository _repository;
@@ -42,6 +47,7 @@ final class NotificationCoordinator {
   final NotificationStateStore _store;
   final DateTime Function() _now;
   final String platform;
+  final void Function(String?)? onTaskOpened;
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
@@ -220,9 +226,13 @@ final class NotificationCoordinator {
     try {
       // Do not trust provider-supplied push copy on an unlocked or locked
       // device: it could accidentally contain patient/prescription details.
+      final taskId = message.type == 'care_reminder' && message.taskId != null
+          ? careTaskIdFromPayload('care_task:${message.taskId}')
+          : null;
       await _local.showRemote(
         title: 'সুকুন লাইফ',
         body: 'আপনার জন্য নতুন একটি বার্তা এসেছে।',
+        payload: taskId == null ? null : 'care_task:$taskId',
       );
       if (message.type == 'plan_updated') await syncIfEnabled();
     } on Object {
@@ -231,6 +241,11 @@ final class NotificationCoordinator {
   }
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
+    if (message.type == 'care_reminder' && message.taskId != null) {
+      final taskId = careTaskIdFromPayload('care_task:${message.taskId}');
+      if (taskId != null) onTaskOpened?.call('care_task:$taskId');
+      // Patient Today independently enforces ownership through RLS.
+    }
     if (message.type == 'plan_updated') await syncIfEnabled();
   }
 
