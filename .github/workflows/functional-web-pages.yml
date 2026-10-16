@@ -331,6 +331,43 @@ jobs:
             "$ENABLE_MEMBER_SIGNUP" "$ENABLE_EMAIL_OTP" "$ENABLE_PHONE_OTP" "$ENABLE_GOOGLE_OAUTH" \
             > build/web/preview-build.json
 
+      - name: Configure optional scoped Web Push assets
+        shell: bash
+        env:
+          PUSH_READY: ${{ vars.SUKUN_WEB_PUSH_RELEASE_READY }}
+          PUSH_API_KEY: ${{ vars.SUKUN_FIREBASE_WEB_API_KEY }}
+          PUSH_APP_ID: ${{ vars.SUKUN_FIREBASE_WEB_APP_ID }}
+          PUSH_PROJECT_ID: ${{ vars.SUKUN_FIREBASE_PROJECT_ID }}
+          PUSH_SENDER_ID: ${{ vars.SUKUN_FIREBASE_MESSAGING_SENDER_ID }}
+          PUSH_VAPID_PUBLIC: ${{ vars.SUKUN_FIREBASE_WEB_VAPID_PUBLIC_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "workflow_run" || "${PUSH_READY:-false}" != "true" ]]; then
+            echo 'Web Push remains disabled pending Firebase credentials, server dispatch, and consent QA.'
+            grep -Fq 'enabled: false' build/web/sukun-push-config.js
+          else
+            for required in PUSH_API_KEY PUSH_APP_ID PUSH_PROJECT_ID PUSH_SENDER_ID PUSH_VAPID_PUBLIC; do
+              if [[ -z "${!required}" ]]; then
+                echo "Web Push release gate is incomplete: $required" >&2
+                exit 1
+              fi
+            done
+            jq -cn \
+              --arg api "$PUSH_API_KEY" \
+              --arg app "$PUSH_APP_ID" \
+              --arg project "$PUSH_PROJECT_ID" \
+              --arg sender "$PUSH_SENDER_ID" \
+              --arg vapid "$PUSH_VAPID_PUBLIC" \
+              '{enabled:true,apiKey:$api,appId:$app,projectId:$project,messagingSenderId:$sender,vapidKey:$vapid}' \
+              | sed 's/^/globalThis.sukunWebPushConfig = Object.freeze(/; s/$/);/' \
+              > build/web/sukun-push-config.js
+            echo 'Public Firebase web config injected only after explicit release gate.'
+          fi
+          test -s build/web/sukun-web-push.js
+          test -s build/web/firebase-messaging-sw.js
+          test -s build/web/sukun-push-config.js
+
       - name: Preserve existing /prelaunch content in the SAME Pages site
         if: github.event_name == 'workflow_run'
         uses: actions/checkout@v5
