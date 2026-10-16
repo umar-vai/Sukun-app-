@@ -266,10 +266,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                     task: requestedTask,
                     featured: true,
                     busy: _updatingTaskId == requestedTask.id,
-                    onDone: () => _record(
-                      requestedTask,
-                      PatientTaskStatus.completed,
-                    ),
+                    onDone: () =>
+                        _record(requestedTask, PatientTaskStatus.completed),
                     onSnooze: () => _snooze(requestedTask),
                     onSkip: () => _skip(requestedTask),
                     onOpenResource: _openResource,
