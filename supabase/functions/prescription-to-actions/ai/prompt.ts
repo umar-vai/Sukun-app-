@@ -7,7 +7,7 @@ Safety rules:
 - Use null for every missing value and set needs_review=true with a short ambiguity reason.
 - Create one action per real-world task the patient can complete and check off. Do not create one action per sentence, ingredient, verse, or bullet when those details belong to a single task.
 - Merge instructions that share the same purpose, preparation, and schedule. For example, several recitations performed into the same bottle of water should normally be one preparation action with the recitations preserved in the instruction.
-- Do not split an instruction only because it says morning and evening. If the same task applies in both windows, keep one action, preserve both windows in instruction/source_evidence, set time_window=null, and set needs_review=true because the current time_window field cannot represent two windows.
+- When one task is explicitly prescribed for both morning and evening, return ONE candidate with both windows in source_evidence, time_window=null, and no invented clock times. The server separates verified morning/evening sessions for Admin review.
 - Split only when the practitioner clearly gives separate tasks with different counts, durations, schedules, methods, or outcomes.
 - Prefer a concise checklist over sentence-level fragmentation. More than 20 actions should be exceptional and only when the prescription truly contains more than 20 distinct tasks.
 - exact_time is HH:mm only when the source contains that exact clock time.
@@ -45,17 +45,17 @@ Safety rules:
 - Never invent dosage, repetition count, duration, exact time, frequency, number of days, medical instruction, audio duration, or religious ruling.
 - Use null for every missing value.
 - If text or a field is unclear, preserve the closest readable source quotation, set needs_review=true, and add a short ambiguity reason. Never guess handwriting.
-- Split distinct morning/evening instructions into separate actions.
+- If the same recitation appears for morning and evening, return one source-backed candidate containing both windows in source_evidence and time_window=null; the server separates verified sessions for review. Distinct counts, instructions or methods must remain separate.
 - exact_time is HH:mm only when that clock time is visibly written.
 - time_window may be morning, afternoon, evening, night, anytime, or null.
-- frequency may be daily, weekly with explicit ISO weekdays 1-7, or null.
+- frequency may be daily, weekly with explicit ISO weekdays 1-7, or null. For clearly recurring expressions such as প্রতিদিন and সকাল-সন্ধ্যা, use daily interval=1. For an isolated one-off morning/evening mention, do not assume daily.
 - resource_match_query is only a search phrase, never a fabricated resource ID.
 - When the PDF/photo visibly specifies a numeric Qur'an reference, preserve it in resource_match_query as "2:255" (or explicitly bounded "2:255-257"); never guess missing surah/ayah numbers or reconstruct Arabic text.
 - Keep reading/reciting distinct from listening: output an audio task only when the practitioner explicitly instructs listening. If ambiguous, mark needs_review=true.
 - Copy a clock time, duration and frequency only when visibly provided; a prayer-relative time window is not an invented HH:mm.
 - A Quran text item is not an audio recording. Source-approved recordings must cover the exact referenced verses, with final Admin review before plan approval.
 - source_evidence must be a short exact quotation visible in the document that supports the action.
-- source_text must be a conservative transcription of all readable prescription text, preserving headings and line breaks. Mark unreadable fragments as [unclear]; do not fill them in.
+- source_text must be a conservative transcription of all readable prescription text, preserving headings and line breaks. Mark unreadable fragments as [unclear]; do not fill them in. Do not repeat identical instructions as multiple candidates because they occur in duplicate PDF sections.
 - Return JSON only and follow the supplied schema.`;
 }
 
