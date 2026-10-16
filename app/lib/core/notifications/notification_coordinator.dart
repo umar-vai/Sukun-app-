@@ -31,9 +31,10 @@ final class NotificationCoordinator {
     this._store, {
     DateTime Function()? now,
     this.platform = 'unknown',
+    this.onTaskOpened,
   }) : _now = now ?? DateTime.now,
        assert(
-         platform == 'android' || platform == 'ios' || platform == 'unknown',
+         platform == 'android' || platform == 'ios' || platform == 'web' || platform == 'unknown',
        );
 
   final NotificationRepository _repository;
@@ -42,6 +43,7 @@ final class NotificationCoordinator {
   final NotificationStateStore _store;
   final DateTime Function() _now;
   final String platform;
+  final void Function(String?)? onTaskOpened;
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
@@ -231,6 +233,11 @@ final class NotificationCoordinator {
   }
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
+    if (message.type == 'care_reminder' && message.taskId != null) {
+      // The relay validates the UUID and the Patient Today route resolves it
+      // through authenticated patient-task RLS before displaying material.
+      onTaskOpened?.call('care_task:${message.taskId}');
+    }
     if (message.type == 'plan_updated') await syncIfEnabled();
   }
 
