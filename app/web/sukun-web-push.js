@@ -34,8 +34,8 @@ const api = {
       unlisten = messageLib.onMessage(messaging, (payload) => {
         const data = payload?.data || {};
         window.dispatchEvent(new CustomEvent("sukun-web-push-message", {
-          detail: { type: data.type || "", task_id:
-            uuid.test(data.task_id || "") ? data.task_id : "" }
+          detail: JSON.stringify({ type: data.type || "", task_id:
+            uuid.test(data.task_id || "") ? data.task_id : "" })
         }));
       });
       api._messageLib = messageLib;
