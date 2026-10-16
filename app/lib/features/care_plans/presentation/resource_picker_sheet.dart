@@ -494,7 +494,9 @@ class _ResourceTile extends StatelessWidget {
           : null,
       icon: _iconForType(resource.type),
       title: resource.displayTitle,
-      subtitle: resource.titleBn?.trim().isNotEmpty == true
+      subtitle: resource.isEditorialRuqyahExcerpt
+          ? 'Editorial source excerpt · not a complete canonical ayah'
+          : resource.titleBn?.trim().isNotEmpty == true
           ? resource.title
           : resource.linkabilityMessage,
       meta: [
