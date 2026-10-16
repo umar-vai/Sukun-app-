@@ -280,7 +280,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
     try {
       final repository = ref.read(carePlansRepositoryProvider);
       for (final draft in selected) {
-        await repository.saveAction(
+        final saved = await repository.saveAction(
           SavePlanActionInput(
             carePlanId: widget.planId,
             type: draft.type.trim(),
@@ -307,6 +307,14 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             humanEdited: draft.wasEdited,
           ),
         );
+        if (draft.contentItemIds.length > 1) {
+          final links = draft.contentItemIds.toList()..sort();
+          await repository.replaceActionResources(
+            actionId: saved.id,
+            resourceIds: links,
+            requestId: draft.resourceLinkRequestId,
+          );
+        }
         draft.imported = true;
         draft.selected = false;
         imported += 1;
@@ -757,6 +765,9 @@ class _EditableSuggestion {
       draft.contentItemId =
           exactReviewResource(resourceMatches, actionType: source.type)?.id ??
           '';
+      if (draft.contentItemId.isNotEmpty) {
+        draft.contentItemIds.add(draft.contentItemId);
+      }
     }
     draft.selected = draft.isReady;
     return draft;
@@ -776,6 +787,17 @@ class _EditableSuggestion {
   String timeWindow;
   DateTime? exactTime;
   String contentItemId = '';
+  final Set<String> contentItemIds = <String>{};
+  final String resourceLinkRequestId = const Uuid().v4();
+
+  void selectContentItem(String id, {required bool selected}) {
+    if (selected && id.isNotEmpty && contentItemIds.length < 16) {
+      contentItemIds.add(id);
+    } else if (!selected) {
+      contentItemIds.remove(id);
+    }
+    contentItemId = contentItemIds.isEmpty ? '' : contentItemIds.first;
+  }
   bool selected = false;
   bool imported = false;
   bool reminderEnabled = false;
@@ -1212,12 +1234,16 @@ class _SuggestedActionCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 for (final match in draft.resourceMatches)
-                  ActionChip(
+                  FilterChip(
                     label: Text(match.resource.displayTitle),
-                    onPressed: !enabled || draft.imported
+                    selected: draft.contentItemIds.contains(match.resource.id),
+                    onSelected: !enabled || draft.imported
                         ? null
-                        : () {
-                            draft.contentItemId = match.resource.id;
+                        : (selected) {
+                            draft.selectContentItem(
+                              match.resource.id,
+                              selected: selected,
+                            );
                             onChanged();
                           },
                   ),
@@ -1231,7 +1257,12 @@ class _SuggestedActionCard extends StatelessWidget {
             selectedId: draft.contentItemId,
             enabled: enabled && !draft.imported,
             onChanged: (value) {
-              draft.contentItemId = value;
+              if (value.isEmpty) {
+                draft.contentItemIds.clear();
+                draft.contentItemId = '';
+              } else {
+                draft.selectContentItem(value, selected: true);
+              }
               onChanged();
             },
           ),
