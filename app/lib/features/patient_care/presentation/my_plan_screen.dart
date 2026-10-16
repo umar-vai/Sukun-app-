@@ -111,9 +111,9 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                 for (final action in data.actions) ...[
                   _PlanActionCard(
                     action: action,
-                    onOpenResource: action.resource == null
+                    onOpenResource: action.linkedResources.isEmpty
                         ? null
-                        : () => _openResource(action.resource!),
+                        : _openResource,
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -221,7 +221,7 @@ class _PlanActionCard extends StatelessWidget {
   const _PlanActionCard({required this.action, this.onOpenResource});
 
   final PlanAction action;
-  final VoidCallback? onOpenResource;
+  final ValueChanged<LinkedResource>? onOpenResource;
 
   @override
   Widget build(BuildContext context) {
@@ -258,12 +258,21 @@ class _PlanActionCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(action.instruction!),
           ],
-          if (action.resource != null) ...[
+          if (action.linkedResources.isNotEmpty) ...[
             const Divider(height: 26),
-            OutlinedButton.icon(
-              onPressed: onOpenResource,
-              icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: Text('উপকরণ দেখুন: ${action.resource!.title}'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final resource in action.linkedResources)
+                  OutlinedButton.icon(
+                    onPressed: onOpenResource == null
+                        ? null
+                        : () => onOpenResource!(resource),
+                    icon: const Icon(Icons.menu_book_outlined, size: 18),
+                    label: Text(resource.titleBn ?? resource.title),
+                  ),
+              ],
             ),
           ],
         ],
