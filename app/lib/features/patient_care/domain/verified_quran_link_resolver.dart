@@ -42,7 +42,7 @@ List<VerifiedQuranLink> verifiedQuranLinksForText({
   required String title,
   String? instruction,
 }) {
-  final source = '${title} ${instruction ?? ''}'.toLowerCase();
+  final source = '$title ${instruction ?? ''}'.toLowerCase();
   final result = <VerifiedQuranLink>[];
   final seen = <String>{};
   void add(VerifiedQuranLink item) {
