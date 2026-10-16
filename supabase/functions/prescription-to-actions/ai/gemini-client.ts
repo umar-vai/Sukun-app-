@@ -32,6 +32,10 @@ export interface GeminiClient {
 }
 
 export class RestGeminiClient implements GeminiClient {
+  // Only scoped to one function invocation. Repeated schema HTTP 400s across
+  // retry slots waste latency and can exhaust the action-generation budget.
+  private readonly noSchemaModels = new Set<string>();
+
   constructor(
     private readonly fetcher: typeof fetch = fetch,
     private readonly diagnostic?: (event: Record<string, unknown>) => void,
@@ -74,8 +78,10 @@ export class RestGeminiClient implements GeminiClient {
           }),
         });
 
-      let response = await send(true);
-      if (response.status === 400) {
+      const trySchema = !this.noSchemaModels.has(request.model);
+      let response = await send(trySchema);
+      if (trySchema && response.status === 400) {
+        this.noSchemaModels.add(request.model);
         this.diagnostic?.({
           event: "ai_structured_output_fallback",
           endpoint: "/v1beta/interactions",
@@ -141,8 +147,9 @@ export class RestGeminiClient implements GeminiClient {
         const result = parseSuggestedActions(normalized);
         report("valid");
         return result;
-      } catch {
-        // Only fixed field names/types; never serialize provider text or errors.
+      } catch (error) {
+        // Only fixed field names/types and our own finite error categories.
+        // Never serialize provider text, prescriptions or exception messages.
         const actions = parsed && typeof parsed === "object"
           ? (parsed as Record<string, unknown>).actions
           : null;
@@ -162,6 +169,7 @@ export class RestGeminiClient implements GeminiClient {
           "ambiguities",
         ];
         report("action_schema_invalid", {
+          validation_failure: safeParserFailureCategory(error),
           actions_array: Array.isArray(actions),
           missing_action_fields: fields.filter((field) =>
             Array.isArray(actions) &&
@@ -251,6 +259,22 @@ export class RestGeminiClient implements GeminiClient {
       clearTimeout(timer);
     }
   }
+}
+
+function safeParserFailureCategory(error: unknown): string {
+  if (!(error instanceof Error)) return "unknown";
+  const message = error.message;
+  if (/frequency|weekdays/i.test(message)) return "frequency";
+  if (/time window/i.test(message)) return "time_window";
+  if (/exact time/i.test(message)) return "exact_time";
+  if (/count/i.test(message)) return "count_target";
+  if (/duration/i.test(message)) return "duration_minutes";
+  if (/confidence/i.test(message)) return "confidence";
+  if (/ambiguities|review/i.test(message)) return "review";
+  if (/source evidence/i.test(message)) return "source_evidence";
+  if (/instruction/i.test(message)) return "instruction";
+  if (/title|type/i.test(message)) return "identity";
+  return "other";
 }
 
 async function safeJson(response: Response): Promise<unknown> {
