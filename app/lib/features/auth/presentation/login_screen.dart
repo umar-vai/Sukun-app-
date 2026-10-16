@@ -8,6 +8,7 @@ import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/auth/domain/auth_inputs.dart';
+import 'package:sukun_life/features/auth/presentation/google_oauth_button.dart';
 import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 
@@ -219,14 +220,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   if (AppEnvironment.googleOAuthEnabled) ...[
                     const SizedBox(height: 8),
-                    OutlinedButton.icon(
+                    GoogleOAuthButton(
+                      key: const Key('login-google-oauth'),
                       onPressed: _googleStarting ? null : _signInGoogle,
-                      icon: const Icon(Icons.login_rounded),
-                      label: Text(
-                        _googleStarting
-                            ? 'Google লগইন শুরু হচ্ছে…'
-                            : 'Google দিয়ে লগইন',
-                      ),
+                      starting: _googleStarting,
+                      label: _googleStarting
+                          ? 'Google লগইন শুরু হচ্ছে…'
+                          : 'Google দিয়ে লগইন',
                     ),
                   ],
                   if (AppEnvironment.isProduction &&
