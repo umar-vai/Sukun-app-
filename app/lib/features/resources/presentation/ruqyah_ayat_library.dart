@@ -860,23 +860,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                   label: const Text('আবার চেষ্টা করুন'),
                                 ),
                               ] else ...[
-                                Text(
-                                  'উল্লেখিত শুরুর আয়াতের বাংলা অর্থ',
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 8),
                                 SelectableText(result.translation),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'অনুবাদ: ${result.edition} · উৎস: ${result.provider}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'এটি শুধু সূত্রে উল্লেখিত শুরুর আয়াতের অনুবাদ। '
-                                  'এই পাঠে আরও আয়াত থাকলে সেগুলোর পূর্ণ বাংলা '
-                                  'অনুবাদ এখানে যাচাই করা হয়নি।',
-                                ),
                               ],
                               const SizedBox(height: 8),
                               TextButton.icon(
