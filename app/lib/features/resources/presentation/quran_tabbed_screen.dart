@@ -184,9 +184,14 @@ class QuranSurahList extends StatelessWidget {
 }
 
 class QuranApiSurahScreen extends ConsumerStatefulWidget {
-  const QuranApiSurahScreen({required this.surahNumber, super.key});
+  const QuranApiSurahScreen({
+    required this.surahNumber,
+    this.initialAyah,
+    super.key,
+  });
 
   final int surahNumber;
+  final int? initialAyah;
 
   @override
   ConsumerState<QuranApiSurahScreen> createState() =>
@@ -205,6 +210,8 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
   String? _translationEdition;
   String? _recitationEdition;
   bool _loading = false;
+  bool _locatingInitialAyah = false;
+  bool _showFromTarget = true;
   bool _masterLoading = false;
   bool _verseLoading = false;
   bool _more = true;
@@ -217,7 +224,31 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
     _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
     _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
     _loadTitle();
-    _nextPage();
+    final firstPage = _nextPage();
+    if (widget.initialAyah != null) {
+      _locatingInitialAyah = true;
+      unawaited(firstPage.then((_) => _locateInitialAyah()));
+    }
+  }
+
+  Future<void> _locateInitialAyah() async {
+    final target = widget.initialAyah;
+    if (target == null || target < 1 || target > 286) {
+      if (mounted) setState(() => _locatingInitialAyah = false);
+      return;
+    }
+    final expected = '${widget.surahNumber}:$target';
+    for (
+      var count = 0;
+      mounted &&
+          count < 20 &&
+          _more &&
+          !_verses.any((verse) => verse['verse_key'] == expected);
+      count++
+    ) {
+      await _nextPage();
+    }
+    if (mounted) setState(() => _locatingInitialAyah = false);
   }
 
   @override
@@ -309,8 +340,13 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
       _lastAutoScrolled = null;
       _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
       _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
+      _locatingInitialAyah = widget.initialAyah != null;
+      _showFromTarget = true;
       _loadTitle();
-      _nextPage();
+      final firstPage = _nextPage();
+      if (widget.initialAyah != null) {
+        unawaited(firstPage.then((_) => _locateInitialAyah()));
+      }
     }
   }
 
@@ -560,7 +596,37 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          for (final verse in _verses) _verseCard(context, verse),
+          if (widget.initialAyah != null && _showFromTarget) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'নির্ধারিত আয়াত: ${widget.surahNumber}:${widget.initialAyah}',
+                    ),
+                    if (_locatingInitialAyah) const LinearProgressIndicator(),
+                    if (!_locatingInitialAyah)
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => _showFromTarget = false),
+                        child: const Text('সূরার শুরু থেকে পড়ুন'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          for (final verse in _verses)
+            if (!_showFromTarget ||
+                widget.initialAyah == null ||
+                (int.tryParse(
+                          (verse['verse_key'] as String? ?? '').split(':').last,
+                        ) ??
+                        0) >=
+                    widget.initialAyah!)
+              _verseCard(context, verse),
           if (_error != null)
             _ConnectionNotice(message: _error!, onRetry: _nextPage),
           if (_loading)

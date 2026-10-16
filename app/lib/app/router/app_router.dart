@@ -161,6 +161,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: ':surahNumber',
                 builder: (context, state) => QuranApiSurahScreen(
                   surahNumber: int.parse(state.pathParameters['surahNumber']!),
+                  initialAyah: int.tryParse(
+                    state.uri.queryParameters['ayah'] ?? '',
+                  ),
                 ),
               ),
             ],
