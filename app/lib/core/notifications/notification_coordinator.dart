@@ -35,7 +35,10 @@ final class NotificationCoordinator {
     this.onTaskOpened,
   }) : _now = now ?? DateTime.now,
        assert(
-         platform == 'android' || platform == 'ios' || platform == 'web' || platform == 'unknown',
+         platform == 'android' ||
+             platform == 'ios' ||
+             platform == 'web' ||
+             platform == 'unknown',
        );
 
   final NotificationRepository _repository;
