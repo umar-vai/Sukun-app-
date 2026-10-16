@@ -208,7 +208,7 @@ function reconcileSourceBackedActions(
     if (base.frequency === null && (explicitDaily || bothWindows)) {
       base.frequency = { type: "daily", interval: 1 };
     }
-    const split = bothWindows
+    const split: Record<string, unknown>[] = bothWindows
       ? (["morning", "evening"] as const).map((window) => {
         const needsTimeReview = base.exact_time !== null;
         const windowLabel = window === "morning" ? "সকাল" : "সন্ধ্যা";
