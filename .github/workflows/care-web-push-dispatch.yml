@@ -1,0 +1,46 @@
+name: Sukun Web Push Dispatch
+
+on:
+  schedule:
+    # Github-hosted fallback: approximate five-minute cadence, not exact-time SLA.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-care-push-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    # Disabled until Firebase service credentials, Web VAPID, backend sender,
+    # isolated Patient/Admin QA, and owner-approved launch are completed.
+    if: >-
+      github.repository == 'umar-vai/Sukun-app-' &&
+      vars.SUKUN_WEB_PUSH_RELEASE_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      DISPATCH_TOKEN: ${{ secrets.SUKUN_WEB_PUSH_DISPATCH_TOKEN }}
+      DISPATCH_URL: https://vydfafumxptanpkmtrpr.supabase.co/functions/v1/dispatch-care-reminders
+    steps:
+      - name: Refuse execution without protected cron credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${#DISPATCH_TOKEN}" -ge 32
+      - name: Claim approved reminders without exposing patient content
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+          status="$(curl --silent --show-error --retry 2 --max-time 60 \
+            -H 'Content-Type: application/json' \
+            -H "X-Sukun-Cron-Token: $DISPATCH_TOKEN" \
+            -X POST "$DISPATCH_URL" -o "$response" -w '%{http_code}')"
+          test "$status" = 200
+          jq -e '.status == "processed" and (.sent|type=="number") and (.failed|type=="number")' "$response" >/dev/null
+          jq '{status,sent,failed}' "$response"
