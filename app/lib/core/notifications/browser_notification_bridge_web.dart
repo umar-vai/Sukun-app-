@@ -5,8 +5,7 @@ import 'dart:html' as html;
 /// remain running to fire local timers; closed-tab push requires a separately
 /// configured FCM service worker and backend delivery, not this adapter.
 bool get supported => html.Notification.supported;
-bool get granted =>
-    supported && html.Notification.permission == 'granted';
+bool get granted => supported && html.Notification.permission == 'granted';
 
 Future<bool> requestPermission() async {
   if (!supported) return false;
