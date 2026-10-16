@@ -223,7 +223,6 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-
 }
 
 GoRouter _testRouter({PrescriptionDocumentFile? initialDocument}) => GoRouter(
