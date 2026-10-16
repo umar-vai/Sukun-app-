@@ -174,7 +174,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Upload & generate draft actions'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Gemini API key configure'), findsOneWidget);
+    expect(find.textContaining('Gemini API সেটআপ নেই'), findsOneWidget);
     expect(documents.importCalls, 1);
     expect(documents.retryCalls, 0);
     expect(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'), findsOneWidget);
