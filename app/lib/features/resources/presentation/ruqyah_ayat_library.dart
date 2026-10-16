@@ -730,6 +730,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   Widget _entryCard(BuildContext context, _RuqyahEntry item) {
     final meaning = item.meaning;
     final expanded = _expandedMeanings.contains(item.slug);
+    final closedMeaningLabel = meaning.isEmpty && item.citation != null
+        ? 'শুরুর আয়াতের অর্থ দেখুন'
+        : 'বাংলা অর্থ দেখুন';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -818,7 +821,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
               label: Text(
-                expanded ? 'বাংলা অর্থ বন্ধ করুন' : 'বাংলা অর্থ দেখুন',
+                expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel,
               ),
               onPressed: () => setState(() {
                 if (!_expandedMeanings.add(item.slug)) {
@@ -860,23 +863,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                   label: const Text('আবার চেষ্টা করুন'),
                                 ),
                               ] else ...[
-                                Text(
-                                  'উল্লেখিত শুরুর আয়াতের বাংলা অর্থ',
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 8),
                                 SelectableText(result.translation),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'অনুবাদ: ${result.edition} · উৎস: ${result.provider}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'এটি শুধু সূত্রে উল্লেখিত শুরুর আয়াতের অনুবাদ। '
-                                  'এই পাঠে আরও আয়াত থাকলে সেগুলোর পূর্ণ বাংলা '
-                                  'অনুবাদ এখানে যাচাই করা হয়নি।',
-                                ),
                               ],
                               const SizedBox(height: 8),
                               TextButton.icon(

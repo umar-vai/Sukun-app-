@@ -103,63 +103,16 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
           }
         }
         final isPrelive = snapshot.data?['environment'] == 'prelive';
-        final openSource = snapshot.data?['provider'] == 'Al Quran Cloud';
         return RefreshIndicator(
           onRefresh: () async {
             _retry();
             await _result;
           },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-            children: [
-              Text(
-                'কুরআনের সূরাসমূহ',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'সূরার নাম ও আয়াত API থেকে আনা হয়; কুরআন পাঠ বা অডিও এই অ্যাপে সংরক্ষণ করা হয় না।',
-              ),
-              const SizedBox(height: 16),
-              if (openSource)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Text(
-                      '১১৪টি সূরার জন্য Al Quran Cloud API থেকে আরবি পাঠ, বাংলা অনুবাদ ও তিলাওয়াত স্ট্রিম করা হচ্ছে। অনুবাদক, প্রকাশক ও রিসাইটারের স্বত্ব তাঁদের নিজস্ব; উৎসের নাম সূরার পাঠক স্ক্রিনে দেখানো হয়। এটি Sukun-এর নিজস্ব সংরক্ষিত কুরআন ডেটাবেস নয়।',
-                    ),
-                  ),
-                ),
-              if (isPrelive)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Text(
-                      'API পরীক্ষামূলক অবস্থায় আছে। বর্তমানে শুধুমাত্র সূরা ফাতিহা ও বাকারা পাওয়া যেতে পারে; পূর্ণ ১১৪ সূরার জন্য Quran Foundation-এর Production API অনুমোদন প্রয়োজন।',
-                    ),
-                  ),
-                ),
-              if (chapters.isEmpty)
-                const Center(child: Text('এখনো কোনো সূরা পাওয়া যায়নি।')),
-              for (final chapter in chapters)
-                Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text('${chapter['id'] ?? ''}'),
-                    ),
-                    title: Text(_chapterTitle(chapter)),
-                    subtitle: Text('${chapter['verses_count'] ?? '—'} আয়াত'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      final number = chapter['id'];
-                      if (number is int && number >= 1 && number <= 114) {
-                        context.push('/resources/quran/$number');
-                      }
-                    },
-                  ),
-                ),
-            ],
+          child: QuranSurahList(
+            chapters: chapters,
+            chapterTitle: _chapterTitle,
+            onOpenSurah: (number) => context.push('/resources/quran/$number'),
+            isPrelive: isPrelive,
           ),
         );
       },
@@ -174,6 +127,59 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
         ? '$simple — $bangla'
         : '$simple';
   }
+}
+
+/// Shows the real surah list directly: no introductory API/legal copy above it.
+/// Edition and reciter attribution remain available in the full surah reader's
+/// existing "উৎস তথ্য" action.
+@visibleForTesting
+class QuranSurahList extends StatelessWidget {
+  const QuranSurahList({
+    required this.chapters,
+    required this.chapterTitle,
+    required this.onOpenSurah,
+    this.isPrelive = false,
+    super.key,
+  });
+
+  final List<Map<String, dynamic>> chapters;
+  final String Function(Map<String, dynamic>) chapterTitle;
+  final ValueChanged<int> onOpenSurah;
+  final bool isPrelive;
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+    children: [
+      if (isPrelive)
+        const Card(
+          child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text(
+              'API পরীক্ষামূলক অবস্থায় আছে। বর্তমানে শুধুমাত্র সূরা ফাতিহা ও বাকারা পাওয়া যেতে পারে; পূর্ণ ১১৪ সূরার জন্য Quran Foundation-এর Production API অনুমোদন প্রয়োজন।',
+            ),
+          ),
+        ),
+      if (chapters.isEmpty)
+        const Center(child: Text('এখনো কোনো সূরা পাওয়া যায়নি।')),
+      for (final chapter in chapters)
+        Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(child: Text('${chapter['id'] ?? ''}')),
+            title: Text(chapterTitle(chapter)),
+            subtitle: Text('${chapter['verses_count'] ?? '—'} আয়াত'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              final number = chapter['id'];
+              if (number is int && number >= 1 && number <= 114) {
+                onOpenSurah(number);
+              }
+            },
+          ),
+        ),
+    ],
+  );
 }
 
 class QuranApiSurahScreen extends ConsumerStatefulWidget {
