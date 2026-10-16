@@ -141,6 +141,14 @@ void main() {
 }
 
 class _FakeCarePlansRepository implements CarePlansRepository {
+  @override
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  }) async =>
+      throw UnimplementedError();
+
   final plan = CarePlan(
     id: 'plan-1',
     patientId: 'patient-1',
