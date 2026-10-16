@@ -10,6 +10,7 @@ import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:uuid/uuid.dart';
 
@@ -94,9 +95,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     }
   }
 
-  Future<void> _openResource(PatientTask task) async {
-    final resource = task.action.resource;
-    if (resource == null) return;
+  Future<void> _openResource(LinkedResource resource) async {
     await context.push<void>(
       '/patient/resources/${Uri.encodeComponent(resource.id)}',
     );
@@ -272,7 +271,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           _record(day.nextTask!, PatientTaskStatus.completed),
                       onSnooze: () => _snooze(day.nextTask!),
                       onSkip: () => _skip(day.nextTask!),
-                      onOpenResource: () => _openResource(day.nextTask!),
+                      onOpenResource: _openResource,
                     ),
                     const SizedBox(height: 22),
                   ],
@@ -300,7 +299,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                               _record(task, PatientTaskStatus.completed),
                           onSnooze: () => _snooze(task),
                           onSkip: () => _skip(task),
-                          onOpenResource: () => _openResource(task),
+                          onOpenResource: _openResource,
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -378,7 +377,7 @@ class _TaskCard extends StatelessWidget {
   final VoidCallback onDone;
   final VoidCallback onSnooze;
   final VoidCallback onSkip;
-  final VoidCallback onOpenResource;
+  final ValueChanged<LinkedResource> onOpenResource;
 
   @override
   Widget build(BuildContext context) {
@@ -447,12 +446,19 @@ class _TaskCard extends StatelessWidget {
               ],
             ),
           ],
-          if (task.action.resource != null) ...[
+          if (task.action.linkedResources.isNotEmpty) ...[
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onOpenResource,
-              icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: Text('উপকরণ দেখুন: ${task.action.resource!.title}'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final resource in task.action.linkedResources)
+                  OutlinedButton.icon(
+                    onPressed: () => onOpenResource(resource),
+                    icon: const Icon(Icons.menu_book_outlined, size: 18),
+                    label: Text(resource.titleBn ?? resource.title),
+                  ),
+              ],
             ),
           ],
           if (task.isPendingSync) ...[
