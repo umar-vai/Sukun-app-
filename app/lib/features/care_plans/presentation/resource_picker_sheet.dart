@@ -212,7 +212,11 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Browse every admin resource by category. Only published patient-accessible resources can be linked.',
+                              'Published CMS resources are linkable here. '
+                              'The 114-surah Quran API catalog is separate: '
+                              'use the Quran Reader reference on the action '
+                              'card. Select an approved audio item only when '
+                              'the source specifically asks the patient to listen.',
                               style: TextStyle(color: SukunColors.muted),
                             ),
                           ],
