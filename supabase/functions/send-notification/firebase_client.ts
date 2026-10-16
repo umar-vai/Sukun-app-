@@ -60,6 +60,19 @@ export function buildPlanUpdatedMessage(
   };
 }
 
+export function buildWebCareReminderMessage(
+  token: string,
+  taskId: string,
+): FirebaseMessage {
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuid.test(taskId)) throw new Error("Invalid care task ID.");
+  return {
+    token,
+    data: { type: "care_reminder", task_id: taskId.toLowerCase() },
+    webpush: { headers: { TTL: "600" } },
+  };
+}
+
 export async function createFirebaseAccessToken(
   account: FirebaseServiceAccount,
   fetcher: typeof fetch = fetch,
