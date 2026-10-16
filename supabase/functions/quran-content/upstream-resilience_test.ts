@@ -24,6 +24,28 @@ Deno.test("transient 503 uses bounded retries and succeeds with attributed data"
   assertEquals(result, [{ number: 1 }]);
 });
 
+Deno.test("retry uses only official Al Quran Cloud mirrors", async () => {
+  resetOpenQuranCacheForTests();
+  const requested: string[] = [];
+  const data = await openQuranGet("surah", {
+    fetcher: (input) => {
+      requested.push(String(input));
+      return Promise.resolve(
+        requested.length < 3
+          ? new Response("", { status: 503 })
+          : ok([{ number: 114 }]),
+      );
+    },
+    sleep: () => Promise.resolve(),
+  });
+  assertEquals(data, [{ number: 114 }]);
+  assertEquals(requested, [
+    "https://api.alquran.cloud/v1/surah",
+    "https://alquran.api.islamic.network/v1/surah",
+    "https://alquran.api.alislam.ru/v1/surah",
+  ]);
+});
+
 Deno.test("successful short-lived response is shared without another upstream call", async () => {
   resetOpenQuranCacheForTests();
   let calls = 0;
