@@ -232,7 +232,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
               .firstOrNull;
           if (requestedTask != null &&
               requestedTask.action.linkedResources.length +
-                      verifiedQuranLinksForAction(requestedTask.action).length ==
+                      verifiedQuranLinksForAction(requestedTask.action)
+                          .length ==
                   1 &&
               !_notificationTaskOpened) {
             _notificationTaskOpened = true;
@@ -251,8 +252,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           final highlightedTaskId =
               requestedTask != null &&
                   requestedTask.action.linkedResources.length +
-                      verifiedQuranLinksForAction(requestedTask.action).length >
-                  1
+                          verifiedQuranLinksForAction(requestedTask.action)
+                              .length >
+                      1
               ? requestedTask.id
               : null;
           final remainingTasks = day.remainingTasks
@@ -279,8 +281,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 const SizedBox(height: 24),
                 if (requestedTask != null &&
                     requestedTask.action.linkedResources.length +
-                      verifiedQuranLinksForAction(requestedTask.action).length >
-                  1) ...[
+                            verifiedQuranLinksForAction(requestedTask.action)
+                                .length >
+                        1) ...[
                   SukunSectionHeader(
                     title: 'নোটিফিকেশনের আমল',
                     subtitle: requestedTask.action.title,
@@ -334,7 +337,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                       onSnooze: () => _snooze(day.nextTask!),
                       onSkip: () => _skip(day.nextTask!),
                       onOpenResource: _openResource,
-                    onOpenQuran: _openQuran,
+                      onOpenQuran: _openQuran,
                     ),
                     const SizedBox(height: 22),
                   ],
@@ -363,7 +366,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           onSnooze: () => _snooze(task),
                           onSkip: () => _skip(task),
                           onOpenResource: _openResource,
-                    onOpenQuran: _openQuran,
+                          onOpenQuran: _openQuran,
                         ),
                         const SizedBox(height: 10),
                       ],
