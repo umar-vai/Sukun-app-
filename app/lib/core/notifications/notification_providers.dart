@@ -43,6 +43,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
     ),
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
+    onTaskOpened: onOpened,
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;
