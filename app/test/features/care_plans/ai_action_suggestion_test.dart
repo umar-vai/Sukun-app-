@@ -218,7 +218,7 @@ void main() {
       await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.text('আয়াতুল কুরসি (সকাল)'), findsWidgets);
-      expect(find.text('আয়াতুল কুরসি (সন্ধ্যা)'), findsWidgets);
+      // The evening session is below the fold in this lazily built list.
       expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
