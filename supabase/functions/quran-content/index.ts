@@ -115,7 +115,6 @@ async function contentGet(
  * https://alquran.cloud/terms-and-conditions
  */
 
-
 async function openQuranResponse(body: any) {
   if (body?.action === "chapters") {
     const chapters = await openQuranGet("surah");
