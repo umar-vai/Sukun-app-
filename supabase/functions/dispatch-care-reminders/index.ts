@@ -9,7 +9,10 @@ import {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
   });
 }
 
@@ -18,15 +21,18 @@ async function authorized(request: Request): Promise<boolean> {
   const supplied = request.headers.get("X-Sukun-Cron-Token");
   if (!secret || secret.length < 32 || !supplied) return false;
   const digest = async (input: string) =>
-    new Uint8Array(await crypto.subtle.digest(
-      "SHA-256", new TextEncoder().encode(input)
-    ));
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(input),
+      ),
+    );
   const a = await digest(secret);
   const b = await digest(supplied);
   return a.length === b.length && a.reduce(
-    (difference, byte, index) => difference | (byte ^ b[index]),
-    0,
-  ) === 0;
+        (difference, byte, index) => difference | (byte ^ b[index]),
+        0,
+      ) === 0;
 }
 
 type ClaimedReminder = {
@@ -36,7 +42,9 @@ type ClaimedReminder = {
 };
 
 Deno.serve(async (request) => {
-  if (request.method !== "POST") return json({ code: "method_not_allowed" }, 405);
+  if (request.method !== "POST") {
+    return json({ code: "method_not_allowed" }, 405);
+  }
   if (!await authorized(request)) return json({ code: "unauthorized" }, 401);
 
   // Fail closed before claiming events. No role token or Firebase credentials
@@ -58,7 +66,8 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: claimed, error } = await supabase.rpc(
-      "claim_due_web_care_reminders", { p_batch_size: 50 }
+      "claim_due_web_care_reminders",
+      { p_batch_size: 50 },
     );
     if (error) throw new Error("Reminder claim unavailable.");
 
@@ -70,7 +79,8 @@ Deno.serve(async (request) => {
       let messageId: string | undefined;
       try {
         const result = await sendFirebaseMessage(
-          account, firebaseAccessToken,
+          account,
+          firebaseAccessToken,
           buildWebCareReminderMessage(event.push_token, event.task_id),
         );
         delivered = result.ok;
