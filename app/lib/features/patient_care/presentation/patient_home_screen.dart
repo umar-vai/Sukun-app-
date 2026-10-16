@@ -235,7 +235,13 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
               }
             });
           }
-          final remainingTasks = day.remainingTasks;
+          final highlightedTaskId = requestedTask != null &&
+                  requestedTask.action.linkedResources.length > 1
+              ? requestedTask.id
+              : null;
+          final remainingTasks = day.remainingTasks
+              .where((task) => task.id != highlightedTaskId)
+              .toList(growable: false);
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
@@ -293,7 +299,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 else ...[
                   _DayProgress(day: day),
                   const SizedBox(height: 18),
-                  if (day.nextTask != null) ...[
+                  if (day.nextTask != null &&
+                      day.nextTask!.id != highlightedTaskId) ...[
                     const SukunSectionHeader(
                       title: 'এখন যে কাজটি করবেন',
                       subtitle: 'এই কাজটি দিয়ে শুরু করুন',
