@@ -208,14 +208,18 @@ class _CreatePrescriptionScreenState
       if (!mounted) return;
       if (!result.isReadyForReview) {
         setState(() => _storedDocumentAttachmentId = result.attachmentId);
-        _showMessage(
-          result.aiResult.failureCode == 'ai_configuration_missing'
-              ? 'Staging-এ Gemini API key configure করা নেই। '
-                    'Admin/Developer-কে server-side AI keys যোগ করতে হবে। '
-                    'আপনার PDF নিরাপদে সংরক্ষিত আছে।'
-              : 'AI দিয়ে করণীয় তৈরি হয়নি। আপলোড করা PDF সংরক্ষিত আছে; '
-                    'আবার চেষ্টা করুন অথবা নিজে লিখুন।',
-        );
+        _showMessage(switch (result.aiResult.failureCode) {
+          'ai_configuration_missing' =>
+            'সার্ভারে Gemini API সেটআপ নেই। Admin/Developer-এর সাহায্য নিন। '
+                'PDF নিরাপদে সংরক্ষিত আছে।',
+          'draft_plan_conflict' =>
+            'এই রোগীর জন্য আগে থেকেই একটি অন্য প্রেসক্রিপশনের Draft Plan আছে। '
+                'সেটি Review/Complete করুন অথবা Admin-এর সাহায্য নিন। '
+                'PDF আবার আপলোড করার দরকার নেই।',
+          _ =>
+            'PDF সংরক্ষিত আছে, কিন্তু করণীয় তৈরির সব ধাপ শেষ হয়নি। '
+                'আবার চেষ্টা করুন অথবা নিজে লিখুন।',
+        });
         return;
       }
 

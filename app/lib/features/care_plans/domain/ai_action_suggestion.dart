@@ -55,9 +55,11 @@ class AiActionGenerationResult {
       status: status,
       actions: List.unmodifiable(actions),
       sourceText: _optionalText(json['source_text'], maxLength: 50000),
-      failureCode: json['failure_code'] == 'ai_configuration_missing'
-          ? 'ai_configuration_missing'
-          : null,
+      failureCode: switch (json['failure_code']) {
+        'ai_configuration_missing' => 'ai_configuration_missing',
+        'draft_plan_conflict' => 'draft_plan_conflict',
+        _ => null,
+      },
     );
   }
 
