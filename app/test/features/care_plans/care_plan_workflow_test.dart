@@ -43,6 +43,8 @@ void main() {
               'title': 'Assigned recording',
               'title_bn': null,
               'type': 'audio',
+              'status': 'published',
+              'visibility': 'patient_only',
             },
           },
         ],
