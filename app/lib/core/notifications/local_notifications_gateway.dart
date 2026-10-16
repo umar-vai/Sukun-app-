@@ -19,8 +19,12 @@ abstract interface class LocalNotificationsGateway {
 
 final class PluginLocalNotificationsGateway
     implements LocalNotificationsGateway {
-  PluginLocalNotificationsGateway([FlutterLocalNotificationsPlugin? plugin])
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  PluginLocalNotificationsGateway([
+    FlutterLocalNotificationsPlugin? plugin,
+    this.onNotificationOpened,
+  ]) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  final void Function(String?)? onNotificationOpened;
 
   static const _channelId = 'care_reminders';
   static const _channelName = 'Care plan reminders';
@@ -41,7 +45,14 @@ final class PluginLocalNotificationsGateway
           requestSoundPermission: false,
         ),
       ),
+      onDidReceiveNotificationResponse: (response) {
+        onNotificationOpened?.call(response.payload);
+      },
     );
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      onNotificationOpened?.call(launch?.notificationResponse?.payload);
+    }
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
