@@ -1,6 +1,13 @@
 // Bounded resilience for the existing attributed Al Quran Cloud stream.
 // No persisted Quran or translation corpus, no alternate unapproved provider.
-const baseUrl = "https://api.alquran.cloud/v1/";
+// These are mirrors of the SAME Al Quran Cloud API, as documented by the
+// provider at https://legacy.alquran.cloud/api. Do not switch editions or
+// silently use any other Quran or Bengali translation provider.
+const baseUrls = [
+  "https://api.alquran.cloud/v1/",
+  "https://alquran.api.islamic.network/v1/",
+  "https://alquran.api.alislam.ru/v1/",
+] as const;
 const successTtlMs = 90_000;
 const staleLimitMs = 600_000;
 const cacheLimit = 6;
@@ -66,7 +73,7 @@ export async function openQuranGet(
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const response = await fetcher(baseUrl + path, {
+        const response = await fetcher(baseUrls[attempt] + path, {
           headers: { Accept: "application/json" },
           signal: AbortSignal.timeout(7_000),
         });
