@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -155,12 +156,38 @@ String? ruqyahCitation({
   return 'সূরা $surah · আয়াত $start থেকে নির্বাচিত পাঠ';
 }
 
+/// Reuse only approved, attributed Quran verse audio URLs; never infer a
+/// recitation from a source-book excerpt's Arabic text.
+String? ruqyahTrustedVerseAudioUrl(Object? audio) {
+  if (audio is! Map || audio['url'] is! String) return null;
+  final value = audio['url'] as String;
+  final uri = Uri.tryParse(value);
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      uri.userInfo.isNotEmpty ||
+      !{
+        'cdn.islamic.network',
+        'cdn.alquran.cloud',
+        'audio.qurancdn.com',
+        'verses.quran.foundation',
+      }.contains(uri.host)) {
+    return null;
+  }
+  return value;
+}
+
 class _FirstAyahBangla {
-  const _FirstAyahBangla(this.translation, this.edition, this.provider);
+  const _FirstAyahBangla(
+    this.translation,
+    this.edition,
+    this.provider,
+    this.audioUrl,
+  );
 
   final String translation;
   final String edition;
   final String provider;
+  final String? audioUrl;
 }
 
 class _RuqyahEntry {
@@ -421,6 +448,7 @@ class _RuqyahSectionReader extends StatefulWidget {
 class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   late int _section = widget.initialSection;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<PlayerState>? _playerStateSubscription;
   final Set<String> _favorites = {};
   String? _playingSlug;
   bool _loadingAudio = false;
@@ -462,6 +490,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               ? edition!
               : data['translation_name']?.toString() ?? 'বাংলা অনুবাদ',
           data['provider']?.toString() ?? 'Quran Foundation',
+          ruqyahTrustedVerseAudioUrl(raw['audio']),
         );
       }
     }
@@ -471,6 +500,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   @override
   void initState() {
     super.initState();
+    _playerStateSubscription = _audioPlayer.playerStateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
     unawaited(_readFavorites());
   }
 
@@ -492,6 +524,53 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     await store.setStringList('sukun.ruqyah.favorites', _favorites.toList());
   }
 
+  /// Editorial selections can span an unknown number of verses.
+  /// Play only the canonical, independently referenced *starting ayah*.
+  Future<void> _playStartAyah(_RuqyahEntry entry) async {
+    if (_loadingAudio || entry.citation == null) return;
+    setState(() => _loadingAudio = true);
+    try {
+      if (_playingSlug == entry.slug) {
+        if (_audioPlayer.playing) {
+          await _audioPlayer.pause();
+        } else {
+          if (_audioPlayer.processingState == ProcessingState.completed) {
+            await _audioPlayer.seek(Duration.zero);
+          }
+          unawaited(_audioPlayer.play());
+        }
+      } else {
+        final result = await _banglaRequests.putIfAbsent(
+          entry.slug,
+          () => _fetchFirstAyahBangla(entry),
+        );
+        final url = result?.audioUrl;
+        if (url == null) {
+          throw const FormatException('Missing verified Quran recitation');
+        }
+        await _audioPlayer.stop();
+        await _audioPlayer.setUrl(url);
+        if (!mounted) return;
+        _playingSlug = entry.slug;
+        unawaited(_audioPlayer.play());
+      }
+    } catch (_) {
+      // Do not permanently cache a failed third-party provider request.
+      _banglaRequests.remove(entry.slug);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'শুরুর আয়াতের তিলাওয়াত পাওয়া যায়নি। আবার চেষ্টা করুন।',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingAudio = false);
+    }
+  }
+
   Future<void> _playSection() async {
     final slug = ruqyahSections[_section].audioSlug;
     final url = widget.data.sectionAudio[slug];
@@ -501,10 +580,14 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
         if (_audioPlayer.playing) {
           await _audioPlayer.pause();
         } else {
+          if (_audioPlayer.processingState == ProcessingState.completed) {
+            await _audioPlayer.seek(Duration.zero);
+          }
           unawaited(_audioPlayer.play());
         }
       } else {
         setState(() => _loadingAudio = true);
+        await _audioPlayer.stop();
         await _audioPlayer.setUrl(url);
         if (!mounted) return;
         _playingSlug = slug;
@@ -536,6 +619,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
 
   @override
   void dispose() {
+    unawaited(_playerStateSubscription?.cancel());
     unawaited(_audioPlayer.dispose());
     super.dispose();
   }
@@ -661,6 +745,25 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                   ),
                 ),
                 IconButton(
+                  key: Key('ruqyah-ayah-audio-${item.slug}'),
+                  tooltip: item.citation == null
+                      ? 'এই পাঠের আলাদা আয়াতের অডিও যাচাই হয়নি'
+                      : 'শুধু শুরুর আয়াতের তিলাওয়াত শুনুন',
+                  onPressed: item.citation == null || _loadingAudio
+                      ? null
+                      : () => _playStartAyah(item),
+                  icon: _loadingAudio && _playingSlug == item.slug
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          _playingSlug == item.slug && _audioPlayer.playing
+                              ? Icons.pause_circle_outline
+                              : Icons.play_circle_outline,
+                        ),
+                ),
+                IconButton(
                   tooltip: 'ফেভারিট',
                   icon: Icon(
                     _favorites.contains(item.slug)
@@ -689,15 +792,28 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               child: SelectableText(
                 item.arabic,
                 textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 27, height: 2.1),
+                // Amiri Quran retains the vowel marks and improves the
+                // breathing room around dense Quranic glyph combinations.
+                // Only the Arabic reader uses this font; Bangla brand stays.
+                style: GoogleFonts.amiriQuran(
+                  fontSize: MediaQuery.sizeOf(context).width < 500 ? 27 : 31,
+                  height: 2.15,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
             const SizedBox(height: 12),
-            if (item.citation != null)
+            if (item.citation != null) ...[
               Text(
                 item.citation!,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+              const SizedBox(height: 4),
+              Text(
+                'অডিও: শুধু সূত্রে উল্লিখিত শুরুর আয়াত; পুরো নির্বাচিত পাঠ নয়',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const Divider(),
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),

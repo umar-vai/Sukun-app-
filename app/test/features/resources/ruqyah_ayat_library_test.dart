@@ -70,4 +70,35 @@ void main() {
     expect(ruqyahBanglaNumber(255), '২৫৫');
     expect(ruqyahBanglaNumber(114), '১১৪');
   });
+
+  test('verse audio must come from attributed Quran CDN over HTTPS', () {
+    expect(
+      ruqyahTrustedVerseAudioUrl({
+        'url': 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3',
+      }),
+      'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3',
+    );
+    expect(
+      ruqyahTrustedVerseAudioUrl({
+        'url': 'https://cdn.alquran.cloud/media/audio/001.mp3',
+      }),
+      isNotNull,
+    );
+    for (final url in [
+      'http://cdn.islamic.network/quran/audio/1.mp3',
+      'https://attacker.example/verse.mp3',
+      'https://cdn.islamic.network@attacker.example/verse.mp3',
+      'javascript:alert(1)',
+    ]) {
+      expect(ruqyahTrustedVerseAudioUrl({'url': url}), isNull);
+    }
+    expect(ruqyahTrustedVerseAudioUrl(null), isNull);
+    expect(ruqyahTrustedVerseAudioUrl({'text': 'verse'}), isNull);
+  });
+
+  test('unverified editorial introductions cannot acquire guessed ayat', () {
+    expect(ruqyahSectionForSlug('srg2024-qur-001'), 0);
+    expect(ruqyahSectionForSlug('srg2024-qur-047'), 4);
+    expect(ruqyahCitation(surahNumber: null, ayahNumber: null), isNull);
+  });
 }
