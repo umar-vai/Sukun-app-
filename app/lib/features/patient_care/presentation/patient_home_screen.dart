@@ -11,6 +11,7 @@ import 'package:sukun_life/features/patient_care/data/patient_care_providers.dar
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:uuid/uuid.dart';
 
@@ -95,6 +96,10 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     } finally {
       if (mounted) setState(() => _updatingTaskId = null);
     }
+  }
+
+  Future<void> _openQuran(VerifiedQuranLink link) async {
+    await context.push<void>(link.route);
   }
 
   Future<void> _openResource(LinkedResource resource) async {
@@ -226,18 +231,28 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
               .where((task) => task.id == widget.openTaskId)
               .firstOrNull;
           if (requestedTask != null &&
-              requestedTask.action.linkedResources.length == 1 &&
+              requestedTask.action.linkedResources.length +
+                      verifiedQuranLinksForAction(requestedTask.action).length ==
+                  1 &&
               !_notificationTaskOpened) {
             _notificationTaskOpened = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                _openResource(requestedTask.action.linkedResources.single);
+                if (requestedTask.action.linkedResources.length == 1) {
+                  _openResource(requestedTask.action.linkedResources.single);
+                } else {
+                  _openQuran(
+                    verifiedQuranLinksForAction(requestedTask.action).single,
+                  );
+                }
               }
             });
           }
           final highlightedTaskId =
               requestedTask != null &&
-                  requestedTask.action.linkedResources.length > 1
+                  requestedTask.action.linkedResources.length +
+                      verifiedQuranLinksForAction(requestedTask.action).length >
+                  1
               ? requestedTask.id
               : null;
           final remainingTasks = day.remainingTasks
@@ -263,7 +278,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (requestedTask != null &&
-                    requestedTask.action.linkedResources.length > 1) ...[
+                    requestedTask.action.linkedResources.length +
+                      verifiedQuranLinksForAction(requestedTask.action).length >
+                  1) ...[
                   SukunSectionHeader(
                     title: 'নোটিফিকেশনের আমল',
                     subtitle: requestedTask.action.title,
@@ -278,6 +295,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                     onSnooze: () => _snooze(requestedTask),
                     onSkip: () => _skip(requestedTask),
                     onOpenResource: _openResource,
+                    onOpenQuran: _openQuran,
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -316,6 +334,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                       onSnooze: () => _snooze(day.nextTask!),
                       onSkip: () => _skip(day.nextTask!),
                       onOpenResource: _openResource,
+                    onOpenQuran: _openQuran,
                     ),
                     const SizedBox(height: 22),
                   ],
@@ -344,6 +363,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           onSnooze: () => _snooze(task),
                           onSkip: () => _skip(task),
                           onOpenResource: _openResource,
+                    onOpenQuran: _openQuran,
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -412,6 +432,7 @@ class _TaskCard extends StatelessWidget {
     required this.onSnooze,
     required this.onSkip,
     required this.onOpenResource,
+    required this.onOpenQuran,
     this.featured = false,
   });
 
@@ -422,6 +443,7 @@ class _TaskCard extends StatelessWidget {
   final VoidCallback onSnooze;
   final VoidCallback onSkip;
   final ValueChanged<LinkedResource> onOpenResource;
+  final ValueChanged<VerifiedQuranLink> onOpenQuran;
 
   @override
   Widget build(BuildContext context) {
@@ -501,6 +523,21 @@ class _TaskCard extends StatelessWidget {
                     onPressed: () => onOpenResource(resource),
                     icon: const Icon(Icons.menu_book_outlined, size: 18),
                     label: Text(resource.titleBn ?? resource.title),
+                  ),
+              ],
+            ),
+          ],
+          if (verifiedQuranLinksForAction(task.action).isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final link in verifiedQuranLinksForAction(task.action))
+                  OutlinedButton.icon(
+                    onPressed: () => onOpenQuran(link),
+                    icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                    label: Text(link.title),
                   ),
               ],
             ),
