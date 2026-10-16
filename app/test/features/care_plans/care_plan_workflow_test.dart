@@ -146,8 +146,7 @@ class _FakeCarePlansRepository implements CarePlansRepository {
     required String patientId,
     required String planId,
     required String requestId,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   final plan = CarePlan(
     id: 'plan-1',
