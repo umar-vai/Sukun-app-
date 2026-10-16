@@ -72,8 +72,16 @@ final class WebCareRemindersGateway implements LocalNotificationsGateway {
   }
 
   @override
-  Future<void> showRemote({required String title, required String body}) async {
-    browser.show(title: title, body: body, onClick: () {});
+  Future<void> showRemote({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    browser.show(
+      title: title,
+      body: body,
+      onClick: () => onNotificationOpened(payload),
+    );
   }
 
   void dispose() {
