@@ -19,8 +19,7 @@ final class WebFirebasePushMessagingGateway implements PushMessagingGateway {
   WebFirebasePushMessagingGateway();
 
   @override
-  bool get isAvailable =>
-      _sukunPushBridge != null && _pushAvailable().toDart;
+  bool get isAvailable => _sukunPushBridge != null && _pushAvailable().toDart;
 
   @override
   Future<void> requestPermission() async {
