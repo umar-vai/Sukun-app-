@@ -235,7 +235,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
               }
             });
           }
-          final highlightedTaskId = requestedTask != null &&
+          final highlightedTaskId =
+              requestedTask != null &&
                   requestedTask.action.linkedResources.length > 1
               ? requestedTask.id
               : null;
