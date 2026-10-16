@@ -10,7 +10,9 @@ for (
       output_text: JSON.stringify({
         actions: [{
           type: "amal",
-          title: "private prescription",
+          // Required identity fields stay fail-closed; only optional
+          // metadata is eligible for conservative review normalization.
+          title: "T".repeat(170),
           instruction: null,
           count_target: null,
           duration_minutes: null,
