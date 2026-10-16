@@ -37,10 +37,10 @@ export function normalizeSuggestedActions(
 ): unknown {
   if (!isObject(value) || !Array.isArray(value.actions)) return value;
 
-  return {
+  const normalizedOutput = {
     ...value,
     source_text: value.source_text === undefined ? null : value.source_text,
-    actions: reconcileSourceBackedActions(value.actions.map((action) => {
+    actions: value.actions.map((action) => {
       if (!isObject(action)) return action;
 
       const missing: string[] = [];
@@ -156,7 +156,14 @@ export function normalizeSuggestedActions(
       }
       normalized.ambiguities = [...new Set(reviewReasons)];
       return normalized;
-    }), originalPrescriptionText),
+    }),
+  };
+  return {
+    ...normalizedOutput,
+    actions: reconcileSourceBackedActions(
+      normalizedOutput.actions,
+      originalPrescriptionText,
+    ),
   };
 }
 
