@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_coordinator.dart';
@@ -99,6 +101,57 @@ void main() {
       expect((await coordinator.status()).lastSyncSucceeded, isTrue);
     },
   );
+
+  test('browser coordinator is accepted without native exact alarms', () async {
+    final browser = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'web',
+    );
+    try {
+      await browser.initialize();
+      expect(await browser.status(), isA<CareNotificationStatus>());
+    } finally {
+      await browser.dispose();
+    }
+  });
+
+  test('only valid care reminder Firebase task UUIDs reach tap relay', () async {
+    final opened = <String?>[];
+    const validTaskId = 'a4ba5d60-81df-4688-81c8-b1064f7cf45e';
+    final listener = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'android',
+      onTaskOpened: opened.add,
+    );
+    await listener.initialize();
+    push.emit(const RemotePushMessage(
+      type: 'care_reminder',
+      title: 'Sukun',
+      body: 'Care task',
+      taskId: validTaskId,
+    ));
+    push.emit(const RemotePushMessage(
+      type: 'care_reminder',
+      title: 'Sukun',
+      body: 'Ignore untrusted target',
+      taskId: 'https://evil.test',
+    ));
+    push.emit(const RemotePushMessage(
+      type: 'plan_updated',
+      title: 'Sukun',
+      body: 'Not a care task',
+      taskId: validTaskId,
+    ));
+    await Future<void>.delayed(Duration.zero);
+    expect(opened, ['care_task:$validTaskId']);
+    await listener.dispose();
+  });
 
   test('disable cancels reminders and removes the registered device', () async {
     store.enabled = true;
@@ -236,8 +289,13 @@ final class _FakePushMessaging implements PushMessagingGateway {
   @override
   Stream<RemotePushMessage> get foregroundMessages => const Stream.empty();
 
+  final StreamController<RemotePushMessage> _opened =
+      StreamController<RemotePushMessage>.broadcast();
+
+  void emit(RemotePushMessage message) => _opened.add(message);
+
   @override
-  Stream<RemotePushMessage> get openedMessages => const Stream.empty();
+  Stream<RemotePushMessage> get openedMessages => _opened.stream;
 
   @override
   Future<RemotePushMessage?> getInitialMessage() async => null;
