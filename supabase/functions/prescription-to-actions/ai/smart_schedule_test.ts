@@ -53,7 +53,9 @@ Deno.test("explicit Bengali morning-evening becomes two source-backed daily sess
 
 Deno.test("duplicate suggestions collapse without dropping separate morning and evening sessions", () => {
   const sessions = extract(quote, [
-    action(quote), action(quote), action(quote, { time_window: "morning" }),
+    action(quote),
+    action(quote),
+    action(quote, { time_window: "morning" }),
     action(quote, { time_window: "evening" }),
   ]);
   assertEquals(sessions.length, 2);
@@ -104,7 +106,12 @@ Deno.test("conflicting exact clock on a paired schedule is cleared for Admin rev
   assertEquals(sessions.length, 2);
   assertEquals(sessions.map((a) => a.exact_time), [null, null]);
   assertEquals(sessions.every((a) => a.needs_review), true);
-  assertEquals(sessions.every((a) =>
-    a.ambiguities.some((reason) => reason.includes("Confirm each reminder time"))
-  ), true);
+  assertEquals(
+    sessions.every((a) =>
+      a.ambiguities.some((reason) =>
+        reason.includes("Confirm each reminder time")
+      )
+    ),
+    true,
+  );
 });
