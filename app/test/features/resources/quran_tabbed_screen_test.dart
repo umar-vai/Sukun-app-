@@ -44,6 +44,4 @@ void main() {
     await tester.tap(find.text('Al-Faatihah'));
     expect(opened, [1]);
   });
-
-
 }
