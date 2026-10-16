@@ -168,26 +168,26 @@ class _PlanActionEditorScreenState
           : ActionFrequency.weekly(_weekdays);
       final repository = ref.read(carePlansRepositoryProvider);
       final saved = await repository.saveAction(
-            SavePlanActionInput(
-              carePlanId: widget.planId,
-              actionId: widget.actionId,
-              type: _typeController.text,
-              title: _titleController.text,
-              instruction: _instructionController.text,
-              countTarget: int.tryParse(_countController.text.trim()),
-              durationMinutes: int.tryParse(_durationController.text.trim()),
-              frequency: frequency,
-              timeWindow: _timeWindow.isEmpty ? null : _timeWindow,
-              exactTime: _exactTime,
-              startDate: _startDate,
-              endDate: _endDate,
-              reviewStatus: _reviewStatus,
-              reminderEnabled: _reminderEnabled,
-              contentItemId: _contentItemId.isEmpty ? null : _contentItemId,
-              resourceUsageNote: _usageNoteController.text,
-              requestId: _requestId,
-            ),
-          );
+        SavePlanActionInput(
+          carePlanId: widget.planId,
+          actionId: widget.actionId,
+          type: _typeController.text,
+          title: _titleController.text,
+          instruction: _instructionController.text,
+          countTarget: int.tryParse(_countController.text.trim()),
+          durationMinutes: int.tryParse(_durationController.text.trim()),
+          frequency: frequency,
+          timeWindow: _timeWindow.isEmpty ? null : _timeWindow,
+          exactTime: _exactTime,
+          startDate: _startDate,
+          endDate: _endDate,
+          reviewStatus: _reviewStatus,
+          reminderEnabled: _reminderEnabled,
+          contentItemId: _contentItemId.isEmpty ? null : _contentItemId,
+          resourceUsageNote: _usageNoteController.text,
+          requestId: _requestId,
+        ),
+      );
       if (_contentItemIds.length > 1) {
         await repository.replaceActionResources(
           actionId: saved.id,
@@ -478,7 +478,9 @@ class _PlanActionEditorScreenState
                             title: 'No linked resource',
                             description: 'Keep this action instruction-only.',
                           ),
-                          for (final resource in data.resources.where((item) => item.isLinkable))
+                          for (final resource in data.resources.where(
+                            (item) => item.isLinkable,
+                          ))
                             SukunChoiceOption(
                               value: resource.id,
                               title: resource.title,
