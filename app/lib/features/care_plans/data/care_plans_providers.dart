@@ -21,8 +21,7 @@ final class UnavailableCarePlansRepository implements CarePlansRepository {
     required String patientId,
     required String planId,
     required String requestId,
-  }) async =>
-      _unavailable();
+  }) async => _unavailable();
 
   const UnavailableCarePlansRepository();
 
