@@ -92,10 +92,10 @@ void main() {
         status: 'review',
         verificationStatus: 'pending',
       );
-      final matches = matchResources(
-        'Surah Al-Baqarah Completion',
-        [approvedRecording, unpublished],
-      );
+      final matches = matchResources('Surah Al-Baqarah Completion', [
+        approvedRecording,
+        unpublished,
+      ]);
       expect(matches.map((m) => m.resource.id), ['baqarah-audio']);
       expect(exactReviewResource(matches, actionType: 'recitation'), isNull);
       expect(exactReviewResource(matches, actionType: 'listening'), isNull);
@@ -115,7 +115,10 @@ void main() {
         visibility: 'public',
       );
       expect(resourceMatchesSearch(individualAmal, 'sleep'), isTrue);
-      expect(matchResources('Bedtime Masnun Routine', [individualAmal]), isEmpty);
+      expect(
+        matchResources('Bedtime Masnun Routine', [individualAmal]),
+        isEmpty,
+      );
     });
 
     test('missing AI match query never invents a linked resource', () {
