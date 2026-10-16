@@ -59,12 +59,15 @@ void main() {
     expect(fixed.actions.every((a) => !a.needsReview), isTrue);
   });
 
-  test('actual prescription text can verify old output with no source_text', () {
-    final raw = result(twice, [oldAction(twice)], sourceText: ' ');
-    final fixed = reconcileStoredAiResult(raw, prescriptionText: twice);
-    expect(fixed.actions, hasLength(2));
-    expect(fixed.actions.every((a) => !a.needsReview), isTrue);
-  });
+  test(
+    'actual prescription text can verify old output with no source_text',
+    () {
+      final raw = result(twice, [oldAction(twice)], sourceText: ' ');
+      final fixed = reconcileStoredAiResult(raw, prescriptionText: twice);
+      expect(fixed.actions, hasLength(2));
+      expect(fixed.actions.every((a) => !a.needsReview), isTrue);
+    },
+  );
 
   test('AI-provided quote absent from prescription cannot be auto-ready', () {
     final raw = result('শুধু আগামীকাল সকালে পড়বেন।', [oldAction(twice)]);
@@ -94,10 +97,7 @@ void main() {
 
   test('different repetition counts remain separate approved candidates', () {
     final fixed = reconcileStoredAiResult(
-      result(twice, [
-        oldAction(twice, count: 7),
-        oldAction(twice, count: 11),
-      ]),
+      result(twice, [oldAction(twice, count: 7), oldAction(twice, count: 11)]),
     );
     expect(fixed.actions.map((a) => a.countTarget), [7, 7, 11, 11]);
   });
