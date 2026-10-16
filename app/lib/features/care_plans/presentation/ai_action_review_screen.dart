@@ -226,6 +226,31 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
     }
   }
 
+  Future<void> _applyWindowReminderTime(String window) async {
+    if (_importing || _drafts == null) return;
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      helpText: window == 'morning'
+          ? 'সকালের আমলের রিমাইন্ডার সময়'
+          : 'সন্ধ্যার আমলের রিমাইন্ডার সময়',
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      for (final draft in _drafts!) {
+        if (draft.imported || draft.timeWindow != window) continue;
+        draft.exactTime = DateTime(
+          2000,
+          1,
+          1,
+          selected.hour,
+          selected.minute,
+        );
+        draft.reminderEnabled = true;
+      }
+    });
+  }
+
   Future<void> _import(_ReviewData data) async {
     if (_importing) return;
     final selected = _drafts!
@@ -269,7 +294,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             startDate: data.plan.startDate,
             endDate: data.plan.endDate,
             reviewStatus: importedReviewStatus(draft.source),
-            reminderEnabled: false,
+            reminderEnabled: draft.reminderEnabled && draft.exactTime != null,
             contentItemId: draft.contentItemId.isEmpty
                 ? null
                 : draft.contentItemId,
@@ -401,6 +426,32 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                       }),
                     ),
                     const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _importing
+                              ? null
+                              : () => _applyWindowReminderTime('morning'),
+                          icon: const Icon(Icons.wb_sunny_outlined),
+                          label: const Text('সকালের রিমাইন্ডার সময় দিন'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _importing
+                              ? null
+                              : () => _applyWindowReminderTime('evening'),
+                          icon: const Icon(Icons.nights_stay_outlined),
+                          label: const Text('সন্ধ্যার রিমাইন্ডার সময় দিন'),
+                        ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8, bottom: 8),
+                      child: Text(
+                        'সময় Admin নিশ্চিত করবেন। Import-এর পরেও Action অনুমোদন এবং Plan publish ছাড়া কোনো রিমাইন্ডার যাবে না।',
+                      ),
+                    ),
                     if (visibleDrafts.isEmpty)
                       const _NoSuggestionsForFilter()
                     else
@@ -727,6 +778,7 @@ class _EditableSuggestion {
   String contentItemId = '';
   bool selected = false;
   bool imported = false;
+  bool reminderEnabled = false;
 
   bool get hasIncompleteMetadata => source.ambiguities.any(
     (item) =>
@@ -761,6 +813,7 @@ class _EditableSuggestion {
         int.tryParse(count.trim()) != source.countTarget ||
         int.tryParse(duration.trim()) != source.durationMinutes ||
         timeWindow != (source.timeWindow ?? '') ||
+        reminderEnabled ||
         contentItemId.isNotEmpty) {
       return true;
     }
