@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_coordinator.dart';
+import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
@@ -14,6 +15,12 @@ String get _notificationPlatform {
   return defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
 }
 
+final notificationTapRelayProvider = Provider<NotificationTapRelay>((ref) {
+  final relay = NotificationTapRelay();
+  ref.onDispose(relay.dispose);
+  return relay;
+});
+
 final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
   ref,
 ) {
@@ -22,7 +29,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
       : const UnavailableNotificationRepository();
   final coordinator = NotificationCoordinator(
     repository,
-    PluginLocalNotificationsGateway(),
+    PluginLocalNotificationsGateway(null, ref.read(notificationTapRelayProvider).accept),
     FirebasePushMessagingGateway(
       isAvailable: AppEnvironment.isFirebaseConfigured,
     ),
