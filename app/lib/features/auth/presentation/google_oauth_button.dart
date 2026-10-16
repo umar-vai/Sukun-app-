@@ -33,7 +33,13 @@ class _GoogleMarkPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt;
     void segment(Color color, double start, double sweep) {
       paint.color = color;
-      canvas.drawArc(ring, start * math.pi / 180, sweep * math.pi / 180, false, paint);
+      canvas.drawArc(
+        ring,
+        start * math.pi / 180,
+        sweep * math.pi / 180,
+        false,
+        paint,
+      );
     }
 
     segment(const Color(0xFF4285F4), -8, 77);
