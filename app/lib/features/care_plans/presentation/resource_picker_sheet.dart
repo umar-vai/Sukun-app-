@@ -314,7 +314,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
           final categoryMatch = _categoryId == null
               ? true
               : _categoryId == '__uncategorized__'
-              ? resource.categoryId == null
+              ? resource.categoryId == null &&
+                    !resource.isEditorialRuqyahExcerpt
+              : _categoryId == '__editorial_ruqyah__'
+              ? resource.isEditorialRuqyahExcerpt
               : resource.categoryId == _categoryId;
           if (!categoryMatch) return false;
           if (query.isEmpty) return true;
@@ -328,7 +331,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   ) {
     final grouped = <String, List<ContentResourceOption>>{};
     for (final resource in resources) {
-      final label = resource.categoryId == null
+      final label = resource.isEditorialRuqyahExcerpt
+          ? resource.categoryLabel
+          : resource.categoryId == null
           ? 'Uncategorized · ${_displayType(resource.type)}'
           : resource.categoryLabel;
       grouped.putIfAbsent(label, () => []).add(resource);
@@ -339,7 +344,12 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   List<_CategoryInfo> _categories(List<ContentResourceOption> resources) {
     final categories = <String, _CategoryInfo>{};
     var uncategorized = 0;
+    var editorialRuqyah = 0;
     for (final resource in resources) {
+      if (resource.isEditorialRuqyahExcerpt) {
+        editorialRuqyah += 1;
+        continue;
+      }
       if (resource.categoryId == null) {
         uncategorized += 1;
         continue;
@@ -359,6 +369,16 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
             ? order
             : left.label.toLowerCase().compareTo(right.label.toLowerCase());
       });
+    if (editorialRuqyah > 0) {
+      result.add(
+        _CategoryInfo(
+          id: '__editorial_ruqyah__',
+          label: 'রুকইয়াহ আয়াত · উদ্ধৃতি',
+          count: editorialRuqyah,
+          sortOrder: 9998,
+        ),
+      );
+    }
     if (uncategorized > 0) {
       result.add(
         _CategoryInfo(
