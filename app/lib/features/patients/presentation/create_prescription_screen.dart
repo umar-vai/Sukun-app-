@@ -304,7 +304,9 @@ class _CreatePrescriptionScreenState
         if (open == true && mounted) {
           // Push (not replace) so the preserved PDF retry is still available
           // when Admin returns from the older plan.
-          context.push('/admin/patients/${widget.patientId}/plans/${oldDraft.id}');
+          context.push(
+            '/admin/patients/${widget.patientId}/plans/${oldDraft.id}',
+          );
         }
         return;
       }
@@ -524,7 +526,9 @@ class _CreatePrescriptionScreenState
                               _storedDocumentAttachmentId != null) ...[
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
-                              onPressed: _submitting ? null : _resolveDraftConflict,
+                              onPressed: _submitting
+                                  ? null
+                                  : _resolveDraftConflict,
                               icon: const Icon(Icons.rule_folder_outlined),
                               label: const Text('আগের Draft Plan যাচাই ও সমাধান করুন'),
                             ),
