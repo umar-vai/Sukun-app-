@@ -124,16 +124,24 @@ class PlanAction {
     this.exactTime,
     this.endDate,
     this.resource,
+    this.resources = const [],
   });
 
   factory PlanAction.fromJson(Map<String, dynamic> json) {
     final relations = json['plan_action_resources'] as List<dynamic>?;
-    LinkedResource? resource;
-    if (relations?.isNotEmpty == true) {
-      final relation = relations!.first as Map<String, dynamic>;
+    final resources = <LinkedResource>[];
+    for (final entry in relations ?? const <dynamic>[]) {
+      final relation = entry as Map<String, dynamic>;
       final item = relation['content_items'] as Map<String, dynamic>?;
-      if (item != null) {
-        resource = LinkedResource(
+      if (item == null) continue;
+      // Never expose unpublished/staff-only media through patient plan UI.
+      if (item['status'] != 'published' ||
+          !const ['public', 'patient_only', 'assigned_only']
+              .contains(item['visibility'])) {
+        continue;
+      }
+      resources.add(
+        LinkedResource(
           id: item['id'] as String,
           title: item['title'] as String,
           titleBn: item['title_bn'] as String?,
@@ -144,9 +152,10 @@ class PlanAction {
           youtubeVideoId: item['youtube_video_id'] as String?,
           thumbnailUrl: item['thumbnail_url'] as String?,
           rightsNote: item['rights_note'] as String?,
-        );
-      }
+        ),
+      );
     }
+    resources.sort((a, b) => a.title.compareTo(b.title));
 
     return PlanAction(
       id: json['id'] as String,
@@ -168,7 +177,8 @@ class PlanAction {
         json['review_status'] as String?,
       ),
       reminderEnabled: json['reminder_enabled'] as bool? ?? false,
-      resource: resource,
+      resource: resources.isEmpty ? null : resources.first,
+      resources: List.unmodifiable(resources),
     );
   }
 
@@ -188,6 +198,7 @@ class PlanAction {
   final ActionReviewStatus reviewStatus;
   final bool reminderEnabled;
   final LinkedResource? resource;
+  final List<LinkedResource> resources;
 }
 
 DateTime? _parseDate(String? value) =>
