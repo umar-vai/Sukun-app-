@@ -111,13 +111,38 @@ ContentResourceOption? exactReviewResource(
 // combining marks. Normalize Bengali ya variants for consistent suggestions.
 // This only ranks existing published resources; it never creates religious text
 // or automatically assigns a content ID to a patient.
+/// Search-only transliterations for *names*, not scriptural evidence.
+/// This makes a published Bengali title discoverable from an English action.
+/// Fuzzy matches still require explicit Admin selection; they are never
+/// silently treated as verified Quran verses or complete routines.
 String _normalize(String value) => value
     .toLowerCase()
     .replaceAll('য়', 'য়')
     .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '')
+    .replaceAll(RegExp(r'\b(?:surah|sura|surat)\b'), 'সূরা')
+    .replaceAll(RegExp(r'\b(?:al[-\\s]*)?baqarah?\b'), 'বাকারা')
+    .replaceAll(RegExp(r'\b(?:bedtime|sleeping|sleep)\b'), 'ঘুম')
+    .replaceAll(RegExp(r'\b(?:masnun|masnoon)\b'), 'মাসনুন')
+    .replaceAll(RegExp(r'(?:সুরা|সূরাহ)'), 'সূরা')
+    .replaceAll('বাকারাহ', 'বাকারা')
+    .replaceAll(RegExp(r'ঘুমানো|ঘুমানোর'), 'ঘুম')
     .replaceAll(RegExp(r'[^\p{L}\p{N}\p{M}]+', unicode: true), ' ')
     .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
+
+/// The Admin picker and AI suggestion matcher share the same bilingual
+/// title normalization. Only fields already returned by the approved library
+/// are searched; this never creates or approves a content item.
+bool resourceMatchesSearch(ContentResourceOption resource, String query) {
+  final normalized = _normalize(query.trim());
+  if (normalized.isEmpty) return true;
+  return [
+    resource.title,
+    resource.titleBn ?? '',
+    resource.type,
+    resource.categoryLabel,
+  ].any((label) => _normalize(label).contains(normalized));
+}
 
 Set<String> _tokens(String value) =>
     value.split(RegExp(r'\s+')).where((token) => token.isNotEmpty).toSet();
