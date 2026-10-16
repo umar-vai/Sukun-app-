@@ -36,6 +36,17 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     _day = _load();
   }
 
+  @override
+  void didUpdateWidget(covariant PatientHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.openTaskId != widget.openTaskId) {
+      // GoRouter can reuse this widget for another reminder tap. Always
+      // resolve the new target against a freshly scoped Patient Today query.
+      _notificationTaskOpened = false;
+      _day = _load();
+    }
+  }
+
   Future<PatientDay> _load() async {
     final day = await ref.read(patientCareRepositoryProvider).getToday();
     unawaited(ref.read(notificationCoordinatorProvider).syncIfEnabled());
