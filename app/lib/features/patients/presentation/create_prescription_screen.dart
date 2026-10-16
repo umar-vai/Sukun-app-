@@ -280,6 +280,8 @@ class _CreatePrescriptionScreenState
       final actions = await repository.getActions(oldDraft.id);
       if (!mounted) return;
       if (actions.isNotEmpty) {
+        // Stop the progress animation while awaiting Admin confirmation.
+        setState(() => _submitting = false);
         final open = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -310,6 +312,8 @@ class _CreatePrescriptionScreenState
         }
         return;
       }
+      // A live spinner prevents dialog transitions from ever settling.
+      setState(() => _submitting = false);
       final approved = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -332,6 +336,7 @@ class _CreatePrescriptionScreenState
         ),
       );
       if (approved != true || !mounted) return;
+      setState(() => _submitting = true);
       await repository.archiveEmptyDraftForPrescriptionImport(
         patientId: widget.patientId,
         planId: oldDraft.id,
