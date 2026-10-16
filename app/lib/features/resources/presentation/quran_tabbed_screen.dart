@@ -166,9 +166,7 @@ class QuranSurahList extends StatelessWidget {
         Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            leading: CircleAvatar(
-              child: Text('${chapter['id'] ?? ''}'),
-            ),
+            leading: CircleAvatar(child: Text('${chapter['id'] ?? ''}')),
             title: Text(chapterTitle(chapter)),
             subtitle: Text('${chapter['verses_count'] ?? '—'} আয়াত'),
             trailing: const Icon(Icons.chevron_right),
