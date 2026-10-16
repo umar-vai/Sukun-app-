@@ -199,6 +199,10 @@ class PlanAction {
   final bool reminderEnabled;
   final LinkedResource? resource;
   final List<LinkedResource> resources;
+
+  List<LinkedResource> get linkedResources => resources.isNotEmpty
+      ? resources
+      : (resource == null ? const [] : [resource!]);
 }
 
 DateTime? _parseDate(String? value) =>
