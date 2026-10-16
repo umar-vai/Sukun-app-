@@ -37,6 +37,7 @@ class _PlanActionEditorScreenState
   final _dailyIntervalController = TextEditingController(text: '1');
   final _usageNoteController = TextEditingController();
   final _requestId = const Uuid().v4();
+  final _resourceLinkRequestId = const Uuid().v4();
 
   late Future<_EditorData> _data;
   CarePlan? _plan;
@@ -49,6 +50,7 @@ class _PlanActionEditorScreenState
   ActionReviewStatus _reviewStatus = ActionReviewStatus.draft;
   bool _reminderEnabled = false;
   String _contentItemId = '';
+  final Set<String> _contentItemIds = <String>{};
   bool _submitting = false;
 
   @override
@@ -98,6 +100,9 @@ class _PlanActionEditorScreenState
     _reviewStatus = action.reviewStatus;
     _reminderEnabled = action.reminderEnabled;
     _contentItemId = action.resource?.id ?? '';
+    _contentItemIds
+      ..clear()
+      ..addAll(action.linkedResources.map((resource) => resource.id));
     _usageNoteController.text = action.resource?.usageNote ?? '';
   }
 
@@ -161,9 +166,8 @@ class _PlanActionEditorScreenState
               interval: int.parse(_dailyIntervalController.text.trim()),
             )
           : ActionFrequency.weekly(_weekdays);
-      await ref
-          .read(carePlansRepositoryProvider)
-          .saveAction(
+      final repository = ref.read(carePlansRepositoryProvider);
+      final saved = await repository.saveAction(
             SavePlanActionInput(
               carePlanId: widget.planId,
               actionId: widget.actionId,
@@ -184,6 +188,13 @@ class _PlanActionEditorScreenState
               requestId: _requestId,
             ),
           );
+      if (_contentItemIds.length > 1) {
+        await repository.replaceActionResources(
+          actionId: saved.id,
+          resourceIds: _contentItemIds.toList()..sort(),
+          requestId: _resourceLinkRequestId,
+        );
+      }
       if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;
@@ -467,7 +478,7 @@ class _PlanActionEditorScreenState
                             title: 'No linked resource',
                             description: 'Keep this action instruction-only.',
                           ),
-                          for (final resource in data.resources)
+                          for (final resource in data.resources.where((item) => item.isLinkable))
                             SukunChoiceOption(
                               value: resource.id,
                               title: resource.title,
@@ -475,9 +486,42 @@ class _PlanActionEditorScreenState
                               icon: Icons.menu_book_outlined,
                             ),
                         ],
-                        onChanged: (value) =>
-                            setState(() => _contentItemId = value),
+                        onChanged: (value) => setState(() {
+                          if (value.isEmpty) {
+                            _contentItemIds.clear();
+                            _contentItemId = '';
+                          } else if (_contentItemIds.length < 16 ||
+                              _contentItemIds.contains(value)) {
+                            _contentItemIds.add(value);
+                            _contentItemId = value;
+                          }
+                        }),
                       ),
+                      if (_contentItemIds.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            for (final id in _contentItemIds)
+                              InputChip(
+                                label: Text(
+                                  data.resources
+                                          .where((item) => item.id == id)
+                                          .firstOrNull
+                                          ?.displayTitle ??
+                                      'Linked resource',
+                                ),
+                                onDeleted: () => setState(() {
+                                  _contentItemIds.remove(id);
+                                  _contentItemId = _contentItemIds.isEmpty
+                                      ? ''
+                                      : _contentItemIds.first;
+                                }),
+                              ),
+                          ],
+                        ),
+                      ],
                       if (_contentItemId.isNotEmpty) ...[
                         const SizedBox(height: 14),
                         TextFormField(
