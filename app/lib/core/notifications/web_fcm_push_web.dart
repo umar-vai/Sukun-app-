@@ -1,39 +1,38 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:js_util' as js;
+import 'dart:js_interop';
 
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 
-/// Optional Firebase Web client. It cannot activate without a fully vetted
-/// public Firebase configuration and verified server-side sender/scheduler.
+@JS('sukunWebPush')
+external JSObject? get _sukunPushBridge;
+@JS('sukunWebPush.isAvailable')
+external JSBoolean _pushAvailable();
+@JS('sukunWebPush.getToken')
+external JSPromise<JSString?> _requestPushToken();
+@JS('sukunWebPush.deleteToken')
+external JSPromise<JSAny?> _removePushToken();
+
+/// Optional, scoped FCM client. Does not initialize native Firebase on Web.
 final class WebFirebasePushMessagingGateway implements PushMessagingGateway {
   WebFirebasePushMessagingGateway();
 
-  Object? get _bridge => js.hasProperty(js.globalThis, 'sukunWebPush')
-      ? js.getProperty<Object?>(js.globalThis, 'sukunWebPush')
-      : null;
-
   @override
-  bool get isAvailable {
-    final bridge = _bridge;
-    if (bridge == null) return false;
-    return js.callMethod<bool>(bridge, 'isAvailable', []);
-  }
+  bool get isAvailable =>
+      _sukunPushBridge != null && _pushAvailable().toDart;
 
   @override
   Future<void> requestPermission() async {
-    // Local Web Notifications already acquired explicit browser permission.
-    // Token registration remains separately guarded by .isAvailable.
+    // Browser local-notification consent is already requested by coordinator.
   }
 
   @override
   Future<String?> getToken() async {
     if (!isAvailable) return null;
-    final bridge = _bridge;
-    if (bridge == null) return null;
-    final promise = js.callMethod<Object>(bridge, 'getToken', []);
-    final result = await js.promiseToFuture<Object?>(promise);
-    return result is String && result.isNotEmpty ? result : null;
+    final token = await _requestPushToken().toDart;
+    final value = token?.toDart;
+    return value == null || value.isEmpty ? null : value;
   }
 
   @override
@@ -43,13 +42,13 @@ final class WebFirebasePushMessagingGateway implements PushMessagingGateway {
   Stream<RemotePushMessage> get foregroundMessages {
     if (!isAvailable) return const Stream.empty();
     return html.window.on['sukun-web-push-message'].map((event) {
-      final data = (event as html.CustomEvent).detail;
-      final detail = data == null
-          ? null
-          : js.dartify(data) as Map<Object?, Object?>?;
+      final raw = (event as html.CustomEvent).detail;
+      final data = raw is String
+          ? jsonDecode(raw) as Map<String, dynamic>
+          : <String, dynamic>{};
       return RemotePushMessage(
-        type: detail?['type'] as String?,
-        taskId: detail?['task_id'] as String?,
+        type: data['type'] as String?,
+        taskId: data['task_id'] as String?,
         title: 'Sukun Life',
         body: 'Your care reminder is ready.',
       );
@@ -64,10 +63,7 @@ final class WebFirebasePushMessagingGateway implements PushMessagingGateway {
 
   @override
   Future<void> deleteToken() async {
-    final bridge = _bridge;
-    if (bridge == null || !isAvailable) return;
-    await js.promiseToFuture<Object>(
-      js.callMethod<Object>(bridge, 'deleteToken', []),
-    );
+    if (!isAvailable) return;
+    await _removePushToken().toDart;
   }
 }
