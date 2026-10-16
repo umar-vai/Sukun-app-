@@ -16,6 +16,14 @@ abstract interface class CarePlansRepository {
 
   Future<PlanAction> saveAction(SavePlanActionInput input);
 
+  /// Atomically sets all published, patient-accessible resource links on a
+  /// draft action. Requires database-verified Super Admin and audit.
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  });
+
   Future<List<PlanAction>> reorderActions(
     String planId,
     List<String> actionIds,
