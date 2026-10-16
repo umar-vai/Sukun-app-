@@ -111,6 +111,7 @@ ContentResourceOption? exactReviewResource(
 // combining marks. Normalize Bengali ya variants for consistent suggestions.
 // This only ranks existing published resources; it never creates religious text
 // or automatically assigns a content ID to a patient.
+///
 /// Search-only transliterations for *names*, not scriptural evidence.
 /// This makes a published Bengali title discoverable from an English action.
 /// Fuzzy matches still require explicit Admin selection; they are never
@@ -120,7 +121,7 @@ String _normalize(String value) => value
     .replaceAll('য়', 'য়')
     .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '')
     .replaceAll(RegExp(r'\b(?:surah|sura|surat)\b'), 'সূরা')
-    .replaceAll(RegExp(r'\b(?:al[-\\s]*)?baqarah?\b'), 'বাকারা')
+    .replaceAll(RegExp(r'\b(?:al[-\s]*)?baqarah?\b'), 'বাকারা')
     .replaceAll(RegExp(r'\b(?:bedtime|sleeping|sleep)\b'), 'ঘুম')
     .replaceAll(RegExp(r'\b(?:masnun|masnoon)\b'), 'মাসনুন')
     .replaceAll(RegExp(r'(?:সুরা|সূরাহ)'), 'সূরা')
