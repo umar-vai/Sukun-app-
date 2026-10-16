@@ -29,6 +29,26 @@ void main() {
     expect(reminders.single.scheduledAt, DateTime(2026, 10, 2, 9));
   });
 
+  test('approved morning and evening sessions keep independent reminders', () {
+    final tasks = [
+      _task(id: 'morning-session', exactTime: DateTime(2000, 1, 1, 9)),
+      _task(id: 'evening-session', exactTime: DateTime(2000, 1, 1, 19)),
+    ];
+    final reminders = planCareReminders(tasks: tasks, now: now);
+    expect(reminders.map((reminder) => reminder.taskId), [
+      'morning-session',
+      'evening-session',
+    ]);
+    expect(reminders.map((reminder) => reminder.scheduledAt), [
+      DateTime(2026, 10, 2, 9),
+      DateTime(2026, 10, 2, 19),
+    ]);
+    expect(
+      reminders.map((reminder) => reminder.notificationId).toSet(),
+      hasLength(2),
+    );
+  });
+
   test('uses the explicit patient-selected snooze time', () {
     final snoozedUntil = DateTime(2026, 10, 2, 12, 15);
     final task = _task(

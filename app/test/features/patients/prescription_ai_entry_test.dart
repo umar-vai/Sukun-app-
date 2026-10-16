@@ -319,6 +319,13 @@ class _CountingPrescriptions implements PatientsRepository {
 }
 
 class _DraftPlans implements CarePlansRepository {
+  @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
   _DraftPlans({this.failFirst = false});
 
   final bool failFirst;
@@ -393,6 +400,13 @@ class _PdfRetryRepository implements PrescriptionDocumentsRepository {
 }
 
 class _RecoverableDraftPlans implements CarePlansRepository {
+  @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
   int archivedCount = 0;
   String? archivedPlanId;
 

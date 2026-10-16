@@ -130,6 +130,13 @@ Future<void> _save(WidgetTester tester) async {
 
 final class _EditorRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<void> archiveEmptyDraftForPrescriptionImport({
     required String patientId,
     required String planId,

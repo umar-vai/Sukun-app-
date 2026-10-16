@@ -43,6 +43,8 @@ void main() {
               'title': 'Assigned recording',
               'title_bn': null,
               'type': 'audio',
+              'status': 'published',
+              'visibility': 'patient_only',
             },
           },
         ],
@@ -141,6 +143,13 @@ void main() {
 }
 
 class _FakeCarePlansRepository implements CarePlansRepository {
+  @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
   @override
   Future<void> archiveEmptyDraftForPrescriptionImport({
     required String patientId,

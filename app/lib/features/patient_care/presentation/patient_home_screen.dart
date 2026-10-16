@@ -10,13 +10,15 @@ import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:uuid/uuid.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
-  const PatientHomeScreen({super.key, this.displayName});
+  const PatientHomeScreen({super.key, this.displayName, this.openTaskId});
 
   final String? displayName;
+  final String? openTaskId;
 
   @override
   ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
@@ -25,6 +27,7 @@ class PatientHomeScreen extends ConsumerStatefulWidget {
 class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   late Future<PatientDay> _day;
   String? _updatingTaskId;
+  bool _notificationTaskOpened = false;
 
   @override
   void initState() {
@@ -94,9 +97,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
     }
   }
 
-  Future<void> _openResource(PatientTask task) async {
-    final resource = task.action.resource;
-    if (resource == null) return;
+  Future<void> _openResource(LinkedResource resource) async {
     await context.push<void>(
       '/patient/resources/${Uri.encodeComponent(resource.id)}',
     );
@@ -219,7 +220,29 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             );
           }
           final day = snapshot.data!;
-          final remainingTasks = day.remainingTasks;
+          // Resolve the payload only against today's RLS-scoped patient tasks.
+          // Never use task IDs as resource IDs or route directly from a push.
+          final requestedTask = day.tasks
+              .where((task) => task.id == widget.openTaskId)
+              .firstOrNull;
+          if (requestedTask != null &&
+              requestedTask.action.linkedResources.length == 1 &&
+              !_notificationTaskOpened) {
+            _notificationTaskOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _openResource(requestedTask.action.linkedResources.single);
+              }
+            });
+          }
+          final highlightedTaskId =
+              requestedTask != null &&
+                  requestedTask.action.linkedResources.length > 1
+              ? requestedTask.id
+              : null;
+          final remainingTasks = day.remainingTasks
+              .where((task) => task.id != highlightedTaskId)
+              .toList(growable: false);
           return RefreshIndicator(
             onRefresh: () async {
               final updated = await _load();
@@ -239,6 +262,25 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),
+                if (requestedTask != null &&
+                    requestedTask.action.linkedResources.length > 1) ...[
+                  SukunSectionHeader(
+                    title: 'নোটিফিকেশনের আমল',
+                    subtitle: requestedTask.action.title,
+                  ),
+                  const SizedBox(height: 10),
+                  _TaskCard(
+                    task: requestedTask,
+                    featured: true,
+                    busy: _updatingTaskId == requestedTask.id,
+                    onDone: () =>
+                        _record(requestedTask, PatientTaskStatus.completed),
+                    onSnooze: () => _snooze(requestedTask),
+                    onSkip: () => _skip(requestedTask),
+                    onOpenResource: _openResource,
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 if (day.activePlan == null)
                   const SukunSurface(
                     tone: SukunSurfaceTone.soft,
@@ -258,7 +300,8 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 else ...[
                   _DayProgress(day: day),
                   const SizedBox(height: 18),
-                  if (day.nextTask != null) ...[
+                  if (day.nextTask != null &&
+                      day.nextTask!.id != highlightedTaskId) ...[
                     const SukunSectionHeader(
                       title: 'এখন যে কাজটি করবেন',
                       subtitle: 'এই কাজটি দিয়ে শুরু করুন',
@@ -272,7 +315,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           _record(day.nextTask!, PatientTaskStatus.completed),
                       onSnooze: () => _snooze(day.nextTask!),
                       onSkip: () => _skip(day.nextTask!),
-                      onOpenResource: () => _openResource(day.nextTask!),
+                      onOpenResource: _openResource,
                     ),
                     const SizedBox(height: 22),
                   ],
@@ -300,7 +343,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                               _record(task, PatientTaskStatus.completed),
                           onSnooze: () => _snooze(task),
                           onSkip: () => _skip(task),
-                          onOpenResource: () => _openResource(task),
+                          onOpenResource: _openResource,
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -378,7 +421,7 @@ class _TaskCard extends StatelessWidget {
   final VoidCallback onDone;
   final VoidCallback onSnooze;
   final VoidCallback onSkip;
-  final VoidCallback onOpenResource;
+  final ValueChanged<LinkedResource> onOpenResource;
 
   @override
   Widget build(BuildContext context) {
@@ -447,12 +490,19 @@ class _TaskCard extends StatelessWidget {
               ],
             ),
           ],
-          if (task.action.resource != null) ...[
+          if (task.action.linkedResources.isNotEmpty) ...[
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onOpenResource,
-              icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: Text('উপকরণ দেখুন: ${task.action.resource!.title}'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final resource in task.action.linkedResources)
+                  OutlinedButton.icon(
+                    onPressed: () => onOpenResource(resource),
+                    icon: const Icon(Icons.menu_book_outlined, size: 18),
+                    label: Text(resource.titleBn ?? resource.title),
+                  ),
+              ],
             ),
           ],
           if (task.isPendingSync) ...[

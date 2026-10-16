@@ -209,6 +209,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/patient/today',
         builder: (context, state) => PatientHomeScreen(
           displayName: _patientSession(session)?.displayName,
+          openTaskId: state.uri.queryParameters['task'],
         ),
       ),
       GoRoute(

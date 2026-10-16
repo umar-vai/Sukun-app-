@@ -17,6 +17,13 @@ final carePlansRepositoryProvider = Provider<CarePlansRepository>((ref) {
 
 final class UnavailableCarePlansRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<void> archiveEmptyDraftForPrescriptionImport({
     required String patientId,
     required String planId,
