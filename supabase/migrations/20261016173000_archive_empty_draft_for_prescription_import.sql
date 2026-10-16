@@ -57,7 +57,8 @@ begin
     where pa.care_plan_id = p_care_plan_id
   ) or exists (
     select 1 from public.task_instances ti
-    where ti.care_plan_id = p_care_plan_id
+    join public.plan_actions pa on pa.id = ti.plan_action_id
+    where pa.care_plan_id = p_care_plan_id
   ) then
     raise exception 'This draft contains work. Review it instead of archiving automatically.'
       using errcode = '55000';
