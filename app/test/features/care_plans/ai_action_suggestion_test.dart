@@ -217,13 +217,14 @@ void main() {
       );
       await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
-      expect(find.text('আয়াতুল কুরসি'), findsWidgets);
+      expect(find.text('আয়াতুল কুরসি (সকাল)'), findsWidgets);
+      // The evening session is below the fold in this lazily built list.
       expect(find.textContaining('Source evidence:'), findsOneWidget);
       expect(find.text('Check these ambiguities:'), findsOneWidget);
       expect(find.text('Possible resource matches'), findsOneWidget);
       expect(find.text('No actions selected'), findsOneWidget);
-      expect(find.text('0 ready · 1 need review'), findsOneWidget);
-      expect(find.text('Needs review · 1'), findsOneWidget);
+      expect(find.text('0 ready · 2 need review'), findsOneWidget);
+      expect(find.text('Needs review · 2'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
     },
   );

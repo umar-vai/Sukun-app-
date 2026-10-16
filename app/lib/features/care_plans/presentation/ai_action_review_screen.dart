@@ -9,6 +9,7 @@ import 'package:sukun_life/features/care_plans/data/ai_actions_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
+import 'package:sukun_life/features/care_plans/domain/stored_ai_suggestion_reconciler.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
@@ -84,14 +85,17 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
         'The source prescription could not be found.',
       );
     }
-    final result = results[3] as AiActionGenerationResult;
+    final result = reconcileStoredAiResult(
+      results[3] as AiActionGenerationResult,
+      prescriptionText: prescription.rawText,
+    );
     final resources = results[1] as List<ContentResourceOption>;
     _drafts ??= result.actions
         .map(
           (suggestion) => _EditableSuggestion.fromSuggestion(
             suggestion,
             resourceMatches: matchResources(
-              suggestion.resourceMatchQuery,
+              suggestion.resourceMatchQuery ?? suggestion.title,
               resources,
             ),
           ),
@@ -401,6 +405,14 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
                     ),
                     const SizedBox(height: 20),
                     const _SafetyNotice(),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(4, 8, 4, 6),
+                      child: Text(
+                        'পুরোনো AI suggestions-এর একই নির্দেশনা মিলিয়ে দেখানো হচ্ছে। '
+                        'শুধু মূল প্রেসক্রিপশনে স্পষ্ট থাকা দৈনিক সময়সূচি প্রস্তাব করা হয়। '
+                        'সংশোধিত সব অ্যাকশন Import ও Publish করার আগে যাচাই করুন।',
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     _SourcePrescription(prescription: data.prescription),
                     const SizedBox(height: 16),
