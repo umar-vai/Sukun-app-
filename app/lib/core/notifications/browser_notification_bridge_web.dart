@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
 
 /// Browser notifications work only with permission on HTTPS. The tab must
@@ -23,7 +23,6 @@ void show({
   final notification = html.Notification(title, body: body);
   notification.onClick.listen((_) {
     notification.close();
-    html.window.focus();
     onClick();
   });
 }
