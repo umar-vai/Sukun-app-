@@ -136,8 +136,11 @@ class PlanAction {
       if (item == null) continue;
       // Never expose unpublished/staff-only media through patient plan UI.
       if (item['status'] != 'published' ||
-          !const ['public', 'patient_only', 'assigned_only']
-              .contains(item['visibility'])) {
+          !const [
+            'public',
+            'patient_only',
+            'assigned_only',
+          ].contains(item['visibility'])) {
         continue;
       }
       resources.add(
