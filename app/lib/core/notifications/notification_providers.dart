@@ -29,7 +29,10 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
       : const UnavailableNotificationRepository();
   final coordinator = NotificationCoordinator(
     repository,
-    PluginLocalNotificationsGateway(null, ref.read(notificationTapRelayProvider).accept),
+    PluginLocalNotificationsGateway(
+      null,
+      ref.read(notificationTapRelayProvider).accept,
+    ),
     FirebasePushMessagingGateway(
       isAvailable: AppEnvironment.isFirebaseConfigured,
     ),
