@@ -41,11 +41,13 @@ List<VerifiedQuranLink> verifiedQuranLinksForAction(PlanAction action) {
     r'আ[য়য়]াতুল\s*কুরস[িী]|ayat\s*(?:al[-\s]*)?kurs[iy]|آية\s*الكرسي',
     caseSensitive: false,
   ).hasMatch(source)) {
-    add(const VerifiedQuranLink(
-      surahNumber: 2,
-      ayahNumber: 255,
-      title: 'আয়াতুল কুরসি (২:২৫৫)',
-    ));
+    add(
+      const VerifiedQuranLink(
+        surahNumber: 2,
+        ayahNumber: 255,
+        title: 'আয়াতুল কুরসি (২:২৫৫)',
+      ),
+    );
   }
 
   if (RegExp(
