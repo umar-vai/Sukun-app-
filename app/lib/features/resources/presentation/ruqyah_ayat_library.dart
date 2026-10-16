@@ -165,8 +165,12 @@ String? ruqyahTrustedVerseAudioUrl(Object? audio) {
   if (uri == null ||
       uri.scheme != 'https' ||
       uri.userInfo.isNotEmpty ||
-      !{'cdn.islamic.network', 'cdn.alquran.cloud',
-         'audio.qurancdn.com', 'verses.quran.foundation'}.contains(uri.host)) {
+      !{
+        'cdn.islamic.network',
+        'cdn.alquran.cloud',
+        'audio.qurancdn.com',
+        'verses.quran.foundation',
+      }.contains(uri.host)) {
     return null;
   }
   return value;
@@ -556,7 +560,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('শুরুর আয়াতের তিলাওয়াত পাওয়া যায়নি। আবার চেষ্টা করুন।'),
+            content: Text(
+              'শুরুর আয়াতের তিলাওয়াত পাওয়া যায়নি। আবার চেষ্টা করুন।',
+            ),
           ),
         );
       }
