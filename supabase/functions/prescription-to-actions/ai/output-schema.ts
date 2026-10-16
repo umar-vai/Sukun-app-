@@ -171,7 +171,6 @@ function normalizedEvidence(value: string): string {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-
 /**
  * Build separate daily review candidates for an explicitly repeated morning +
  * evening instruction, without guessing HH:mm or changing the original quote.
