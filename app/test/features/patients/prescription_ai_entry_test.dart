@@ -181,39 +181,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('draft conflict explains existing plan without re-uploading PDF', (
-    tester,
-  ) async {
-    final documents = _PdfRetryRepository(
-      initialFailureCode: 'draft_plan_conflict',
-    );
-    final router = _testRouter(
-      initialDocument: PrescriptionDocumentFile(
-        filename: 'synthetic-prescription.pdf',
-        mimeType: 'application/pdf',
-        bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
-      ),
-    );
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          prescriptionDocumentsRepositoryProvider.overrideWithValue(documents),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.ensureVisible(find.text('Upload & generate draft actions'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Upload & generate draft actions'));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'draft conflict explains existing plan without re-uploading PDF',
+    (tester) async {
+      final documents = _PdfRetryRepository(
+        initialFailureCode: 'draft_plan_conflict',
+      );
+      final router = _testRouter(
+        initialDocument: PrescriptionDocumentFile(
+          filename: 'synthetic-prescription.pdf',
+          mimeType: 'application/pdf',
+          bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
+        ),
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            prescriptionDocumentsRepositoryProvider.overrideWithValue(
+              documents,
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.ensureVisible(find.text('Upload & generate draft actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upload & generate draft actions'));
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('অন্য প্রেসক্রিপশনের Draft Plan'), findsOneWidget);
-    expect(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'), findsOneWidget);
-    expect(documents.importCalls, 1);
-    expect(documents.retryCalls, 0);
-    expect(tester.takeException(), isNull);
-  });
+      expect(
+        find.textContaining('অন্য প্রেসক্রিপশনের Draft Plan'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'),
+        findsOneWidget,
+      );
+      expect(documents.importCalls, 1);
+      expect(documents.retryCalls, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
 }
 
