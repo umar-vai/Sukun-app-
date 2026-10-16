@@ -239,13 +239,7 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
     setState(() {
       for (final draft in _drafts!) {
         if (draft.imported || draft.timeWindow != window) continue;
-        draft.exactTime = DateTime(
-          2000,
-          1,
-          1,
-          selected.hour,
-          selected.minute,
-        );
+        draft.exactTime = DateTime(2000, 1, 1, selected.hour, selected.minute);
         draft.reminderEnabled = true;
       }
     });
@@ -798,6 +792,7 @@ class _EditableSuggestion {
     }
     contentItemId = contentItemIds.isEmpty ? '' : contentItemIds.first;
   }
+
   bool selected = false;
   bool imported = false;
   bool reminderEnabled = false;
