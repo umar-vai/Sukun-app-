@@ -134,8 +134,7 @@ final class _EditorRepository implements CarePlansRepository {
     required String patientId,
     required String planId,
     required String requestId,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   _EditorRepository(this.frequency);
 
