@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
 
 Future<String?> showResourcePickerSheet({
   required BuildContext context,
@@ -317,14 +318,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               : resource.categoryId == _categoryId;
           if (!categoryMatch) return false;
           if (query.isEmpty) return true;
-          return [
-            resource.title,
-            resource.titleBn ?? '',
-            resource.type,
-            resource.categoryLabel,
-            resource.status,
-            resource.visibility,
-          ].any((value) => value.toLowerCase().contains(query));
+          return resourceMatchesSearch(resource, query);
         })
         .toList(growable: false);
   }
@@ -334,7 +328,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   ) {
     final grouped = <String, List<ContentResourceOption>>{};
     for (final resource in resources) {
-      grouped.putIfAbsent(resource.categoryLabel, () => []).add(resource);
+      final label = resource.categoryId == null
+          ? 'Uncategorized · ${_displayType(resource.type)}'
+          : resource.categoryLabel;
+      grouped.putIfAbsent(label, () => []).add(resource);
     }
     return grouped;
   }
