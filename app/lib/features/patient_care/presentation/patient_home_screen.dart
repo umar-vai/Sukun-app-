@@ -15,9 +15,10 @@ import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.d
 import 'package:uuid/uuid.dart';
 
 class PatientHomeScreen extends ConsumerStatefulWidget {
-  const PatientHomeScreen({super.key, this.displayName});
+  const PatientHomeScreen({super.key, this.displayName, this.openTaskId});
 
   final String? displayName;
+  final String? openTaskId;
 
   @override
   ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
@@ -26,6 +27,7 @@ class PatientHomeScreen extends ConsumerStatefulWidget {
 class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   late Future<PatientDay> _day;
   String? _updatingTaskId;
+  bool _notificationTaskOpened = false;
 
   @override
   void initState() {
@@ -218,6 +220,21 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
             );
           }
           final day = snapshot.data!;
+          // Resolve the payload only against today's RLS-scoped patient tasks.
+          // Never use task IDs as resource IDs or route directly from a push.
+          final requestedTask = day.tasks
+              .where((task) => task.id == widget.openTaskId)
+              .firstOrNull;
+          if (requestedTask != null &&
+              requestedTask.action.linkedResources.length == 1 &&
+              !_notificationTaskOpened) {
+            _notificationTaskOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _openResource(requestedTask.action.linkedResources.single);
+              }
+            });
+          }
           final remainingTasks = day.remainingTasks;
           return RefreshIndicator(
             onRefresh: () async {
@@ -238,6 +255,27 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),
+                if (requestedTask != null &&
+                    requestedTask.action.linkedResources.length > 1) ...[
+                  SukunSectionHeader(
+                    title: 'নোটিফিকেশনের আমল',
+                    subtitle: requestedTask.action.title,
+                  ),
+                  const SizedBox(height: 10),
+                  _TaskCard(
+                    task: requestedTask,
+                    featured: true,
+                    busy: _updatingTaskId == requestedTask.id,
+                    onDone: () => _record(
+                      requestedTask,
+                      PatientTaskStatus.completed,
+                    ),
+                    onSnooze: () => _snooze(requestedTask),
+                    onSkip: () => _skip(requestedTask),
+                    onOpenResource: _openResource,
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 if (day.activePlan == null)
                   const SukunSurface(
                     tone: SukunSurfaceTone.soft,
