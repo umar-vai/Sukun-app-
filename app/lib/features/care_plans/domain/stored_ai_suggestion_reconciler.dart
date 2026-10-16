@@ -5,13 +5,16 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 /// The original AI result remains immutable. Every action still needs an
 /// explicit Super Admin review before publication.
 AiActionGenerationResult reconcileStoredAiResult(
-  AiActionGenerationResult original,
-) {
+  AiActionGenerationResult original, {
+  String? prescriptionText,
+}) {
   if (original.requiresManualBuilder) return original;
 
   final unique = <String>{};
   final actions = <SuggestedPlanAction>[];
-  final fullSource = _proof(original.sourceText ?? '');
+  final fullSource = _proof(original.sourceText?.trim().isNotEmpty == true
+      ? original.sourceText!
+      : (prescriptionText ?? ''));
 
   for (final item in original.actions) {
     final evidence = item.sourceEvidence ?? '';
