@@ -730,6 +730,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   Widget _entryCard(BuildContext context, _RuqyahEntry item) {
     final meaning = item.meaning;
     final expanded = _expandedMeanings.contains(item.slug);
+    final closedMeaningLabel = meaning.isEmpty && item.citation != null
+        ? 'শুরুর আয়াতের অর্থ দেখুন'
+        : 'বাংলা অর্থ দেখুন';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -817,9 +820,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
             const Divider(),
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              label: Text(
-                expanded ? 'বাংলা অর্থ বন্ধ করুন' : 'বাংলা অর্থ দেখুন',
-              ),
+              label: Text(expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel),
               onPressed: () => setState(() {
                 if (!_expandedMeanings.add(item.slug)) {
                   _expandedMeanings.remove(item.slug);
