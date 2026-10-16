@@ -47,23 +47,23 @@ void main() {
   test('a reading instruction never auto-links an audio recording', () {
     final matches = matchResources('Ayatul Kursi', [approvedAudio]);
     expect(exactReviewResource(matches, actionType: 'recitation'), isNull);
-    expect(
-      exactReviewResource(matches, actionType: 'audio')?.id,
-      'audio-1',
-    );
+    expect(exactReviewResource(matches, actionType: 'audio')?.id, 'audio-1');
   });
 
-  test('verified HTTPS audio still requires direct source and an exact title', () {
-    const unsafeAudio = ContentResourceOption(
-      id: 'unsafe',
-      title: 'Morning Dua',
-      type: 'audio',
-      status: 'published',
-      visibility: 'public',
-    );
-    final matches = matchResources('Morning Dua', [unsafeAudio]);
-    expect(exactReviewResource(matches, actionType: 'audio'), isNull);
-  });
+  test(
+    'verified HTTPS audio still requires direct source and an exact title',
+    () {
+      const unsafeAudio = ContentResourceOption(
+        id: 'unsafe',
+        title: 'Morning Dua',
+        type: 'audio',
+        status: 'published',
+        visibility: 'public',
+      );
+      final matches = matchResources('Morning Dua', [unsafeAudio]);
+      expect(exactReviewResource(matches, actionType: 'audio'), isNull);
+    },
+  );
 
   test('ambiguous identical resources must be picked manually', () {
     const duplicate = ContentResourceOption(
