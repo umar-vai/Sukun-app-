@@ -238,12 +238,14 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
       return;
     }
     final expected = '${widget.surahNumber}:$target';
-    for (var count = 0;
-        mounted &&
-            count < 20 &&
-            _more &&
-            !_verses.any((verse) => verse['verse_key'] == expected);
-        count++) {
+    for (
+      var count = 0;
+      mounted &&
+          count < 20 &&
+          _more &&
+          !_verses.any((verse) => verse['verse_key'] == expected);
+      count++
+    ) {
       await _nextPage();
     }
     if (mounted) setState(() => _locatingInitialAyah = false);
@@ -601,12 +603,14 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('নির্ধারিত আয়াত: ${widget.surahNumber}:${widget.initialAyah}'),
-                    if (_locatingInitialAyah)
-                      const LinearProgressIndicator(),
+                    Text(
+                      'নির্ধারিত আয়াত: ${widget.surahNumber}:${widget.initialAyah}',
+                    ),
+                    if (_locatingInitialAyah) const LinearProgressIndicator(),
                     if (!_locatingInitialAyah)
                       TextButton(
-                        onPressed: () => setState(() => _showFromTarget = false),
+                        onPressed: () =>
+                            setState(() => _showFromTarget = false),
                         child: const Text('সূরার শুরু থেকে পড়ুন'),
                       ),
                   ],
@@ -618,9 +622,10 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
             if (!_showFromTarget ||
                 widget.initialAyah == null ||
                 (int.tryParse(
-                      (verse['verse_key'] as String? ?? '').split(':').last,
-                    ) ??
-                    0) >= widget.initialAyah!)
+                          (verse['verse_key'] as String? ?? '').split(':').last,
+                        ) ??
+                        0) >=
+                    widget.initialAyah!)
               _verseCard(context, verse),
           if (_error != null)
             _ConnectionNotice(message: _error!, onRetry: _nextPage),
