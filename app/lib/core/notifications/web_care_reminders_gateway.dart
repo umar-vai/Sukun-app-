@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/reminder_schedule.dart';
+
 import 'browser_notification_bridge_stub.dart'
-    if (dart.library.html) 'browser_notification_bridge_web.dart' as browser;
+    if (dart.library.html) 'browser_notification_bridge_web.dart'
+    as browser;
 
 /// Browser-only active-tab fallback. It does NOT claim background or
 /// closed-browser reminder delivery and does not request any patient data.
@@ -47,7 +49,7 @@ final class WebCareRemindersGateway implements LocalNotificationsGateway {
     // Browser setTimeout may overflow at > 2^31 milliseconds. Recheck a
     // short horizon to tolerate tab throttling and keep scheduled times exact
     // *while the page remains running*, without claiming background support.
-    const horizon = Duration(hours:6);
+    const horizon = Duration(hours: 6);
     final delay = remaining > horizon ? horizon : remaining;
     _scheduled[reminder.notificationId] = Timer(delay, () {
       _scheduled.remove(reminder.notificationId);
@@ -70,10 +72,7 @@ final class WebCareRemindersGateway implements LocalNotificationsGateway {
   }
 
   @override
-  Future<void> showRemote({
-    required String title,
-    required String body,
-  }) async {
+  Future<void> showRemote({required String title, required String body}) async {
     browser.show(title: title, body: body, onClick: () {});
   }
 
