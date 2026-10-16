@@ -96,12 +96,13 @@ final class SupabasePublicSignInGateway implements PublicSignInGateway {
   Future<void> signInWithGoogle() async {
     if (!AppEnvironment.googleOAuthEnabled) throw const PublicSignInException();
     try {
-      await _client.auth.signInWithOAuth(
+      final launched = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb
             ? googleOAuthWebRedirectUrl(Uri.base)
             : AppEnvironment.mobileAuthRedirectUrl,
       );
+      if (!launched) throw const PublicSignInException();
       // Browser launch != authenticated. Supabase onAuthStateChange is authoritative.
     } on AuthException {
       throw const PublicSignInException();
