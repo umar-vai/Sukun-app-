@@ -1,5 +1,8 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert";
-import { openQuranGet, resetOpenQuranCacheForTests } from "./upstream-resilience.ts";
+import {
+  openQuranGet,
+  resetOpenQuranCacheForTests,
+} from "./upstream-resilience.ts";
 
 function ok(data: unknown): Response {
   return Response.json({ code: 200, status: "OK", data });
@@ -11,7 +14,9 @@ Deno.test("transient 503 uses bounded retries and succeeds with attributed data"
   const result = await openQuranGet("surah", {
     fetcher: () => {
       calls++;
-      return Promise.resolve(calls < 3 ? new Response("", { status: 503 }) : ok([{ number: 1 }]));
+      return Promise.resolve(
+        calls < 3 ? new Response("", { status: 503 }) : ok([{ number: 1 }]),
+      );
     },
     sleep: () => Promise.resolve(),
   });
@@ -53,11 +58,12 @@ Deno.test("temporary upstream failure can use only a recent successful response"
   assertEquals(stale, fresh);
   time += 601_000;
   await assertRejects(
-    () => openQuranGet("surah", {
-      fetcher: () => Promise.resolve(new Response("", { status: 503 })),
-      sleep: () => Promise.resolve(),
-      now: () => time,
-    }),
+    () =>
+      openQuranGet("surah", {
+        fetcher: () => Promise.resolve(new Response("", { status: 503 })),
+        sleep: () => Promise.resolve(),
+        now: () => time,
+      }),
     Error,
     "temporarily unavailable",
   );
@@ -67,16 +73,19 @@ Deno.test("does not retry nontransient errors or fabricate missing verses", asyn
   resetOpenQuranCacheForTests();
   let calls = 0;
   await assertRejects(
-    () => openQuranGet("surah", {
-      fetcher: () => {
-        calls++;
-        return Promise.resolve(new Response("", { status: 403 }));
-      },
-    }),
+    () =>
+      openQuranGet("surah", {
+        fetcher: () => {
+          calls++;
+          return Promise.resolve(new Response("", { status: 403 }));
+        },
+      }),
     Error,
     "HTTP 403",
   );
   assertEquals(calls, 1);
-  await assertRejects(() => openQuranGet("surah/0/editions/quran-uthmani,bn.bengali,ar.alafasy"));
+  await assertRejects(() =>
+    openQuranGet("surah/0/editions/quran-uthmani,bn.bengali,ar.alafasy")
+  );
   assert(true);
 });
