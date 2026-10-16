@@ -67,8 +67,8 @@ begin
     patient_id, device_id, plan_action_id, task_instance_id,
     scheduled_at, notification_type, status
   )
-  select patient_id, device_id, action_id, task_id, scheduled_at,
-         'care_reminder', 'scheduled'
+  select eligible.patient_id, eligible.device_id, eligible.action_id,
+         eligible.task_id, eligible.scheduled_at, 'care_reminder', 'scheduled'
   from eligible
   on conflict do nothing;
 
