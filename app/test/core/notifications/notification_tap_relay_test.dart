@@ -6,10 +6,7 @@ void main() {
 
   test('reminder opens only a well-formed patient task route', () {
     expect(careTaskIdFromPayload('care_task:$uuid'), uuid);
-    expect(
-      patientTodayTaskRoute(uuid),
-      '/patient/today?task=$uuid',
-    );
+    expect(patientTodayTaskRoute(uuid), '/patient/today?task=$uuid');
   });
 
   test('never accepts raw URLs, fake task IDs, or arbitrary push copy', () {
