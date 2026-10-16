@@ -105,12 +105,16 @@ export function normalizeSuggestedActions(
         }
         return false;
       });
-      const timeWindow = optionalValid("time_window", (candidate) =>
-        typeof candidate === "string" && timeWindows.has(candidate)
+      const timeWindow = optionalValid(
+        "time_window",
+        (candidate) =>
+          typeof candidate === "string" && timeWindows.has(candidate),
       );
-      const exactTime = optionalValid("exact_time", (candidate) =>
-        typeof candidate === "string" &&
-        /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(candidate)
+      const exactTime = optionalValid(
+        "exact_time",
+        (candidate) =>
+          typeof candidate === "string" &&
+          /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(candidate),
       );
       const validConfidence = typeof action.confidence === "number" &&
         Number.isFinite(action.confidence) &&
