@@ -6,13 +6,14 @@ export type FirebaseServiceAccount = {
 
 export type FirebaseMessage = {
   token: string;
-  notification: { title: string; body: string };
+  notification?: { title: string; body: string };
   data: Record<string, string>;
-  android: {
+  webpush?: { headers: { TTL: string } };
+  android?: {
     priority: "high";
     notification: { channel_id: "care_updates"; sound: "default" };
   };
-  apns: {
+  apns?: {
     payload: { aps: { sound: "default"; "content-available": number } };
   };
 };
