@@ -27,6 +27,7 @@ void main() {
     );
     expect(googleButton, findsOneWidget);
     expect(tester.widget<OutlinedButton>(googleButton).onPressed, isNotNull);
+    expect(find.byKey(const Key('google-brand-mark')), findsOneWidget);
 
     if (!AppEnvironment.publicMemberSignupEnabled) {
       expect(find.byKey(const Key('member-email')), findsNothing);
