@@ -5,7 +5,7 @@ Deno.test("background Web reminder sends task ID only and never patient copy", (
   const taskId = "10000000-0000-4000-8000-000000000711";
   const message = buildWebCareReminderMessage("synthetic-web-token", taskId);
   assertEquals(message.data, { type: "care_reminder", task_id: taskId });
-  assertEquals(message.notification, undefined);
+  assertEquals("notification" in message, false);
   assertEquals(message.webpush?.headers.TTL, "600");
   assertEquals(JSON.stringify(message).includes("prescription"), false);
 });
