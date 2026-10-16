@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,6 +72,97 @@ int? ruqyahSectionForSlug(String slug) {
   return 1;
 }
 
+/// Bengali names of surahs referenced in the approved editorial mapping.
+/// An unknown surah does not get a made-up title.
+const ruqyahSurahNamesBn = <int, String>{
+  1: 'আল-ফাতিহা',
+  2: 'আল-বাকারা',
+  3: 'আলে ইমরান',
+  4: 'আন-নিসা',
+  5: 'আল-মায়িদা',
+  6: 'আল-আনআম',
+  7: 'আল-আরাফ',
+  8: 'আল-আনফাল',
+  9: 'আত-তাওবা',
+  10: 'ইউনুস',
+  12: 'ইউসুফ',
+  13: 'আর-রাদ',
+  14: 'ইবরাহিম',
+  15: 'আল-হিজর',
+  16: 'আন-নাহল',
+  17: 'আল-ইসরা',
+  19: 'মারইয়াম',
+  20: 'ত্ব-হা',
+  21: 'আল-আম্বিয়া',
+  23: 'আল-মুমিনুন',
+  25: 'আল-ফুরকান',
+  26: 'আশ-শুআরা',
+  27: 'আন-নামল',
+  29: 'আল-আনকাবুত',
+  36: 'ইয়াসিন',
+  37: 'আস-সাফফাত',
+  39: 'আয-যুমার',
+  41: 'ফুসসিলাত',
+  48: 'আল-ফাতহ',
+  55: 'আর-রহমান',
+  59: 'আল-হাশর',
+  65: 'আত-তালাক',
+  71: 'নূহ',
+  72: 'আল-জিন',
+  76: 'আল-ইনসান',
+  84: 'আল-ইনশিকাক',
+  86: 'আত-তারিক',
+  97: 'আল-কদর',
+  99: 'আয-যিলযাল',
+  112: 'আল-ইখলাস',
+  113: 'আল-ফালাক',
+  114: 'আন-নাস',
+};
+
+String ruqyahBanglaNumber(int number) {
+  const digits = '০১২৩৪৫৬৭৮৯';
+  return number.toString().split('').map((value) {
+    final digit = int.tryParse(value);
+    return digit == null ? value : digits[digit];
+  }).join();
+}
+
+/// The source book's "আয়াত/অংশ 13" is NOT a Quran ayah number.
+String ruqyahDisplayTitle(String title) =>
+    title.replaceFirst(RegExp(r'\s*—\s*আয়াত/অংশ\s*[0-9০-৯]+\s*$'), '').trim();
+
+/// A source-book start reference never establishes the end of the excerpt.
+String? ruqyahCitation({
+  required int? surahNumber,
+  required int? ayahNumber,
+  int? ayahEndNumber,
+}) {
+  if (surahNumber == null ||
+      ayahNumber == null ||
+      surahNumber < 1 ||
+      surahNumber > 114 ||
+      ayahNumber < 1) {
+    return null;
+  }
+  final surah = ruqyahSurahNamesBn[surahNumber];
+  if (surah == null) return null;
+  final start = ruqyahBanglaNumber(ayahNumber);
+  if (ayahEndNumber != null && ayahEndNumber >= ayahNumber) {
+    final end = ruqyahBanglaNumber(ayahEndNumber);
+    final suffix = ayahEndNumber == ayahNumber ? '' : '–$end';
+    return 'সূরা $surah · আয়াত $start$suffix';
+  }
+  return 'সূরা $surah · আয়াত $start থেকে নির্বাচিত পাঠ';
+}
+
+class _FirstAyahBangla {
+  const _FirstAyahBangla(this.translation, this.edition, this.provider);
+
+  final String translation;
+  final String edition;
+  final String provider;
+}
+
 class _RuqyahEntry {
   const _RuqyahEntry(this.json);
 
@@ -81,25 +173,22 @@ class _RuqyahEntry {
       ? json['title_bn'] as String
       : json['title'] as String? ?? 'দোয়া ও আয়াত';
   String get arabic => json['arabic_text'] as String? ?? '';
+  String get displayTitle => ruqyahDisplayTitle(title);
+
+  int? get surahNumber => json['surah_number'] as int?;
+  int? get ayahNumber => json['ayah_number'] as int?;
+  int? get ayahEndNumber => json['ayah_end_number'] as int?;
+  String? get citation => ruqyahCitation(
+    surahNumber: surahNumber,
+    ayahNumber: ayahNumber,
+    ayahEndNumber: ayahEndNumber,
+  );
   String get meaning {
     for (final key in ['bangla_text', 'translation']) {
       final value = json[key] as String?;
       if (value != null && value.trim().isNotEmpty) return value;
     }
     return '';
-  }
-
-  String get reference {
-    final surah = json['surah_number'];
-    final ayah = json['ayah_number'];
-    final end = json['ayah_end_number'];
-    if (surah is int && ayah is int) {
-      // The imported editorial start reference may cover a longer excerpt.
-      return end is int && end >= ayah
-          ? 'সূরা $surah · আয়াত $ayah–$end'
-          : 'সূরা $surah · আয়াত $ayah থেকে নির্বাচিত অংশ';
-    }
-    return 'সংকলিত দোয়া / পাঠ';
   }
 }
 
@@ -336,6 +425,48 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   String? _playingSlug;
   bool _loadingAudio = false;
   final Set<String> _expandedMeanings = {};
+  final Map<String, Future<_FirstAyahBangla?>> _banglaRequests = {};
+
+  /// Fetch only the explicitly cited start verse; source-book paragraphs can
+  /// contain more verses, and their end boundaries are not reviewed.
+  Future<_FirstAyahBangla?> _fetchFirstAyahBangla(_RuqyahEntry entry) async {
+    final surah = entry.surahNumber;
+    final ayah = entry.ayahNumber;
+    if (surah == null || ayah == null || entry.citation == null) {
+      return null;
+    }
+    final page = ((ayah - 1) ~/ 50) + 1;
+    final response = await Supabase.instance.client.functions.invoke(
+      'quran-content',
+      body: {'action': 'verses', 'chapter': surah, 'page': page},
+    );
+    final data = response.data;
+    if (data is! Map) return null;
+    final verses = data['verses'];
+    if (verses is! List) return null;
+    for (final raw in verses) {
+      if (raw is! Map || raw['verse_key'] != '$surah:$ayah') continue;
+      final translations = raw['translations'];
+      if (translations is! List) return null;
+      for (final item in translations) {
+        if (item is! Map) continue;
+        if (item['language_name']?.toString().toLowerCase() != 'bengali') {
+          continue;
+        }
+        final translation = item['text']?.toString().trim() ?? '';
+        if (translation.isEmpty) return null;
+        final edition = item['resource_name']?.toString().trim();
+        return _FirstAyahBangla(
+          translation,
+          (edition?.isNotEmpty ?? false)
+              ? edition!
+              : data['translation_name']?.toString() ?? 'বাংলা অনুবাদ',
+          data['provider']?.toString() ?? 'Quran Foundation',
+        );
+      }
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -501,7 +632,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                     child: Text('এই বিভাগে যাচাইকৃত পাঠ এখনও যোগ করা হয়নি।'),
                   ),
                 for (var i = 0; i < entries.length; i++) ...[
-                  _entryCard(context, entries[i], i + 1),
+                  _entryCard(context, entries[i]),
                   const SizedBox(height: 10),
                 ],
               ],
@@ -512,7 +643,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     );
   }
 
-  Widget _entryCard(BuildContext context, _RuqyahEntry item, int number) {
+  Widget _entryCard(BuildContext context, _RuqyahEntry item) {
     final meaning = item.meaning;
     final expanded = _expandedMeanings.contains(item.slug);
     return Card(
@@ -525,7 +656,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               children: [
                 Expanded(
                   child: Text(
-                    '$number. ${item.title}',
+                    item.displayTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -562,7 +693,11 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(item.reference, style: Theme.of(context).textTheme.bodySmall),
+            if (item.citation != null)
+              Text(
+                item.citation!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             const Divider(),
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
@@ -578,11 +713,69 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
             if (expanded)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(
-                  meaning.isNotEmpty
-                      ? meaning
-                      : 'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
-                ),
+                child: meaning.isNotEmpty
+                    ? Text(meaning)
+                    : item.citation == null
+                    ? const Text(
+                        'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
+                      )
+                    : FutureBuilder<_FirstAyahBangla?>(
+                        future: _banglaRequests.putIfAbsent(
+                          item.slug,
+                          () => _fetchFirstAyahBangla(item),
+                        ),
+                        builder: (context, snapshot) {
+                          final result = snapshot.data;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (snapshot.connectionState !=
+                                  ConnectionState.done)
+                                const LinearProgressIndicator()
+                              else if (result == null) ...[
+                                const Text(
+                                  'এই সূত্রের বাংলা অনুবাদ এখন পাওয়া যাচ্ছে না।',
+                                ),
+                                TextButton.icon(
+                                  onPressed: () => setState(() {
+                                    _banglaRequests.remove(item.slug);
+                                  }),
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('আবার চেষ্টা করুন'),
+                                ),
+                              ] else ...[
+                                Text(
+                                  'উল্লেখিত শুরুর আয়াতের বাংলা অর্থ',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 8),
+                                SelectableText(result.translation),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'অনুবাদ: ${result.edition} · উৎস: ${result.provider}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'এটি শুধু সূত্রে উল্লেখিত শুরুর আয়াতের অনুবাদ। '
+                                  'এই পাঠে আরও আয়াত থাকলে সেগুলোর পূর্ণ বাংলা '
+                                  'অনুবাদ এখানে যাচাই করা হয়নি।',
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: () => context.push(
+                                  '/resources/quran/${item.surahNumber}',
+                                ),
+                                icon: const Icon(Icons.menu_book_outlined),
+                                label: const Text(
+                                  'সম্পূর্ণ সূরা বাংলা অর্থসহ পড়ুন',
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
               ),
           ],
         ),

@@ -1,0 +1,43 @@
+name: Quran Edge Staging Smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/quran-content/**'
+      - '.github/workflows/quran-staging-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage-read-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Verify deployed Staging Quran API against attributed upstream
+        shell: bash
+        env:
+          # Supabase *publishable* key is public by design, never a service key.
+          STAGING_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+        run: |
+          set -euo pipefail
+          endpoint='https://qacklgqvxvjjzsimjoip.supabase.co/functions/v1/quran-content'
+          data="$(mktemp)"
+          trap 'rm -f "$data"' EXIT
+          call_api() {
+            curl --fail-with-body --silent --show-error --retry 1               --max-time 42               --header "apikey: $STAGING_PUBLISHABLE_KEY"               --header 'Content-Type: application/json'               --data "$1" "$endpoint" > "$data"
+          }
+          call_api '{"action":"chapters"}'
+          jq -e '.provider == "Al Quran Cloud" and
+                 (.chapters | length) == 114 and
+                 .chapters[0].id == 1 and .chapters[113].id == 114' "$data"
+          call_api '{"action":"verses","chapter":114,"page":1}'
+          jq -e '.provider == "Al Quran Cloud" and
+                 (.verses | length) == 6 and
+                 .verses[0].verse_key == "114:1" and
+                 .verses[0].text_uthmani != "" and
+                 .verses[0].translations[0].language_name == "Bengali" and
+                 .verses[0].translations[0].text != ""' "$data"
+          echo 'PASS: Staging Quran upstream + attributed Bengali verses'
