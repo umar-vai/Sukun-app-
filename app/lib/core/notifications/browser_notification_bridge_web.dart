@@ -10,8 +10,14 @@ bool get granted => supported && html.Notification.permission == 'granted';
 Future<bool> requestPermission() async {
   if (!supported) return false;
   if (granted) return true;
-  final result = await html.Notification.requestPermission();
-  return result == 'granted';
+  try {
+    final result = await html.Notification.requestPermission();
+    return result == 'granted';
+  } on Object {
+    // Incognito, embedded WebViews and enterprise browser policies can deny
+    // access without displaying a permission prompt.
+    return false;
+  }
 }
 
 void show({
