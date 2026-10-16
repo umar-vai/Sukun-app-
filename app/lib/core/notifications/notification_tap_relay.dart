@@ -12,10 +12,8 @@ String? careTaskIdFromPayload(String? payload) {
   return uuid.hasMatch(id) ? id.toLowerCase() : null;
 }
 
-String patientTodayTaskRoute(String taskId) => Uri(
-  path: '/patient/today',
-  queryParameters: {'task': taskId},
-).toString();
+String patientTodayTaskRoute(String taskId) =>
+    Uri(path: '/patient/today', queryParameters: {'task': taskId}).toString();
 
 final class NotificationTapRelay {
   final StreamController<String> _opened = StreamController<String>.broadcast();
