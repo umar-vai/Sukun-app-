@@ -8,6 +8,7 @@ import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/data/prescription_documents_providers.dart';
@@ -182,6 +183,57 @@ void main() {
   });
 
   testWidgets(
+    'confirmed empty linked draft recovery retries the stored PDF once',
+    (tester) async {
+      final documents = _PdfRetryRepository(
+        initialFailureCode: 'draft_plan_conflict',
+      );
+      final plans = _RecoverableDraftPlans();
+      final router = _testRouter(
+        initialDocument: PrescriptionDocumentFile(
+          filename: 'synthetic-prescription.pdf',
+          mimeType: 'application/pdf',
+          bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2d]),
+        ),
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            prescriptionDocumentsRepositoryProvider.overrideWithValue(
+              documents,
+            ),
+            carePlansRepositoryProvider.overrideWithValue(plans),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.ensureVisible(find.text('Upload & generate draft actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upload & generate draft actions'));
+      await tester.pumpAndSettle();
+      expect(documents.importCalls, 1);
+      await tester.ensureVisible(
+        find.text('আগের Draft Plan যাচাই ও সমাধান করুন'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('আগের Draft Plan যাচাই ও সমাধান করুন'));
+      await tester.pumpAndSettle();
+      expect(find.text('খালি Draft আর্কাইভ করবেন?'), findsOneWidget);
+      expect(plans.archivedCount, 0);
+      await tester.tap(find.text('আর্কাইভ করে চালিয়ে যান'));
+      await tester.pumpAndSettle();
+      expect(plans.archivedCount, 1);
+      expect(plans.archivedPlanId, 'older-draft-1');
+      expect(documents.importCalls, 1);
+      expect(documents.retryCalls, 1);
+      expect(documents.retriedAttachmentId, 'attachment-1');
+      expect(find.text('AI review: prescription-1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'draft conflict explains existing plan without re-uploading PDF',
     (tester) async {
       final documents = _PdfRetryRepository(
@@ -338,4 +390,39 @@ class _PdfRetryRepository implements PrescriptionDocumentsRepository {
       ),
     );
   }
+}
+
+class _RecoverableDraftPlans implements CarePlansRepository {
+  int archivedCount = 0;
+  String? archivedPlanId;
+
+  @override
+  Future<List<CarePlan>> getPatientPlans(String patientId) async => [
+    CarePlan(
+      id: 'older-draft-1',
+      patientId: patientId,
+      prescriptionId: 'older-prescription-1',
+      version: 1,
+      name: 'Older linked empty draft',
+      startDate: DateTime(2026, 10, 15),
+      status: CarePlanStatus.draft,
+      createdAt: DateTime(2026, 10, 15),
+    ),
+  ];
+
+  @override
+  Future<List<PlanAction>> getActions(String planId) async => const [];
+
+  @override
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  }) async {
+    archivedCount += 1;
+    archivedPlanId = planId;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

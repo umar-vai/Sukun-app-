@@ -27,6 +27,14 @@ abstract interface class CarePlansRepository {
   Future<CarePlan> publishPlan(String planId, String requestId);
 
   Future<CarePlan> archivePlan(String planId, String requestId);
+
+  /// Explicitly retire an empty draft blocking a new prescription import.
+  /// The backend rechecks draft status, ownership and absence of work atomically.
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  });
 }
 
 class CarePlanWorkflowException implements Exception {

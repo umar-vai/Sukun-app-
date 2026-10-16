@@ -195,6 +195,19 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
     });
   }
 
+  @override
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  }) async {
+    await _rpcPlan('archive_empty_draft_for_prescription_import', {
+      'p_patient_id': patientId,
+      'p_care_plan_id': planId,
+      'p_request_id': requestId,
+    });
+  }
+
   Future<CarePlan> _rpcPlan(
     String functionName,
     Map<String, dynamic> params,

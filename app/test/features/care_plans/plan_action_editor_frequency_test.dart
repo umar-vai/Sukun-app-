@@ -129,6 +129,13 @@ Future<void> _save(WidgetTester tester) async {
 }
 
 final class _EditorRepository implements CarePlansRepository {
+  @override
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  }) async => throw UnimplementedError();
+
   _EditorRepository(this.frequency);
 
   final ActionFrequency frequency;

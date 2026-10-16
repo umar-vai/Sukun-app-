@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -43,6 +45,7 @@ class _CreatePrescriptionScreenState
   PrescriptionDocumentFile? _documentFile;
   // For manual-required extraction, retry the private stored file only.
   String? _storedDocumentAttachmentId;
+  bool _draftConflict = false;
   String _documentCreateRequestId = const Uuid().v4();
   String _documentExtractionRequestId = const Uuid().v4();
   // Stable IDs and the saved result prevent duplicate prescription inserts
@@ -105,6 +108,7 @@ class _CreatePrescriptionScreenState
     setState(() {
       _documentFile = file;
       _storedDocumentAttachmentId = null;
+      _draftConflict = false;
       _documentCreateRequestId = const Uuid().v4();
       _documentExtractionRequestId = const Uuid().v4();
     });
@@ -207,7 +211,10 @@ class _CreatePrescriptionScreenState
 
       if (!mounted) return;
       if (!result.isReadyForReview) {
-        setState(() => _storedDocumentAttachmentId = result.attachmentId);
+        setState(() {
+          _storedDocumentAttachmentId = result.attachmentId;
+          _draftConflict = result.aiResult.failureCode == 'draft_plan_conflict';
+        });
         _showMessage(switch (result.aiResult.failureCode) {
           'ai_configuration_missing' =>
             'সার্ভারে Gemini API সেটআপ নেই। Admin/Developer-এর সাহায্য নিন। '
@@ -223,6 +230,7 @@ class _CreatePrescriptionScreenState
         return;
       }
 
+      _draftConflict = false;
       final planId = result.carePlanId!;
       final prescriptionId = result.prescriptionId!;
       context.pushReplacement(
@@ -244,6 +252,116 @@ class _CreatePrescriptionScreenState
       if (mounted) _showMessage(prescriptionDocumentManualMessage);
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  /// Never overwrite an older practitioner's prescription or draft silently.
+  /// The server independently checks Admin permission, draft status and zero
+  /// task/action records while holding locks before archiving the empty draft.
+  Future<void> _resolveDraftConflict() async {
+    if (_submitting || !_draftConflict || _storedDocumentAttachmentId == null) {
+      return;
+    }
+    setState(() => _submitting = true);
+    var retrySavedPdf = false;
+    try {
+      final repository = ref.read(carePlansRepositoryProvider);
+      final plans = await repository.getPatientPlans(widget.patientId);
+      if (!mounted) return;
+      final drafts = plans
+          .where((plan) => plan.status == CarePlanStatus.draft)
+          .toList(growable: false);
+      if (drafts.isEmpty) {
+        setState(() => _draftConflict = false);
+        _showMessage('আগের Draft আর নেই। সংরক্ষিত PDF থেকে আবার চেষ্টা করুন।');
+        return;
+      }
+      final oldDraft = drafts.first;
+      final actions = await repository.getActions(oldDraft.id);
+      if (!mounted) return;
+      if (actions.isNotEmpty) {
+        // Stop the progress animation while awaiting Admin confirmation.
+        setState(() => _submitting = false);
+        final open = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('আগের Draft-এ করণীয় রয়েছে'),
+            content: const Text(
+              'আগের প্রেসক্রিপশনের করণীয় পরিবর্তন বা মুছে দেওয়া হবে না। '
+              'আগের Draft Plan খুলে Review/Complete করুন, তারপর ফিরে এসে '
+              'সংরক্ষিত PDF থেকে আবার চেষ্টা করুন।',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('পরে করব'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Draft Plan খুলুন'),
+              ),
+            ],
+          ),
+        );
+        if (open == true && mounted) {
+          // Push (not replace) so the preserved PDF retry is still available
+          // when Admin returns from the older plan.
+          context.push(
+            '/admin/patients/${widget.patientId}/plans/${oldDraft.id}',
+          );
+        }
+        return;
+      }
+      // A live spinner prevents dialog transitions from ever settling.
+      setState(() => _submitting = false);
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('খালি Draft আর্কাইভ করবেন?'),
+          content: const Text(
+            'আগের Draft-এ কোনো করণীয় নেই। শুধু এই খালি Draft আর্কাইভ হবে; '
+            'আগের প্রেসক্রিপশন ও ইতিহাস অক্ষত থাকবে। তারপর এই আপলোড করা '
+            'PDF থেকে নতুন করণীয় তৈরির চেষ্টা করা হবে।',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('বাতিল'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('আর্কাইভ করে চালিয়ে যান'),
+            ),
+          ],
+        ),
+      );
+      if (approved != true || !mounted) return;
+      setState(() => _submitting = true);
+      await repository.archiveEmptyDraftForPrescriptionImport(
+        patientId: widget.patientId,
+        planId: oldDraft.id,
+        requestId: const Uuid().v4(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _draftConflict = false;
+        _documentExtractionRequestId = const Uuid().v4();
+      });
+      retrySavedPdf = true;
+    } on CarePlanWorkflowException {
+      if (mounted) {
+        _showMessage(
+          'Draft পরিবর্তন হয়েছে অথবা এতে করণীয় রয়েছে। আগের Plan খুলে '
+          'Review করুন; কোনো প্রেসক্রিপশন মুছে দেওয়া হয়নি।',
+        );
+      }
+    } catch (_) {
+      if (mounted) _showMessage('Draft যাচাই করা যায়নি। আবার চেষ্টা করুন।');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+    if (retrySavedPdf && mounted) {
+      await _submitDocumentPrescription();
     }
   }
 
@@ -328,6 +446,7 @@ class _CreatePrescriptionScreenState
                             onClear: () => setState(() {
                               _documentFile = null;
                               _storedDocumentAttachmentId = null;
+                              _draftConflict = false;
                               _documentCreateRequestId = const Uuid().v4();
                               _documentExtractionRequestId = const Uuid().v4();
                             }),
@@ -408,6 +527,19 @@ class _CreatePrescriptionScreenState
                           ),
                         ),
                         if (_mode == _PrescriptionSourceMode.document) ...[
+                          if (_draftConflict &&
+                              _storedDocumentAttachmentId != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: _submitting
+                                  ? null
+                                  : _resolveDraftConflict,
+                              icon: const Icon(Icons.rule_folder_outlined),
+                              label: const Text(
+                                'আগের Draft Plan যাচাই ও সমাধান করুন',
+                              ),
+                            ),
+                          ],
                           if (_storedDocumentAttachmentId != null) ...[
                             const SizedBox(height: 12),
                             const Text(
