@@ -55,7 +55,7 @@ begin
       using errcode = 'P0002';
   end if;
 
-  select cardinality(p_resource_ids) into previous_count
+  select (aal.metadata ->> 'resource_count')::integer into previous_count
   from public.admin_audit_logs aal
   where aal.actor_user_id = caller_user_id
     and aal.action = 'plan_action.resources_replaced'
@@ -63,6 +63,20 @@ begin
     and aal.entity_id = p_action_id
   limit 1;
   if found then
+    if not exists (
+      select 1 from public.admin_audit_logs aal
+      where aal.actor_user_id = caller_user_id
+        and aal.action = 'plan_action.resources_replaced'
+        and aal.request_id = p_request_id
+        and aal.entity_id = p_action_id
+        and aal.metadata ->> 'resource_fingerprint' = md5(
+          (select coalesce(string_agg(resource_id::text, ',' order by resource_id::text), '')
+           from unnest(p_resource_ids) resource_id)
+        )
+    ) then
+      raise exception 'A request ID cannot be reused with different resources.'
+        using errcode = '22023';
+    end if;
     return previous_count;
   end if;
   if exists (
@@ -104,7 +118,13 @@ begin
   ) values (
     caller_user_id, 'plan_action.resources_replaced', 'plan_action',
     p_action_id, target_patient_id, p_request_id,
-    jsonb_build_object('resource_count', requested_count)
+    jsonb_build_object(
+      'resource_count', requested_count,
+      'resource_fingerprint', md5(
+        (select coalesce(string_agg(resource_id::text, ',' order by resource_id::text), '')
+         from unnest(p_resource_ids) resource_id)
+      )
+    )
   );
 
   return requested_count;
