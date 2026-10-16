@@ -81,6 +81,32 @@ List<ResourceMatch> matchResources(
   return List.unmodifiable(matches.take(limit));
 }
 
+/// Prefill only a unique, exact, published and type-compatible match.
+/// A fuzzy title match, unverified Qur'an, ambiguous duplicate or a listening
+/// URL with no verified direct HTTPS source is NEVER silently assigned.
+ContentResourceOption? exactReviewResource(
+  List<ResourceMatch> matches, {
+  required String actionType,
+}) {
+  final exact = matches
+      .where((match) => match.score >= 0.999 && match.resource.isLinkable)
+      .toList(growable: false);
+  if (exact.length != 1) return null;
+  final resource = exact.single.resource;
+  final accepted = switch (actionType.toLowerCase().trim()) {
+    'quran' || 'recitation' || 'verse' =>
+      resource.type == 'quran' && resource.verificationStatus == 'verified',
+    'dua' || 'supplication' => resource.type == 'dua',
+    'amal' => resource.type == 'amal',
+    'audio' || 'listening' =>
+      resource.type == 'audio' &&
+          resource.mediaSourceType == 'direct_audio_url' &&
+          Uri.tryParse(resource.mediaUrl ?? '')?.scheme == 'https',
+    _ => false,
+  };
+  return accepted ? resource : null;
+}
+
 // Preserve Bengali vowel signs and Arabic letters rather than stripping all
 // combining marks. Normalize Bengali ya variants for consistent suggestions.
 // This only ranks existing published resources; it never creates religious text
