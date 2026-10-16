@@ -118,40 +118,49 @@ void main() {
     }
   });
 
-  test('only valid care reminder Firebase task UUIDs reach tap relay', () async {
-    final opened = <String?>[];
-    const validTaskId = 'a4ba5d60-81df-4688-81c8-b1064f7cf45e';
-    final listener = NotificationCoordinator(
-      repository,
-      local,
-      push,
-      store,
-      platform: 'android',
-      onTaskOpened: opened.add,
-    );
-    await listener.initialize();
-    push.emit(const RemotePushMessage(
-      type: 'care_reminder',
-      title: 'Sukun',
-      body: 'Care task',
-      taskId: validTaskId,
-    ));
-    push.emit(const RemotePushMessage(
-      type: 'care_reminder',
-      title: 'Sukun',
-      body: 'Ignore untrusted target',
-      taskId: 'https://evil.test',
-    ));
-    push.emit(const RemotePushMessage(
-      type: 'plan_updated',
-      title: 'Sukun',
-      body: 'Not a care task',
-      taskId: validTaskId,
-    ));
-    await Future<void>.delayed(Duration.zero);
-    expect(opened, ['care_task:$validTaskId']);
-    await listener.dispose();
-  });
+  test(
+    'only valid care reminder Firebase task UUIDs reach tap relay',
+    () async {
+      final opened = <String?>[];
+      const validTaskId = 'a4ba5d60-81df-4688-81c8-b1064f7cf45e';
+      final listener = NotificationCoordinator(
+        repository,
+        local,
+        push,
+        store,
+        platform: 'android',
+        onTaskOpened: opened.add,
+      );
+      await listener.initialize();
+      push.emit(
+        const RemotePushMessage(
+          type: 'care_reminder',
+          title: 'Sukun',
+          body: 'Care task',
+          taskId: validTaskId,
+        ),
+      );
+      push.emit(
+        const RemotePushMessage(
+          type: 'care_reminder',
+          title: 'Sukun',
+          body: 'Ignore untrusted target',
+          taskId: 'https://evil.test',
+        ),
+      );
+      push.emit(
+        const RemotePushMessage(
+          type: 'plan_updated',
+          title: 'Sukun',
+          body: 'Not a care task',
+          taskId: validTaskId,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(opened, ['care_task:$validTaskId']);
+      await listener.dispose();
+    },
+  );
 
   test('disable cancels reminders and removes the registered device', () async {
     store.enabled = true;
