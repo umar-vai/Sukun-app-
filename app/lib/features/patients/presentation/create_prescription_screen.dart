@@ -530,7 +530,9 @@ class _CreatePrescriptionScreenState
                                   ? null
                                   : _resolveDraftConflict,
                               icon: const Icon(Icons.rule_folder_outlined),
-                              label: const Text('আগের Draft Plan যাচাই ও সমাধান করুন'),
+                              label: const Text(
+                                'আগের Draft Plan যাচাই ও সমাধান করুন',
+                              ),
                             ),
                           ],
                           if (_storedDocumentAttachmentId != null) ...[
