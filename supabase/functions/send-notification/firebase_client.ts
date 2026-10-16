@@ -4,19 +4,28 @@ export type FirebaseServiceAccount = {
   privateKey: string;
 };
 
-export type FirebaseMessage = {
+export type FirebasePlanUpdatedMessage = {
   token: string;
-  notification?: { title: string; body: string };
+  notification: { title: string; body: string };
   data: Record<string, string>;
-  webpush?: { headers: { TTL: string } };
-  android?: {
+  android: {
     priority: "high";
     notification: { channel_id: "care_updates"; sound: "default" };
   };
-  apns?: {
+  apns: {
     payload: { aps: { sound: "default"; "content-available": number } };
   };
 };
+
+export type FirebaseWebCareReminderMessage = {
+  token: string;
+  data: Record<string, string>;
+  webpush: { headers: { TTL: string } };
+};
+
+export type FirebaseMessage =
+  | FirebasePlanUpdatedMessage
+  | FirebaseWebCareReminderMessage;
 
 export type FirebaseSendResult = {
   ok: boolean;
@@ -42,7 +51,7 @@ export function parseServiceAccount(raw: string): FirebaseServiceAccount {
 export function buildPlanUpdatedMessage(
   token: string,
   carePlanId: string,
-): FirebaseMessage {
+): FirebasePlanUpdatedMessage {
   return {
     token,
     notification: {
@@ -63,7 +72,7 @@ export function buildPlanUpdatedMessage(
 export function buildWebCareReminderMessage(
   token: string,
   taskId: string,
-): FirebaseMessage {
+): FirebaseWebCareReminderMessage {
   const uuid =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuid.test(taskId)) throw new Error("Invalid care task ID.");
