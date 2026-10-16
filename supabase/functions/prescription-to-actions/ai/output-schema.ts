@@ -37,7 +37,7 @@ export function normalizeSuggestedActions(
 ): unknown {
   if (!isObject(value) || !Array.isArray(value.actions)) return value;
 
-  return {
+  const normalizedOutput = {
     ...value,
     source_text: value.source_text === undefined ? null : value.source_text,
     actions: value.actions.map((action) => {
@@ -158,10 +158,100 @@ export function normalizeSuggestedActions(
       return normalized;
     }),
   };
+  return {
+    ...normalizedOutput,
+    actions: reconcileSourceBackedActions(
+      normalizedOutput.actions,
+      originalPrescriptionText,
+    ),
+  };
 }
 
 function normalizedEvidence(value: string): string {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/**
+ * Build separate daily review candidates for an explicitly repeated morning +
+ * evening instruction, without guessing HH:mm or changing the original quote.
+ * Only deduplicate byte-equivalent normalized work; different counts, resources
+ * or windows remain separate. All results still require Admin approval.
+ */
+function reconcileSourceBackedActions(
+  candidates: unknown[],
+  originalPrescriptionText?: string,
+): unknown[] {
+  const unique = new Set<string>();
+  const result: unknown[] = [];
+  for (const candidate of candidates) {
+    if (!isObject(candidate)) {
+      result.push(candidate);
+      continue;
+    }
+    const evidence = typeof candidate.source_evidence === "string"
+      ? candidate.source_evidence
+      : "";
+    const supported = evidence.length > 0 &&
+      (originalPrescriptionText === undefined ||
+        normalizedEvidence(originalPrescriptionText).includes(
+          normalizedEvidence(evidence),
+        ));
+    // A model-provided instruction is not sufficient evidence for recurrence.
+    const explicitDaily = supported &&
+      /(?:প্রতিদিন|প্রতি\s*দিন|দৈনিক|every\s+day|daily)/iu.test(evidence);
+    const morning = supported &&
+      /(?:সকাল|ভোর|morning)/iu.test(evidence);
+    const evening = supported &&
+      /(?:সন্ধ্যা|সান্ধ্য|evening)/iu.test(evidence);
+    const bothWindows = morning && evening;
+    const base = { ...candidate };
+    if (base.frequency === null && (explicitDaily || bothWindows)) {
+      base.frequency = { type: "daily", interval: 1 };
+    }
+    const split: Record<string, unknown>[] = bothWindows
+      ? (["morning", "evening"] as const).map((window) => {
+        const needsTimeReview = base.exact_time !== null;
+        const windowLabel = window === "morning" ? "সকাল" : "সন্ধ্যা";
+        const title = typeof base.title === "string" ? base.title : "";
+        const cleanTitle = title.replace(/\s*\((?:সকাল|সন্ধ্যা)\)\s*$/u, "");
+        const ambiguities = Array.isArray(base.ambiguities)
+          ? [...base.ambiguities]
+          : [];
+        if (needsTimeReview) {
+          ambiguities.push(
+            "The prescription's exact time applies to multiple windows. Confirm each reminder time.",
+          );
+        }
+        return {
+          ...base,
+          title: `${cleanTitle.slice(0, 148)} (${windowLabel})`,
+          time_window: window,
+          exact_time: null,
+          needs_review: base.needs_review === true || needsTimeReview,
+          ambiguities,
+        };
+      })
+      : [base];
+
+    for (const action of split) {
+      const fingerprint = JSON.stringify([
+        normalizedEvidence(String(action.type ?? "")),
+        normalizedEvidence(String(action.title ?? "")),
+        normalizedEvidence(String(action.instruction ?? "")),
+        action.count_target,
+        action.duration_minutes,
+        action.frequency,
+        action.time_window,
+        action.exact_time,
+        normalizedEvidence(String(action.resource_match_query ?? "")),
+        normalizedEvidence(String(action.source_evidence ?? "")),
+      ]);
+      if (unique.has(fingerprint)) continue;
+      unique.add(fingerprint);
+      result.push(action);
+    }
+  }
+  return result;
 }
 
 export function parseSuggestedActions(value: unknown): SuggestedActions {
