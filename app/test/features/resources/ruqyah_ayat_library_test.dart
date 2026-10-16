@@ -101,5 +101,4 @@ void main() {
     expect(ruqyahSectionForSlug('srg2024-qur-047'), 4);
     expect(ruqyahCitation(surahNumber: null, ayahNumber: null), isNull);
   });
-
 }
