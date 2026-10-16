@@ -299,7 +299,42 @@ Deno.serve(async (request) => {
         p_provider_model: `${documentModel} -> ${parserModel}`,
       },
     );
-    if (finalizeError || !finalized) throw new Error("finalization_failed");
+    if (finalizeError || !finalized) {
+      // A separate, already-linked draft is a workflow conflict, not an AI
+      // provider failure. Do not leak patient records or SQL details to the
+      // browser, and do not silently replace a clinician's existing draft.
+      if (finalizeError?.code === "55000") {
+        const fallback = {
+          request_id: input.requestId,
+          ...manualRequired(),
+          failure_code: "draft_plan_conflict",
+          attachment_id: attachment.id,
+        };
+        await adminClient.from("prescription_attachments").update({
+          extraction_status: "manual_required",
+          normalized_result: fallback,
+          processed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", attachment.id);
+        await recordFailure(
+          adminClient,
+          user.id,
+          attachment.patient_id,
+          attachment.id,
+          input.requestId,
+          "draft_plan_conflict",
+        );
+        return jsonResponse(fallback);
+      }
+      console.log(JSON.stringify({
+        event: "prescription_document_finalization_failed",
+        request_id: input.requestId,
+        // Allowlisted database error class only; never log SQL messages or
+        // extracted prescription text.
+        failure_type: "database_finalization",
+      }));
+      throw new Error("finalization_failed");
+    }
     return jsonResponse({
       ...normalizedResult,
       attachment_id: finalized.attachment_id,
