@@ -68,7 +68,7 @@ select results_eq(
  array[0::bigint],
  'Unreviewed clinical action is never eligible'
 );
-update public.task_instances set status='completed' where id='f4000000-0000-4000-8000-000000000901';
+update public.task_instances set status='completed', completed_at=now() where id='f4000000-0000-4000-8000-000000000901';
 select results_eq(
  $$select count(*) from public.claim_due_web_care_reminders(10)$$,
  array[0::bigint],
