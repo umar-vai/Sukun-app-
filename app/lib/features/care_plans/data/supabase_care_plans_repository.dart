@@ -132,6 +132,26 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
   }
 
   @override
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> resourceIds,
+    required String requestId,
+  }) async {
+    try {
+      await _client.rpc(
+        'replace_draft_action_resources',
+        params: {
+          'p_action_id': actionId,
+          'p_resource_ids': resourceIds,
+          'p_request_id': requestId,
+        },
+      );
+    } on PostgrestException catch (error) {
+      throw CarePlanWorkflowException(error.message);
+    }
+  }
+
+  @override
   Future<List<PlanAction>> reorderActions(
     String planId,
     List<String> actionIds,
