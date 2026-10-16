@@ -226,9 +226,13 @@ final class NotificationCoordinator {
     try {
       // Do not trust provider-supplied push copy on an unlocked or locked
       // device: it could accidentally contain patient/prescription details.
+      final taskId = message.type == 'care_reminder' && message.taskId != null
+          ? careTaskIdFromPayload('care_task:${message.taskId}')
+          : null;
       await _local.showRemote(
         title: 'সুকুন লাইফ',
         body: 'আপনার জন্য নতুন একটি বার্তা এসেছে।',
+        payload: taskId == null ? null : 'care_task:$taskId',
       );
       if (message.type == 'plan_updated') await syncIfEnabled();
     } on Object {
