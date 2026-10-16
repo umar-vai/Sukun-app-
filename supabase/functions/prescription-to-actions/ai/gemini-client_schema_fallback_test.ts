@@ -38,4 +38,16 @@ Deno.test("HTTP 400 structured output retries without response schema", async ()
   }
   assertEquals(bodies[1].response_format, undefined);
   assertEquals(events[0].event, "ai_structured_output_fallback");
+
+  // The next slot retry in the same extraction must not repeat a known 400.
+  const retried = await client.generate({
+    apiKey: "second-test-key",
+    model: "gemini-3.5-flash-lite",
+    prescriptionText: "source",
+    timeoutMs: 1000,
+  });
+  assertEquals(retried.actions.length, 1);
+  assertEquals(bodies.length, 3);
+  assertEquals(bodies[2].response_format, undefined);
+  assertEquals(events.length, 3);
 });
