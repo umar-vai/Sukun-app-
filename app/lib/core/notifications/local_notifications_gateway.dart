@@ -194,12 +194,12 @@ final class PluginLocalNotificationsGateway
     required String body,
     String? payload,
   }) => _plugin.show(
-        id: DateTime.now().millisecondsSinceEpoch & 0x7fffffff,
-        title: title,
-        body: body,
-        notificationDetails: _details,
-        payload: payload,
-      );
+    id: DateTime.now().millisecondsSinceEpoch & 0x7fffffff,
+    title: title,
+    body: body,
+    notificationDetails: _details,
+    payload: payload,
+  );
 
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
