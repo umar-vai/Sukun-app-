@@ -700,6 +700,13 @@ class _EditableSuggestion {
       exactTime: source.exactTime,
       resourceMatches: resourceMatches,
     );
+    // Only an exact, unambiguous, approved resource can be preselected.
+    // The action still imports as unapproved and requires Admin review.
+    if (!source.needsReview) {
+      draft.contentItemId =
+          exactReviewResource(resourceMatches, actionType: source.type)?.id ??
+          '';
+    }
     draft.selected = draft.isReady;
     return draft;
   }
@@ -722,7 +729,9 @@ class _EditableSuggestion {
   bool imported = false;
 
   bool get hasIncompleteMetadata => source.ambiguities.any(
-    (item) => item.startsWith('AI omitted metadata fields:'),
+    (item) =>
+        item.startsWith('AI omitted metadata fields:') ||
+        item.startsWith('AI omitted or left empty metadata fields:'),
   );
 
   bool get isReady =>
