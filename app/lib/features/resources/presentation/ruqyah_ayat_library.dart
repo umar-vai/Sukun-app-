@@ -820,7 +820,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
             const Divider(),
             TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              label: Text(expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel),
+              label: Text(
+                expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel,
+              ),
               onPressed: () => setState(() {
                 if (!_expandedMeanings.add(item.slug)) {
                   _expandedMeanings.remove(item.slug);
