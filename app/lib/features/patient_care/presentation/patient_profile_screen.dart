@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,7 +46,11 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
       SnackBar(
         content: Text(
           enabled
-              ? 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।'
+              ? kIsWeb
+                    ? 'ব্রাউজারের ট্যাব খোলা থাকলে নির্ধারিত সময়ে রিমাইন্ডার দেখাবে।'
+                    : 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।'
+              : kIsWeb
+              ? 'ব্রাউজারের Notification permission দিন।'
               : 'অনুমতি পাওয়া যায়নি। ফোনের সেটিংস থেকে চালু করতে পারেন।',
         ),
       ),
@@ -191,14 +196,18 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     const SizedBox(height: 10),
                     Text(
                       enabled
-                          ? status!.preciseTimingAvailable
+                          ? kIsWeb
+                                ? 'Browser tab চালু থাকলে নির্ধারিত কাজের reminder দেখানো হবে।'
+                                : status!.preciseTimingAvailable
                                 ? 'নির্ধারিত সময় দেওয়া ও অনুমোদিত কাজের জন্য মনে করিয়ে দেওয়ার অনুমতি আছে।'
                                 : 'মনে করিয়ে দেওয়া চালু আছে। নির্দিষ্ট সময়ের অনুমতি না থাকলে ফোন কিছুটা দেরিতে জানাতে পারে।'
                           : 'শুধু আপনার অনুমোদিত পরিকল্পনার নির্ধারিত কাজের সময় মনে করিয়ে দেওয়া হবে।',
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
+                    Text(
+                      kIsWeb
+                          ? 'Web Preview-এ ট্যাব খোলা থাকা অবস্থায় রিমাইন্ডার কাজ করে। ব্রাউজার বন্ধ থাকলে বা ডিভাইস ঘুমিয়ে থাকলে নির্ধারিত ডেলিভারি নিশ্চিত নয়। পূর্ণ background push আলাদা service worker ও server setup-এর পর চালু হবে।'
+                          : 'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
                     ),
                     const SizedBox(height: 14),
                     if (enabled && status?.lastSyncSucceeded == false) ...[
@@ -221,7 +230,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                         spacing: 10,
                         runSpacing: 10,
                         children: [
-                          if (!status!.preciseTimingAvailable)
+                          if (!kIsWeb && !status!.preciseTimingAvailable)
                             FilledButton.tonalIcon(
                               onPressed: _enablePreciseTiming,
                               icon: const Icon(Icons.alarm_outlined),
