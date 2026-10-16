@@ -16,6 +16,14 @@ final carePlansRepositoryProvider = Provider<CarePlansRepository>((ref) {
 });
 
 final class UnavailableCarePlansRepository implements CarePlansRepository {
+  @override
+  Future<void> archiveEmptyDraftForPrescriptionImport({
+    required String patientId,
+    required String planId,
+    required String requestId,
+  }) async =>
+      _unavailable();
+
   const UnavailableCarePlansRepository();
 
   Never _unavailable() => throw const CarePlanWorkflowException(
