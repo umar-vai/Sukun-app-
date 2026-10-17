@@ -48,10 +48,13 @@ final class PersonalRoutineRepository {
   }
 
   Future<void> setRoutineActive(String id, bool active) async {
-    await client.from('personal_routines').update({
-      'is_active': active,
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', id);
+    await client
+        .from('personal_routines')
+        .update({
+          'is_active': active,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', id);
   }
 
   Future<void> saveAction({
