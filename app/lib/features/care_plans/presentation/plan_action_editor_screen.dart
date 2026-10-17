@@ -125,11 +125,14 @@ class _PlanActionEditorScreenState
     _exactTime = action.exactTime;
     _reviewStatus = action.reviewStatus;
     _reminderEnabled = action.reminderEnabled;
-    _contentItemId = action.resource?.id ?? '';
+    final notedResource = action.linkedResources
+        .where((resource) => resource.usageNote?.isNotEmpty == true)
+        .firstOrNull;
+    _contentItemId = notedResource?.id ?? action.resource?.id ?? '';
     _contentItemIds
       ..clear()
       ..addAll(action.linkedResources.map((resource) => resource.id));
-    _usageNoteController.text = action.resource?.usageNote ?? '';
+    _usageNoteController.text = notedResource?.usageNote ?? '';
   }
 
   void _selectResource(ContentResourceOption resource) {
@@ -138,6 +141,7 @@ class _PlanActionEditorScreenState
       return;
     }
     _contentItemIds.add(resource.id);
+    if (_contentItemId != resource.id) _usageNoteController.clear();
     _contentItemId = resource.id;
     // Resource-first quick action: prefill editable labels, never invent a
     // practitioner instruction or mark the resulting action approved.
@@ -147,6 +151,20 @@ class _PlanActionEditorScreenState
     if (_typeController.text.trim().isEmpty) {
       _typeController.text = resource.type;
     }
+  }
+
+  void _moveResource(String id, int offset) {
+    final ids = _contentItemIds.toList();
+    final index = ids.indexOf(id);
+    final destination = index + offset;
+    if (index < 0 || destination < 0 || destination >= ids.length) return;
+    setState(() {
+      final moved = ids.removeAt(index);
+      ids.insert(destination, moved);
+      _contentItemIds
+        ..clear()
+        ..addAll(ids);
+    });
   }
 
   @override
@@ -234,7 +252,7 @@ class _PlanActionEditorScreenState
       if (_contentItemIds.length > 1) {
         await repository.replaceActionResources(
           actionId: saved.id,
-          resourceIds: _contentItemIds.toList()..sort(),
+          resourceIds: _contentItemIds.toList(),
           requestId: _resourceLinkRequestId,
         );
       }
@@ -564,25 +582,57 @@ class _PlanActionEditorScreenState
                       ),
                       if (_contentItemIds.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
+                        Column(
                           children: [
-                            for (final id in _contentItemIds)
-                              InputChip(
-                                label: Text(
+                            for (final (index, id)
+                                in _contentItemIds.toList().indexed)
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
                                   data.resources
                                           .where((item) => item.id == id)
                                           .firstOrNull
                                           ?.displayTitle ??
                                       'Linked resource',
                                 ),
-                                onDeleted: () => setState(() {
-                                  _contentItemIds.remove(id);
-                                  _contentItemId = _contentItemIds.isEmpty
-                                      ? ''
-                                      : _contentItemIds.first;
-                                }),
+                                subtitle: Text(
+                                  'Resource ${index + 1}'
+                                  '${id == _contentItemId ? ' · usage note target' : ''}',
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Move resource up',
+                                      onPressed: index == 0
+                                          ? null
+                                          : () => _moveResource(id, -1),
+                                      icon: const Icon(Icons.arrow_upward),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Move resource down',
+                                      onPressed:
+                                          index == _contentItemIds.length - 1
+                                          ? null
+                                          : () => _moveResource(id, 1),
+                                      icon: const Icon(Icons.arrow_downward),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Remove resource',
+                                      onPressed: () => setState(() {
+                                        _contentItemIds.remove(id);
+                                        if (_contentItemId == id) {
+                                          _contentItemId =
+                                              _contentItemIds.isEmpty
+                                              ? ''
+                                              : _contentItemIds.first;
+                                          _usageNoteController.clear();
+                                        }
+                                      }),
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                  ],
+                                ),
                               ),
                           ],
                         ),
@@ -592,7 +642,8 @@ class _PlanActionEditorScreenState
                         TextFormField(
                           controller: _usageNoteController,
                           decoration: const InputDecoration(
-                            labelText: 'Resource usage note (optional)',
+                            labelText:
+                                'Usage note for selected resource (optional)',
                           ),
                         ),
                       ],

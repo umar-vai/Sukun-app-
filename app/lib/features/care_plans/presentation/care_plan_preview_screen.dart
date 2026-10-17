@@ -173,20 +173,22 @@ class _PatientActionCard extends StatelessWidget {
               ],
             ),
           ],
-          if (action.resource != null) ...[
+          if (action.linkedResources.isNotEmpty) ...[
             const Divider(height: 28),
-            Row(
-              children: [
-                const Icon(Icons.library_books_outlined, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text(action.resource!.title)),
-              ],
-            ),
-            if (action.resource!.usageNote?.isNotEmpty == true)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(action.resource!.usageNote!),
+            for (final resource in action.linkedResources) ...[
+              Row(
+                children: [
+                  const Icon(Icons.library_books_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(resource.titleBn ?? resource.title)),
+                ],
               ),
+              if (resource.usageNote?.isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, bottom: 8),
+                  child: Text(resource.usageNote!),
+                ),
+            ],
           ],
         ],
       ),

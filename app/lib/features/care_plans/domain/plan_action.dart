@@ -78,6 +78,7 @@ class LinkedResource {
     required this.id,
     required this.title,
     required this.type,
+    this.sortOrder = 0,
     this.usageNote,
     this.titleBn,
     this.mediaSourceType,
@@ -91,6 +92,7 @@ class LinkedResource {
   final String title;
   final String? titleBn;
   final String type;
+  final int sortOrder;
   final String? usageNote;
   final String? mediaSourceType;
   final String? mediaUrl;
@@ -149,6 +151,7 @@ class PlanAction {
           title: item['title'] as String,
           titleBn: item['title_bn'] as String?,
           type: item['type'] as String,
+          sortOrder: relation['sort_order'] as int? ?? 0,
           usageNote: relation['usage_note'] as String?,
           mediaSourceType: item['media_source_type'] as String?,
           mediaUrl: item['media_url'] as String?,
@@ -158,7 +161,10 @@ class PlanAction {
         ),
       );
     }
-    resources.sort((a, b) => a.title.compareTo(b.title));
+    resources.sort((a, b) {
+      final order = a.sortOrder.compareTo(b.sortOrder);
+      return order != 0 ? order : a.title.compareTo(b.title);
+    });
 
     return PlanAction(
       id: json['id'] as String,

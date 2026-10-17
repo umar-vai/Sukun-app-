@@ -13,6 +13,18 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-10-17 ordered clinical resource links
+
+- Applied additive migration `clinical_resource_order_and_note` to Production
+  (remote migration version `20261017174248`; repository file
+  `20261017113000_clinical_resource_order_and_note.sql`). It adds a defaulted
+  `sort_order` to `plan_action_resources` and updates the existing draft-only
+  resource replacement RPC to retain the selected resource order and usage note.
+- Verified the new column, enabled RLS, and that `anon` still cannot execute
+  the RPC. Existing published action links and patient records were not edited.
+- PR #128 contains the matching Flutter code and synthetic rollback-only
+  database tests. The Pages client must be deployed after this migration.
+
 ### 2026-10-08 prescription AI diagnostic update
 
 - Confirmed existing migrations `20261007114242` (document extraction) and
