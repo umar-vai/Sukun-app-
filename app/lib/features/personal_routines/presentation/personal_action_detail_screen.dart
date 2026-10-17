@@ -62,7 +62,11 @@ class _PersonalActionDetailScreenState
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(status == 'done' ? 'আজকের আমল সম্পন্ন' : 'আজকের আমল Skip করা হয়েছে')),
+        SnackBar(
+          content: Text(
+            status == 'done' ? 'আজকের আমল সম্পন্ন' : 'আজকের আমল Skip করা হয়েছে',
+          ),
+        ),
       );
     } catch (_) {
       if (!mounted) return;
@@ -93,7 +97,9 @@ class _PersonalActionDetailScreenState
         }
         final data = snapshot.data!;
         if (data.action == null) {
-          return const Center(child: Text('অ্যাকশনটি পাওয়া যায়নি বা অনুমতি নেই।'));
+          return const Center(
+            child: Text('অ্যাকশনটি পাওয়া যায়নি বা অনুমতি নেই।'),
+          );
         }
         final action = data.action!;
         return ListView(
@@ -109,11 +115,16 @@ class _PersonalActionDetailScreenState
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 18),
-            Text('সংযুক্ত রিসোর্স', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'সংযুক্ত রিসোর্স',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (data.references.isEmpty)
               const ListTile(
                 title: Text('এখনো কোনো রিসোর্স যুক্ত করা হয়নি'),
-                subtitle: Text('রুটিন থেকে Edit করে লাইব্রেরির রিসোর্স যুক্ত করুন।'),
+                subtitle: Text(
+                  'রুটিন থেকে Edit করে লাইব্রেরির রিসোর্স যুক্ত করুন।',
+                ),
               ),
             for (final reference in data.references)
               _ResourceReferenceTile(reference: reference),
@@ -144,8 +155,11 @@ class _ResourceReferenceTile extends StatelessWidget {
     final content = reference['content_items'];
     final cms = content is Map ? Map<String, dynamic>.from(content) : null;
     final id = reference['content_item_id'] as String?;
-    final canOpen = provider == 'cms' && cms != null &&
-        cms['status'] == 'published' && cms['visibility'] == 'public' &&
+    final canOpen =
+        provider == 'cms' &&
+        cms != null &&
+        cms['status'] == 'published' &&
+        cms['visibility'] == 'public' &&
         id != null;
     final label = cms?['title_bn'] as String?;
     final name = label?.trim().isNotEmpty == true
@@ -154,11 +168,17 @@ class _ResourceReferenceTile extends StatelessWidget {
     final external = reference['external_resource_ref'] as String?;
     return Card(
       child: ListTile(
-        leading: Icon(provider == 'quran'
-            ? Icons.menu_book_outlined
-            : Icons.library_books_outlined),
-        title: Text(provider == 'cms' ? name : (external ?? 'রিসোর্স অনুপলব্ধ')),
-        subtitle: Text(canOpen ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়'),
+        leading: Icon(
+          provider == 'quran'
+              ? Icons.menu_book_outlined
+              : Icons.library_books_outlined,
+        ),
+        title: Text(
+          provider == 'cms' ? name : (external ?? 'রিসোর্স অনুপলব্ধ'),
+        ),
+        subtitle: Text(
+          canOpen ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
+        ),
         trailing: canOpen ? const Icon(Icons.chevron_right) : null,
         onTap: canOpen
             ? () => context.push('/resources/${Uri.encodeComponent(id!)}')
@@ -169,10 +189,7 @@ class _ResourceReferenceTile extends StatelessWidget {
 }
 
 class _PersonalActionDetail {
-  const _PersonalActionDetail({
-    this.action,
-    this.references = const [],
-  });
+  const _PersonalActionDetail({this.action, this.references = const []});
   final Map<String, dynamic>? action;
   final List<Map<String, dynamic>> references;
 }
