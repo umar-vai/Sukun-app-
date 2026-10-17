@@ -32,16 +32,20 @@ ReviewResourceDiscovery discoverReviewResources({
       terms.any((term) => source.contains(term));
 
   void offer(String slug, String label, String type, {bool audio = false}) {
-    final found = resources.where((resource) {
-      if (!resource.isLinkable || resource.slug != slug || resource.type != type) {
-        return false;
-      }
-      if (!audio) return true;
-      final url = Uri.tryParse(resource.mediaUrl ?? '');
-      return resource.mediaSourceType == 'direct_audio_url' &&
-          url?.scheme == 'https' &&
-          url?.host.isNotEmpty == true;
-    }).toList(growable: false);
+    final found = resources
+        .where((resource) {
+          if (!resource.isLinkable ||
+              resource.slug != slug ||
+              resource.type != type) {
+            return false;
+          }
+          if (!audio) return true;
+          final url = Uri.tryParse(resource.mediaUrl ?? '');
+          return resource.mediaSourceType == 'direct_audio_url' &&
+              url?.scheme == 'https' &&
+              url?.host.isNotEmpty == true;
+        })
+        .toList(growable: false);
     if (found.length != 1) {
       missing.add(label);
     } else if (visited.add(found.single.id)) {
@@ -50,8 +54,11 @@ ReviewResourceDiscovery discoverReviewResources({
   }
 
   final jinn = includesAny([
-    'জিনের আছর', 'জিনের আসর', 'জ্বিনের আছর',
-    'jinn ruqyah', 'jinn affliction',
+    'জিনের আছর',
+    'জিনের আসর',
+    'জ্বিনের আছর',
+    'jinn ruqyah',
+    'jinn affliction',
   ]);
   final harq = includesAny(['হারক', 'হার্ক', 'harq']);
   final shifa = includesAny(['শিফা', 'shifa']);
@@ -61,7 +68,12 @@ ReviewResourceDiscovery discoverReviewResources({
   if (jinn || harq || (shifa && sakina) || tadmir || qital) {
     contextual = true;
     if (jinn) {
-      offer('sukun-ruqyahbd-jinn', 'জিনের আছরের রুকইয়াহ অডিও', 'audio', audio: true);
+      offer(
+        'sukun-ruqyahbd-jinn',
+        'জিনের আছরের রুকইয়াহ অডিও',
+        'audio',
+        audio: true,
+      );
     }
     if (harq) {
       offer('sukun-ruqyahbd-harq', 'আয়াতুল হারক অডিও', 'audio', audio: true);
@@ -84,7 +96,12 @@ ReviewResourceDiscovery discoverReviewResources({
   final masnun = includesAny(['মাসনুন', 'মাসনূন', 'masnun', 'masnoon']);
   final morning = includesAny(['সকাল', 'সন্ধ্যা', 'morning', 'evening']);
   final bedtime = includesAny([
-    'ঘুম', 'শোয়ার', 'শোয়ার', 'শোবার', 'sleep', 'bedtime',
+    'ঘুম',
+    'শোয়ার',
+    'শোয়ার',
+    'শোবার',
+    'sleep',
+    'bedtime',
   ]);
   if (masnun && (morning || bedtime)) {
     contextual = true;
@@ -111,9 +128,9 @@ ReviewResourceDiscovery discoverReviewResources({
       missing: List.unmodifiable(missing),
       note: masnun && (morning || bedtime)
           ? 'Related individual Dua/Amal cards only — NOT a verified '
-              'complete Masnun routine. Compare each with the source.'
+                'complete Masnun routine. Compare each with the source.'
           : 'Named published audio tracks only. Confirm exact recording, '
-              'listening sequence and instructions before linking.',
+                'listening sequence and instructions before linking.',
       requiresManualSelection: true,
     );
   }
