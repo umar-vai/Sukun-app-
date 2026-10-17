@@ -1,0 +1,254 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
+
+/// One public notice is always addressed by stable UUID. The route is valid
+/// on a cold start, while authorization comes solely from database RLS.
+class UniversalNoticeDetailScreen extends ConsumerStatefulWidget {
+  const UniversalNoticeDetailScreen({super.key, required this.announcementId});
+  final String announcementId;
+
+  @override
+  ConsumerState<UniversalNoticeDetailScreen> createState() =>
+      _UniversalNoticeDetailScreenState();
+}
+
+class _UniversalNoticeDetailScreenState
+    extends ConsumerState<UniversalNoticeDetailScreen> {
+  late Future<UniversalAnnouncement?> _notice;
+
+  @override
+  void initState() {
+    super.initState();
+    _notice = ref.read(announcementRepositoryProvider).get(widget.announcementId);
+  }
+
+  void _close() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black54,
+    body: SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 510),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Material(
+              borderRadius: BorderRadius.circular(24),
+              clipBehavior: Clip.antiAlias,
+              color: Theme.of(context).colorScheme.surface,
+              elevation: 8,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.83,
+                ),
+                child: FutureBuilder<UniversalAnnouncement?>(
+                  future: _notice,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const SizedBox(
+                        height: 220,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.info_outline, size: 40),
+                            const SizedBox(height: 12),
+                            const Text('নোটিশটি পাওয়া যায়নি অথবা মেয়াদ শেষ।'),
+                            TextButton(
+                              onPressed: _close,
+                              child: const Text('বন্ধ করুন'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return _NoticePanel(
+                      notice: snapshot.data!,
+                      imageUrl: (path) =>
+                          ref.read(announcementRepositoryProvider).imageUrl(path),
+                      onClose: _close,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _NoticePanel extends StatelessWidget {
+  const _NoticePanel({
+    required this.notice,
+    required this.imageUrl,
+    required this.onClose,
+  });
+
+  final UniversalAnnouncement notice;
+  final String Function(String) imageUrl;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(notice.linkUrl ?? '');
+    final safeLink = uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          color: SukunColors.mist,
+          padding: const EdgeInsets.fromLTRB(18, 10, 8, 10),
+          child: Row(
+            children: [
+              const Icon(Icons.campaign_outlined, color: SukunColors.deepTide),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              IconButton(
+                tooltip: 'নোটিশ বন্ধ করুন',
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  notice.title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                if (notice.imagePath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      imageUrl(notice.imagePath!),
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: Text('ছবি লোড করা যায়নি।'),
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+                SelectableText(notice.body),
+                if (safeLink) ...[
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('লিংক খুলুন'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class UniversalAnnouncementsScreen extends ConsumerWidget {
+  const UniversalAnnouncementsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(publishedAnnouncementsProvider);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('সব নোটিশ'),
+        actions: [
+          IconButton(
+            tooltip: 'আবার দেখুন',
+            onPressed: () => ref.invalidate(publishedAnnouncementsProvider),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: items.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('নোটিশ লোড করা যায়নি।'),
+                TextButton(
+                  onPressed: () => ref.invalidate(publishedAnnouncementsProvider),
+                  child: const Text('আবার চেষ্টা করুন'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        data: (list) => list.isEmpty
+            ? const Center(child: Text('এখন কোনো প্রকাশিত নোটিশ নেই।'))
+            : RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(publishedAnnouncementsProvider);
+                  await ref.read(publishedAnnouncementsProvider.future);
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: list.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 9),
+                  itemBuilder: (context, index) {
+                    final notice = list[index];
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.notifications_active_outlined),
+                        title: Text(notice.title),
+                        subtitle: Text(
+                          notice.body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/announcements/' + notice.id),
+                      ),
+                    );
+                  },
+                ),
+              ),
+      ),
+    );
+  }
+}
