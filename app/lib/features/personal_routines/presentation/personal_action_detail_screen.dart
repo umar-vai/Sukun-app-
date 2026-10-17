@@ -161,7 +161,7 @@ class _ResourceReferenceTile extends StatelessWidget {
         subtitle: Text(canOpen ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়'),
         trailing: canOpen ? const Icon(Icons.chevron_right) : null,
         onTap: canOpen
-            ? () => context.push('/resources/${Uri.encodeComponent(id)}')
+            ? () => context.push('/resources/${Uri.encodeComponent(id!)}')
             : null,
       ),
     );
