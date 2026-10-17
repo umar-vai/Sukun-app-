@@ -112,6 +112,13 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 'আপনার প্রতিদিনের সুকুন',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('universal-announcements-shortcut'),
+                onPressed: () => context.push('/announcements'),
+                icon: const Icon(Icons.campaign_outlined),
+                label: const Text('গুরুত্বপূর্ণ নোটিশ দেখুন'),
+              ),
               const SizedBox(height: 16),
               if (widget.isSignedInMember || widget.isPatient) ...[
                 OutlinedButton.icon(
