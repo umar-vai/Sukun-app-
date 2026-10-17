@@ -93,7 +93,7 @@ void main() {
       );
     });
 
-    test('requires Android and iOS client values together', () {
+    test('accepts complete Android-only pilot configuration', () {
       expect(
         () => validateFirebaseRuntimeConfiguration(
           projectId: 'firebase-project',
@@ -103,7 +103,49 @@ void main() {
           iosApiKey: '',
           iosAppId: '',
         ),
+        returnsNormally,
+      );
+    });
+
+    test('rejects partial platform credentials', () {
+      expect(
+        () => validateFirebaseRuntimeConfiguration(
+          projectId: 'firebase-project',
+          messagingSenderId: '123456',
+          androidApiKey: 'android-public-key',
+          androidAppId: '',
+          iosApiKey: '',
+          iosAppId: '',
+        ),
         throwsA(isA<StateError>()),
+      );
+    });
+
+    test('rejects missing shared Firebase project values', () {
+      expect(
+        () => validateFirebaseRuntimeConfiguration(
+          projectId: '',
+          messagingSenderId: '123456',
+          androidApiKey: 'android-public-key',
+          androidAppId: 'android-app-id',
+          iosApiKey: '',
+          iosAppId: '',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('accepts complete iOS-only configuration', () {
+      expect(
+        () => validateFirebaseRuntimeConfiguration(
+          projectId: 'firebase-project',
+          messagingSenderId: '123456',
+          androidApiKey: '',
+          androidAppId: '',
+          iosApiKey: 'ios-public-key',
+          iosAppId: 'ios-app-id',
+        ),
+        returnsNormally,
       );
     });
   });
