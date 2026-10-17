@@ -9,8 +9,7 @@ abstract final class UniversalNoticePush {
   static const topic = 'sukun_public_notices_v1';
   static const preference = 'sukun_public_notice_push_opt_in';
 
-  static bool get supported =>
-      !kIsWeb && AppEnvironment.isFirebaseConfigured;
+  static bool get supported => !kIsWeb && AppEnvironment.isFirebaseConfigured;
 
   static Future<bool> isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
