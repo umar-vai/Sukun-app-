@@ -129,8 +129,12 @@ final class PersonalRoutineRepository {
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> cmsIds,
+    List<int> quranSurahs = const [],
   }) async {
-    if (cmsIds.length > 16 || cmsIds.toSet().length != cmsIds.length) {
+    if (cmsIds.length + quranSurahs.length > 16 ||
+        cmsIds.toSet().length != cmsIds.length ||
+        quranSurahs.toSet().length != quranSurahs.length ||
+        quranSurahs.any((number) => number < 1 || number > 114)) {
       throw ArgumentError('Invalid resource selection');
     }
     await client.rpc(
@@ -139,6 +143,8 @@ final class PersonalRoutineRepository {
         'p_action_id': actionId,
         'p_resources': [
           for (final id in cmsIds) {'provider': 'cms', 'content_item_id': id},
+          for (final surah in quranSurahs)
+            {'provider': 'quran', 'external_resource_ref': 'quran:$surah'},
         ],
       },
     );
