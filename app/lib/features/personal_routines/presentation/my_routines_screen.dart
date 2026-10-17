@@ -192,7 +192,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     final selectedSurahs = <int>[
       for (final item in existingLinks)
         if (item['provider'] == 'quran')
-          if (quranNumberFromRef(item['external_resource_ref'] as String?) != null)
+          if (quranNumberFromRef(item['external_resource_ref'] as String?) !=
+              null)
             quranNumberFromRef(item['external_resource_ref'] as String?)!,
     ];
     final selectedIds = <String>[
@@ -335,7 +336,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       trailing: IconButton(
                         tooltip: 'সূরা বাদ দিন',
                         icon: const Icon(Icons.close),
-                        onPressed: () => update(() => selectedSurahs.remove(number)),
+                        onPressed: () =>
+                            update(() => selectedSurahs.remove(number)),
                       ),
                     ),
                   OutlinedButton.icon(
@@ -346,7 +348,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                               context: ctx,
                               exclude: selectedSurahs.toSet(),
                             );
-                            if (number != null && !selectedSurahs.contains(number) &&
+                            if (number != null &&
+                                !selectedSurahs.contains(number) &&
                                 ctx.mounted) {
                               update(() => selectedSurahs.add(number));
                             }
