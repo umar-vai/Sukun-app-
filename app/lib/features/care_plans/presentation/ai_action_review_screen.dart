@@ -773,7 +773,10 @@ class _EditableSuggestion {
     // The action still imports as unapproved and requires Admin review.
     if (!source.needsReview && !resourceDiscovery.requiresManualSelection) {
       draft.contentItemId =
-          exactReviewResource(resourceDiscovery.matches, actionType: source.type)?.id ??
+          exactReviewResource(
+            resourceDiscovery.matches,
+            actionType: source.type,
+          )?.id ??
           '';
       if (draft.contentItemId.isNotEmpty) {
         draft.contentItemIds.add(draft.contentItemId);
