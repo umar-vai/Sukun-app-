@@ -15,6 +15,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/domain/review_resource_discovery.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_material_packet.dart';
 import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
@@ -95,9 +96,11 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
         .map(
           (suggestion) => _EditableSuggestion.fromSuggestion(
             suggestion,
-            resourceMatches: matchResources(
-              suggestion.resourceMatchQuery ?? suggestion.title,
-              resources,
+            resourceDiscovery: discoverReviewResources(
+              title: suggestion.title,
+              instruction: suggestion.instruction,
+              resourceMatchQuery: suggestion.resourceMatchQuery,
+              resources: resources,
             ),
           ),
         )
@@ -745,12 +748,12 @@ class _EditableSuggestion {
     required this.weekdays,
     required this.timeWindow,
     required this.exactTime,
-    required this.resourceMatches,
+    required this.resourceDiscovery,
   });
 
   factory _EditableSuggestion.fromSuggestion(
     SuggestedPlanAction source, {
-    required List<ResourceMatch> resourceMatches,
+    required ReviewResourceDiscovery resourceDiscovery,
   }) {
     final draft = _EditableSuggestion(
       source: source,
@@ -764,13 +767,16 @@ class _EditableSuggestion {
       weekdays: {...?source.frequency?.weekdays},
       timeWindow: source.timeWindow ?? '',
       exactTime: source.exactTime,
-      resourceMatches: resourceMatches,
+      resourceDiscovery: resourceDiscovery,
     );
     // Only an exact, unambiguous, approved resource can be preselected.
     // The action still imports as unapproved and requires Admin review.
-    if (!source.needsReview) {
+    if (!source.needsReview && !resourceDiscovery.requiresManualSelection) {
       draft.contentItemId =
-          exactReviewResource(resourceMatches, actionType: source.type)?.id ??
+          exactReviewResource(
+            resourceDiscovery.matches,
+            actionType: source.type,
+          )?.id ??
           '';
       if (draft.contentItemId.isNotEmpty) {
         draft.contentItemIds.add(draft.contentItemId);
@@ -782,7 +788,8 @@ class _EditableSuggestion {
 
   final SuggestedPlanAction source;
   final String importRequestId = const Uuid().v4();
-  final List<ResourceMatch> resourceMatches;
+  final ReviewResourceDiscovery resourceDiscovery;
+  List<ResourceMatch> get resourceMatches => resourceDiscovery.matches;
   String type;
   String title;
   String instruction;
@@ -1228,6 +1235,13 @@ class _SuggestedActionCard extends StatelessWidget {
                     onChanged();
                   },
           ),
+          if (draft.resourceDiscovery.note != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              draft.resourceDiscovery.note!,
+              style: const TextStyle(color: SukunColors.deepTide),
+            ),
+          ],
           if (draft.resourceMatches.isNotEmpty) ...[
             Align(
               alignment: Alignment.centerLeft,
@@ -1257,6 +1271,19 @@ class _SuggestedActionCard extends StatelessWidget {
                   ),
               ],
             ),
+            const SizedBox(height: 10),
+          ],
+          if (draft.resourceDiscovery.missing.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Not found in published resource catalog',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            for (final label in draft.resourceDiscovery.missing)
+              Text('• $label — add/verify in Resource CMS before linking'),
             const SizedBox(height: 10),
           ],
           // Canonical Surah links live in the existing API reader, not in
