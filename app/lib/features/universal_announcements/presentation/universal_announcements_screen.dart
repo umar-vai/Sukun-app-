@@ -173,7 +173,7 @@ class _NoticePanel extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: () async {
                       await launchUrl(
-                        uri!,
+                        uri,
                         mode: LaunchMode.externalApplication,
                       );
                     },
@@ -255,7 +255,7 @@ class UniversalAnnouncementsScreen extends ConsumerWidget {
                               ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () =>
-                                  context.push('/announcements/' + notice.id),
+                                  context.push('/announcements/${notice.id}'),
                             ),
                           );
                         },
