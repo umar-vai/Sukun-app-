@@ -59,7 +59,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // navigate to their permitted clinical route after session restoration.
       final path = state.uri.path;
       if (session == null) {
-        if (path.startsWith('/patient') || path.startsWith('/admin')) {
+        if (path.startsWith('/patient') ||
+            path.startsWith('/admin') ||
+            path.startsWith('/my-routines')) {
           return '/';
         }
         return null;
