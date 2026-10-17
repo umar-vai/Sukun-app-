@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/router/app_router.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
+import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
@@ -76,6 +77,20 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(appSessionProvider, (previous, next) {
+      final oldId = previous?.value?.userId;
+      final newId = next.value?.userId;
+      if (oldId == newId) return;
+      final service = ref.read(personalReminderServiceProvider);
+      // Cancel old-owner reminders on shared devices before a new account
+      // can use the app. No patient records are consulted or modified.
+      if (oldId != null) {
+        unawaited(service.cancelOwner(oldId).catchError((Object _) {}));
+      }
+      if (newId != null && next.value?.requiresCredentialChange != true) {
+        unawaited(service.refresh().catchError((Object _) {}));
+      }
+    });
     final session = ref.watch(appSessionProvider).value;
     if (session?.isAuthenticated == true) {
       // Browser app uses guarded URL navigation; unsupported native local
