@@ -214,7 +214,6 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                           subtitle: Text(resource?.type ?? 'Unavailable'),
                           leading: const Icon(Icons.library_books_outlined),
                           trailing: Wrap(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.arrow_upward_rounded),
