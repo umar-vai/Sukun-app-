@@ -24,7 +24,9 @@ class _UniversalNoticeDetailScreenState
   @override
   void initState() {
     super.initState();
-    _notice = ref.read(announcementRepositoryProvider).get(widget.announcementId);
+    _notice = ref
+        .read(announcementRepositoryProvider)
+        .get(widget.announcementId);
   }
 
   void _close() {
@@ -81,8 +83,9 @@ class _UniversalNoticeDetailScreenState
                     }
                     return _NoticePanel(
                       notice: snapshot.data!,
-                      imageUrl: (path) =>
-                          ref.read(announcementRepositoryProvider).imageUrl(path),
+                      imageUrl: (path) => ref
+                          .read(announcementRepositoryProvider)
+                          .imageUrl(path),
                       onClose: _close,
                     );
                   },
@@ -110,7 +113,8 @@ class _NoticePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final uri = Uri.tryParse(notice.linkUrl ?? '');
-    final safeLink = uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+    final safeLink =
+        uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -208,51 +212,55 @@ class UniversalAnnouncementsScreen extends ConsumerWidget {
           if (UniversalNoticePush.supported) const _UniversalPushToggle(),
           Expanded(
             child: items.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('নোটিশ লোড করা যায়নি।'),
-                TextButton(
-                  onPressed: () => ref.invalidate(publishedAnnouncementsProvider),
-                  child: const Text('আবার চেষ্টা করুন'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        data: (list) => list.isEmpty
-            ? const Center(child: Text('এখন কোনো প্রকাশিত নোটিশ নেই।'))
-            : RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(publishedAnnouncementsProvider);
-                  await ref.read(publishedAnnouncementsProvider.future);
-                },
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: list.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 9),
-                  itemBuilder: (context, index) {
-                    final notice = list[index];
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.notifications_active_outlined),
-                        title: Text(notice.title),
-                        subtitle: Text(
-                          notice.body,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.push('/announcements/' + notice.id),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('নোটিশ লোড করা যায়নি।'),
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(publishedAnnouncementsProvider),
+                        child: const Text('আবার চেষ্টা করুন'),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
+              data: (list) => list.isEmpty
+                  ? const Center(child: Text('এখন কোনো প্রকাশিত নোটিশ নেই।'))
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(publishedAnnouncementsProvider);
+                        await ref.read(publishedAnnouncementsProvider.future);
+                      },
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: list.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 9),
+                        itemBuilder: (context, index) {
+                          final notice = list[index];
+                          return Card(
+                            child: ListTile(
+                              leading: const Icon(
+                                Icons.notifications_active_outlined,
+                              ),
+                              title: Text(notice.title),
+                              subtitle: Text(
+                                notice.body,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  context.push('/announcements/' + notice.id),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ),
         ],
@@ -297,7 +305,9 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Push চালু করা যায়নি। পরে চেষ্টা করুন।')),
+          const SnackBar(
+            content: Text('Push চালু করা যায়নি। পরে চেষ্টা করুন।'),
+          ),
         );
       }
     } finally {
