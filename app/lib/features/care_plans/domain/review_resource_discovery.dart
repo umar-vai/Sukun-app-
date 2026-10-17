@@ -23,7 +23,7 @@ ReviewResourceDiscovery discoverReviewResources({
   required List<ContentResourceOption> resources,
 }) {
   // Include the instruction when an AI query only mentions one of the tracks.
-  final source = '$title \${instruction ?? ''}'.toLowerCase();
+  final source = '$title ${instruction ?? ''}'.toLowerCase();
   final matched = <ResourceMatch>[];
   final missing = <String>[];
   final visited = <String>{};
