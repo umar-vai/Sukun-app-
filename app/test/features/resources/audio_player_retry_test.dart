@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
@@ -30,8 +31,10 @@ void main() {
     }
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: AudioPlayerScreen(resource: first, loadResource: unavailable),
+      ProviderScope(
+        child: MaterialApp(
+          home: AudioPlayerScreen(resource: first, loadResource: unavailable),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -56,15 +59,22 @@ void main() {
     }
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: AudioPlayerScreen(resource: first, loadResource: unavailable),
+      ProviderScope(
+        child: MaterialApp(
+          home: AudioPlayerScreen(resource: first, loadResource: unavailable),
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: AudioPlayerScreen(resource: refreshed, loadResource: unavailable),
+      ProviderScope(
+        child: MaterialApp(
+          home: AudioPlayerScreen(
+            resource: refreshed,
+            loadResource: unavailable,
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
