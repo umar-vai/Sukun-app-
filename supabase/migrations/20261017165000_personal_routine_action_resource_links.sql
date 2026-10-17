@@ -72,3 +72,56 @@ comment on table public.personal_routine_action_resources is
 
 -- Existing single CMS link on personal_routine_actions is retained
 -- for backwards compatibility. UI reads it only as a legacy fallback.
+
+-- Atomic, SECURITY INVOKER replacement for a user's own routine action.
+-- The RLS policies remain the authority for both child rows and CMS items.
+create or replace function public.replace_personal_action_resources(
+  p_action_id uuid,
+  p_resources jsonb
+) returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  item jsonb;
+  ord integer := 0;
+  resource_kind text;
+begin
+  if auth.uid() is null or not exists (
+    select 1 from public.personal_routine_actions a
+    where a.id = p_action_id and a.owner_user_id = (select auth.uid())
+  ) then
+    raise exception 'Not authorized to edit this routine action'
+      using errcode = '42501';
+  end if;
+  if p_resources is null or jsonb_typeof(p_resources) <> 'array'
+    or jsonb_array_length(p_resources) > 16 then
+    raise exception 'Invalid or oversized resource list' using errcode = '22023';
+  end if;
+  delete from public.personal_routine_action_resources
+  where action_id = p_action_id and owner_user_id = (select auth.uid());
+  for item in select value from jsonb_array_elements(p_resources) loop
+    resource_kind := item->>'provider';
+    if resource_kind not in ('cms','quran','hadith') then
+      raise exception 'Unsupported resource provider' using errcode = '22023';
+    end if;
+    insert into public.personal_routine_action_resources(
+      action_id,owner_user_id,provider,content_item_id,
+      external_resource_ref,sort_order
+    ) values (
+      p_action_id,(select auth.uid()),resource_kind,
+      case when resource_kind = 'cms'
+        then (item->>'content_item_id')::uuid else null end,
+      case when resource_kind != 'cms'
+        then item->>'external_resource_ref' else null end,
+      ord
+    );
+    ord := ord + 1;
+  end loop;
+end;
+$$;
+revoke all on function public.replace_personal_action_resources(uuid,jsonb)
+  from public,anon;
+grant execute on function public.replace_personal_action_resources(uuid,jsonb)
+  to authenticated;
