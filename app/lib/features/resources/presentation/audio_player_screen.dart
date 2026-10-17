@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
- import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
