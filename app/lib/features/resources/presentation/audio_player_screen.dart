@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
@@ -72,6 +74,24 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        actions: [
+          if (ref.watch(appSessionProvider).value?.isAuthenticated == true)
+            IconButton(
+              onPressed: () => context.push(
+                '/my-routines?resourceId=${Uri.encodeQueryComponent(widget.resource.id)}',
+              ),
+              tooltip: 'আমার রুটিনে যুক্ত করুন',
+              icon: const Icon(Icons.playlist_add_rounded),
+            ),
+          if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
+            IconButton(
+              onPressed: () => context.push(
+                '/admin/content/${widget.resource.id}/edit',
+              ),
+              tooltip: 'অডিও সম্পাদনা করুন',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+        ],
       ),
       body: FutureBuilder<bool>(
         future: _loadFuture,
