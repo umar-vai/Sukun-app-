@@ -57,9 +57,9 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
               if (payload['type'] == 'care_reminder') {
                 final id = payload['task_id'];
                 if (id is String) {
-                  ref.read(notificationTapRelayProvider).accept(
-                    'care_task:' + id,
-                  );
+                  ref
+                      .read(notificationTapRelayProvider)
+                      .accept('care_task:' + id);
                 }
               }
             })
