@@ -23,6 +23,7 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_col
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
+import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
@@ -65,12 +66,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
+      final isPersonalRoutineRoute = path.startsWith('/my-routines');
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
       final isOtpRoute = path == '/login/otp';
       final isCredentialRoute = path == '/patient/change-password';
 
-      if (!session.isAuthenticated && (isPatientRoute || isAdminRoute)) {
+      if (!session.isAuthenticated &&
+          (isPatientRoute || isAdminRoute || isPersonalRoutineRoute)) {
         return '/login';
       }
       if (isAdminRoute && !session.isSuperAdmin) {
@@ -129,6 +132,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
+      GoRoute(
+        path: '/my-routines',
+        builder: (context, state) => MyRoutinesScreen(
+          resourceId: state.uri.queryParameters['resourceId'],
+        ),
+      ),
       GoRoute(
         path: '/resources',
         redirect: (context, state) {
