@@ -23,7 +23,7 @@ String? personalActionIdFromPayload(String? payload) {
 }
 
 String personalActionRoute(String actionId) =>
-    Uri(pathSegments: ['my-routines', 'action', actionId]).toString();
+    Uri(pathSegments: ['', 'my-routines', 'action', actionId]).toString();
 
 final class NotificationTapRelay {
   final StreamController<String> _opened = StreamController<String>.broadcast();
