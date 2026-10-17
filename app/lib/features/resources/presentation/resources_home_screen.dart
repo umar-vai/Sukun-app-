@@ -157,6 +157,24 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     size: 54,
                   ),
                 ),
+                const SizedBox(height: 12),
+                if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () => context.push('/admin/content/new'),
+                        icon: const Icon(Icons.add_circle_outline_rounded),
+                        label: const Text('নতুন রিসোর্স যোগ করুন'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/admin/content'),
+                        icon: const Icon(Icons.edit_note_outlined),
+                        label: const Text('রিসোর্স পরিচালনা'),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 20),
                 if (backendUnavailable)
                   SukunSurface(
