@@ -1,7 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/domain/resource_picker_sections.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 Future<String?> showResourcePickerSheet({
   required BuildContext context,
@@ -147,19 +152,50 @@ class _ResourcePickerSheet extends StatefulWidget {
 
 class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   final _searchController = TextEditingController();
-  String? _categoryId;
+  final _sectionController = PageController(viewportFraction: .72);
+  int _sectionIndex = 0;
+  DateTime? _lastWheelChange;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _sectionController.dispose();
     super.dispose();
+  }
+
+  void _showSection(int index, int sectionCount) {
+    if (index < 0 || index >= sectionCount || index == _sectionIndex) return;
+    setState(() => _sectionIndex = index);
+    _sectionController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _onSectionWheel(PointerSignalEvent event, int sectionCount) {
+    if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) return;
+    final now = DateTime.now();
+    if (_lastWheelChange != null &&
+        now.difference(_lastWheelChange!) < const Duration(milliseconds: 170)) {
+      return;
+    }
+    _lastWheelChange = now;
+    _showSection(
+      _sectionIndex + (event.scrollDelta.dy > 0 ? 1 : -1),
+      sectionCount,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = _categories(widget.resources);
-    final visible = _filteredResources();
-    final grouped = _groupByCategory(visible);
+    final sections = _sections(widget.resources);
+    final currentSection =
+        sections[_sectionIndex.clamp(0, sections.length - 1)];
+    final visible = _filteredResources(currentSection);
+    final grouped = currentSection.section == null && !currentSection.isOther
+        ? _groupByCategory(visible)
+        : <String, List<ContentResourceOption>>{currentSection.label: visible};
     final selected = widget.resources
         .where((resource) => resource.id == widget.selectedId)
         .firstOrNull;
@@ -221,7 +257,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Close',
+                        tooltip: 'বন্ধ করুন',
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close_rounded),
                       ),
@@ -238,7 +274,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                       suffixIcon: _searchController.text.isEmpty
                           ? null
                           : IconButton(
-                              tooltip: 'Clear search',
+                              tooltip: 'খোঁজার লেখা মুছুন',
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() {});
@@ -248,28 +284,70 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  SizedBox(
-                    height: 42,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _CategoryChip(
-                          label: 'All',
-                          count: widget.resources.length,
-                          selected: _categoryId == null,
-                          onTap: () => setState(() => _categoryId = null),
+                  Row(
+                    children: [
+                      Text(
+                        'মূল বিভাগ',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: SukunColors.nightNavy,
+                          fontWeight: FontWeight.w700,
                         ),
-                        for (final category in categories) ...[
-                          const SizedBox(width: 8),
-                          _CategoryChip(
-                            label: category.label,
-                            count: category.count,
-                            selected: _categoryId == category.id,
-                            onTap: () =>
-                                setState(() => _categoryId = category.id),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        key: const Key('resource-section-previous'),
+                        tooltip: 'আগের বিভাগ',
+                        onPressed: _sectionIndex == 0
+                            ? null
+                            : () => _showSection(
+                                _sectionIndex - 1,
+                                sections.length,
+                              ),
+                        icon: const Icon(Icons.chevron_left_rounded),
+                      ),
+                      Text('${_sectionIndex + 1}/${sections.length}'),
+                      IconButton(
+                        key: const Key('resource-section-next'),
+                        tooltip: 'পরের বিভাগ',
+                        onPressed: _sectionIndex == sections.length - 1
+                            ? null
+                            : () => _showSection(
+                                _sectionIndex + 1,
+                                sections.length,
+                              ),
+                        icon: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 76,
+                    child: Listener(
+                      onPointerSignal: (event) =>
+                          _onSectionWheel(event, sections.length),
+                      child: ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context).copyWith(
+                          dragDevices: {
+                            PointerDeviceKind.touch,
+                            PointerDeviceKind.mouse,
+                            PointerDeviceKind.stylus,
+                          },
+                        ),
+                        child: PageView.builder(
+                          key: const Key('resource-section-carousel'),
+                          controller: _sectionController,
+                          itemCount: sections.length,
+                          onPageChanged: (index) =>
+                              setState(() => _sectionIndex = index),
+                          itemBuilder: (context, index) => _SectionCard(
+                            key: Key(
+                              'resource-section-${sections[index].slug}',
+                            ),
+                            section: sections[index],
+                            selected: index == _sectionIndex,
+                            onTap: () => _showSection(index, sections.length),
                           ),
-                        ],
-                      ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -309,19 +387,11 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     );
   }
 
-  List<ContentResourceOption> _filteredResources() {
+  List<ContentResourceOption> _filteredResources(_PickerSection section) {
     final query = _searchController.text.trim().toLowerCase();
     return widget.resources
         .where((resource) {
-          final categoryMatch = _categoryId == null
-              ? true
-              : _categoryId == '__uncategorized__'
-              ? resource.categoryId == null &&
-                    !resource.isEditorialRuqyahExcerpt
-              : _categoryId == '__editorial_ruqyah__'
-              ? resource.isEditorialRuqyahExcerpt
-              : resource.categoryId == _categoryId;
-          if (!categoryMatch) return false;
+          if (!section.matches(resource)) return false;
           if (query.isEmpty) return true;
           return resourceMatchesSearch(resource, query);
         })
@@ -336,99 +406,130 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       final label = resource.isEditorialRuqyahExcerpt
           ? resource.categoryLabel
           : resource.categoryId == null
-          ? 'Uncategorized · ${_displayType(resource.type)}'
+          ? 'অন্যান্য · ${_displayType(resource.type)}'
           : resource.categoryLabel;
       grouped.putIfAbsent(label, () => []).add(resource);
     }
     return grouped;
   }
 
-  List<_CategoryInfo> _categories(List<ContentResourceOption> resources) {
-    final categories = <String, _CategoryInfo>{};
-    var uncategorized = 0;
-    var editorialRuqyah = 0;
-    for (final resource in resources) {
-      if (resource.isEditorialRuqyahExcerpt) {
-        editorialRuqyah += 1;
-        continue;
-      }
-      if (resource.categoryId == null) {
-        uncategorized += 1;
-        continue;
-      }
-      final current = categories[resource.categoryId!];
-      categories[resource.categoryId!] = _CategoryInfo(
-        id: resource.categoryId!,
-        label: resource.categoryLabel,
-        count: (current?.count ?? 0) + 1,
-        sortOrder: resource.categorySortOrder,
-      );
-    }
-    final result = categories.values.toList()
-      ..sort((left, right) {
-        final order = left.sortOrder.compareTo(right.sortOrder);
-        return order != 0
-            ? order
-            : left.label.toLowerCase().compareTo(right.label.toLowerCase());
-      });
-    if (editorialRuqyah > 0) {
-      result.add(
-        _CategoryInfo(
-          id: '__editorial_ruqyah__',
-          label: 'রুকইয়াহ আয়াত · উদ্ধৃতি',
-          count: editorialRuqyah,
-          sortOrder: 9998,
+  List<_PickerSection> _sections(List<ContentResourceOption> resources) {
+    final sections = <_PickerSection>[
+      _PickerSection(
+        slug: 'all',
+        label: 'সব উপকরণ',
+        icon: Icons.apps_rounded,
+        count: resources.length,
+      ),
+      for (final section in resourceSections)
+        _PickerSection(
+          slug: section.slug,
+          label: section.titleBn,
+          icon: section.icon,
+          count: resources
+              .where(
+                (resource) => resourceMatchesPickerSection(resource, section),
+              )
+              .length,
+          section: section,
+        ),
+    ];
+    final otherCount = resources
+        .where((resource) => !resourceMatchesAnyPickerSection(resource))
+        .length;
+    if (otherCount > 0) {
+      sections.add(
+        _PickerSection(
+          slug: 'other',
+          label: 'অন্যান্য',
+          icon: Icons.more_horiz_rounded,
+          count: otherCount,
+          isOther: true,
         ),
       );
     }
-    if (uncategorized > 0) {
-      result.add(
-        _CategoryInfo(
-          id: '__uncategorized__',
-          label: 'Uncategorized',
-          count: uncategorized,
-          sortOrder: 9999,
-        ),
-      );
-    }
-    return result;
+    return sections;
   }
 }
 
-class _CategoryInfo {
-  const _CategoryInfo({
-    required this.id,
+class _PickerSection {
+  const _PickerSection({
+    required this.slug,
     required this.label,
+    required this.icon,
     required this.count,
-    required this.sortOrder,
+    this.section,
+    this.isOther = false,
   });
 
-  final String id;
+  final String slug;
   final String label;
+  final IconData icon;
   final int count;
-  final int sortOrder;
+  final ResourceSection? section;
+  final bool isOther;
+
+  bool matches(ContentResourceOption resource) {
+    if (isOther) return !resourceMatchesAnyPickerSection(resource);
+    final selectedSection = section;
+    return selectedSection == null ||
+        resourceMatchesPickerSection(resource, selectedSection);
+  }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.count,
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    super.key,
+    required this.section,
     required this.selected,
     required this.onTap,
   });
 
-  final String label;
-  final int count;
+  final _PickerSection section;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      selected: selected,
-      onSelected: (_) => onTap(),
-      label: Text('$label · $count'),
-      avatar: selected ? const Icon(Icons.check_rounded, size: 16) : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+      child: Material(
+        color: selected ? SukunColors.mist : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? SukunColors.sukunBlue : SukunColors.border,
+                width: selected ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(section.icon, color: SukunColors.deepTide, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    section.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: SukunColors.nightNavy,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text('${section.count}'),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -454,7 +555,7 @@ class _CategoryHeader extends StatelessWidget {
           ),
         ),
         Text(
-          '$count resource${count == 1 ? '' : 's'}',
+          '$countটি উপকরণ',
           style: Theme.of(context).textTheme.bodySmall
               ?.copyWith(color: SukunColors.muted),
         ),
@@ -474,8 +575,8 @@ class _ClearResourceTile extends StatelessWidget {
     enabled: true,
     onTap: () => Navigator.pop(context, ''),
     icon: Icons.link_off_rounded,
-    title: 'No linked resource',
-    subtitle: 'Keep this action text-only.',
+    title: 'কোনো উপকরণ নয়',
+    subtitle: 'করণীয়টি শুধু নির্দেশনা হিসেবে রাখুন।',
     trailing: selected ? const _SelectedMark() : null,
   );
 }
@@ -496,8 +597,10 @@ class _ResourceTile extends StatelessWidget {
           : null,
       icon: _iconForType(resource.type),
       title: resource.displayTitle,
-      subtitle: resource.isEditorialRuqyahExcerpt
-          ? 'Editorial source excerpt · not a complete canonical ayah'
+      subtitle: !resource.isLinkable
+          ? _unavailableReason(resource)
+          : resource.isEditorialRuqyahExcerpt
+          ? 'সম্পাদিত উৎস-উদ্ধৃতি · পূর্ণ যাচাইকৃত আয়াত নয়'
           : resource.titleBn?.trim().isNotEmpty == true
           ? resource.title
           : resource.linkabilityMessage,
@@ -661,12 +764,12 @@ class _EmptyResources extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'No resources found',
+          'কোনো উপকরণ পাওয়া যায়নি',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 5),
         const Text(
-          'Try another search or category.',
+          'অন্য শব্দ দিয়ে খুঁজুন বা বিভাগ বদলান।',
           textAlign: TextAlign.center,
         ),
       ],
@@ -689,26 +792,42 @@ IconData _iconForType(String type) => switch (type) {
 };
 
 String _displayType(String value) => switch (value) {
-  'quran' => 'Qur’an',
-  'book_chapter' => 'Book chapter',
-  'external_link' => 'External link',
-  _ =>
-    value.isEmpty
-        ? 'Resource'
-        : '${value[0].toUpperCase()}${value.substring(1)}',
+  'quran' => 'কুরআন',
+  'hadith' => 'হাদিস',
+  'dua' => 'দোয়া',
+  'amal' => 'আমল',
+  'audio' => 'অডিও',
+  'video' => 'ভিডিও',
+  'pdf' => 'পিডিএফ',
+  'book' => 'বই',
+  'book_chapter' => 'বইয়ের অধ্যায়',
+  'article' => 'আর্টিকেল',
+  'guide' => 'গাইড',
+  'external_link' => 'বাইরের লিংক',
+  _ => 'উপকরণ',
 };
 
 String _displayStatus(String value) => switch (value) {
-  'published' => 'Published',
-  'review' => 'In review',
-  'verified' => 'Verified',
-  'archived' => 'Archived',
-  _ => 'Draft',
+  'published' => 'প্রকাশিত',
+  'review' => 'যাচাই চলছে',
+  'verified' => 'যাচাইকৃত',
+  'archived' => 'সংরক্ষিত',
+  _ => 'খসড়া',
 };
 
 String _displayVisibility(String value) => switch (value) {
-  'patient_only' => 'Patients',
-  'assigned_only' => 'Assigned only',
-  'staff_only' => 'Staff only',
-  _ => 'Public',
+  'patient_only' => 'রোগীদের জন্য',
+  'assigned_only' => 'নির্ধারিতদের জন্য',
+  'staff_only' => 'শুধু কর্মীদের জন্য',
+  _ => 'সবার জন্য',
 };
+
+String _unavailableReason(ContentResourceOption resource) {
+  if (resource.status != 'published') {
+    return 'প্রকাশের আগে রোগীর করণীয়তে যুক্ত করা যাবে না।';
+  }
+  if (!resource.isPatientAccessible) {
+    return 'শুধু কর্মীদের উপকরণ রোগীর করণীয়তে যুক্ত করা যাবে না।';
+  }
+  return 'উৎস যাচাই ছাড়া কুরআনের উপকরণ যুক্ত করা যাবে না।';
+}
