@@ -98,7 +98,8 @@ void main() {
   test('explicit multi-audio request finds three real items and flags missing Qital', () {
     final result = discoverReviewResources(
       title: 'General Ruqyah Audio Session',
-      instruction: 'জিনের আছরের রুকইয়াহ, আয়াতুল হারক, '
+      instruction:
+          'জিনের আছরের রুকইয়াহ, আয়াতুল হারক, '
           'রুকইয়াহ তাদমির-কিতাল, শিফা-সাকিনা '
           'প্রতিটি অডিও ১৫-২০ মিনিট করে শুনবেন।',
       resourceMatchQuery: 'General Ruqyah',
@@ -136,26 +137,29 @@ void main() {
     expect(result.missing, hasLength(1));
   });
 
-  test('unpublished and staff-only tracks cannot become related suggestions', () {
-    const privateTrack = ContentResourceOption(
-      id: 'hidden',
-      slug: 'sukun-ruqyahbd-jinn',
-      title: 'জিনের আছরের রুকইয়াহ',
-      type: 'audio',
-      status: 'published',
-      visibility: 'staff_only',
-      mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://example.org/hidden.mp3',
-    );
-    final result = discoverReviewResources(
-      title: 'জিনের আছরের রুকইয়াহ',
-      instruction: null,
-      resourceMatchQuery: null,
-      resources: [privateTrack],
-    );
-    expect(result.matches, isEmpty);
-    expect(result.missing, hasLength(1));
-  });
+  test(
+    'unpublished and staff-only tracks cannot become related suggestions',
+    () {
+      const privateTrack = ContentResourceOption(
+        id: 'hidden',
+        slug: 'sukun-ruqyahbd-jinn',
+        title: 'জিনের আছরের রুকইয়াহ',
+        type: 'audio',
+        status: 'published',
+        visibility: 'staff_only',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://example.org/hidden.mp3',
+      );
+      final result = discoverReviewResources(
+        title: 'জিনের আছরের রুকইয়াহ',
+        instruction: null,
+        resourceMatchQuery: null,
+        resources: [privateTrack],
+      );
+      expect(result.matches, isEmpty);
+      expect(result.missing, hasLength(1));
+    },
+  );
 
   test('morning and bedtime Masnun task proposes individual cards, not a full routine', () {
     final result = discoverReviewResources(
