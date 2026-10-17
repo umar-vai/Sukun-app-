@@ -168,7 +168,7 @@ class _NoticePanel extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: () async {
                       await launchUrl(
-                        uri,
+                        uri!,
                         mode: LaunchMode.externalApplication,
                       );
                     },
