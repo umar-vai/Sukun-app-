@@ -265,6 +265,10 @@ class _AdminAnnouncementEditorScreenState
         : ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              if (widget.id != null) ...[
+                Text('বর্তমান অবস্থা: ' + _status),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 key: const Key('notice-title'),
                 controller: _title,
