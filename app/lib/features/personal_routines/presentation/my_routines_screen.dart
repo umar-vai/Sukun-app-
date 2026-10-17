@@ -10,6 +10,7 @@ import 'package:sukun_life/features/personal_routines/data/personal_reminder_ser
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
+import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
@@ -189,23 +190,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     final existingLinks = existing == null
         ? <Map<String, dynamic>>[]
         : await _repository.listActionResources(existing['id'] as String);
-    final selectedSurahs = <int>[
-      for (final item in existingLinks)
-        if (item['provider'] == 'quran')
-          if (quranNumberFromRef(item['external_resource_ref'] as String?) !=
-              null)
-            quranNumberFromRef(item['external_resource_ref'] as String?)!,
-    ];
-    final selectedIds = <String>[
-      for (final item in existingLinks)
-        if (item['provider'] == 'cms' && item['content_item_id'] is String)
-          item['content_item_id'] as String,
-    ];
-    if (selectedIds.isEmpty && existing?['content_item_id'] is String) {
-      selectedIds.add(existing!['content_item_id'] as String);
+    final selected = PersonalActionResourceSelection.fromLinks(
+      existingLinks,
+      legacyContentId: existing?['content_item_id'] as String?,
+    );
+    if (selected.length != existingLinks.length && existingLinks.isNotEmpty) {
+      _notice('কিছু সংযুক্ত রেফারেন্স এখন সম্পাদনা করা যাচ্ছে না।');
+      title.dispose();
+      reminder.dispose();
+      return;
     }
-    if (prefill != null && !selectedIds.contains(prefill.contentId)) {
-      selectedIds.add(prefill.contentId);
+    if (prefill != null &&
+        !selected.any((item) => item.contentItemId == prefill!.contentId)) {
+      selected.add(PersonalActionResourceSelection.cms(prefill.contentId));
     }
     final resourceRows = await Supabase.instance.client
         .from('content_items')
@@ -252,20 +249,31 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
-                  for (var index = 0; index < selectedIds.length; index++)
+                  for (var index = 0; index < selected.length; index++)
                     Builder(
                       builder: (context) {
-                        final id = selectedIds[index];
+                        final selectedItem = selected[index];
+                        final id = selectedItem.contentItemId;
                         final resource = resources
                             .where((item) => item.id == id)
                             .firstOrNull;
                         return ListTile(
                           dense: true,
                           title: Text(
-                            resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
+                            selectedItem.provider == 'quran'
+                                ? 'সূরা ${selectedItem.surahNumber}'
+                                : resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
                           ),
-                          subtitle: Text(resource?.type ?? 'Unavailable'),
-                          leading: const Icon(Icons.library_books_outlined),
+                          subtitle: Text(
+                            selectedItem.provider == 'quran'
+                                ? 'কুরআনের মূল API রিডারে খুলবে'
+                                : resource?.type ?? 'অনুপলব্ধ',
+                          ),
+                          leading: Icon(
+                            selectedItem.provider == 'quran'
+                                ? Icons.menu_book_outlined
+                                : Icons.library_books_outlined,
+                          ),
                           trailing: Wrap(
                             children: [
                               IconButton(
@@ -274,29 +282,25 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                 onPressed: index == 0
                                     ? null
                                     : () => update(() {
-                                        final moved = selectedIds.removeAt(
-                                          index,
-                                        );
-                                        selectedIds.insert(index - 1, moved);
+                                        final moved = selected.removeAt(index);
+                                        selected.insert(index - 1, moved);
                                       }),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.arrow_downward_rounded),
                                 tooltip: 'নিচে নিন',
-                                onPressed: index == selectedIds.length - 1
+                                onPressed: index == selected.length - 1
                                     ? null
                                     : () => update(() {
-                                        final moved = selectedIds.removeAt(
-                                          index,
-                                        );
-                                        selectedIds.insert(index + 1, moved);
+                                        final moved = selected.removeAt(index);
+                                        selected.insert(index + 1, moved);
                                       }),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.close_rounded),
                                 tooltip: 'বাদ দিন',
                                 onPressed: () =>
-                                    update(() => selectedIds.removeAt(index)),
+                                    update(() => selected.removeAt(index)),
                               ),
                             ],
                           ),
@@ -304,54 +308,59 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       },
                     ),
                   OutlinedButton.icon(
-                    onPressed: selectedIds.length + selectedSurahs.length >= 16
+                    onPressed: selected.length >= 16
                         ? null
                         : () async {
                             final id = await showResourcePickerSheet(
                               context: ctx,
                               resources: resources
                                   .where(
-                                    (item) => !selectedIds.contains(item.id),
+                                    (item) => !selected.any(
+                                      (selectedItem) =>
+                                          selectedItem.contentItemId == item.id,
+                                    ),
                                   )
                                   .toList(growable: false),
                               selectedId: '',
                             );
                             if (id != null &&
                                 id.isNotEmpty &&
-                                !selectedIds.contains(id) &&
+                                !selected.any(
+                                  (item) => item.contentItemId == id,
+                                ) &&
                                 ctx.mounted) {
-                              update(() => selectedIds.add(id));
+                              update(
+                                () => selected.add(
+                                  PersonalActionResourceSelection.cms(id),
+                                ),
+                              );
                             }
                           },
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text('লাইব্রেরি থেকে রিসোর্স বাছুন'),
                   ),
                   const SizedBox(height: 10),
-                  for (final number in selectedSurahs)
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.menu_book_outlined),
-                      title: Text('সূরা $number'),
-                      subtitle: const Text('কুরআনের মূল API রিডারে খুলবে'),
-                      trailing: IconButton(
-                        tooltip: 'সূরা বাদ দিন',
-                        icon: const Icon(Icons.close),
-                        onPressed: () =>
-                            update(() => selectedSurahs.remove(number)),
-                      ),
-                    ),
                   OutlinedButton.icon(
-                    onPressed: selectedIds.length + selectedSurahs.length >= 16
+                    onPressed: selected.length >= 16
                         ? null
                         : () async {
                             final number = await showPersonalSurahPicker(
                               context: ctx,
-                              exclude: selectedSurahs.toSet(),
+                              exclude: selected
+                                  .where((item) => item.provider == 'quran')
+                                  .map((item) => item.surahNumber!)
+                                  .toSet(),
                             );
                             if (number != null &&
-                                !selectedSurahs.contains(number) &&
+                                !selected.any(
+                                  (item) => item.surahNumber == number,
+                                ) &&
                                 ctx.mounted) {
-                              update(() => selectedSurahs.add(number));
+                              update(
+                                () => selected.add(
+                                  PersonalActionResourceSelection.quran(number),
+                                ),
+                              );
                             }
                           },
                     icon: const Icon(Icons.menu_book_outlined),
@@ -468,7 +477,10 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     );
     if (result == true) {
       await _mutate(() async {
-        final resourceId = selectedIds.isEmpty ? null : selectedIds.first;
+        final resourceId = selected
+            .where((item) => item.provider == 'cms')
+            .firstOrNull
+            ?.contentItemId;
         final savedId = await _repository.saveAction(
           routineId: routineId,
           actionId: existing?['id'] as String?,
@@ -496,8 +508,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         );
         await _repository.replaceActionResources(
           actionId: savedId,
-          cmsIds: selectedIds,
-          quranSurahs: selectedSurahs,
+          orderedResources: selected,
         );
       });
     }

@@ -49,7 +49,12 @@ class _PersonalActionDetailScreenState
         });
       }
     }
-    return _PersonalActionDetail(action: action, references: refs);
+    final outcomes = await _repo.todaysOutcomes(DateTime.now());
+    return _PersonalActionDetail(
+      action: action,
+      references: refs,
+      todayOutcome: outcomes[widget.actionId],
+    );
   }
 
   Future<void> _complete(String status) async {
@@ -62,6 +67,7 @@ class _PersonalActionDetailScreenState
         outcome: status,
       );
       if (!mounted) return;
+      setState(() => _load = _read());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -130,6 +136,15 @@ class _PersonalActionDetailScreenState
             for (final reference in data.references)
               _ResourceReferenceTile(reference: reference),
             const SizedBox(height: 24),
+            if (data.todayOutcome case final outcome?) ...[
+              Text(
+                outcome == 'done'
+                    ? 'আজকের অবস্থা: সম্পন্ন'
+                    : 'আজকের অবস্থা: Skip করা হয়েছে',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 12),
+            ],
             FilledButton.icon(
               onPressed: _saving ? null : () => _complete('done'),
               icon: const Icon(Icons.check_circle_outline),
@@ -183,7 +198,11 @@ class _ResourceReferenceTile extends StatelessWidget {
               : Icons.library_books_outlined,
         ),
         title: Text(
-          provider == 'cms' ? name : (external ?? 'রিসোর্স অনুপলব্ধ'),
+          provider == 'cms'
+              ? name
+              : surahNumber != null
+              ? 'সূরা $surahNumber'
+              : 'রিসোর্স অনুপলব্ধ',
         ),
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
@@ -196,7 +215,12 @@ class _ResourceReferenceTile extends StatelessWidget {
 }
 
 class _PersonalActionDetail {
-  const _PersonalActionDetail({this.action, this.references = const []});
+  const _PersonalActionDetail({
+    this.action,
+    this.references = const [],
+    this.todayOutcome,
+  });
   final Map<String, dynamic>? action;
   final List<Map<String, dynamic>> references;
+  final String? todayOutcome;
 }
