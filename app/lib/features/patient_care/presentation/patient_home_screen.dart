@@ -12,6 +12,7 @@ import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
+import 'package:sukun_life/features/patient_care/presentation/linked_resource_buttons.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:uuid/uuid.dart';
 
@@ -528,17 +529,9 @@ class _TaskCard extends StatelessWidget {
           ],
           if (task.action.linkedResources.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                for (final resource in task.action.linkedResources)
-                  OutlinedButton.icon(
-                    onPressed: () => onOpenResource(resource),
-                    icon: const Icon(Icons.menu_book_outlined, size: 18),
-                    label: Text(resource.titleBn ?? resource.title),
-                  ),
-              ],
+            LinkedResourceButtons(
+              resources: task.action.linkedResources,
+              onOpenResource: onOpenResource,
             ),
           ],
           if (verifiedQuranLinksForAction(task.action).isNotEmpty) ...[

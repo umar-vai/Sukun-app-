@@ -8,6 +8,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
+import 'package:sukun_life/features/patient_care/presentation/linked_resource_buttons.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
 
@@ -271,19 +272,9 @@ class _PlanActionCard extends StatelessWidget {
           ],
           if (action.linkedResources.isNotEmpty) ...[
             const Divider(height: 26),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                for (final resource in action.linkedResources)
-                  OutlinedButton.icon(
-                    onPressed: onOpenResource == null
-                        ? null
-                        : () => onOpenResource!(resource),
-                    icon: const Icon(Icons.menu_book_outlined, size: 18),
-                    label: Text(resource.titleBn ?? resource.title),
-                  ),
-              ],
+            LinkedResourceButtons(
+              resources: action.linkedResources,
+              onOpenResource: onOpenResource,
             ),
           ],
           if (verifiedQuranLinksForAction(action).isNotEmpty) ...[
