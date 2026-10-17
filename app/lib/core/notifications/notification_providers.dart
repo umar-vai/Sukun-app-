@@ -54,7 +54,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
           ),
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
-    onTaskOpened: onOpened,
+    onTaskOpened: ref.read(notificationTapRelayProvider).accept,
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;
