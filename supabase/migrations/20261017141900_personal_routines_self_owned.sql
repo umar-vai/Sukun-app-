@@ -42,6 +42,7 @@ create table public.personal_routine_actions (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  unique (id,owner_user_id),
   constraint personal_routine_action_owned foreign key (routine_id,owner_user_id)
     references public.personal_routines(id,owner_user_id) on delete cascade,
   constraint personal_routine_resource_shape check (
@@ -71,11 +72,6 @@ create table public.personal_routine_progress (
     references public.personal_routine_actions(id,owner_user_id) on delete cascade,
   unique (action_id,local_date)
 );
--- Make action/owner pair referenceable for progress, without client-supplied
--- ownership becoming authoritative.
-alter table public.personal_routine_actions
-  add constraint personal_routine_actions_owner_key unique (id,owner_user_id);
-
 create index personal_routines_owner_idx
   on public.personal_routines(owner_user_id, created_at desc);
 create index personal_routine_actions_owner_idx
