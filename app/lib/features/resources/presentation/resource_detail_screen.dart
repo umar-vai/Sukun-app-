@@ -183,6 +183,16 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     ? resource.title
                     : resource.summary,
               ),
+              if (ref.watch(appSessionProvider).value?.isAuthenticated == true) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => context.push(
+                    '/my-routines?resourceId=${Uri.encodeQueryComponent(resource.id)}',
+                  ),
+                  icon: const Icon(Icons.playlist_add_rounded),
+                  label: const Text('আমার রুটিনে যুক্ত করুন'),
+                ),
+              ],
               if (resource.titleBn?.isNotEmpty == true)
                 const SizedBox(height: 4),
               _Section(
