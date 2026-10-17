@@ -182,7 +182,8 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
     if (extension == null) {
       throw const FormatException('PNG, JPG অথবা WebP ছবি ব্যবহার করুন।');
     }
-    final path = 'notices/${DateTime.now().microsecondsSinceEpoch}-${name.hashCode.abs()}.$extension';
+    final path =
+        'notices/${DateTime.now().microsecondsSinceEpoch}-${name.hashCode.abs()}.$extension';
     await client.storage
         .from(bucket)
         .uploadBinary(
