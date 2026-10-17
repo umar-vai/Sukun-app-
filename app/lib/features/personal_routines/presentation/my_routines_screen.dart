@@ -81,7 +81,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     await _mutate(() => _repository.createRoutine(title));
   }
 
-  Future<void> _mutate(Future<Object?> Function() action) async {
+  Future<void> _mutate(Future<dynamic> Function() action) async {
     if (_working) return;
     setState(() => _working = true);
     try {
