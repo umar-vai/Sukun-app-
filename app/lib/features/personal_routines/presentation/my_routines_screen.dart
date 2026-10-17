@@ -58,7 +58,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
 
   Future<void> _readReminderEnabled() async {
     try {
-      final enabled = await ref.read(personalReminderServiceProvider).isEnabled();
+      final enabled = await ref
+          .read(personalReminderServiceProvider)
+          .isEnabled();
       if (mounted) setState(() => _reminderEnabled = enabled);
     } catch (_) {
       if (mounted) setState(() => _reminderEnabled = false);
@@ -496,9 +498,11 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           tooltip: _reminderEnabled
               ? 'ব্যক্তিগত রিমাইন্ডার বন্ধ করুন'
               : 'ব্যক্তিগত রিমাইন্ডার চালু করুন',
-          icon: Icon(_reminderEnabled
-              ? Icons.notifications_active_outlined
-              : Icons.notifications_off_outlined),
+          icon: Icon(
+            _reminderEnabled
+                ? Icons.notifications_active_outlined
+                : Icons.notifications_off_outlined,
+          ),
         ),
         IconButton(
           onPressed: _working ? null : _createRoutine,
