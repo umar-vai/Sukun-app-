@@ -96,6 +96,16 @@ jobs:
         if: steps.config.outputs.ready == 'true'
         run: flutter pub get
 
+      - name: Prepare official Sukun Life Android launcher icons
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user 'Pillow==11.3.0'
+          python3 ../scripts/generate_android_launcher_icons.py
+          test -s android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+
       - name: Build connected debug APK
         if: steps.config.outputs.ready == 'true'
         shell: bash
