@@ -42,9 +42,14 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     if (!kIsWeb && AppEnvironment.isFirebaseConfigured) {
       _openedUniversalSubscription = FirebaseMessaging.onMessageOpenedApp
           .listen((message) => _openUniversalAnnouncement(message.data));
-      unawaited(FirebaseMessaging.instance.getInitialMessage().then((message) {
-        if (message != null) _openUniversalAnnouncement(message.data);
-      }).catchError((Object _) {}));
+      unawaited(
+        FirebaseMessaging.instance
+            .getInitialMessage()
+            .then((message) {
+              if (message != null) _openUniversalAnnouncement(message.data);
+            })
+            .catchError((Object _) {}),
+      );
     }
   }
 
