@@ -132,23 +132,30 @@ revoke all on private.universal_announcement_outbox from public, anon, authentic
 
 create or replace function private.enqueue_universal_announcement()
 returns trigger language plpgsql security definer set search_path = ''
-as $$
+as $
+declare
+  new_publication boolean := false;
 begin
-  if new.status = 'published' and new.published_at is not null
-     and (tg_op = 'INSERT' or old.status is distinct from 'published') then
+  if tg_op = 'INSERT' then
+    new_publication := new.status = 'published';
+  elsif tg_op = 'UPDATE' then
+    new_publication := new.status = 'published'
+      and old.status is distinct from 'published';
+    if old.status = 'published' and new.status <> 'published' then
+      update private.universal_announcement_outbox o
+         set status = 'cancelled'
+       where o.announcement_id = new.id
+         and o.status = 'pending';
+    end if;
+  end if;
+  if new_publication and new.published_at is not null then
     insert into private.universal_announcement_outbox (
       announcement_id, published_at
     ) values (new.id, new.published_at) on conflict do nothing;
-  elsif tg_op = 'UPDATE' and old.status = 'published'
-      and new.status <> 'published' then
-    update private.universal_announcement_outbox o
-       set status = 'cancelled'
-     where o.announcement_id = new.id
-       and o.status = 'pending';
   end if;
   return new;
 end;
-$$;
+$;
 
 create trigger enqueue_universal_announcement_trigger
 after insert or update of status on public.universal_announcements
