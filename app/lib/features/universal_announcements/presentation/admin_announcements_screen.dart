@@ -97,8 +97,8 @@ class _AdminAnnouncementsScreenState
                     notice.status == 'published'
                         ? 'প্রকাশিত'
                         : notice.status == 'draft'
-                            ? 'ড্রাফট'
-                            : 'আর্কাইভ',
+                        ? 'ড্রাফট'
+                        : 'আর্কাইভ',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context
@@ -148,7 +148,9 @@ class _AdminAnnouncementEditorScreenState
 
   Future<void> _readExisting() async {
     try {
-      final notice = await ref.read(announcementRepositoryProvider).get(widget.id!);
+      final notice = await ref
+          .read(announcementRepositoryProvider)
+          .get(widget.id!);
       if (!mounted) return;
       if (notice == null) {
         setState(() => _error = 'নোটিশটি পাওয়া যায়নি।');
@@ -214,8 +216,8 @@ class _AdminAnnouncementEditorScreenState
         final mime = extension == 'png'
             ? 'image/png'
             : extension == 'webp'
-                ? 'image/webp'
-                : 'image/jpeg';
+            ? 'image/webp'
+            : 'image/jpeg';
         uploadedPath = await repo.uploadImage(
           name: _imageFile!.name,
           bytes: _imageFile!.bytes!,
@@ -237,8 +239,10 @@ class _AdminAnnouncementEditorScreenState
       context.go('/admin/announcements');
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            'নোটিশ সংরক্ষণ করা যায়নি। অনুমতি ও সংযোগ পরীক্ষা করুন।');
+        setState(
+          () =>
+              _error = 'নোটিশ সংরক্ষণ করা যায়নি। অনুমতি ও সংযোগ পরীক্ষা করুন।',
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -285,18 +289,22 @@ class _AdminAnnouncementEditorScreenState
               OutlinedButton.icon(
                 onPressed: _busy ? null : _chooseImage,
                 icon: const Icon(Icons.add_photo_alternate_outlined),
-                label: Text(_imageFile == null
-                    ? (_imagePath == null ? 'ছবি যোগ করুন' : 'ছবি পরিবর্তন করুন')
-                    : _imageFile!.name),
+                label: Text(
+                  _imageFile == null
+                      ? (_imagePath == null
+                            ? 'ছবি যোগ করুন'
+                            : 'ছবি পরিবর্তন করুন')
+                      : _imageFile!.name,
+                ),
               ),
               if (_imagePath != null || _imageFile != null)
                 TextButton(
                   onPressed: _busy
                       ? null
                       : () => setState(() {
-                            _imageFile = null;
-                            _imagePath = null;
-                          }),
+                          _imageFile = null;
+                          _imagePath = null;
+                        }),
                   child: const Text('ছবি বাদ দিন'),
                 ),
               const SizedBox(height: 12),
