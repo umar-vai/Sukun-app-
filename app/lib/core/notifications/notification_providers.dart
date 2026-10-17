@@ -24,7 +24,9 @@ final notificationTapRelayProvider = Provider<NotificationTapRelay>((ref) {
   return relay;
 });
 
-final localNotificationsGatewayProvider = Provider<LocalNotificationsGateway>((ref) {
+final localNotificationsGatewayProvider = Provider<LocalNotificationsGateway>((
+  ref,
+) {
   final onOpened = ref.read(notificationTapRelayProvider).accept;
   final local = kIsWeb
       ? WebCareRemindersGateway(onNotificationOpened: onOpened)
