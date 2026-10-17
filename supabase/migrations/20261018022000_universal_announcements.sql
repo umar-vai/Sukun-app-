@@ -132,7 +132,7 @@ revoke all on private.universal_announcement_outbox from public, anon, authentic
 
 create or replace function private.enqueue_universal_announcement()
 returns trigger language plpgsql security definer set search_path = ''
-as $
+as $$
 declare
   new_publication boolean := false;
 begin
@@ -155,7 +155,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 create trigger enqueue_universal_announcement_trigger
 after insert or update of status on public.universal_announcements
