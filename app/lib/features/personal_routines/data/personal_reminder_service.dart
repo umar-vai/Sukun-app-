@@ -9,7 +9,9 @@ import 'package:sukun_life/features/personal_routines/data/personal_routine_repo
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_reminder_planner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final personalReminderServiceProvider = Provider<PersonalReminderService>((ref) {
+final personalReminderServiceProvider = Provider<PersonalReminderService>((
+  ref,
+) {
   return PersonalReminderService(
     repository: PersonalRoutineRepository(Supabase.instance.client),
     local: ref.watch(localNotificationsGatewayProvider),
@@ -38,8 +40,10 @@ class PersonalReminderService {
 
   Future<bool> isEnabled() async {
     final owner = repository.ownerId;
-    return (await SharedPreferences.getInstance())
-        .getBool(_enabledKey(owner)) ?? false;
+    return (await SharedPreferences.getInstance()).getBool(
+          _enabledKey(owner),
+        ) ??
+        false;
   }
 
   Future<bool> enable() async {
@@ -82,8 +86,7 @@ class PersonalReminderService {
     final settings = await settingsStore.load();
     final active = {
       for (final routine in routines)
-        if (routine['is_active'] == true)
-          routine['id'] as String,
+        if (routine['is_active'] == true) routine['id'] as String,
     };
     final scheduled = planPersonalRoutineReminders(
       ownerId: owner,
@@ -102,7 +105,10 @@ class PersonalReminderService {
       await local.schedule(reminder, precise: precise);
       ids.add(reminder.notificationId.toString());
     }
-    await (await SharedPreferences.getInstance()).setStringList(_idsKey(owner), ids);
+    await (await SharedPreferences.getInstance()).setStringList(
+      _idsKey(owner),
+      ids,
+    );
     return ids.length;
   }
 }
