@@ -16,6 +16,8 @@ void main() {
       'quran:115',
       'quran:../admin',
       'quran:2?redirect=evil',
+      'quran:-1',
+      'quran:1/../../admin',
       'http://evil.test',
       'hadith:2',
     ]) {
