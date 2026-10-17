@@ -17,7 +17,9 @@ String? personalActionIdFromPayload(String? payload) {
 }
 
 String? _validId(String value) {
-  const pattern = r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' + r'$';
+  const pattern =
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' +
+      r'$';
   return RegExp(pattern).hasMatch(value) ? value.toLowerCase() : null;
 }
 
@@ -26,7 +28,8 @@ String personalActionRoute(String actionId) =>
 
 final class NotificationTapRelay {
   final StreamController<String> _opened = StreamController<String>.broadcast();
-  final StreamController<String> _openedPersonal = StreamController<String>.broadcast();
+  final StreamController<String> _openedPersonal =
+      StreamController<String>.broadcast();
   String? _pending;
   String? _pendingPersonal;
 
