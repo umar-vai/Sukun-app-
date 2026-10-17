@@ -183,7 +183,11 @@ class _ResourceReferenceTile extends StatelessWidget {
               : Icons.library_books_outlined,
         ),
         title: Text(
-          provider == 'cms' ? name : (external ?? 'রিসোর্স অনুপলব্ধ'),
+          provider == 'cms'
+              ? name
+              : surahNumber != null
+              ? 'সূরা $surahNumber'
+              : 'রিসোর্স অনুপলব্ধ',
         ),
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
