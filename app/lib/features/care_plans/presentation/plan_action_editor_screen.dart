@@ -97,7 +97,9 @@ class _PlanActionEditorScreenState
       }
     } else if (widget.initialResourceId != null) {
       final initialResource = resources
-          .where((item) => item.id == widget.initialResourceId && item.isLinkable)
+          .where(
+            (item) => item.id == widget.initialResourceId && item.isLinkable,
+          )
           .firstOrNull;
       if (initialResource != null) {
         _selectResource(initialResource);
@@ -131,7 +133,8 @@ class _PlanActionEditorScreenState
   }
 
   void _selectResource(ContentResourceOption resource) {
-    if (!_contentItemIds.contains(resource.id) && _contentItemIds.length >= 16) {
+    if (!_contentItemIds.contains(resource.id) &&
+        _contentItemIds.length >= 16) {
       return;
     }
     _contentItemIds.add(resource.id);
@@ -291,7 +294,9 @@ class _PlanActionEditorScreenState
                           enabled: true,
                           onChanged: (id) {
                             final resource = data.resources
-                                .where((item) => item.id == id && item.isLinkable)
+                                .where(
+                                  (item) => item.id == id && item.isLinkable,
+                                )
                                 .firstOrNull;
                             if (resource != null) {
                               setState(() => _selectResource(resource));
