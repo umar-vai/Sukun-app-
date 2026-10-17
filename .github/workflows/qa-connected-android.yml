@@ -129,8 +129,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --user 'Pillow==11.3.0'
-          python3 ../scripts/generate_android_launcher_icons.py
+          python3 -m venv "$RUNNER_TEMP/sukun-icon-venv"
+          "$RUNNER_TEMP/sukun-icon-venv/bin/python" -m pip install 'Pillow==11.3.0'
+          "$RUNNER_TEMP/sukun-icon-venv/bin/python" ../scripts/generate_android_launcher_icons.py
           test -s android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 
