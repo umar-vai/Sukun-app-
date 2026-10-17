@@ -364,7 +364,7 @@ class _PlanActionEditorScreenState
   Widget build(BuildContext context) {
     final editing = widget.actionId != null;
     return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'Edit action' : 'Add action')),
+      appBar: AppBar(title: Text(editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়')),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
@@ -711,7 +711,7 @@ class _ActionDateTile extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.event_outlined),
         title: Text(label),
-        subtitle: Text(date == null ? 'No end date' : _formatDate(date!)),
+        subtitle: Text(date == null ? 'শেষ তারিখ নেই' : _formatDate(date!)),
         trailing: onClear == null
             ? const Icon(Icons.chevron_right)
             : IconButton(
