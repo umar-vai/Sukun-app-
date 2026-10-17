@@ -46,7 +46,22 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         FirebaseMessaging.instance
             .getInitialMessage()
             .then((message) {
-              if (message != null) _openUniversalAnnouncement(message.data);
+              if (message == null) return;
+              final payload = message.data;
+              if (universalNoticeIdFromPush(payload) != null) {
+                _openUniversalAnnouncement(payload);
+                return;
+              }
+              // getInitialMessage is consumptive: retain the existing
+              // patient-task cold-start route rather than stealing its tap.
+              if (payload['type'] == 'care_reminder') {
+                final id = payload['task_id'];
+                if (id is String) {
+                  ref.read(notificationTapRelayProvider).accept(
+                    'care_task:' + id,
+                  );
+                }
+              }
             })
             .catchError((Object _) {}),
       );
