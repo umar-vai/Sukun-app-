@@ -59,7 +59,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
                 if (id is String) {
                   ref
                       .read(notificationTapRelayProvider)
-                      .accept('care_task:' + id);
+                      .accept('care_task:$id');
                 }
               }
             })
@@ -73,7 +73,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     if (noticeId == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(appRouterProvider).go('/announcements/' + noticeId);
+      ref.read(appRouterProvider).go('/announcements/$noticeId');
     });
   }
 
