@@ -172,22 +172,25 @@ final class PersonalRoutineRepository {
     final newId = newRow['id'] as String;
     try {
       if (links.isNotEmpty) {
-        await client.rpc('replace_personal_action_resources', params: {
-          'p_action_id': newId,
-          'p_resources': [
-            for (final link in links)
-              if (link['provider'] == 'cms')
-                {
-                  'provider': 'cms',
-                  'content_item_id': link['content_item_id'],
-                }
-              else
-                {
-                  'provider': link['provider'],
-                  'external_resource_ref': link['external_resource_ref'],
-                },
-          ],
-        });
+        await client.rpc(
+          'replace_personal_action_resources',
+          params: {
+            'p_action_id': newId,
+            'p_resources': [
+              for (final link in links)
+                if (link['provider'] == 'cms')
+                  {
+                    'provider': 'cms',
+                    'content_item_id': link['content_item_id'],
+                  }
+                else
+                  {
+                    'provider': link['provider'],
+                    'external_resource_ref': link['external_resource_ref'],
+                  },
+            ],
+          },
+        );
       }
     } catch (_) {
       // Do not leave a half-duplicated active-looking action if any reference
