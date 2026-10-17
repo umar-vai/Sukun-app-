@@ -534,11 +534,10 @@ class _ActionCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(action.instruction!),
                 ],
-                if (action.resource != null) ...[
+                if (action.linkedResources.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'সহায়ক উপকরণ: ${action.resource!.titleBn ?? action.resource!.title}',
-                  ),
+                  for (final resource in action.linkedResources)
+                    Text('সহায়ক উপকরণ: ${resource.titleBn ?? resource.title}'),
                 ],
               ],
             ),

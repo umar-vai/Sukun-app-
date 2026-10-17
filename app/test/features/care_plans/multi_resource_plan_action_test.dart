@@ -15,6 +15,7 @@ void main() {
       'reminder_enabled': true,
       'plan_action_resources': [
         {
+          'sort_order': 0,
           'usage_note': 'Read',
           'content_items': {
             'id': 'dua-2',
@@ -25,6 +26,7 @@ void main() {
           },
         },
         {
+          'sort_order': 1,
           'usage_note': null,
           'content_items': {
             'id': 'amal-1',
@@ -57,10 +59,11 @@ void main() {
       ],
     });
     expect(action.linkedResources.map((resource) => resource.id), [
-      'amal-1',
       'dua-2',
+      'amal-1',
     ]);
-    expect(action.resource?.id, 'amal-1');
+    expect(action.resource?.id, 'dua-2');
+    expect(action.linkedResources.first.usageNote, 'Read');
   });
 
   test('old single-resource action construction remains compatible', () {
