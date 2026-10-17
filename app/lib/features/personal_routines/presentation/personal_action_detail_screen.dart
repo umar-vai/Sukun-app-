@@ -171,7 +171,7 @@ class _ResourceReferenceTile extends StatelessWidget {
         ? quranNumberFromRef(external)
         : null;
     final route = canOpen
-        ? '/resources/${Uri.encodeComponent(id!)}'
+        ? '/resources/${Uri.encodeComponent(id)}'
         : surahNumber != null
         ? '/resources/quran/$surahNumber'
         : null;
