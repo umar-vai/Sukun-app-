@@ -63,8 +63,7 @@ class AnnouncementDraft {
     if (body.trim().isEmpty || body.trim().length > 5000) {
       return 'নোটিশের লেখা ১–৫০০০ অক্ষরের মধ্যে হতে হবে।';
     }
-    if (status != 'draft' && status != 'published' &&
-        status != 'archived') {
+    if (status != 'draft' && status != 'published' && status != 'archived') {
       return 'নোটিশের অবস্থা সঠিক নয়।';
     }
     if (linkUrl != null && linkUrl!.trim().isNotEmpty) {
@@ -183,19 +182,26 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
     if (extension == null) {
       throw const FormatException('PNG, JPG অথবা WebP ছবি ব্যবহার করুন।');
     }
-    final path = 'notices/' +
-        DateTime.now().microsecondsSinceEpoch.toString() + '-' +
-        name.hashCode.abs().toString() + '.' + extension;
-    await client.storage.from(bucket).uploadBinary(
-      path,
-      bytes is Uint8List ? bytes as Uint8List : Uint8List.fromList(bytes),
-      fileOptions: FileOptions(contentType: mimeType, upsert: false),
-    );
+    final path =
+        'notices/' +
+        DateTime.now().microsecondsSinceEpoch.toString() +
+        '-' +
+        name.hashCode.abs().toString() +
+        '.' +
+        extension;
+    await client.storage
+        .from(bucket)
+        .uploadBinary(
+          path,
+          bytes is Uint8List ? bytes as Uint8List : Uint8List.fromList(bytes),
+          fileOptions: FileOptions(contentType: mimeType, upsert: false),
+        );
     return path;
   }
 
   @override
-  String imageUrl(String path) => client.storage.from(bucket).getPublicUrl(path);
+  String imageUrl(String path) =>
+      client.storage.from(bucket).getPublicUrl(path);
 }
 
 final announcementRepositoryProvider = Provider<AnnouncementRepository>((ref) {
@@ -206,5 +212,5 @@ final announcementRepositoryProvider = Provider<AnnouncementRepository>((ref) {
 
 final publishedAnnouncementsProvider =
     FutureProvider<List<UniversalAnnouncement>>((ref) async {
-  return ref.read(announcementRepositoryProvider).published();
-});
+      return ref.read(announcementRepositoryProvider).published();
+    });
