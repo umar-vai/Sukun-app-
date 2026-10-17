@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -166,6 +167,12 @@ class _ResourceReferenceTile extends StatelessWidget {
         ? label!
         : (cms?['title'] as String? ?? 'রিসোর্সটি এখন অনুপলব্ধ');
     final external = reference['external_resource_ref'] as String?;
+    final surahNumber = provider == 'quran' ? quranNumberFromRef(external) : null;
+    final route = canOpen
+        ? '/resources/${Uri.encodeComponent(id!)}'
+        : surahNumber != null
+            ? '/resources/quran/$surahNumber'
+            : null;
     return Card(
       child: ListTile(
         leading: Icon(
@@ -177,12 +184,10 @@ class _ResourceReferenceTile extends StatelessWidget {
           provider == 'cms' ? name : (external ?? 'রিসোর্স অনুপলব্ধ'),
         ),
         subtitle: Text(
-          canOpen ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
+          route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
         ),
-        trailing: canOpen ? const Icon(Icons.chevron_right) : null,
-        onTap: canOpen
-            ? () => context.push('/resources/${Uri.encodeComponent(id)}')
-            : null,
+        trailing: route != null ? const Icon(Icons.chevron_right) : null,
+        onTap: route == null ? null : () => context.push(route),
       ),
     );
   }
