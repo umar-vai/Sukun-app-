@@ -520,6 +520,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       (item) => item['routine_id'] == routine['id'],
                     ))
                       ListTile(
+                        onTap: () => context.push(
+                          '/my-routines/action/${action['id']}',
+                        ),
                         leading: const Icon(Icons.check_circle_outline),
                         title: Text(action['title'].toString()),
                         subtitle: Text(
