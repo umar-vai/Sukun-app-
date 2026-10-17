@@ -113,6 +113,14 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
+              if (widget.isSignedInMember) ...[
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/my-routines'),
+                  icon: const Icon(Icons.checklist_rtl_rounded),
+                  label: const Text('আমার রুটিন ও রিমাইন্ডার'),
+                ),
+                const SizedBox(height: 12),
+              ],
               LayoutBuilder(
                 builder: (context, constraints) => constraints.maxWidth < 520
                     ? Column(
