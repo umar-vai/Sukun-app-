@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Personal routines never read or mutate clinician-approved patient plans.
@@ -128,24 +129,14 @@ final class PersonalRoutineRepository {
   /// Only published, public CMS items can be persisted by normal users.
   Future<void> replaceActionResources({
     required String actionId,
-    required List<String> cmsIds,
-    List<int> quranSurahs = const [],
+    required List<PersonalActionResourceSelection> orderedResources,
   }) async {
-    if (cmsIds.length + quranSurahs.length > 16 ||
-        cmsIds.toSet().length != cmsIds.length ||
-        quranSurahs.toSet().length != quranSurahs.length ||
-        quranSurahs.any((number) => number < 1 || number > 114)) {
-      throw ArgumentError('Invalid resource selection');
-    }
+    PersonalActionResourceSelection.validate(orderedResources);
     await client.rpc(
       'replace_personal_action_resources',
       params: {
         'p_action_id': actionId,
-        'p_resources': [
-          for (final id in cmsIds) {'provider': 'cms', 'content_item_id': id},
-          for (final surah in quranSurahs)
-            {'provider': 'quran', 'external_resource_ref': 'quran:$surah'},
-        ],
+        'p_resources': [for (final item in orderedResources) item.rpcValue],
       },
     );
   }
