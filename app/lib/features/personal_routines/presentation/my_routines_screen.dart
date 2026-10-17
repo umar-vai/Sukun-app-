@@ -252,8 +252,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         offsetMinutes: offset,
         fixedTime: fixed == null
             ? null
-            : TimeOfDay(hour: fixed!.hour, minute: fixed!.minute)
-                .format(context),
+            : fixed!.hour.toString().padLeft(2, '0') + ':' +
+                fixed!.minute.toString().padLeft(2, '0') + ':00',
         timezoneName: settings.location?.timezone,
         city: kind == 'fajr' || kind == 'maghrib'
             ? settings.location?.name
