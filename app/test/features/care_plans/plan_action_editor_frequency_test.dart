@@ -9,8 +9,24 @@ import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 
 void main() {
+  testWidgets('compact editor has one resource picker and no layout error', (
+    tester,
+  ) async {
+    final repo = _EditorRepository(const ActionFrequency.daily());
+    await _openEditor(tester, repo, compact: true);
+
+    expect(find.byType(ResourcePickerField), findsOneWidget);
+    expect(find.byKey(const Key('optional-clinical-details')), findsOneWidget);
+    final reminder = tester.widget<SwitchListTile>(
+      find.widgetWithText(SwitchListTile, 'রিমাইন্ডার চালু'),
+    );
+    expect(reminder.onChanged, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('editing a title keeps the existing every-three-days interval', (
     tester,
   ) async {
@@ -22,7 +38,7 @@ void main() {
     expect(tester.widget<TextFormField>(interval).controller?.text, '3');
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Title'),
+      find.widgetWithText(TextFormField, 'রোগী যে শিরোনাম দেখবেন'),
       'Updated instruction',
     );
     await _save(tester);
@@ -70,7 +86,7 @@ void main() {
     await _openEditor(tester, repo);
     expect(find.byKey(const Key('daily-interval-field')), findsNothing);
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Title'),
+      find.widgetWithText(TextFormField, 'রোগী যে শিরোনাম দেখবেন'),
       'Updated weekly action',
     );
     await _save(tester);
@@ -81,10 +97,16 @@ void main() {
   });
 }
 
-Future<void> _openEditor(WidgetTester tester, _EditorRepository repo) async {
+Future<void> _openEditor(
+  WidgetTester tester,
+  _EditorRepository repo, {
+  bool compact = false,
+}) async {
   // This suite asserts save semantics, not short-viewport scroll behavior.
   // Keep the full form visible so test taps are genuine hits.
-  tester.view.physicalSize = const Size(1000, 2200);
+  tester.view.physicalSize = compact
+      ? const Size(390, 844)
+      : const Size(1000, 2200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -121,7 +143,7 @@ Future<void> _openEditor(WidgetTester tester, _EditorRepository repo) async {
 }
 
 Future<void> _save(WidgetTester tester) async {
-  final button = find.text('Save action');
+  final button = find.text('করণীয় সংরক্ষণ করুন');
   await tester.ensureVisible(button);
   await tester.pumpAndSettle();
   await tester.tap(button);

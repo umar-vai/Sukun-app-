@@ -107,6 +107,46 @@ void main() {
     expect(publishButton.onPressed, isNull);
   });
 
+  testWidgets('new plan opens its first action without another tap', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/admin/patients/patient-1/plans/plan-1?addAction=1',
+      routes: [
+        GoRoute(
+          path: '/admin/patients/:patientId/plans/:planId',
+          builder: (context, state) => CarePlanBuilderScreen(
+            patientId: state.pathParameters['patientId']!,
+            planId: state.pathParameters['planId']!,
+            openNewAction: state.uri.queryParameters['addAction'] == '1',
+          ),
+          routes: [
+            GoRoute(
+              path: 'actions/new',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('New action editor')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          carePlansRepositoryProvider.overrideWithValue(
+            _FakeCarePlansRepository(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('New action editor'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('publishing refreshes the builder without a setState error', (
     tester,
   ) async {

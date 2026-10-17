@@ -72,7 +72,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     if (!mounted || plan == null) return;
     _reload();
     await context.push<void>(
-      '/admin/patients/${widget.patientId}/plans/${plan.id}',
+      '/admin/patients/${widget.patientId}/plans/${plan.id}?addAction=1',
     );
     if (mounted) _reload();
   }

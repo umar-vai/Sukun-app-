@@ -14,10 +14,12 @@ class CarePlanBuilderScreen extends ConsumerStatefulWidget {
     super.key,
     required this.patientId,
     required this.planId,
+    this.openNewAction = false,
   });
 
   final String patientId;
   final String planId;
+  final bool openNewAction;
 
   @override
   ConsumerState<CarePlanBuilderScreen> createState() =>
@@ -32,6 +34,11 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   void initState() {
     super.initState();
     _data = _load();
+    if (widget.openNewAction) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openAction();
+      });
+    }
   }
 
   Future<_BuilderData> _load() async {
