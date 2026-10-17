@@ -272,8 +272,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       ),
     );
     if (result == true) {
-      final resourceId = existing?['content_item_id'] as String? ??
-          prefill?.contentId;
+      final resourceId =
+          existing?['content_item_id'] as String? ?? prefill?.contentId;
       await _mutate(
         () => _repository.saveAction(
           routineId: routineId,
