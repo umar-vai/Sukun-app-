@@ -167,12 +167,14 @@ class _ResourceReferenceTile extends StatelessWidget {
         ? label!
         : (cms?['title'] as String? ?? 'রিসোর্সটি এখন অনুপলব্ধ');
     final external = reference['external_resource_ref'] as String?;
-    final surahNumber = provider == 'quran' ? quranNumberFromRef(external) : null;
+    final surahNumber = provider == 'quran'
+        ? quranNumberFromRef(external)
+        : null;
     final route = canOpen
         ? '/resources/${Uri.encodeComponent(id!)}'
         : surahNumber != null
-            ? '/resources/quran/$surahNumber'
-            : null;
+        ? '/resources/quran/$surahNumber'
+        : null;
     return Card(
       child: ListTile(
         leading: Icon(
