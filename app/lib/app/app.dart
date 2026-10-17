@@ -90,7 +90,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         unawaited(service.cancelOwner(oldId).catchError((Object _) {}));
       }
       if (newId != null && next.value?.requiresCredentialChange != true) {
-        unawaited(service.refresh().catchError((Object _) {}));
+        unawaited(service.refresh().catchError((Object _) => 0));
       }
     });
     final session = ref.watch(appSessionProvider).value;
