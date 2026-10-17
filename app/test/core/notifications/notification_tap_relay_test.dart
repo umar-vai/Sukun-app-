@@ -54,6 +54,4 @@ void main() {
       expect(personalActionIdFromPayload(unsafe), isNull);
     }
   });
-
-
 }
