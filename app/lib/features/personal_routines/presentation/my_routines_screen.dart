@@ -50,9 +50,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
 
   void _notice(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _createRoutine() async {
@@ -68,7 +67,10 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           decoration: const InputDecoration(labelText: 'রুটিনের নাম'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('বাতিল')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('বাতিল'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
             child: const Text('তৈরি করুন'),
@@ -98,7 +100,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     required String routineId,
     Map<String, dynamic>? existing,
   }) async {
-    final title = TextEditingController(text: existing?['title'] as String? ?? '');
+    final title = TextEditingController(
+      text: existing?['title'] as String? ?? '',
+    );
     final reminder = TextEditingController(
       text: existing?['notification_title'] as String? ?? '',
     );
@@ -150,10 +154,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                     value: kind,
                     decoration: const InputDecoration(labelText: 'কখন করবেন?'),
                     items: const [
-                      DropdownMenuItem(value: 'manual', child: Text('নিজে যখন চাই')),
-                      DropdownMenuItem(value: 'fixed', child: Text('নির্দিষ্ট সময়')),
+                      DropdownMenuItem(
+                        value: 'manual',
+                        child: Text('নিজে যখন চাই'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'fixed',
+                        child: Text('নির্দিষ্ট সময়'),
+                      ),
                       DropdownMenuItem(value: 'fajr', child: Text('ফজরের পরে')),
-                      DropdownMenuItem(value: 'maghrib', child: Text('মাগরিবের পরে')),
+                      DropdownMenuItem(
+                        value: 'maghrib',
+                        child: Text('মাগরিবের পরে'),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null) update(() => kind = value);
@@ -161,14 +174,15 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   ),
                   if (kind == 'fixed')
                     ListTile(
-                      title: Text(fixed == null
-                          ? 'সময় বেছে নিন'
-                          : fixed!.format(context)),
+                      title: Text(
+                        fixed == null ? 'সময় বেছে নিন' : fixed!.format(context),
+                      ),
                       trailing: const Icon(Icons.schedule),
                       onTap: () async {
                         final chosen = await showTimePicker(
                           context: context,
-                          initialTime: fixed ?? const TimeOfDay(hour: 22, minute: 0),
+                          initialTime:
+                              fixed ?? const TimeOfDay(hour: 22, minute: 0),
                         );
                         if (chosen != null) update(() => fixed = chosen);
                       },
@@ -185,13 +199,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                           update(() => offset = next.single),
                     ),
                     if (!settings.isComplete)
-                      const Text('প্রথমে নামাজের সময়ের সেটিংসে শহর ও পদ্ধতি নির্বাচন করুন।'),
+                      const Text(
+                        'প্রথমে নামাজের সময়ের সেটিংসে শহর ও পদ্ধতি নির্বাচন করুন।',
+                      ),
                     if (settings.isComplete)
-                      Text(_prayerPreview(
-                        settings: settings,
-                        kind: kind,
-                        offset: offset,
-                      )),
+                      Text(
+                        _prayerPreview(
+                          settings: settings,
+                          kind: kind,
+                          offset: offset,
+                        ),
+                      ),
                   ],
                   const SizedBox(height: 12),
                   const Text(
@@ -204,13 +222,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('বাতিল'),
+            ),
             FilledButton(
               onPressed: () {
                 if (title.text.trim().isEmpty ||
                     reminder.text.trim().isEmpty ||
                     (kind == 'fixed' && fixed == null) ||
-                    ((kind == 'fajr' || kind == 'maghrib') && !settings.isComplete)) {
+                    ((kind == 'fajr' || kind == 'maghrib') &&
+                        !settings.isComplete)) {
                   return;
                 }
                 Navigator.pop(ctx, true);
@@ -242,32 +264,36 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           return;
         }
       }
-      await _mutate(() => _repository.saveAction(
-        routineId: routineId,
-        actionId: existing?['id'] as String?,
-        title: title.text,
-        notificationTitle: reminder.text,
-        contentItemId: resourceId,
-        scheduleKind: kind,
-        offsetMinutes: offset,
-        fixedTime: fixed == null
-            ? null
-            : fixed!.hour.toString().padLeft(2, '0') + ':' +
-                fixed!.minute.toString().padLeft(2, '0') + ':00',
-        timezoneName: settings.location?.timezone,
-        city: kind == 'fajr' || kind == 'maghrib'
-            ? settings.location?.name
-            : null,
-        latitude: kind == 'fajr' || kind == 'maghrib'
-            ? settings.location?.latitude
-            : null,
-        longitude: kind == 'fajr' || kind == 'maghrib'
-            ? settings.location?.longitude
-            : null,
-        prayerMethod: kind == 'fajr' || kind == 'maghrib'
-            ? settings.calculationMethod?.id
-            : null,
-      ));
+      await _mutate(
+        () => _repository.saveAction(
+          routineId: routineId,
+          actionId: existing?['id'] as String?,
+          title: title.text,
+          notificationTitle: reminder.text,
+          contentItemId: resourceId,
+          scheduleKind: kind,
+          offsetMinutes: offset,
+          fixedTime: fixed == null
+              ? null
+              : fixed!.hour.toString().padLeft(2, '0') +
+                    ':' +
+                    fixed!.minute.toString().padLeft(2, '0') +
+                    ':00',
+          timezoneName: settings.location?.timezone,
+          city: kind == 'fajr' || kind == 'maghrib'
+              ? settings.location?.name
+              : null,
+          latitude: kind == 'fajr' || kind == 'maghrib'
+              ? settings.location?.latitude
+              : null,
+          longitude: kind == 'fajr' || kind == 'maghrib'
+              ? settings.location?.longitude
+              : null,
+          prayerMethod: kind == 'fajr' || kind == 'maghrib'
+              ? settings.calculationMethod?.id
+              : null,
+        ),
+      );
     }
     title.dispose();
     reminder.dispose();
@@ -279,17 +305,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     required int offset,
   }) {
     try {
-      final upcoming = PrayerRelativeReminder(
-        anchor: kind == 'fajr'
-            ? PrayerReminderAnchor.fajr
-            : PrayerReminderAnchor.maghrib,
-        minutesAfter: offset,
-      ).nextOccurrence(
-        calculator: ref.read(prayerCalculationServiceProvider),
-        settings: settings,
-        after: DateTime.now(),
-      );
-      return 'পরের নির্ধারিত সময়: ' + TimeOfDay.fromDateTime(upcoming).format(context);
+      final upcoming =
+          PrayerRelativeReminder(
+            anchor: kind == 'fajr'
+                ? PrayerReminderAnchor.fajr
+                : PrayerReminderAnchor.maghrib,
+            minutesAfter: offset,
+          ).nextOccurrence(
+            calculator: ref.read(prayerCalculationServiceProvider),
+            settings: settings,
+            after: DateTime.now(),
+          );
+      return 'পরের নির্ধারিত সময়: ' +
+          TimeOfDay.fromDateTime(upcoming).format(context);
     } catch (_) {
       return 'নামাজের সময় এখন নির্ধারণ করা যাচ্ছে না।';
     }
@@ -317,7 +345,10 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।'),
-                  OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                  OutlinedButton(
+                    onPressed: _refresh,
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             );
@@ -339,7 +370,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             if (data.routines.isEmpty)
               const ListTile(
                 title: Text('এখনো রুটিন নেই'),
-                subtitle: Text('উপরে + চাপুন এবং নিজের জন্য একটি রুটিন তৈরি করুন।'),
+                subtitle: Text(
+                  'উপরে + চাপুন এবং নিজের জন্য একটি রুটিন তৈরি করুন।',
+                ),
               ),
             for (final routine in data.routines) ...[
               Card(
@@ -348,28 +381,39 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   children: [
                     ListTile(
                       title: Text(routine['title'].toString()),
-                      subtitle: Text(routine['is_active'] == true
-                          ? 'চালু আছে'
-                          : 'Pause করা আছে'),
+                      subtitle: Text(
+                        routine['is_active'] == true
+                            ? 'চালু আছে'
+                            : 'Pause করা আছে',
+                      ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'pause') {
-                            _mutate(() => _repository.setRoutineActive(
-                              routine['id'] as String,
-                              routine['is_active'] != true,
-                            ));
+                            _mutate(
+                              () => _repository.setRoutineActive(
+                                routine['id'] as String,
+                                routine['is_active'] != true,
+                              ),
+                            );
                           } else if (value == 'delete') {
-                            _mutate(() => _repository.deleteRoutine(
-                              routine['id'] as String,
-                            ));
+                            _mutate(
+                              () => _repository.deleteRoutine(
+                                routine['id'] as String,
+                              ),
+                            );
                           }
                         },
                         itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'pause',
-                            child: Text(routine['is_active'] == true ? 'Pause' : 'Resume'),
+                            child: Text(
+                              routine['is_active'] == true ? 'Pause' : 'Resume',
+                            ),
                           ),
-                          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
                         ],
                       ),
                     ),
@@ -379,44 +423,80 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       ListTile(
                         leading: const Icon(Icons.check_circle_outline),
                         title: Text(action['title'].toString()),
-                        subtitle: Text(action['schedule_kind'].toString() +
-                            ' · ' + action['notification_title'].toString()),
+                        subtitle: Text(
+                          action['schedule_kind'].toString() +
+                              ' · ' +
+                              action['notification_title'].toString(),
+                        ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
                             if (value == 'edit') {
-                              _editAction(routineId: routine['id'] as String, existing: action);
+                              _editAction(
+                                routineId: routine['id'] as String,
+                                existing: action,
+                              );
                             } else if (value == 'duplicate') {
-                              _mutate(() => _repository.duplicateAction(action));
+                              _mutate(
+                                () => _repository.duplicateAction(action),
+                              );
                             } else if (value == 'done' || value == 'skipped') {
-                              _mutate(() => _repository.recordOutcome(
-                                actionId: action['id'] as String,
-                                localDate: DateTime.now(),
-                                outcome: value,
-                              ));
+                              _mutate(
+                                () => _repository.recordOutcome(
+                                  actionId: action['id'] as String,
+                                  localDate: DateTime.now(),
+                                  outcome: value,
+                                ),
+                              );
                             } else if (value == 'delete') {
-                              _mutate(() => _repository.deleteAction(action['id'] as String));
+                              _mutate(
+                                () => _repository.deleteAction(
+                                  action['id'] as String,
+                                ),
+                              );
                             }
                           },
                           itemBuilder: (_) => [
                             PopupMenuItem(
                               enabled: false,
-                              child: Text('আজ: ' +
-                                (data.outcomes[action['id']] ?? 'বাকি আছে')),
+                              child: Text(
+                                'আজ: ' +
+                                    (data.outcomes[action['id']] ?? 'বাকি আছে'),
+                              ),
                             ),
-                            const PopupMenuItem(value: 'done', child: Text('Done')),
-                            const PopupMenuItem(value: 'skipped', child: Text('Skip')),
-                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            const PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            const PopupMenuItem(
+                              value: 'done',
+                              child: Text('Done'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'skipped',
+                              child: Text('Skip'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'duplicate',
+                              child: Text('Duplicate'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
                           ],
                         ),
                       ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       child: OutlinedButton.icon(
                         onPressed: _working
                             ? null
-                            : () => _editAction(routineId: routine['id'] as String),
+                            : () => _editAction(
+                                routineId: routine['id'] as String,
+                              ),
                         icon: const Icon(Icons.add),
                         label: const Text('করণীয় যোগ করুন'),
                       ),
