@@ -39,16 +39,18 @@ List<ReminderSchedule> planPersonalRoutineReminders({
             hour < 0 ||
             minute == null ||
             minute > 59 ||
-            minute < 0)
+            minute < 0) {
           continue;
+        }
         time = DateTime(date.year, date.month, date.day, hour, minute);
       } else {
         // Do not guess city or method. If the saved schedule no longer matches
         // the device's prayer preferences, require an explicit reconfiguration.
         if (!settings.isComplete ||
             action['timezone_name'] != settings.location?.timezone ||
-            action['prayer_method'] != settings.calculationMethod?.id)
+            action['prayer_method'] != settings.calculationMethod?.id) {
           continue;
+        }
         final offset = action['prayer_offset_minutes'] as int? ?? 10;
         if (offset < 0 || offset > 120) continue;
         try {
@@ -68,8 +70,9 @@ List<ReminderSchedule> planPersonalRoutineReminders({
         }
         if (time.year != date.year ||
             time.month != date.month ||
-            time.day != date.day)
+            time.day != date.day) {
           continue;
+        }
       }
 
       if (!time.isAfter(now)) continue;
