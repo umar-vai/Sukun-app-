@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
@@ -138,6 +140,31 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       reminder.text = prefill.notificationTitle;
     }
     final settings = await ref.read(utilityPreferencesStoreProvider).load();
+    final existingLinks = existing == null
+        ? <Map<String, dynamic>>[]
+        : await _repository.listActionResources(existing['id'] as String);
+    final selectedIds = <String>[
+      for (final item in existingLinks)
+        if (item['provider'] == 'cms' && item['content_item_id'] is String)
+          item['content_item_id'] as String,
+    ];
+    if (selectedIds.isEmpty && existing?['content_item_id'] is String) {
+      selectedIds.add(existing!['content_item_id'] as String);
+    }
+    if (prefill != null && !selectedIds.contains(prefill.contentId)) {
+      selectedIds.add(prefill.contentId);
+    }
+    final resourceRows = await Supabase.instance.client
+        .from('content_items')
+        .select('id,slug,title,title_bn,type,status,visibility,verification_status,media_source_type,media_url,category_id')
+        .eq('status', 'published')
+        .eq('visibility', 'public')
+        .order('title');
+    final resources = resourceRows
+        .map((row) => ContentResourceOption.fromJson(row))
+        .where((resource) => resource.isLinkable)
+        .toList(growable: false);
+
     if (!mounted) {
       title.dispose();
       reminder.dispose();
@@ -163,6 +190,69 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                         'প্রকাশিত লাইব্রেরি রিসোর্স — নাম ও সময় সম্পাদনা করুন',
                       ),
                     ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'সংযুক্ত রিসোর্স (সর্বোচ্চ ১৬টি)',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  for (var index = 0; index < selectedIds.length; index++)
+                    Builder(builder: (context) {
+                      final id = selectedIds[index];
+                      final resource = resources.where((item) => item.id == id).firstOrNull;
+                      return ListTile(
+                        dense: true,
+                        title: Text(resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ'),
+                        subtitle: Text(resource?.type ?? 'Unavailable'),
+                        leading: const Icon(Icons.library_books_outlined),
+                        trailing: Wrap(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_upward_rounded),
+                              tooltip: 'উপরে নিন',
+                              onPressed: index == 0 ? null : () => update(() {
+                                final moved = selectedIds.removeAt(index);
+                                selectedIds.insert(index - 1, moved);
+                              }),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_downward_rounded),
+                              tooltip: 'নিচে নিন',
+                              onPressed: index == selectedIds.length - 1
+                                  ? null : () => update(() {
+                                      final moved = selectedIds.removeAt(index);
+                                      selectedIds.insert(index + 1, moved);
+                                    }),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              tooltip: 'বাদ দিন',
+                              onPressed: () => update(() => selectedIds.removeAt(index)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  OutlinedButton.icon(
+                    onPressed: selectedIds.length >= 16 ? null : () async {
+                      final id = await showResourcePickerSheet(
+                        context: ctx,
+                        resources: resources
+                            .where((item) => !selectedIds.contains(item.id))
+                            .toList(growable: false),
+                        selectedId: '',
+                      );
+                      if (id != null && id.isNotEmpty &&
+                          !selectedIds.contains(id) && ctx.mounted) {
+                        update(() => selectedIds.add(id));
+                      }
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('লাইব্রেরি থেকে রিসোর্স বাছুন'),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: title,
                     maxLength: 160,
@@ -272,10 +362,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       ),
     );
     if (result == true) {
-      final resourceId =
-          existing?['content_item_id'] as String? ?? prefill?.contentId;
-      await _mutate(
-        () => _repository.saveAction(
+      await _mutate(() async {
+        final resourceId = selectedIds.isEmpty ? null : selectedIds.first;
+        final savedId = await _repository.saveAction(
           routineId: routineId,
           actionId: existing?['id'] as String?,
           title: title.text,
@@ -299,8 +388,12 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           prayerMethod: kind == 'fajr' || kind == 'maghrib'
               ? settings.calculationMethod?.id
               : null,
-        ),
-      );
+        );
+        await _repository.replaceActionResources(
+          actionId: savedId,
+          cmsIds: selectedIds,
+        );
+      });
     }
     title.dispose();
     reminder.dispose();
