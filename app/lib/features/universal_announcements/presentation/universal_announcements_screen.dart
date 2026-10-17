@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
+import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 
 /// One public notice is always addressed by stable UUID. The route is valid
 /// on a cold start, while authorization comes solely from database RLS.
@@ -202,7 +203,11 @@ class UniversalAnnouncementsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: items.when(
+      body: Column(
+        children: [
+          if (UniversalNoticePush.supported) const _UniversalPushToggle(),
+          Expanded(
+            child: items.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Padding(
@@ -248,7 +253,64 @@ class UniversalAnnouncementsScreen extends ConsumerWidget {
                   },
                 ),
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _UniversalPushToggle extends StatefulWidget {
+  const _UniversalPushToggle();
+
+  @override
+  State<_UniversalPushToggle> createState() => _UniversalPushToggleState();
+}
+
+class _UniversalPushToggleState extends State<_UniversalPushToggle> {
+  bool _busy = false;
+  bool _enabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    UniversalNoticePush.isEnabled().then((enabled) {
+      if (mounted) setState(() => _enabled = enabled);
+    });
+  }
+
+  Future<void> _change(bool nextValue) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final success = nextValue
+          ? await UniversalNoticePush.enable()
+          : await UniversalNoticePush.disable().then((_) => true);
+      if (!mounted) return;
+      setState(() => _enabled = nextValue && success);
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ফোনের নোটিফিকেশন অনুমতি প্রয়োজন।')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Push চালু করা যায়নি। পরে চেষ্টা করুন।')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+    title: const Text('সবার গুরুত্বপূর্ণ নোটিশ ফোনে পেতে চাই'),
+    subtitle: const Text('ইচ্ছামতো চালু বা বন্ধ করতে পারবেন।'),
+    secondary: const Icon(Icons.notifications_active_outlined),
+    value: _enabled,
+    onChanged: _busy ? null : _change,
+  );
 }
