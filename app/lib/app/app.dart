@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 
 class SukunLifeApp extends ConsumerStatefulWidget {
   const SukunLifeApp({super.key});
@@ -22,6 +25,7 @@ class SukunLifeApp extends ConsumerStatefulWidget {
 class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   StreamSubscription<String>? _openedSubscription;
   StreamSubscription<String>? _openedPersonalSubscription;
+  StreamSubscription<RemoteMessage>? _openedUniversalSubscription;
   bool _nativeNotificationsInitialized = false;
 
   @override
@@ -35,6 +39,22 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         .read(notificationTapRelayProvider)
         .openedPersonalActionIds
         .listen((_) => _routePendingPersonal());
+    if (!kIsWeb && AppEnvironment.isFirebaseConfigured) {
+      _openedUniversalSubscription = FirebaseMessaging.onMessageOpenedApp
+          .listen((message) => _openUniversalAnnouncement(message.data));
+      unawaited(FirebaseMessaging.instance.getInitialMessage().then((message) {
+        if (message != null) _openUniversalAnnouncement(message.data);
+      }).catchError((Object _) {}));
+    }
+  }
+
+  void _openUniversalAnnouncement(Map<String, dynamic> payload) {
+    final noticeId = universalNoticeIdFromPush(payload);
+    if (noticeId == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(appRouterProvider).go('/announcements/' + noticeId);
+    });
   }
 
   void _routePendingTask() {
@@ -74,6 +94,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   void dispose() {
     unawaited(_openedSubscription?.cancel());
     unawaited(_openedPersonalSubscription?.cancel());
+    unawaited(_openedUniversalSubscription?.cancel());
     super.dispose();
   }
 
