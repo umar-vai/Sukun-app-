@@ -181,7 +181,7 @@ class _ResourceReferenceTile extends StatelessWidget {
         ),
         trailing: canOpen ? const Icon(Icons.chevron_right) : null,
         onTap: canOpen
-            ? () => context.push('/resources/${Uri.encodeComponent(id!)}')
+            ? () => context.push('/resources/${Uri.encodeComponent(id)}')
             : null,
       ),
     );
