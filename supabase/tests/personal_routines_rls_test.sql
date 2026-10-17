@@ -64,7 +64,7 @@ select throws_ok($$
 insert into public.personal_routines(owner_user_id,title)
 values('f0000000-0000-4000-8000-000000001211',
        'Illegally write into A')
-$$,'member B cannot impersonate owner');
+$,'42501','new row violates row-level security policy for table "personal_routines"','member B cannot impersonate owner');
 
 select * from finish();
 rollback;
