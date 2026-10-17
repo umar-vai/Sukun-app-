@@ -69,7 +69,9 @@ select throws_ok(
     title, body, link_url, created_by
   ) values ('Unsafe', 'Never allow http', 'http://unsafe.test',
     '00000000-0000-4000-8000-000000001801')$$,
-  '23514', 'HTTPS-only constraint blocks insecure links'
+  '23514',
+  'new row for relation "universal_announcements" violates check constraint "announcement_https_link_only"',
+  'HTTPS-only constraint blocks insecure links'
 );
 
 select * from finish();
