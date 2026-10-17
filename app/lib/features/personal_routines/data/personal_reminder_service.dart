@@ -64,6 +64,7 @@ class PersonalReminderService {
   }
 
   Future<void> cancelOwner(String ownerId) async {
+    await local.initialize();
     final prefs = await SharedPreferences.getInstance();
     final ids = prefs.getStringList(_idsKey(ownerId)) ?? const [];
     for (final value in ids) {
