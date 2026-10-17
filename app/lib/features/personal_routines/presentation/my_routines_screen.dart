@@ -156,7 +156,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     }
     final resourceRows = await Supabase.instance.client
         .from('content_items')
-        .select('id,slug,title,title_bn,type,status,visibility,verification_status,media_source_type,media_url,category_id')
+        .select(
+          'id,slug,title,title_bn,type,status,visibility,verification_status,media_source_type,media_url,category_id',
+        )
         .eq('status', 'published')
         .eq('visibility', 'public')
         .order('title');
@@ -198,57 +200,77 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                     ),
                   ),
                   for (var index = 0; index < selectedIds.length; index++)
-                    Builder(builder: (context) {
-                      final id = selectedIds[index];
-                      final resource = resources.where((item) => item.id == id).firstOrNull;
-                      return ListTile(
-                        dense: true,
-                        title: Text(resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ'),
-                        subtitle: Text(resource?.type ?? 'Unavailable'),
-                        leading: const Icon(Icons.library_books_outlined),
-                        trailing: Wrap(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_upward_rounded),
-                              tooltip: 'উপরে নিন',
-                              onPressed: index == 0 ? null : () => update(() {
-                                final moved = selectedIds.removeAt(index);
-                                selectedIds.insert(index - 1, moved);
-                              }),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_downward_rounded),
-                              tooltip: 'নিচে নিন',
-                              onPressed: index == selectedIds.length - 1
-                                  ? null : () => update(() {
-                                      final moved = selectedIds.removeAt(index);
-                                      selectedIds.insert(index + 1, moved);
-                                    }),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close_rounded),
-                              tooltip: 'বাদ দিন',
-                              onPressed: () => update(() => selectedIds.removeAt(index)),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                    Builder(
+                      builder: (context) {
+                        final id = selectedIds[index];
+                        final resource = resources
+                            .where((item) => item.id == id)
+                            .firstOrNull;
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
+                          ),
+                          subtitle: Text(resource?.type ?? 'Unavailable'),
+                          leading: const Icon(Icons.library_books_outlined),
+                          trailing: Wrap(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_upward_rounded),
+                                tooltip: 'উপরে নিন',
+                                onPressed: index == 0
+                                    ? null
+                                    : () => update(() {
+                                        final moved = selectedIds.removeAt(
+                                          index,
+                                        );
+                                        selectedIds.insert(index - 1, moved);
+                                      }),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.arrow_downward_rounded),
+                                tooltip: 'নিচে নিন',
+                                onPressed: index == selectedIds.length - 1
+                                    ? null
+                                    : () => update(() {
+                                        final moved = selectedIds.removeAt(
+                                          index,
+                                        );
+                                        selectedIds.insert(index + 1, moved);
+                                      }),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                tooltip: 'বাদ দিন',
+                                onPressed: () =>
+                                    update(() => selectedIds.removeAt(index)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   OutlinedButton.icon(
-                    onPressed: selectedIds.length >= 16 ? null : () async {
-                      final id = await showResourcePickerSheet(
-                        context: ctx,
-                        resources: resources
-                            .where((item) => !selectedIds.contains(item.id))
-                            .toList(growable: false),
-                        selectedId: '',
-                      );
-                      if (id != null && id.isNotEmpty &&
-                          !selectedIds.contains(id) && ctx.mounted) {
-                        update(() => selectedIds.add(id));
-                      }
-                    },
+                    onPressed: selectedIds.length >= 16
+                        ? null
+                        : () async {
+                            final id = await showResourcePickerSheet(
+                              context: ctx,
+                              resources: resources
+                                  .where(
+                                    (item) => !selectedIds.contains(item.id),
+                                  )
+                                  .toList(growable: false),
+                              selectedId: '',
+                            );
+                            if (id != null &&
+                                id.isNotEmpty &&
+                                !selectedIds.contains(id) &&
+                                ctx.mounted) {
+                              update(() => selectedIds.add(id));
+                            }
+                          },
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text('লাইব্রেরি থেকে রিসোর্স বাছুন'),
                   ),
@@ -520,9 +542,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       (item) => item['routine_id'] == routine['id'],
                     ))
                       ListTile(
-                        onTap: () => context.push(
-                          '/my-routines/action/${action['id']}',
-                        ),
+                        onTap: () =>
+                            context.push('/my-routines/action/${action['id']}'),
                         leading: const Icon(Icons.check_circle_outline),
                         title: Text(action['title'].toString()),
                         subtitle: Text(
