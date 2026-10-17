@@ -29,8 +29,20 @@ class VerifiedQuranLink {
 
 /// Deterministic explicit-name mapping. Reject fuzzy names/verse guesses.
 /// Do not add references when an instruction does not explicitly name them.
-List<VerifiedQuranLink> verifiedQuranLinksForAction(PlanAction action) {
-  final source = '${action.title} ${action.instruction ?? ''}'.toLowerCase();
+List<VerifiedQuranLink> verifiedQuranLinksForAction(PlanAction action) =>
+    verifiedQuranLinksForText(
+      title: action.title,
+      instruction: action.instruction,
+    );
+
+/// Exposes the same deterministic Quran-reader references during Admin review.
+/// No Quran text or third-party audio is inserted into the CMS, and a reader
+/// reference is not a substitute for an approved matching audio resource.
+List<VerifiedQuranLink> verifiedQuranLinksForText({
+  required String title,
+  String? instruction,
+}) {
+  final source = '$title ${instruction ?? ''}'.toLowerCase();
   final result = <VerifiedQuranLink>[];
   final seen = <String>{};
   void add(VerifiedQuranLink item) {

@@ -2,6 +2,7 @@ class ContentResourceOption {
   const ContentResourceOption({
     required this.id,
     required this.title,
+    this.slug,
     required this.type,
     required this.visibility,
     required this.status,
@@ -29,6 +30,7 @@ class ContentResourceOption {
     return ContentResourceOption(
       id: json['id'] as String,
       title: json['title'] as String,
+      slug: json['slug'] as String?,
       titleBn: json['title_bn'] as String?,
       surahNumber: json['surah_number'] as int?,
       ayahNumber: json['ayah_number'] as int?,
@@ -49,6 +51,7 @@ class ContentResourceOption {
 
   final String id;
   final String title;
+  final String? slug;
   final String? titleBn;
   final int? surahNumber;
   final int? ayahNumber;
@@ -80,7 +83,13 @@ class ContentResourceOption {
     return bangla?.isNotEmpty == true ? bangla! : title;
   }
 
+  bool get isEditorialRuqyahExcerpt =>
+      type == 'article' && (slug?.startsWith('srg2024-qur-') ?? false);
+
   String get categoryLabel {
+    if (isEditorialRuqyahExcerpt) {
+      return 'রুকইয়াহ আয়াত · সম্পাদিত উদ্ধৃতি';
+    }
     final bangla = categoryNameBn?.trim();
     if (bangla?.isNotEmpty == true) return bangla!;
     final english = categoryName?.trim();

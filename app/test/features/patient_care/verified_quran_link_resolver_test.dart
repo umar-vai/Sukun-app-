@@ -33,6 +33,15 @@ void main() {
     ]);
   });
 
+  test('Admin review can see canonical Baqarah reader without CMS copies', () {
+    final links = verifiedQuranLinksForText(
+      title: 'Surah Al-Baqarah Completion',
+      instruction: 'সূরা বাকারা প্রতি সাত দিনে এক খতম পড়বেন।',
+    );
+    expect(links, hasLength(1));
+    expect(links.single.route, '/resources/quran/2');
+  });
+
   test('no guessed Surah merely because the instruction says namaz', () {
     expect(
       verifiedQuranLinksForAction(action('প্রতি নামাজের পর তাসবিহ পড়বেন')),

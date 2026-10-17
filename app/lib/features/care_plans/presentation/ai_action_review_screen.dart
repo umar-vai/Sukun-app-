@@ -16,6 +16,7 @@ import 'package:sukun_life/features/care_plans/domain/content_resource_option.da
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_material_packet.dart';
+import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -940,7 +941,7 @@ class _SuggestedActionCard extends StatelessWidget {
             Text(
               draft.hasIncompleteMetadata
                   ? 'Metadata incomplete'
-                  : '${(draft.source.confidence * 100).round()}% confidence',
+                  : 'AI parsing ${(draft.source.confidence * 100).round()}% · not verified',
               style: draft.hasIncompleteMetadata
                   ? const TextStyle(color: SukunColors.deepTide)
                   : null,
@@ -1255,6 +1256,44 @@ class _SuggestedActionCard extends StatelessWidget {
                           },
                   ),
               ],
+            ),
+            const SizedBox(height: 10),
+          ],
+          // Canonical Surah links live in the existing API reader, not in
+          // content_items. Show the same safe destination already available
+          // to approved Patient plans without creating a false CMS record.
+          if (verifiedQuranLinksForText(
+            title: draft.title,
+            instruction: draft.instruction,
+          ).isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Quran Reader references',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            const SizedBox(height: 6),
+            for (final link in verifiedQuranLinksForText(
+              title: draft.title,
+              instruction: draft.instruction,
+            ))
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push(link.route),
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: Text('Open ${link.title}'),
+                ),
+              ),
+            const Text(
+              'This verified Surah reference opens the existing Quran reader '
+              'for Admin and Patient after plan approval. It is not a CMS '
+              'resource ID or proof of a complete listening recording. '
+              'Choose a published audio item separately only when '
+              'the prescription explicitly requests listening.',
+              style: TextStyle(fontSize: 12, color: SukunColors.muted),
             ),
             const SizedBox(height: 10),
           ],

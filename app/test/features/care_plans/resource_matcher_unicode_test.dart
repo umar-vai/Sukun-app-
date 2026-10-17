@@ -74,6 +74,53 @@ void main() {
       ]);
     });
 
+    test('English Al-Baqarah finds published Bengali Surah audio but never auto-links a recitation', () {
+      const approvedRecording = ContentResourceOption(
+        id: 'baqarah-audio',
+        title: 'সুরা বাকারা — শায়খ সুদাইস',
+        type: 'audio',
+        visibility: 'public',
+        status: 'published',
+        mediaSourceType: 'direct_audio_url',
+        mediaUrl: 'https://example.org/baqarah.mp3',
+      );
+      const unpublished = ContentResourceOption(
+        id: 'draft-verse',
+        title: 'Surah Al-Baqarah',
+        type: 'quran',
+        visibility: 'public',
+        status: 'review',
+        verificationStatus: 'pending',
+      );
+      final matches = matchResources('Surah Al-Baqarah Completion', [
+        approvedRecording,
+        unpublished,
+      ]);
+      expect(matches.map((m) => m.resource.id), ['baqarah-audio']);
+      expect(exactReviewResource(matches, actionType: 'recitation'), isNull);
+      expect(exactReviewResource(matches, actionType: 'listening'), isNull);
+      expect(
+        resourceMatchesSearch(approvedRecording, 'Surah Al Baqarah'),
+        isTrue,
+      );
+      expect(resourceMatchesSearch(approvedRecording, 'সূরা বাকারা'), isTrue);
+    });
+
+    test('bedtime reference cannot invent a complete approved Masnun pack', () {
+      const individualAmal = ContentResourceOption(
+        id: 'wudu-before-sleep',
+        title: 'অজু করে ঘুমানো এবং ডান কাত হওয়া',
+        type: 'amal',
+        status: 'published',
+        visibility: 'public',
+      );
+      expect(resourceMatchesSearch(individualAmal, 'sleep'), isTrue);
+      expect(
+        matchResources('Bedtime Masnun Routine', [individualAmal]),
+        isEmpty,
+      );
+    });
+
     test('missing AI match query never invents a linked resource', () {
       expect(matchResources('', [publicResource]), isEmpty);
       expect(matchResources(null, [publicResource]), isEmpty);

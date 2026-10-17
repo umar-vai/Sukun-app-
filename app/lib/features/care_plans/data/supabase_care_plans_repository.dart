@@ -48,7 +48,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
     final response = await _client
         .from('content_items')
         .select(
-          'id,title,title_bn,type,visibility,status,category_id,'
+          'id,slug,title,title_bn,type,visibility,status,category_id,'
           'surah_number,ayah_number,ayah_end_number,verification_status,'
           'media_source_type,media_url,'
           'content_categories(id,name,name_bn,slug,sort_order)',
