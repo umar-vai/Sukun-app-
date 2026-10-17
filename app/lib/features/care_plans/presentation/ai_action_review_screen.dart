@@ -1283,7 +1283,7 @@ class _SuggestedActionCard extends StatelessWidget {
               ),
             ),
             for (final label in draft.resourceDiscovery.missing)
-              Text('• ${label} — add/verify in Resource CMS before linking'),
+              Text('• $label — add/verify in Resource CMS before linking'),
             const SizedBox(height: 10),
           ],
           // Canonical Surah links live in the existing API reader, not in
