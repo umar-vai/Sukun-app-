@@ -156,13 +156,45 @@ final class PersonalRoutineRepository {
   }
 
   Future<void> duplicateAction(Map<String, dynamic> action) async {
+    final sourceId = action['id'] as String;
+    final links = await listActionResources(sourceId);
     final payload = Map<String, dynamic>.from(action)
       ..remove('id')
       ..['owner_user_id'] = ownerId
       ..['created_at'] = DateTime.now().toUtc().toIso8601String()
       ..['updated_at'] = DateTime.now().toUtc().toIso8601String()
       ..['is_active'] = false;
-    await client.from('personal_routine_actions').insert(payload);
+    final newRow = await client
+        .from('personal_routine_actions')
+        .insert(payload)
+        .select('id')
+        .single();
+    final newId = newRow['id'] as String;
+    try {
+      if (links.isNotEmpty) {
+        await client.rpc('replace_personal_action_resources', params: {
+          'p_action_id': newId,
+          'p_resources': [
+            for (final link in links)
+              if (link['provider'] == 'cms')
+                {
+                  'provider': 'cms',
+                  'content_item_id': link['content_item_id'],
+                }
+              else
+                {
+                  'provider': link['provider'],
+                  'external_resource_ref': link['external_resource_ref'],
+                },
+          ],
+        });
+      }
+    } catch (_) {
+      // Do not leave a half-duplicated active-looking action if any reference
+      // was unpublished or rejected by RLS while copying.
+      await client.from('personal_routine_actions').delete().eq('id', newId);
+      rethrow;
+    }
   }
 
   Future<void> deleteAction(String id) async {
