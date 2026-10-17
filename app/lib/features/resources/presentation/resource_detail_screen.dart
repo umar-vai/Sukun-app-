@@ -183,7 +183,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     ? resource.title
                     : resource.summary,
               ),
-              if (ref.watch(appSessionProvider).value?.isAuthenticated == true) ...[
+              if (ref.watch(appSessionProvider).value?.isAuthenticated ==
+                  true) ...[
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => context.push(
