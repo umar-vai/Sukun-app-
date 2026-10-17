@@ -32,38 +32,44 @@ void main() {
     expect(reminders.first.scheduledAt, DateTime(2026, 10, 17, 22));
     expect(reminders.first.payload, 'personal_action:$actionId');
     expect(reminders.first.title, 'ঘুমানোর আগের আমল');
-    expect(reminders.first.notificationId, isNot(reminders.last.notificationId));
+    expect(
+      reminders.first.notificationId,
+      isNot(reminders.last.notificationId),
+    );
   });
 
-  test('inactive or paused routine and missing prayer location cannot schedule', () {
-    final rows = [
-      {
-        'id': actionId,
-        'routine_id': routineId,
-        'is_active': true,
-        'schedule_kind': 'maghrib',
-        'timezone_name': 'Asia/Dhaka',
-        'prayer_method': 'karachi',
-        'prayer_offset_minutes': 10,
-      },
-    ];
-    final withoutPrefs = planPersonalRoutineReminders(
-      ownerId: ownerId,
-      actions: rows,
-      activeRoutineIds: {routineId},
-      calculator: AdhanPrayerCalculationService(),
-      settings: const PrayerUtilitySettings(),
-      now: DateTime(2026, 10, 17, 9),
-    );
-    final paused = planPersonalRoutineReminders(
-      ownerId: ownerId,
-      actions: rows,
-      activeRoutineIds: {},
-      calculator: AdhanPrayerCalculationService(),
-      settings: const PrayerUtilitySettings(),
-      now: DateTime(2026, 10, 17, 9),
-    );
-    expect(withoutPrefs, isEmpty);
-    expect(paused, isEmpty);
-  });
+  test(
+    'inactive or paused routine and missing prayer location cannot schedule',
+    () {
+      final rows = [
+        {
+          'id': actionId,
+          'routine_id': routineId,
+          'is_active': true,
+          'schedule_kind': 'maghrib',
+          'timezone_name': 'Asia/Dhaka',
+          'prayer_method': 'karachi',
+          'prayer_offset_minutes': 10,
+        },
+      ];
+      final withoutPrefs = planPersonalRoutineReminders(
+        ownerId: ownerId,
+        actions: rows,
+        activeRoutineIds: {routineId},
+        calculator: AdhanPrayerCalculationService(),
+        settings: const PrayerUtilitySettings(),
+        now: DateTime(2026, 10, 17, 9),
+      );
+      final paused = planPersonalRoutineReminders(
+        ownerId: ownerId,
+        actions: rows,
+        activeRoutineIds: {},
+        calculator: AdhanPrayerCalculationService(),
+        settings: const PrayerUtilitySettings(),
+        now: DateTime(2026, 10, 17, 9),
+      );
+      expect(withoutPrefs, isEmpty);
+      expect(paused, isEmpty);
+    },
+  );
 }
