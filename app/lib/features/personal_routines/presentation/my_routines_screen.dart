@@ -5,6 +5,7 @@ import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_pro
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
+import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -117,6 +118,25 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         minute: int.tryParse(pieces[1]) ?? 0,
       );
     }
+    PersonalRoutineResourcePrefill? prefill;
+    if (existing == null && widget.resourceId != null) {
+      try {
+        final content = await ref
+            .read(resourcesRepositoryProvider)
+            .getResource(widget.resourceId!);
+        prefill = PersonalRoutineResourcePrefill.fromResource(content);
+      } catch (_) {
+        // Fail closed on inaccessible, unpublished or offline resource.
+      }
+      if (prefill == null) {
+        _notice('এই প্রকাশিত রিসোর্সটি রুটিনে যুক্ত করা যাচ্ছে না।');
+        title.dispose();
+        reminder.dispose();
+        return;
+      }
+      title.text = prefill.actionTitle;
+      reminder.text = prefill.notificationTitle;
+    }
     final settings = await ref.read(utilityPreferencesStoreProvider).load();
     if (!mounted) {
       title.dispose();
@@ -135,6 +155,14 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (prefill != null)
+                    ListTile(
+                      leading: const Icon(Icons.library_books_outlined),
+                      title: Text(prefill.actionTitle),
+                      subtitle: const Text(
+                        'প্রকাশিত লাইব্রেরি রিসোর্স — নাম ও সময় সম্পাদনা করুন',
+                      ),
+                    ),
                   TextField(
                     controller: title,
                     maxLength: 160,
@@ -244,26 +272,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       ),
     );
     if (result == true) {
-      String? resourceId = existing?['content_item_id'] as String?;
-      if (existing == null && widget.resourceId != null) {
-        try {
-          final resource = await ref
-              .read(resourcesRepositoryProvider)
-              .getResource(widget.resourceId!);
-          if (resource == null || resource.visibility != 'public') {
-            _notice('এই রিসোর্সটি ব্যক্তিগত রুটিনে যুক্ত করা যাচ্ছে না।');
-            title.dispose();
-            reminder.dispose();
-            return;
-          }
-          resourceId = resource.id;
-        } catch (_) {
-          _notice('রিসোর্সটি যাচাই করা যায়নি।');
-          title.dispose();
-          reminder.dispose();
-          return;
-        }
-      }
+      final resourceId =
+          existing?['content_item_id'] as String? ?? prefill?.contentId;
       await _mutate(
         () => _repository.saveAction(
           routineId: routineId,
