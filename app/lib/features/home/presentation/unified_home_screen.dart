@@ -113,7 +113,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
-              if (widget.isSignedInMember) ...[
+              if (widget.isSignedInMember || widget.isPatient) ...[
                 OutlinedButton.icon(
                   onPressed: () => context.push('/my-routines'),
                   icon: const Icon(Icons.checklist_rtl_rounded),
