@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
@@ -57,6 +58,7 @@ class _PlanActionEditorScreenState
   String _contentItemId = '';
   final Set<String> _contentItemIds = <String>{};
   bool _submitting = false;
+  bool _showOptionalDetails = false;
 
   @override
   void initState() {
@@ -125,6 +127,11 @@ class _PlanActionEditorScreenState
     _exactTime = action.exactTime;
     _reviewStatus = action.reviewStatus;
     _reminderEnabled = action.reminderEnabled;
+    _showOptionalDetails =
+        action.countTarget != null ||
+        action.durationMinutes != null ||
+        action.startDate != _plan?.startDate ||
+        action.endDate != _plan?.endDate;
     final notedResource = action.linkedResources
         .where((resource) => resource.usageNote?.isNotEmpty == true)
         .firstOrNull;
@@ -165,6 +172,92 @@ class _PlanActionEditorScreenState
         ..clear()
         ..addAll(ids);
     });
+  }
+
+  Widget _buildResourceSelection(List<ContentResourceOption> resources) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ResourcePickerField(
+          resources: resources,
+          selectedId: _contentItemId,
+          enabled: true,
+          onChanged: (id) {
+            final resource = resources
+                .where((item) => item.id == id && item.isLinkable)
+                .firstOrNull;
+            setState(() {
+              if (resource != null) {
+                _selectResource(resource);
+              } else if (id.isEmpty) {
+                _contentItemIds.clear();
+                _contentItemId = '';
+                _usageNoteController.clear();
+              }
+            });
+          },
+        ),
+        if (_contentItemIds.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final (index, id) in _contentItemIds.toList().indexed)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                radius: 15,
+                backgroundColor: SukunColors.mist,
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(color: SukunColors.deepTide),
+                ),
+              ),
+              title: Text(
+                resources
+                        .where((item) => item.id == id)
+                        .firstOrNull
+                        ?.displayTitle ??
+                    'Linked resource',
+              ),
+              trailing: Wrap(
+                spacing: 0,
+                children: [
+                  IconButton(
+                    tooltip: 'Move resource up',
+                    onPressed: index == 0 ? null : () => _moveResource(id, -1),
+                    icon: const Icon(Icons.arrow_upward),
+                  ),
+                  IconButton(
+                    tooltip: 'Move resource down',
+                    onPressed: index == _contentItemIds.length - 1
+                        ? null
+                        : () => _moveResource(id, 1),
+                    icon: const Icon(Icons.arrow_downward),
+                  ),
+                  IconButton(
+                    tooltip: 'Remove resource',
+                    onPressed: () => setState(() {
+                      _contentItemIds.remove(id);
+                      if (_contentItemId == id) {
+                        _contentItemId = _contentItemIds.isEmpty
+                            ? ''
+                            : _contentItemIds.first;
+                        _usageNoteController.clear();
+                      }
+                    }),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        if (_contentItemId.isNotEmpty)
+          TextFormField(
+            controller: _usageNoteController,
+            decoration: const InputDecoration(
+              labelText: 'এই রিসোর্স ব্যবহারের নোট (ঐচ্ছিক)',
+            ),
+          ),
+      ],
+    );
   }
 
   @override
@@ -295,78 +388,35 @@ class _PlanActionEditorScreenState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SukunPageIntro(
-                        eyebrow: editing ? 'Structured action' : 'New action',
-                        title: editing ? 'Edit plan action' : 'Add plan action',
-                        subtitle: 'Capture only what the practitioner explicitly provided.',
+                        eyebrow: 'রোগীর পরিকল্পনা',
+                        title: editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়',
+                        subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
                       ),
                       const SizedBox(height: 18),
-                      if (!editing) ...[
-                        Text(
-                          'লাইব্রেরি থেকে করণীয় যোগ করুন',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        ResourcePickerField(
-                          resources: data.resources,
-                          selectedId: _contentItemId,
-                          enabled: true,
-                          onChanged: (id) {
-                            final resource = data.resources
-                                .where(
-                                  (item) => item.id == id && item.isLinkable,
-                                )
-                                .firstOrNull;
-                            if (resource != null) {
-                              setState(() => _selectResource(resource));
-                            } else if (id.isEmpty) {
-                              setState(() {
-                                _contentItemIds.clear();
-                                _contentItemId = '';
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'প্রকাশিত কনটেন্ট বাছুন, তারপর নিজের মতো শিরোনাম ও সময় লিখুন। '
-                          'যা মূল প্রেসক্রিপশনে নেই তা অনুমান করে যোগ করবেন না।',
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      const SukunSurface(
-                        tone: SukunSurfaceTone.warning,
-                        showBorder: false,
-                        radius: 18,
-                        padding: EdgeInsets.all(16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.fact_check_outlined),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Leave unknown count, duration, time, or resource fields blank and mark the action “Needs review”.',
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        '১ · কী করবেন',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 8),
+                      _buildResourceSelection(data.resources),
+                      const SizedBox(height: 14),
                       TextFormField(
                         controller: _typeController,
                         decoration: const InputDecoration(
-                          labelText: 'Action type',
-                          hintText: 'For example: recitation or listening',
+                          labelText: 'করণীয়ের ধরন',
+                          hintText: 'যেমন: তিলাওয়াত বা শ্রবণ',
                         ),
                         validator: (value) =>
-                            validateActionRequired(value, 'Action type'),
+                            validateActionRequired(value, 'করণীয়ের ধরন'),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _titleController,
-                        decoration: const InputDecoration(labelText: 'Title'),
+                        decoration: const InputDecoration(
+                          labelText: 'রোগী যে শিরোনাম দেখবেন',
+                        ),
                         validator: (value) =>
-                            validateActionRequired(value, 'Title'),
+                            validateActionRequired(value, 'শিরোনাম'),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
@@ -374,47 +424,13 @@ class _PlanActionEditorScreenState
                         minLines: 3,
                         maxLines: 7,
                         decoration: const InputDecoration(
-                          labelText: 'Instruction (optional)',
+                          labelText: 'রোগীর জন্য নির্দেশনা (ঐচ্ছিক)',
                           alignLabelWithHint: true,
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _countController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Count (optional)',
-                              ),
-                              validator: (value) =>
-                                  validateOptionalPositiveInteger(
-                                    value,
-                                    'Count',
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _durationController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Minutes (optional)',
-                              ),
-                              validator: (value) =>
-                                  validateOptionalPositiveInteger(
-                                    value,
-                                    'Duration',
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 22),
                       Text(
-                        'Frequency',
+                        '২ · কখন করবেন ও মনে করাবেন',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -422,11 +438,11 @@ class _PlanActionEditorScreenState
                         segments: const [
                           ButtonSegment(
                             value: ActionFrequencyType.daily,
-                            label: Text('Daily'),
+                            label: Text('প্রতিদিন'),
                           ),
                           ButtonSegment(
                             value: ActionFrequencyType.weekly,
-                            label: Text('Selected days'),
+                            label: Text('নির্বাচিত দিন'),
                           ),
                         ],
                         selected: {_frequencyType},
@@ -472,24 +488,24 @@ class _PlanActionEditorScreenState
                       ],
                       const SizedBox(height: 14),
                       SukunChoiceField<String>(
-                        label: 'Time window',
-                        placeholder: 'Not specified',
+                        label: 'দিনের কোন সময়ে (ঐচ্ছিক)',
+                        placeholder: 'সময় নির্ধারিত নয়',
                         value: _timeWindow,
                         options: const [
                           SukunChoiceOption(
                             value: '',
-                            title: 'Not specified',
+                            title: 'সময় নির্ধারিত নয়',
                             description:
-                                'Keep time flexible and do not infer one.',
+                                'মূল নির্দেশনায় না থাকলে সময় অনুমান করবেন না।',
                           ),
-                          SukunChoiceOption(value: 'morning', title: 'Morning'),
+                          SukunChoiceOption(value: 'morning', title: 'সকাল'),
+                          SukunChoiceOption(value: 'afternoon', title: 'দুপুর'),
+                          SukunChoiceOption(value: 'evening', title: 'সন্ধ্যা'),
+                          SukunChoiceOption(value: 'night', title: 'রাত'),
                           SukunChoiceOption(
-                            value: 'afternoon',
-                            title: 'Afternoon',
+                            value: 'anytime',
+                            title: 'সুবিধামতো',
                           ),
-                          SukunChoiceOption(value: 'evening', title: 'Evening'),
-                          SukunChoiceOption(value: 'night', title: 'Night'),
-                          SukunChoiceOption(value: 'anytime', title: 'Anytime'),
                         ],
                         onChanged: (value) =>
                             setState(() => _timeWindow = value),
@@ -500,43 +516,112 @@ class _PlanActionEditorScreenState
                         padding: EdgeInsets.zero,
                         child: ListTile(
                           leading: const Icon(Icons.schedule_outlined),
-                          title: const Text('Exact time'),
+                          title: const Text('নির্দিষ্ট সময় (ঐচ্ছিক)'),
                           subtitle: Text(
                             _exactTime == null
-                                ? 'Not specified'
+                                ? 'নির্ধারিত নয়'
                                 : TimeOfDay.fromDateTime(_exactTime!)
                                       .format(context),
                           ),
                           trailing: _exactTime == null
                               ? const Icon(Icons.chevron_right)
                               : IconButton(
-                                  onPressed: () =>
-                                      setState(() => _exactTime = null),
-                                  tooltip: 'Clear exact time',
+                                  onPressed: () => setState(() {
+                                    _exactTime = null;
+                                    _reminderEnabled = false;
+                                  }),
+                                  tooltip: 'নির্দিষ্ট সময় সরান',
                                   icon: const Icon(Icons.close),
                                 ),
                           onTap: _pickTime,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      _ActionDateTile(
-                        label: 'Action start',
-                        date: _startDate,
-                        onTap: () => _pickDate(start: true),
-                      ),
-                      const SizedBox(height: 10),
-                      _ActionDateTile(
-                        label: 'Action end',
-                        date: _endDate,
-                        onTap: () => _pickDate(start: false),
-                        onClear: _endDate == null
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _reminderEnabled,
+                        onChanged: _exactTime == null
                             ? null
-                            : () => setState(() => _endDate = null),
+                            : (value) =>
+                                  setState(() => _reminderEnabled = value),
+                        title: const Text('রিমাইন্ডার চালু'),
+                        subtitle: Text(
+                          _exactTime == null
+                              ? 'আগে নির্দিষ্ট সময় বাছুন। সময় ছাড়া রিমাইন্ডার পাঠানো যায় না।'
+                              : 'নির্ধারিত সময়ে রোগীর ডিভাইসে মনে করানো হবে।',
+                        ),
+                      ),
+                      ExpansionTile(
+                        key: const Key('optional-clinical-details'),
+                        initiallyExpanded: _showOptionalDetails,
+                        title: const Text('আরও বিবরণ: সংখ্যা, মেয়াদ ও তারিখ'),
+                        subtitle: const Text('প্রয়োজন হলে পূরণ করুন'),
+                        childrenPadding: const EdgeInsets.only(bottom: 10),
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _countController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'কতবার (ঐচ্ছিক)',
+                                  ),
+                                  validator: (value) =>
+                                      validateOptionalPositiveInteger(
+                                        value,
+                                        'Count',
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _durationController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'কত মিনিট (ঐচ্ছিক)',
+                                  ),
+                                  validator: (value) =>
+                                      validateOptionalPositiveInteger(
+                                        value,
+                                        'Duration',
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _ActionDateTile(
+                            label: 'শুরুর তারিখ',
+                            date: _startDate,
+                            onTap: () => _pickDate(start: true),
+                          ),
+                          const SizedBox(height: 10),
+                          _ActionDateTile(
+                            label: 'শেষ তারিখ',
+                            date: _endDate,
+                            onTap: () => _pickDate(start: false),
+                            onClear: _endDate == null
+                                ? null
+                                : () => setState(() => _endDate = null),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 22),
+                      Text(
+                        '৩ · যাচাই করে সংরক্ষণ',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'অস্পষ্ট সংখ্যা, সময় বা নির্দেশনা অনুমান করবেন না। '
+                        'মানুষের যাচাই ছাড়া এই করণীয় রোগীর কাছে প্রকাশ করা যাবে না।',
+                      ),
+                      const SizedBox(height: 10),
                       SukunChoiceField<ActionReviewStatus>(
-                        label: 'Review status',
-                        placeholder: 'Choose review status',
+                        label: 'যাচাইয়ের অবস্থা',
+                        placeholder: 'অবস্থা বাছুন',
                         value: _reviewStatus,
                         options: [
                           for (final status in const [
@@ -546,116 +631,25 @@ class _PlanActionEditorScreenState
                           ])
                             SukunChoiceOption(
                               value: status,
-                              title: status.label,
+                              title: switch (status) {
+                                ActionReviewStatus.draft => 'খসড়া',
+                                ActionReviewStatus.needsReview => 'যাচাই বাকি',
+                                ActionReviewStatus.approved =>
+                                  'যাচাই করে অনুমোদিত',
+                                _ => status.label,
+                              },
                               description: switch (status) {
                                 ActionReviewStatus.draft =>
-                                  'Still being prepared.',
+                                  'এখনো প্রস্তুত করা হচ্ছে।',
                                 ActionReviewStatus.needsReview =>
-                                  'Contains missing or ambiguous information.',
-                                ActionReviewStatus.approved =>
-                                  'Reviewed and eligible for plan publication.',
-                                _ => 'Not available for this workflow.',
+                                  'নির্দেশনায় অস্পষ্ট বা অনুপস্থিত তথ্য আছে।',
+                                ActionReviewStatus.approved => 'মানুষ যাচাই করেছেন; পরিকল্পনা চালু করা যাবে।',
+                                _ => 'এই ধাপে প্রযোজ্য নয়।',
                               },
                             ),
                         ],
                         onChanged: (value) =>
                             setState(() => _reviewStatus = value),
-                      ),
-                      const SizedBox(height: 14),
-                      ResourcePickerField(
-                        resources: data.resources,
-                        selectedId: _contentItemId,
-                        enabled: true,
-                        onChanged: (id) {
-                          final resource = data.resources
-                              .where((item) => item.id == id && item.isLinkable)
-                              .firstOrNull;
-                          setState(() {
-                            if (resource != null) {
-                              _selectResource(resource);
-                            } else if (id.isEmpty) {
-                              _contentItemIds.clear();
-                              _contentItemId = '';
-                            }
-                          });
-                        },
-                      ),
-                      if (_contentItemIds.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Column(
-                          children: [
-                            for (final (index, id)
-                                in _contentItemIds.toList().indexed)
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  data.resources
-                                          .where((item) => item.id == id)
-                                          .firstOrNull
-                                          ?.displayTitle ??
-                                      'Linked resource',
-                                ),
-                                subtitle: Text(
-                                  'Resource ${index + 1}'
-                                  '${id == _contentItemId ? ' · usage note target' : ''}',
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'Move resource up',
-                                      onPressed: index == 0
-                                          ? null
-                                          : () => _moveResource(id, -1),
-                                      icon: const Icon(Icons.arrow_upward),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Move resource down',
-                                      onPressed:
-                                          index == _contentItemIds.length - 1
-                                          ? null
-                                          : () => _moveResource(id, 1),
-                                      icon: const Icon(Icons.arrow_downward),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Remove resource',
-                                      onPressed: () => setState(() {
-                                        _contentItemIds.remove(id);
-                                        if (_contentItemId == id) {
-                                          _contentItemId =
-                                              _contentItemIds.isEmpty
-                                              ? ''
-                                              : _contentItemIds.first;
-                                          _usageNoteController.clear();
-                                        }
-                                      }),
-                                      icon: const Icon(Icons.close),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                      if (_contentItemId.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          controller: _usageNoteController,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Usage note for selected resource (optional)',
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      SwitchListTile(
-                        value: _reminderEnabled,
-                        onChanged: (value) =>
-                            setState(() => _reminderEnabled = value),
-                        title: const Text('Reminder enabled'),
-                        subtitle: const Text(
-                          'Scheduling is configured later; this does not invent a reminder time.',
-                        ),
                       ),
                       const SizedBox(height: 24),
                       FilledButton.icon(
@@ -668,7 +662,9 @@ class _PlanActionEditorScreenState
                                 ),
                               )
                             : const Icon(Icons.save_outlined),
-                        label: Text(_submitting ? 'Saving…' : 'Save action'),
+                        label: Text(
+                          _submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন',
+                        ),
                       ),
                     ],
                   ),

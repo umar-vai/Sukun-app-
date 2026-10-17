@@ -113,7 +113,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
     final isNewVersion = widget.copyFromPlanId != null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isNewVersion ? 'Create new version' : 'Create care plan'),
+        title: Text(isNewVersion ? 'নতুন সংস্করণ' : 'নতুন সেবা পরিকল্পনা'),
       ),
       body: FutureBuilder<List<Prescription>>(
         future: _prescriptions,
@@ -130,11 +130,11 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SukunPageIntro(
-                        eyebrow: 'Plan workspace',
+                        eyebrow: 'রোগীর সেবা',
                         title: isNewVersion
-                            ? 'Create a safe new version'
-                            : 'Create a care plan',
-                        subtitle: 'Set the plan context first. Structured actions are reviewed separately before publishing.',
+                            ? 'নতুন খসড়া সংস্করণ'
+                            : 'সেবা পরিকল্পনা তৈরি করুন',
+                        subtitle: 'নাম ও মূল নির্দেশনা দিন। করণীয় পরের ধাপে যোগ ও যাচাই করবেন।',
                         trailing: const SukunIconBadge(
                           icon: Icons.assignment_add,
                           size: 54,
@@ -168,8 +168,16 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                           children: [
                             TextFormField(
                               controller: _nameController,
+                              onTap: () {
+                                if (_nameController.text == 'Care Plan') {
+                                  _nameController.selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: _nameController.text.length,
+                                  );
+                                }
+                              },
                               decoration: const InputDecoration(
-                                labelText: 'Plan name',
+                                labelText: 'পরিকল্পনার নাম',
                                 prefixIcon: Icon(Icons.assignment_outlined),
                               ),
                               validator: validatePlanName,
@@ -177,13 +185,14 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                             const SizedBox(height: 14),
                             SukunChoiceField<String>(
                               value: _prescriptionId,
-                              label: 'Source prescription',
-                              placeholder: 'Choose an original instruction',
+                              label: 'মূল প্রেসক্রিপশন (যদি থাকে)',
+                              placeholder: 'মূল নির্দেশনা বাছুন',
                               options: [
                                 const SukunChoiceOption(
                                   value: '',
-                                  title: 'No prescription selected',
-                                  description: 'Build this draft manually without an attached source.',
+                                  title: 'প্রেসক্রিপশন যুক্ত নয়',
+                                  description:
+                                      'মূল নির্দেশনা ছাড়া খসড়া তৈরি করুন।',
                                   icon: Icons.edit_note_rounded,
                                 ),
                                 for (final prescription in prescriptions)
@@ -202,30 +211,35 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const SukunSectionHeader(
-                        title: 'Plan window',
-                        subtitle: 'Dates control when this version may generate patient tasks.',
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
+                      ExpansionTile(
+                        initiallyExpanded: isNewVersion,
+                        title: const Text('শুরু ও শেষ তারিখ'),
+                        subtitle: Text(
+                          '${_formatDate(_startDate)} থেকে'
+                          '${_endDate == null ? ' · শেষ তারিখ নেই' : ' · ${_formatDate(_endDate!)} পর্যন্ত'}',
+                        ),
                         children: [
-                          Expanded(
-                            child: _DateTile(
-                              label: 'Start date',
-                              value: _startDate,
-                              onTap: _pickStartDate,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _DateTile(
-                              label: 'End date',
-                              value: _endDate,
-                              onTap: _pickEndDate,
-                              onClear: _endDate == null
-                                  ? null
-                                  : () => setState(() => _endDate = null),
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'শুরুর তারিখ',
+                                  value: _startDate,
+                                  onTap: _pickStartDate,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _DateTile(
+                                  label: 'শেষ তারিখ',
+                                  value: _endDate,
+                                  onTap: _pickEndDate,
+                                  onClear: _endDate == null
+                                      ? null
+                                      : () => setState(() => _endDate = null),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -241,7 +255,11 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                               )
                             : const Icon(Icons.add_task),
                         label: Text(
-                          _submitting ? 'Creating draft…' : 'Create draft plan',
+                          _submitting
+                              ? 'খসড়া তৈরি হচ্ছে…'
+                              : isNewVersion
+                              ? 'নতুন খসড়া সংস্করণ তৈরি করুন'
+                              : 'খসড়া তৈরি করে করণীয় যোগ করুন',
                         ),
                       ),
                     ],

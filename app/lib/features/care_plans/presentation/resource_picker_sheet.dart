@@ -37,14 +37,14 @@ class ResourcePickerField extends StatelessWidget {
     final selected = resources
         .where((resource) => resource.id == selectedId)
         .firstOrNull;
-    final title = selected?.displayTitle ?? 'No linked resource';
+    final title = selected?.displayTitle ?? 'লাইব্রেরি থেকে উপকরণ বাছুন';
     final subtitle = selected == null
-        ? 'Browse all resources by category'
+        ? 'প্রকাশিত দুআ, অডিও, ভিডিও, আর্টিকেল ও পিডিএফ খুঁজুন'
         : '${selected.categoryLabel} · ${_displayType(selected.type)}';
 
     return Semantics(
       button: true,
-      label: 'Linked resource, $title',
+      label: 'সহায়ক উপকরণ, $title',
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: !enabled
@@ -93,7 +93,7 @@ class ResourcePickerField extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Linked resource (optional)',
+                        'সহায়ক উপকরণ (ঐচ্ছিক)',
                         style: Theme.of(context).textTheme.labelSmall
                             ?.copyWith(color: SukunColors.muted),
                       ),
@@ -193,7 +193,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'RESOURCE LIBRARY',
+                              'উপকরণ লাইব্রেরি',
                               style: TextStyle(
                                 color: SukunColors.deepTide,
                                 fontWeight: FontWeight.w700,
@@ -203,7 +203,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                             SizedBox(height: 5),
                             Text(
-                              'Link a resource',
+                              'উপকরণ বাছুন',
                               style: TextStyle(
                                 color: SukunColors.nightNavy,
                                 fontWeight: FontWeight.w700,
@@ -212,11 +212,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Published CMS resources are linkable here. '
-                              'The 114-surah Quran API catalog is separate: '
-                              'use the Quran Reader reference on the action '
-                              'card. Select an approved audio item only when '
-                              'the source specifically asks the patient to listen.',
+                              'এখানে প্রকাশিত CMS উপকরণ যুক্ত করা যায়। ১১৪ সূরার '
+                              'কুরআন তালিকা এখনো এই picker-এ নেই। রোগীর মূল '
+                              'নির্দেশনায় শুনতে বলা থাকলেই অডিও বাছুন।',
                               style: TextStyle(color: SukunColors.muted),
                             ),
                           ],
@@ -235,7 +233,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                     textInputAction: TextInputAction.search,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'Search title, Bangla title, type or category',
+                      hintText: 'নাম বা বিভাগ দিয়ে খুঁজুন',
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchController.text.isEmpty
                           ? null

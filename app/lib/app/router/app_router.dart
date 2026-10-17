@@ -311,6 +311,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => CarePlanBuilderScreen(
                   patientId: state.pathParameters['patientId']!,
                   planId: state.pathParameters['planId']!,
+                  openNewAction: state.uri.queryParameters['addAction'] == '1',
                 ),
                 routes: [
                   GoRoute(
