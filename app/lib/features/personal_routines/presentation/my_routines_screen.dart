@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
@@ -23,6 +26,7 @@ class MyRoutinesScreen extends ConsumerStatefulWidget {
 class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   late Future<_RoutinePageData> _data;
   bool _working = false;
+  bool _reminderEnabled = false;
 
   PersonalRoutineRepository get _repository =>
       PersonalRoutineRepository(Supabase.instance.client);
@@ -35,6 +39,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
 
   void _refresh() {
     _data = _load();
+    unawaited(_readReminderEnabled());
     if (mounted) setState(() {});
   }
 
@@ -49,6 +54,41 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       actions: results[1] as List<Map<String, dynamic>>,
       outcomes: results[2] as Map<String, String>,
     );
+  }
+
+  Future<void> _readReminderEnabled() async {
+    try {
+      final enabled = await ref
+          .read(personalReminderServiceProvider)
+          .isEnabled();
+      if (mounted) setState(() => _reminderEnabled = enabled);
+    } catch (_) {
+      if (mounted) setState(() => _reminderEnabled = false);
+    }
+  }
+
+  Future<void> _toggleReminders() async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      final service = ref.read(personalReminderServiceProvider);
+      if (_reminderEnabled) {
+        await service.disable();
+        _notice('আপনার ব্যক্তিগত রুটিন রিমাইন্ডার বন্ধ হয়েছে।');
+      } else {
+        final granted = await service.enable();
+        if (!granted) {
+          _notice('রিমাইন্ডারের জন্য নোটিফিকেশন অনুমতি প্রয়োজন।');
+        } else {
+          _notice('রিমাইন্ডার চালু। ব্রাউজারে শুধু খোলা ট্যাবে কাজ করবে।');
+        }
+      }
+      await _readReminderEnabled();
+    } catch (_) {
+      _notice('নোটিফিকেশন চালু করা যায়নি। আবার চেষ্টা করুন।');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
   }
 
   void _notice(String message) {
@@ -91,6 +131,11 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     setState(() => _working = true);
     try {
       await action();
+      try {
+        await ref.read(personalReminderServiceProvider).refresh();
+      } catch (_) {
+        _notice('পরিবর্তন সংরক্ষিত হয়েছে, তবে রিমাইন্ডার আপডেট করা যায়নি।');
+      }
       if (mounted) _refresh();
     } catch (_) {
       _notice('পরিবর্তনটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
@@ -448,6 +493,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     appBar: AppBar(
       title: const Text('আমার রুটিন'),
       actions: [
+        IconButton(
+          onPressed: _working ? null : _toggleReminders,
+          tooltip: _reminderEnabled
+              ? 'ব্যক্তিগত রিমাইন্ডার বন্ধ করুন'
+              : 'ব্যক্তিগত রিমাইন্ডার চালু করুন',
+          icon: Icon(
+            _reminderEnabled
+                ? Icons.notifications_active_outlined
+                : Icons.notifications_off_outlined,
+          ),
+        ),
         IconButton(
           onPressed: _working ? null : _createRoutine,
           tooltip: 'নতুন রুটিন',

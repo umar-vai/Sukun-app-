@@ -33,4 +33,25 @@ void main() {
     expect(relay.takePending(), isNull);
     relay.dispose();
   });
+  test('personal action tap is parsed as an owner-checked internal route', () {
+    final relay = NotificationTapRelay();
+    relay.accept('personal_action:$uuid');
+    expect(relay.takePendingPersonalAction(), uuid);
+    expect(relay.takePendingPersonalAction(), isNull);
+    expect(personalActionRoute(uuid), '/my-routines/action/$uuid');
+    expect(relay.takePending(), isNull);
+    relay.dispose();
+  });
+
+  test('personal action tap rejects external URLs and ambiguous IDs', () {
+    for (final unsafe in [
+      null,
+      'personal_action:https://evil.test',
+      'personal_action:../../admin',
+      'personal_action:$uuid?redirect=evil',
+      'personal_action:bad-uuid',
+    ]) {
+      expect(personalActionIdFromPayload(unsafe), isNull);
+    }
+  });
 }

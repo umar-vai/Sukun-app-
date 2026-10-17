@@ -24,12 +24,9 @@ final notificationTapRelayProvider = Provider<NotificationTapRelay>((ref) {
   return relay;
 });
 
-final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
+final localNotificationsGatewayProvider = Provider<LocalNotificationsGateway>((
   ref,
 ) {
-  final repository = AppEnvironment.isSupabaseConfigured
-      ? SupabaseNotificationRepository(Supabase.instance.client)
-      : const UnavailableNotificationRepository();
   final onOpened = ref.read(notificationTapRelayProvider).accept;
   final local = kIsWeb
       ? WebCareRemindersGateway(onNotificationOpened: onOpened)
@@ -37,6 +34,16 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
   if (local is WebCareRemindersGateway) {
     ref.onDispose(local.dispose);
   }
+  return local;
+});
+
+final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
+  ref,
+) {
+  final repository = AppEnvironment.isSupabaseConfigured
+      ? SupabaseNotificationRepository(Supabase.instance.client)
+      : const UnavailableNotificationRepository();
+  final local = ref.watch(localNotificationsGatewayProvider);
   final coordinator = NotificationCoordinator(
     repository,
     local,
@@ -47,7 +54,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
           ),
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
-    onTaskOpened: onOpened,
+    onTaskOpened: ref.read(notificationTapRelayProvider).accept,
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;
