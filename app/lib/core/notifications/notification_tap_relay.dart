@@ -18,7 +18,7 @@ String? personalActionIdFromPayload(String? payload) {
 
 String? _validId(String value) {
   const pattern =
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' +
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
       r'$';
   return RegExp(pattern).hasMatch(value) ? value.toLowerCase() : null;
 }
