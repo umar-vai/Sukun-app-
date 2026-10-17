@@ -70,7 +70,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          home: AudioPlayerScreen(resource: refreshed, loadResource: unavailable),
+          home: AudioPlayerScreen(
+            resource: refreshed,
+            loadResource: unavailable,
+          ),
         ),
       ),
     );
