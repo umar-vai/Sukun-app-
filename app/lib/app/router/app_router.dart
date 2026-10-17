@@ -45,6 +45,8 @@ import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
+import 'package:sukun_life/features/universal_announcements/presentation/universal_announcements_screen.dart';
+import 'package:sukun_life/features/universal_announcements/presentation/admin_announcements_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final sessionState = ref.watch(appSessionProvider);
@@ -135,6 +137,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
+      GoRoute(
+        path: '/announcements',
+        builder: (context, state) => const UniversalAnnouncementsScreen(),
+        routes: [
+          GoRoute(
+            path: ':announcementId',
+            builder: (context, state) => UniversalNoticeDetailScreen(
+              announcementId: state.pathParameters['announcementId']!,
+            ),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/my-routines/action/:actionId',
         builder: (context, state) => PersonalActionDetailScreen(
@@ -352,6 +366,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/admin/announcements',
+        builder: (context, state) => const AdminAnnouncementsScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const AdminAnnouncementEditorScreen(),
+          ),
+          GoRoute(
+            path: ':announcementId/edit',
+            builder: (context, state) => AdminAnnouncementEditorScreen(
+              id: state.pathParameters['announcementId']!,
+            ),
           ),
         ],
       ),
