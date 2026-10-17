@@ -28,7 +28,7 @@ class CreateCarePlanScreen extends ConsumerStatefulWidget {
 
 class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Care Plan');
+  final _nameController = TextEditingController(text: 'সেবা পরিকল্পনা');
   final _requestId = const Uuid().v4();
   late Future<List<Prescription>> _prescriptions;
   late DateTime _startDate;
@@ -169,7 +169,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                             TextFormField(
                               controller: _nameController,
                               onTap: () {
-                                if (_nameController.text == 'Care Plan') {
+                                if (_nameController.text == 'সেবা পরিকল্পনা') {
                                   _nameController.selection = TextSelection(
                                     baseOffset: 0,
                                     extentOffset: _nameController.text.length,
@@ -316,7 +316,7 @@ class _DateTile extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            value == null ? 'No end date' : _formatDate(value!),
+            value == null ? 'শেষ তারিখ নেই' : _formatDate(value!),
             style: Theme.of(context).textTheme.titleSmall,
           ),
         ],

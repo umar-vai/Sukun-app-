@@ -58,7 +58,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     if (!mounted || created != true) return;
     _reload();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prescription saved with version history.')),
+      const SnackBar(content: Text('মূল নির্দেশনা ইতিহাসসহ সংরক্ষিত হয়েছে।')),
     );
   }
 
@@ -80,17 +80,17 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Patient details')),
+      appBar: AppBar(title: const Text('রোগীর তথ্য')),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateMenu(context),
-        tooltip: 'Add patient care record',
+        tooltip: 'রোগীর সেবার তথ্য যোগ করুন',
         child: const Icon(Icons.add),
       ),
       body: FutureBuilder<(Patient?, List<Prescription>, List<CarePlan>)>(
         future: _details,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading patient details');
+            return const AppLoadingState(label: 'রোগীর তথ্য আনা হচ্ছে');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -101,8 +101,8 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
           final patient = snapshot.data?.$1;
           if (patient == null) {
             return const AppEmptyState(
-              title: 'Patient not found',
-              message: 'This patient may have been archived or removed.',
+              title: 'রোগীকে পাওয়া যায়নি',
+              message: 'রোগীর তথ্য সংরক্ষণাগারে থাকতে পারে।',
             );
           }
           final prescriptions = snapshot.data!.$2;
@@ -113,9 +113,9 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
               children: [
                 const SukunPageIntro(
-                  eyebrow: 'Care workspace',
-                  title: 'Patient overview',
-                  subtitle: 'Plans, prescriptions, and adherence in one protected view.',
+                  eyebrow: 'রোগীর সেবা',
+                  title: 'রোগীর সারসংক্ষেপ',
+                  subtitle: 'সেবা পরিকল্পনা, মূল নির্দেশনা ও অগ্রগতি এক জায়গায় দেখুন।',
                 ),
                 const SizedBox(height: 18),
                 _PatientSummaryCard(patient: patient),
@@ -126,13 +126,9 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                 ),
                 const SizedBox(height: 24),
                 SukunSectionHeader(
-                  title: 'Care plans',
-                  subtitle:
-                      'Versioned patient instructions and structured actions.',
-                  action: SukunStatusPill(
-                    label:
-                        '${plans.length} version${plans.length == 1 ? '' : 's'}',
-                  ),
+                  title: 'সেবা পরিকল্পনা',
+                  subtitle: 'প্রতিটি সংস্করণের নির্দেশনা ও করণীয়।',
+                  action: SukunStatusPill(label: '${plans.length}টি সংস্করণ'),
                 ),
                 const SizedBox(height: 12),
                 if (plans.isEmpty)
@@ -143,13 +139,13 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'No care plan has been created yet. Record a prescription first, or build a plan manually.',
+                          'এখনো সেবা পরিকল্পনা নেই। আগে মূল নির্দেশনা সংরক্ষণ করুন অথবা নিজে পরিকল্পনা সাজান।',
                         ),
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: _createPlan,
                           icon: const Icon(Icons.add_task),
-                          label: const Text('Create care plan'),
+                          label: const Text('সেবা পরিকল্পনা তৈরি করুন'),
                         ),
                       ],
                     ),
@@ -169,8 +165,8 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   ],
                 const SizedBox(height: 24),
                 SukunSectionHeader(
-                  title: 'Prescriptions',
-                  subtitle: 'Original human-authored source instructions.',
+                  title: 'মূল নির্দেশনা',
+                  subtitle: 'মানুষের লেখা মূল প্রেসক্রিপশন বা নির্দেশনা।',
                   action: SukunStatusPill(label: '${prescriptions.length}'),
                 ),
                 const SizedBox(height: 12),
@@ -179,7 +175,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                     tone: SukunSurfaceTone.soft,
                     showBorder: false,
                     child: Text(
-                      'No prescription has been recorded yet. Add the original human-authored instruction before building a care plan.',
+                      'এখনো মূল নির্দেশনা নেই। পরিকল্পনা সাজানোর আগে মূল নির্দেশনা যোগ করুন।',
                     ),
                   )
                 else
@@ -210,9 +206,10 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SukunPageIntro(
-                eyebrow: 'Patient care',
-                title: 'What would you like to add?',
-                subtitle: 'Preserve the human instruction or create a structured draft plan.',
+                eyebrow: 'রোগীর সেবা',
+                title: 'কী যোগ করবেন?',
+                subtitle:
+                    'মূল নির্দেশনা সংরক্ষণ করুন অথবা খসড়া পরিকল্পনা সাজান।',
               ),
               const SizedBox(height: 18),
               SukunSurface(
@@ -221,7 +218,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   children: [
                     SukunIconBadge(icon: Icons.note_add_outlined),
                     SizedBox(width: 14),
-                    Expanded(child: Text('Add original prescription')),
+                    Expanded(child: Text('মূল নির্দেশনা যোগ করুন')),
                     Icon(Icons.arrow_forward_rounded),
                   ],
                 ),
@@ -233,7 +230,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   children: [
                     SukunIconBadge(icon: Icons.add_task),
                     SizedBox(width: 14),
-                    Expanded(child: Text('Create care plan')),
+                    Expanded(child: Text('সেবা পরিকল্পনা তৈরি করুন')),
                     Icon(Icons.arrow_forward_rounded),
                   ],
                 ),
@@ -284,9 +281,9 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
           return SukunSurface(
             child: ListTile(
               leading: const Icon(Icons.error_outline),
-              title: const Text('Progress could not be loaded'),
+              title: const Text('অগ্রগতি আনা যাচ্ছে না'),
               trailing: IconButton(
-                tooltip: 'Retry progress',
+                tooltip: 'আবার চেষ্টা করুন',
                 onPressed: () => setState(() {
                   _progress = _load();
                 }),
@@ -307,12 +304,12 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Last 7 days',
+                      'গত ৭ দিন',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                   SukunStatusPill(
-                    label: '$percentage% completed',
+                    label: '$percentage% সম্পন্ন',
                     tone: SukunStatusTone.brand,
                   ),
                 ],
@@ -321,7 +318,7 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
               LinearProgressIndicator(value: progress.completionRate),
               const SizedBox(height: 10),
               Text(
-                '${progress.completed} done · ${progress.skipped} skipped · ${progress.remaining} remaining',
+                '${progress.completed}টি সম্পন্ন · ${progress.skipped}টি বাদ · ${progress.remaining}টি বাকি',
               ),
             ],
           ),
@@ -367,12 +364,17 @@ class _PatientSummaryCard extends StatelessWidget {
           const Divider(height: 32),
           _DetailLine(
             icon: Icons.phone_outlined,
-            label: patient.phone ?? 'No phone number',
+            label: patient.phone ?? 'ফোন নম্বর নেই',
           ),
           const SizedBox(height: 10),
           _DetailLine(
             icon: Icons.verified_user_outlined,
-            label: 'Status: ${patient.status.name}',
+            label:
+                'অবস্থা: ${switch (patient.status) {
+                  PatientStatus.active => 'চালু',
+                  PatientStatus.inactive => 'নিষ্ক্রিয়',
+                  PatientStatus.archived => 'সংরক্ষিত',
+                }}',
           ),
         ],
       ),
@@ -420,21 +422,21 @@ class _PrescriptionCard extends StatelessWidget {
             children: [
               SukunStatusPill(label: prescription.visibility.label),
               if (sessionDate != null)
-                SukunStatusPill(label: 'Session ${_formatDate(sessionDate)}'),
+                SukunStatusPill(label: 'সেশন ${_formatDate(sessionDate)}'),
             ],
           ),
           const SizedBox(height: 10),
           Text(prescription.rawText),
           const SizedBox(height: 12),
           Text(
-            'Recorded ${_formatDate(prescription.createdAt)}',
+            'সংরক্ষিত ${_formatDate(prescription.createdAt)}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 10),
           OutlinedButton.icon(
             onPressed: onBuildPlan,
             icon: const Icon(Icons.add_task),
-            label: const Text('Build care plan'),
+            label: const Text('সেবা পরিকল্পনা সাজান'),
           ),
         ],
       ),
@@ -472,7 +474,7 @@ class _CarePlanCard extends StatelessWidget {
                 Text(plan.name, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
                 Text(
-                  'Version ${plan.version} · starts ${_formatDate(plan.startDate)}',
+                  'সংস্করণ ${plan.version} · শুরু ${_formatDate(plan.startDate)}',
                   style: Theme.of(context).textTheme.bodySmall
                       ?.copyWith(color: SukunColors.muted),
                 ),
@@ -480,7 +482,12 @@ class _CarePlanCard extends StatelessWidget {
             ),
           ),
           SukunStatusPill(
-            label: plan.status.label,
+            label: switch (plan.status) {
+              CarePlanStatus.draft => 'খসড়া',
+              CarePlanStatus.active => 'চালু',
+              CarePlanStatus.inactive => 'নিষ্ক্রিয়',
+              CarePlanStatus.archived => 'সংরক্ষিত',
+            },
             tone: plan.status == CarePlanStatus.active
                 ? SukunStatusTone.success
                 : SukunStatusTone.neutral,
