@@ -20,6 +20,7 @@ class SukunLifeApp extends ConsumerStatefulWidget {
 
 class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   StreamSubscription<String>? _openedSubscription;
+  StreamSubscription<String>? _openedPersonalSubscription;
   bool _nativeNotificationsInitialized = false;
 
   @override
@@ -29,6 +30,10 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         .read(notificationTapRelayProvider)
         .openedTaskIds
         .listen((_) => _routePendingTask());
+    _openedPersonalSubscription = ref
+        .read(notificationTapRelayProvider)
+        .openedPersonalActionIds
+        .listen((_) => _routePendingPersonal());
   }
 
   void _routePendingTask() {
@@ -45,16 +50,34 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     });
   }
 
+  void _routePendingPersonal() {
+    final session = ref.read(appSessionProvider).value;
+    if (session?.isAuthenticated != true || session!.requiresCredentialChange) {
+      return;
+    }
+    final actionId = ref.read(notificationTapRelayProvider)
+        .takePendingPersonalAction();
+    if (actionId == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ref.read(appSessionProvider).value?.isAuthenticated != true) {
+        return;
+      }
+      // Destination will independently query owner-scoped action via RLS.
+      ref.read(appRouterProvider).go(personalActionRoute(actionId));
+    });
+  }
+
   @override
   void dispose() {
     unawaited(_openedSubscription?.cancel());
+    unawaited(_openedPersonalSubscription?.cancel());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(appSessionProvider).value;
-    if (session?.isPatient == true) {
+    if (session?.isAuthenticated == true) {
       // Browser app uses guarded URL navigation; unsupported native local
       // notification initialization is never run by this root on Web.
       if (!kIsWeb && !_nativeNotificationsInitialized) {
@@ -65,13 +88,19 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
             ref
                 .read(notificationCoordinatorProvider)
                 .initialize()
-                .then((_) => _routePendingTask())
+                .then((_) {
+                  _routePendingTask();
+                  _routePendingPersonal();
+                })
                 .catchError((Object _) {}),
           );
         });
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _routePendingTask();
+        if (mounted) {
+          _routePendingTask();
+          _routePendingPersonal();
+        }
       });
     }
     return MaterialApp.router(
