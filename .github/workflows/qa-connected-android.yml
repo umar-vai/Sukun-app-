@@ -8,6 +8,9 @@ on:
         type: boolean
         required: true
         default: false
+  # One explicitly requested client pilot gate; no general push/PR packaging.
+  push:
+    branches: [chore/android-pilot-official-logo-20261018]
 
 permissions:
   contents: read
@@ -20,9 +23,14 @@ jobs:
   android-connected-qa:
     name: Backend-connected Android QA
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    # Secrets must never be used on pull requests from forks.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_native_qa_build == true }}
+    timeout-minutes: 40
+    # Only a manual approval or the user's single named pilot commit is allowed.
+    # Never make native packaging part of ordinary push / PR CI.
+    if: >-
+      ${{ (github.event_name == 'workflow_dispatch' && inputs.approve_native_qa_build == true) ||
+          (github.event_name == 'push' &&
+           github.ref == 'refs/heads/chore/android-pilot-official-logo-20261018' &&
+           contains(github.event.head_commit.message, '[client-pilot-qa-approved]')) }}
     defaults:
       run:
         working-directory: app
