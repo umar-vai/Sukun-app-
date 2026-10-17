@@ -56,11 +56,13 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     if (session?.isAuthenticated != true || session!.requiresCredentialChange) {
       return;
     }
-    final actionId = ref.read(notificationTapRelayProvider)
+    final actionId = ref
+        .read(notificationTapRelayProvider)
         .takePendingPersonalAction();
     if (actionId == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || ref.read(appSessionProvider).value?.isAuthenticated != true) {
+      if (!mounted ||
+          ref.read(appSessionProvider).value?.isAuthenticated != true) {
         return;
       }
       // Destination will independently query owner-scoped action via RLS.
