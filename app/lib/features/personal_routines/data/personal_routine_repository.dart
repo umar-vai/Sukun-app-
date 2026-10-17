@@ -57,7 +57,7 @@ final class PersonalRoutineRepository {
         .eq('id', id);
   }
 
-  Future<void> saveAction({
+  Future<String> saveAction({
     required String routineId,
     String? actionId,
     required String title,
@@ -93,7 +93,12 @@ final class PersonalRoutineRepository {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
     if (actionId == null) {
-      await client.from('personal_routine_actions').insert(payload);
+      final created = await client
+          .from('personal_routine_actions')
+          .insert(payload)
+          .select('id')
+          .single();
+      return created['id'] as String;
     } else {
       payload.remove('owner_user_id');
       payload.remove('routine_id');
@@ -101,7 +106,45 @@ final class PersonalRoutineRepository {
           .from('personal_routine_actions')
           .update(payload)
           .eq('id', actionId);
+      return actionId;
     }
+  }
+
+  /// Ordered resource references; RLS filters out every other owner's rows.
+  Future<List<Map<String, dynamic>>> listActionResources(String actionId) async {
+    final rows = await client
+        .from('personal_routine_action_resources')
+        .select('id,action_id,provider,content_item_id,external_resource_ref,sort_order,content_items(id,title,title_bn,type,status,visibility)')
+        .eq('action_id', actionId)
+        .order('sort_order', ascending: true);
+    return rows.map((row) => Map<String,dynamic>.from(row)).toList();
+  }
+
+  /// The SECURITY INVOKER RPC applies the whole ordered selection atomically.
+  /// Only published, public CMS items can be persisted by normal users.
+  Future<void> replaceActionResources({
+    required String actionId,
+    required List<String> cmsIds,
+  }) async {
+    if (cmsIds.length > 16 || cmsIds.toSet().length != cmsIds.length) {
+      throw ArgumentError('Invalid resource selection');
+    }
+    await client.rpc('replace_personal_action_resources', params: {
+      'p_action_id': actionId,
+      'p_resources': [
+        for (final id in cmsIds)
+          {'provider': 'cms', 'content_item_id': id},
+      ],
+    });
+  }
+
+  Future<Map<String, dynamic>?> getAction(String actionId) async {
+    final row = await client
+        .from('personal_routine_actions')
+        .select('id,routine_id,title,notification_title,content_item_id,resource_provider,is_active')
+        .eq('id', actionId)
+        .maybeSingle();
+    return row == null ? null : Map<String, dynamic>.from(row);
   }
 
   Future<void> duplicateAction(Map<String, dynamic> action) async {
