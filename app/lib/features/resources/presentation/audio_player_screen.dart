@@ -86,9 +86,8 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
             ),
           if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
             IconButton(
-              onPressed: () => context.push(
-                '/admin/content/${widget.resource.id}/edit',
-              ),
+              onPressed: () =>
+                  context.push('/admin/content/${widget.resource.id}/edit'),
               tooltip: 'অডিও সম্পাদনা করুন',
               icon: const Icon(Icons.edit_outlined),
             ),
