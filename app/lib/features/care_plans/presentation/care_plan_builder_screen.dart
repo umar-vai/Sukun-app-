@@ -61,6 +61,14 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     if (mounted && changed == true) _reload();
   }
 
+  Future<void> _duplicateAction(PlanAction action) async {
+    final changed = await context.push<bool>(
+      '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/new'
+      '?copyActionId=${Uri.encodeQueryComponent(action.id)}',
+    );
+    if (mounted && changed == true) _reload();
+  }
+
   Future<void> _generateActions(CarePlan plan) async {
     final prescriptionId = plan.prescriptionId;
     if (prescriptionId == null) return;
@@ -294,6 +302,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                             editable: data.plan.isEditable && !_working,
                             index: index,
                             onEdit: () => _openAction(action),
+                            onDuplicate: () => _duplicateAction(action),
                             onReject: () => _reject(action),
                           ),
                         );
@@ -466,6 +475,7 @@ class _ActionCard extends StatelessWidget {
     required this.editable,
     required this.index,
     required this.onEdit,
+    required this.onDuplicate,
     required this.onReject,
   });
 
@@ -473,6 +483,7 @@ class _ActionCard extends StatelessWidget {
   final bool editable;
   final int index;
   final VoidCallback onEdit;
+  final VoidCallback onDuplicate;
   final VoidCallback onReject;
 
   @override
@@ -540,8 +551,18 @@ class _ActionCard extends StatelessWidget {
             ),
             PopupMenuButton<String>(
               tooltip: 'আরও কাজ',
-              onSelected: (_) => onReject(),
+              onSelected: (value) {
+                if (value == 'duplicate') {
+                  onDuplicate();
+                } else if (value == 'remove') {
+                  onReject();
+                }
+              },
               itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'duplicate',
+                  child: Text('ডুপ্লিকেট করে নতুন খসড়া'),
+                ),
                 PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
               ],
             ),
