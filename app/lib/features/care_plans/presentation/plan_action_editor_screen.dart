@@ -9,6 +9,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:uuid/uuid.dart';
 
 class PlanActionEditorScreen extends ConsumerStatefulWidget {
@@ -16,10 +17,14 @@ class PlanActionEditorScreen extends ConsumerStatefulWidget {
     super.key,
     required this.planId,
     this.actionId,
+    this.copyActionId,
+    this.initialResourceId,
   });
 
   final String planId;
   final String? actionId;
+  final String? copyActionId;
+  final String? initialResourceId;
 
   @override
   ConsumerState<PlanActionEditorScreen> createState() =>
@@ -73,17 +78,38 @@ class _PlanActionEditorScreenState
     }
     final actions = results[1] as List<PlanAction>;
     final resources = results[2] as List<ContentResourceOption>;
-    final action = widget.actionId == null
+    final sourceActionId = widget.actionId ?? widget.copyActionId;
+    final action = sourceActionId == null
         ? null
-        : actions.where((item) => item.id == widget.actionId).firstOrNull;
-    if (widget.actionId != null && action == null) {
+        : actions.where((item) => item.id == sourceActionId).firstOrNull;
+    if (sourceActionId != null && action == null) {
       throw const CarePlanWorkflowException('Plan action was not found.');
     }
     _plan = plan;
     _startDate = action?.startDate ?? plan.startDate;
     _endDate = action?.endDate ?? plan.endDate;
-    if (action != null) _populate(action);
-    return _EditorData(plan: plan, action: action, resources: resources);
+    if (action != null) {
+      _populate(action);
+      if (widget.copyActionId != null) {
+        // Duplicate creates a NEW draft. Never copy approvals or reminders.
+        _reviewStatus = ActionReviewStatus.draft;
+        _reminderEnabled = false;
+      }
+    } else if (widget.initialResourceId != null) {
+      final initialResource = resources
+          .where(
+            (item) => item.id == widget.initialResourceId && item.isLinkable,
+          )
+          .firstOrNull;
+      if (initialResource != null) {
+        _selectResource(initialResource);
+      }
+    }
+    return _EditorData(
+      plan: plan,
+      action: widget.actionId == null ? null : action,
+      resources: resources,
+    );
   }
 
   void _populate(PlanAction action) {
@@ -104,6 +130,23 @@ class _PlanActionEditorScreenState
       ..clear()
       ..addAll(action.linkedResources.map((resource) => resource.id));
     _usageNoteController.text = action.resource?.usageNote ?? '';
+  }
+
+  void _selectResource(ContentResourceOption resource) {
+    if (!_contentItemIds.contains(resource.id) &&
+        _contentItemIds.length >= 16) {
+      return;
+    }
+    _contentItemIds.add(resource.id);
+    _contentItemId = resource.id;
+    // Resource-first quick action: prefill editable labels, never invent a
+    // practitioner instruction or mark the resulting action approved.
+    if (_titleController.text.trim().isEmpty) {
+      _titleController.text = resource.displayTitle;
+    }
+    if (_typeController.text.trim().isEmpty) {
+      _typeController.text = resource.type;
+    }
   }
 
   @override
@@ -239,6 +282,39 @@ class _PlanActionEditorScreenState
                         subtitle: 'Capture only what the practitioner explicitly provided.',
                       ),
                       const SizedBox(height: 18),
+                      if (!editing) ...[
+                        Text(
+                          'লাইব্রেরি থেকে করণীয় যোগ করুন',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        ResourcePickerField(
+                          resources: data.resources,
+                          selectedId: _contentItemId,
+                          enabled: true,
+                          onChanged: (id) {
+                            final resource = data.resources
+                                .where(
+                                  (item) => item.id == id && item.isLinkable,
+                                )
+                                .firstOrNull;
+                            if (resource != null) {
+                              setState(() => _selectResource(resource));
+                            } else if (id.isEmpty) {
+                              setState(() {
+                                _contentItemIds.clear();
+                                _contentItemId = '';
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'প্রকাশিত কনটেন্ট বাছুন, তারপর নিজের মতো শিরোনাম ও সময় লিখুন। '
+                          'যা মূল প্রেসক্রিপশনে নেই তা অনুমান করে যোগ করবেন না।',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       const SukunSurface(
                         tone: SukunSurfaceTone.warning,
                         showBorder: false,
@@ -468,36 +544,23 @@ class _PlanActionEditorScreenState
                             setState(() => _reviewStatus = value),
                       ),
                       const SizedBox(height: 14),
-                      SukunChoiceField<String>(
-                        label: 'Linked resource',
-                        placeholder: 'No linked resource',
-                        value: _contentItemId,
-                        options: [
-                          const SukunChoiceOption(
-                            value: '',
-                            title: 'No linked resource',
-                            description: 'Keep this action instruction-only.',
-                          ),
-                          for (final resource in data.resources.where(
-                            (item) => item.isLinkable,
-                          ))
-                            SukunChoiceOption(
-                              value: resource.id,
-                              title: resource.title,
-                              description: 'Reuse this canonical resource without copying it.',
-                              icon: Icons.menu_book_outlined,
-                            ),
-                        ],
-                        onChanged: (value) => setState(() {
-                          if (value.isEmpty) {
-                            _contentItemIds.clear();
-                            _contentItemId = '';
-                          } else if (_contentItemIds.length < 16 ||
-                              _contentItemIds.contains(value)) {
-                            _contentItemIds.add(value);
-                            _contentItemId = value;
-                          }
-                        }),
+                      ResourcePickerField(
+                        resources: data.resources,
+                        selectedId: _contentItemId,
+                        enabled: true,
+                        onChanged: (id) {
+                          final resource = data.resources
+                              .where((item) => item.id == id && item.isLinkable)
+                              .firstOrNull;
+                          setState(() {
+                            if (resource != null) {
+                              _selectResource(resource);
+                            } else if (id.isEmpty) {
+                              _contentItemIds.clear();
+                              _contentItemId = '';
+                            }
+                          });
+                        },
                       ),
                       if (_contentItemIds.isNotEmpty) ...[
                         const SizedBox(height: 10),

@@ -318,6 +318,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'actions/new',
                     builder: (context, state) => PlanActionEditorScreen(
                       planId: state.pathParameters['planId']!,
+                      copyActionId: state.uri.queryParameters['copyActionId'],
+                      initialResourceId:
+                          state.uri.queryParameters['resourceId'],
                     ),
                   ),
                   GoRoute(

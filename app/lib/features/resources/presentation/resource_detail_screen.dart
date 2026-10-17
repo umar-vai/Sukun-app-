@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/external_resource_launcher.dart';
@@ -153,7 +154,20 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           );
         }
         return Scaffold(
-          appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+          appBar: AppBar(
+            title: const Text('ইসলামিক উপকরণ'),
+            actions: [
+              if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
+                IconButton(
+                  onPressed: () async {
+                    await context.push('/admin/content/${resource.id}/edit');
+                    if (mounted) _reload();
+                  },
+                  tooltip: 'উপকরণ সম্পাদনা করুন',
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+            ],
+          ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
