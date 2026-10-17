@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,7 +104,7 @@ class _AdminAnnouncementsScreenState
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context
-                      .push('/admin/announcements/' + notice.id + '/edit')
+                      .push('/admin/announcements/${notice.id}/edit')
                       .then((_) {
                         if (mounted) _refresh();
                       }),
@@ -131,7 +133,9 @@ class _AdminAnnouncementEditorScreenState
   final _body = TextEditingController();
   final _link = TextEditingController();
   String? _imagePath;
-  PlatformFile? _imageFile;
+  Uint8List? _imageBytes;
+  String? _imageFileName;
+  String? _imageExtension;
   String _status = 'draft';
   bool _busy = false;
   bool _loading = false;
@@ -171,20 +175,21 @@ class _AdminAnnouncementEditorScreenState
   }
 
   Future<void> _chooseImage() async {
-    final result = await FilePicker.platform.pickFiles(
+    final selected = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
-      withData: true,
-      allowMultiple: false,
     );
-    if (!mounted || result == null) return;
-    final selected = result.files.single;
-    if (selected.size > 3 * 1024 * 1024 || selected.bytes == null) {
+    if (!mounted || selected == null) return;
+    final bytes = await selected.readAsBytes();
+    if (!mounted) return;
+    if (bytes.isEmpty || bytes.length > 3 * 1024 * 1024) {
       setState(() => _error = '৩ MB-এর কম PNG/JPG/WebP ছবি বেছে নিন।');
       return;
     }
     setState(() {
-      _imageFile = selected;
+      _imageBytes = bytes;
+      _imageFileName = selected.name;
+      _imageExtension = selected.extension;
       _error = null;
     });
   }
@@ -211,16 +216,16 @@ class _AdminAnnouncementEditorScreenState
     });
     try {
       var uploadedPath = _imagePath;
-      if (_imageFile != null) {
-        final extension = (_imageFile!.extension ?? '').toLowerCase();
+      if (_imageBytes != null) {
+        final extension = (_imageExtension ?? '').toLowerCase();
         final mime = extension == 'png'
             ? 'image/png'
             : extension == 'webp'
             ? 'image/webp'
             : 'image/jpeg';
         uploadedPath = await repo.uploadImage(
-          name: _imageFile!.name,
-          bytes: _imageFile!.bytes!,
+          name: _imageFileName!,
+          bytes: _imageBytes!,
           mimeType: mime,
         );
       }
@@ -266,7 +271,7 @@ class _AdminAnnouncementEditorScreenState
             padding: const EdgeInsets.all(20),
             children: [
               if (widget.id != null) ...[
-                Text('বর্তমান অবস্থা: ' + _status),
+                Text('বর্তমান অবস্থা: $_status'),
                 const SizedBox(height: 12),
               ],
               TextField(
@@ -294,19 +299,21 @@ class _AdminAnnouncementEditorScreenState
                 onPressed: _busy ? null : _chooseImage,
                 icon: const Icon(Icons.add_photo_alternate_outlined),
                 label: Text(
-                  _imageFile == null
+                  _imageBytes == null
                       ? (_imagePath == null
                             ? 'ছবি যোগ করুন'
                             : 'ছবি পরিবর্তন করুন')
-                      : _imageFile!.name,
+                      : _imageFileName!,
                 ),
               ),
-              if (_imagePath != null || _imageFile != null)
+              if (_imagePath != null || _imageBytes != null)
                 TextButton(
                   onPressed: _busy
                       ? null
                       : () => setState(() {
-                          _imageFile = null;
+                          _imageBytes = null;
+                          _imageFileName = null;
+                          _imageExtension = null;
                           _imagePath = null;
                         }),
                   child: const Text('ছবি বাদ দিন'),
