@@ -19,7 +19,7 @@ void main() {
   );
   final calculator = AdhanPrayerCalculationService();
 
-  test('Fajr +10 is calculated for tomorrow if today's prayer has passed', () {
+  test("Fajr +10 is calculated for tomorrow if today\'s prayer has passed", () {
     final after = DateTime.utc(2026, 10, 3, 2);
     const rule = PrayerRelativeReminder(
       anchor: PrayerReminderAnchor.fajr,
@@ -39,7 +39,7 @@ void main() {
     expect(next.isAfter(after), isTrue);
   });
 
-  test('Maghrib +5 uses today's calculated Maghrib, not a fixed clock', () {
+  test("Maghrib +5 uses today\'s calculated Maghrib, not a fixed clock", () {
     final after = DateTime.utc(2026, 10, 3, 4);
     const rule = PrayerRelativeReminder(
       anchor: PrayerReminderAnchor.maghrib,
