@@ -151,7 +151,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                     ),
                   ),
                   DropdownButtonFormField<String>(
-                    value: kind,
+                    initialValue: kind,
                     decoration: const InputDecoration(labelText: 'কখন করবেন?'),
                     items: const [
                       DropdownMenuItem(
@@ -275,10 +275,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           offsetMinutes: offset,
           fixedTime: fixed == null
               ? null
-              : fixed!.hour.toString().padLeft(2, '0') +
-                    ':' +
-                    fixed!.minute.toString().padLeft(2, '0') +
-                    ':00',
+              : "${fixed!.hour.toString().padLeft(2, '0')}:${fixed!.minute.toString().padLeft(2, '0')}:00",
           timezoneName: settings.location?.timezone,
           city: kind == 'fajr' || kind == 'maghrib'
               ? settings.location?.name
@@ -316,8 +313,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             settings: settings,
             after: DateTime.now(),
           );
-      return 'পরের নির্ধারিত সময়: ' +
-          TimeOfDay.fromDateTime(upcoming).format(context);
+      return 'পরের নির্ধারিত সময়: ${TimeOfDay.fromDateTime(upcoming).format(context)}';
     } catch (_) {
       return 'নামাজের সময় এখন নির্ধারণ করা যাচ্ছে না।';
     }
@@ -424,9 +420,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                         leading: const Icon(Icons.check_circle_outline),
                         title: Text(action['title'].toString()),
                         subtitle: Text(
-                          action['schedule_kind'].toString() +
-                              ' · ' +
-                              action['notification_title'].toString(),
+                          "${action['schedule_kind']} · ${action['notification_title']}",
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
@@ -459,8 +453,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                             PopupMenuItem(
                               enabled: false,
                               child: Text(
-                                'আজ: ' +
-                                    (data.outcomes[action['id']] ?? 'বাকি আছে'),
+                                "আজ: ${data.outcomes[action['id']] ?? 'বাকি আছে'}",
                               ),
                             ),
                             const PopupMenuItem(
