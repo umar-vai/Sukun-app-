@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The installer may read only app-private verified update APKs. -->
+    <external-files-path name="verified_apk" path="Download/" />
+</paths>

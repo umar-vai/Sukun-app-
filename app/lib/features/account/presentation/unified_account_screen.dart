@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/updates/android_update_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -99,6 +101,17 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/announcements'),
                 ),
+                if (!kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.system_update_alt),
+                    title: const Text('অ্যাপ আপডেট চেক করুন'),
+                    subtitle: const Text('অফিসিয়াল নতুন APK সংস্করণ খুঁজুন'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => checkAndroidUpdateManually(context),
+                  ),
+                ],
               ],
             ),
           ),

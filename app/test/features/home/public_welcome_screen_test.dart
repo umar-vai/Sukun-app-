@@ -9,8 +9,14 @@ void main() {
     expect(approvedAndroidApkUri('http://example.com/app.apk'), isNull);
     expect(approvedAndroidApkUri('javascript:alert(1)'), isNull);
     expect(
-      approvedAndroidApkUri('https://downloads.example.com/app.apk')?.host,
-      'downloads.example.com',
+      approvedAndroidApkUri(
+        'https://downloads.sukunlife.com/android/1.0.1/SukunLife.apk',
+      )?.host,
+      'downloads.sukunlife.com',
+    );
+    expect(
+      approvedAndroidApkUri('https://downloads.example.com/app.apk'),
+      isNull,
     );
   });
 

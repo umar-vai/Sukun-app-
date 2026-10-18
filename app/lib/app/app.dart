@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/router/app_router.dart';
+import 'package:sukun_life/core/updates/android_update_panel.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -170,8 +171,10 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
-      builder: (context, child) => UniversalNoticeAutoPopup(
-        child: Stack(children: [?child, const GlobalAudioDock()]),
+      builder: (context, child) => AndroidUpdateAutoPopup(
+        child: UniversalNoticeAutoPopup(
+          child: Stack(children: [?child, const GlobalAudioDock()]),
+        ),
       ),
     );
   }

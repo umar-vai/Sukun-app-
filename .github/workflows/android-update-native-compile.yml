@@ -1,0 +1,42 @@
+name: Android Update Native Compile (No APK)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/android/**'
+      - 'app/lib/core/updates/**'
+      - 'app/lib/app/app.dart'
+      - '.github/workflows/android-update-native-compile.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-kotlin-compile:
+    name: Compile Android Kotlin integration (no APK output)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      # This repository has Gradle wrapper properties but no committed gradlew.
+      # Use the exact wrapper-declared Gradle version without packaging an APK.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Fetch Flutter dependencies
+        working-directory: app
+        run: flutter pub get
+      - name: Compile Android native updater channel (no APK/AAB)
+        working-directory: app/android
+        run: gradle :app:compileDebugKotlin --no-daemon
