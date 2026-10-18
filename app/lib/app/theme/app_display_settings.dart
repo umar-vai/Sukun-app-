@@ -50,13 +50,13 @@ class AppDisplaySettings extends ValueNotifier<AppDisplayPreferences> {
 
   static double validBengaliScale(double? scale) =>
       scale != null && scale.isFinite && scale >= 0.85 && scale <= 1.4
-          ? scale
-          : 1.0;
+      ? scale
+      : 1.0;
 
   static double validArabicScale(double? scale) =>
       scale != null && scale.isFinite && scale >= 0.85 && scale <= 1.6
-          ? scale
-          : 1.0;
+      ? scale
+      : 1.0;
 
   Future<void> setThemeMode(ThemeMode mode) async {
     value = value.copyWith(themeMode: mode);
