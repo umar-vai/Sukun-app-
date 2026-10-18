@@ -29,9 +29,14 @@ jobs:
           flutter-version: '3.47.6'
           channel: stable
           cache: true
+      # This repository has Gradle wrapper properties but no committed gradlew.
+      # Use the exact wrapper-declared Gradle version without packaging an APK.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
       - name: Fetch Flutter dependencies
         working-directory: app
         run: flutter pub get
       - name: Compile Android native updater channel (no APK/AAB)
         working-directory: app/android
-        run: ./gradlew :app:compileDebugKotlin --no-daemon
+        run: gradle :app:compileDebugKotlin --no-daemon
