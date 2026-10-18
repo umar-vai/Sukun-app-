@@ -618,7 +618,9 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('অডিও চালু হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।'),
+            content: const Text(
+              'অডিও চালু হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।',
+            ),
             action: SnackBarAction(
               label: 'ব্রাউজারে শুনুন',
               onPressed: () async {
