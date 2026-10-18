@@ -8,6 +8,7 @@ import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/auth/auth_repository.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -106,7 +107,16 @@ void main() {
     expect(width, lessThanOrEqualTo(1140));
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
     expect(find.text('নামাজের সময়'), findsOneWidget);
-    expect(find.text('কিবলার দিক'), findsOneWidget);
+    expect(find.byKey(const Key('home-compact-prayer')), findsOneWidget);
+    expect(find.byTooltip('কিবলার দিক'), findsOneWidget);
+    expect(resourceSections.length, 8);
+    for (final section in resourceSections) {
+      expect(
+        find.byKey(Key('home-resource-${section.slug}')),
+        findsOneWidget,
+        reason: 'Home must expose the canonical ${section.slug} section',
+      );
+    }
   });
 }
 
