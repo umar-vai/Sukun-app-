@@ -141,8 +141,10 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    icon: const Icon(Icons.notification_important_outlined,
-                        size: 18),
+                    icon: const Icon(
+                      Icons.notification_important_outlined,
+                      size: 18,
+                    ),
                     label: const Text(
                       'গুরুত্বপূর্ণ নোটিশ',
                       style: TextStyle(
