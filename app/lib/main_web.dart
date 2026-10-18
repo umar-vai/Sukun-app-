@@ -51,7 +51,7 @@ class _WebBootstrapState extends State<_WebBootstrap> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return MaterialApp(
-            title: 'Sukun Life Preview',
+            title: 'Sukun Life',
             debugShowCheckedModeBanner: false,
             theme: SukunTheme.light(),
             home: const SukunLaunchScreen(),
@@ -59,7 +59,7 @@ class _WebBootstrapState extends State<_WebBootstrap> {
         }
         if (snapshot.hasError) {
           return MaterialApp(
-            title: 'Sukun Life Preview',
+            title: 'Sukun Life',
             debugShowCheckedModeBanner: false,
             theme: SukunTheme.light(),
             home: Scaffold(

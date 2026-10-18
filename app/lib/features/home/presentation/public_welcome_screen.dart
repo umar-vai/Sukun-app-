@@ -98,6 +98,8 @@ class PublicWelcomeScreen extends StatelessWidget {
                           );
                         },
                       ),
+                      const SizedBox(height: 30),
+                      const _WelcomeRuqyahSection(),
                       const SizedBox(height: 44),
                       _WelcomeAccess(
                         canDownload: canDownload,
@@ -147,13 +149,13 @@ class _WelcomeHeader extends StatelessWidget {
       builder: (context, constraints) => constraints.maxWidth >= 700
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [const SukunLifeLogo(height: 45), links],
+              children: [const SukunLifeLogo(height: 100), links],
             )
           : Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 16,
               runSpacing: 12,
-              children: [const SukunLifeLogo(height: 45), links],
+              children: [const SukunLifeLogo(height: 82), links],
             ),
     );
   }
@@ -326,6 +328,52 @@ class _WelcomeBenefit extends StatelessWidget {
           ),
         ],
       ),
+    ),
+  );
+}
+
+class _WelcomeRuqyahSection extends StatelessWidget {
+  const _WelcomeRuqyahSection();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(26),
+    decoration: BoxDecoration(
+      color: SukunColors.mist,
+      borderRadius: BorderRadius.circular(25),
+      border: Border.all(color: SukunColors.border),
+    ),
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 24,
+      runSpacing: 18,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 650),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'রুকইয়াহ চর্চায় শান্ত সময় গড়ুন',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'কুরআনভিত্তিক রুকইয়াহর রিসোর্স, অডিও ও নির্দেশনা এক জায়গায় খুঁজে নিজের চর্চাকে সহজ ও নিয়মিত করুন।',
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: SukunColors.muted, height: 1.55),
+              ),
+            ],
+          ),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => context.go('/resources/ruqyah'),
+          icon: const Icon(Icons.auto_stories_outlined),
+          label: const Text('রুকইয়াহ রিসোর্স দেখুন'),
+        ),
+      ],
     ),
   );
 }
