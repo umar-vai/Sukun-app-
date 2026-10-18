@@ -36,11 +36,15 @@ class _UniversalNoticeDetailScreenState
     final owner = ref.read(appSessionProvider);
     if (owner.hasValue) {
       final store = ref.read(universalNoticeSeenStoreProvider);
-      unawaited(_notice.then((notice) async {
-        if (notice != null) {
-          await store.mark(notice, owner.value?.userId);
-        }
-      }).catchError((Object _) {}));
+      unawaited(
+        _notice
+            .then((notice) async {
+              if (notice != null) {
+                await store.mark(notice, owner.value?.userId);
+              }
+            })
+            .catchError((Object _) {}),
+      );
     }
   }
 
