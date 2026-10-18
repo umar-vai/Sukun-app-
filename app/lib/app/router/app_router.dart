@@ -47,6 +47,7 @@ import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.d
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_announcements_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/admin_announcements_screen.dart';
+import 'package:sukun_life/app/router/role_navigation_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final sessionState = ref.watch(appSessionProvider);
@@ -108,317 +109,360 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) =>
-            _SessionLanding(sessionState: sessionState),
-      ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(
-        path: '/register',
-        builder: (context, state) => const MemberSignUpScreen(),
-      ),
-      GoRoute(
-        path: '/login/otp',
-        builder: (context, state) => PublicOtpSignInScreen(
-          channel: state.uri.queryParameters['channel'] == 'phone'
-              ? PublicOtpChannel.phone
-              : PublicOtpChannel.email,
+      ShellRoute(
+        builder: (context, state, child) => RoleNavigationShell(
+          path: state.uri.path,
+          session: session,
+          child: child,
         ),
-      ),
-      GoRoute(
-        path: '/prayer-times',
-        builder: (context, state) => const PrayerTimesScreen(),
         routes: [
           GoRoute(
-            path: 'settings',
-            builder: (context, state) => const PrayerSettingsScreen(),
+            path: '/',
+            builder: (context, state) =>
+                _SessionLanding(sessionState: sessionState),
           ),
-        ],
-      ),
-      GoRoute(path: '/qibla', builder: (context, state) => const QiblaScreen()),
-      GoRoute(
-        path: '/announcements',
-        builder: (context, state) => const UniversalAnnouncementsScreen(),
-        routes: [
           GoRoute(
-            path: ':announcementId',
-            builder: (context, state) => UniversalNoticeDetailScreen(
-              announcementId: state.pathParameters['announcementId']!,
+            path: '/login',
+            builder: (context, state) => const LoginScreen(),
+          ),
+          GoRoute(
+            path: '/register',
+            builder: (context, state) => const MemberSignUpScreen(),
+          ),
+          GoRoute(
+            path: '/login/otp',
+            builder: (context, state) => PublicOtpSignInScreen(
+              channel: state.uri.queryParameters['channel'] == 'phone'
+                  ? PublicOtpChannel.phone
+                  : PublicOtpChannel.email,
             ),
           ),
-        ],
-      ),
-      GoRoute(
-        path: '/my-routines/action/:actionId',
-        builder: (context, state) => PersonalActionDetailScreen(
-          actionId: state.pathParameters['actionId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/my-routines',
-        builder: (context, state) => MyRoutinesScreen(
-          resourceId: state.uri.queryParameters['resourceId'],
-        ),
-      ),
-      GoRoute(
-        path: '/resources',
-        redirect: (context, state) {
-          final slug = state.uri.queryParameters['section'];
-          return resourceSectionBySlug(slug) == null
-              ? null
-              : '/resources/$slug';
-        },
-        builder: (context, state) => ResourcesHomeScreen(
-          initialSectionSlug: state.uri.queryParameters['section'],
-        ),
-        routes: [
           GoRoute(
-            path: 'quran',
-            builder: (context, state) => const QuranTabbedScreen(),
+            path: '/prayer-times',
+            builder: (context, state) => const PrayerTimesScreen(),
             routes: [
               GoRoute(
-                path: 'collections',
-                builder: (context, state) => const QuranCollectionsScreen(),
-                routes: [
-                  GoRoute(
-                    path: ':collectionId',
-                    builder: (context, state) => QuranCollectionDetailScreen(
-                      collectionId: state.pathParameters['collectionId']!,
-                    ),
-                  ),
-                ],
+                path: 'settings',
+                builder: (context, state) => const PrayerSettingsScreen(),
               ),
+            ],
+          ),
+          GoRoute(
+            path: '/qibla',
+            builder: (context, state) => const QiblaScreen(),
+          ),
+          GoRoute(
+            path: '/announcements',
+            builder: (context, state) => const UniversalAnnouncementsScreen(),
+            routes: [
               GoRoute(
-                path: ':surahNumber',
-                builder: (context, state) => QuranApiSurahScreen(
-                  surahNumber: int.parse(state.pathParameters['surahNumber']!),
-                  initialAyah: int.tryParse(
-                    state.uri.queryParameters['ayah'] ?? '',
-                  ),
+                path: ':announcementId',
+                builder: (context, state) => UniversalNoticeDetailScreen(
+                  announcementId: state.pathParameters['announcementId']!,
                 ),
               ),
             ],
           ),
           GoRoute(
-            path: 'hadith',
-            builder: (context, state) => const HadithBrowserScreen(),
-          ),
-          GoRoute(
-            path: 'dua-azkar',
-            builder: (context, state) =>
-                const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
-          ),
-          GoRoute(
-            path: 'ruqyah',
-            builder: (context, state) =>
-                const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
-          ),
-          for (final slug in const [
-            'books-pdfs',
-            'articles-guides',
-            'audio',
-            'video',
-          ])
-            GoRoute(
-              path: slug,
-              builder: (context, state) =>
-                  ResourceCategoryScreen(section: resourceSectionBySlug(slug)!),
+            path: '/my-routines/action/:actionId',
+            builder: (context, state) => PersonalActionDetailScreen(
+              actionId: state.pathParameters['actionId']!,
             ),
+          ),
           GoRoute(
-            path: ':resourceId',
+            path: '/my-routines',
+            builder: (context, state) => MyRoutinesScreen(
+              resourceId: state.uri.queryParameters['resourceId'],
+            ),
+          ),
+          GoRoute(
+            path: '/resources',
+            redirect: (context, state) {
+              final slug = state.uri.queryParameters['section'];
+              return resourceSectionBySlug(slug) == null
+                  ? null
+                  : '/resources/$slug';
+            },
+            builder: (context, state) => ResourcesHomeScreen(
+              initialSectionSlug: state.uri.queryParameters['section'],
+            ),
+            routes: [
+              GoRoute(
+                path: 'quran',
+                builder: (context, state) => const QuranTabbedScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'collections',
+                    builder: (context, state) => const QuranCollectionsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':collectionId',
+                        builder: (context, state) =>
+                            QuranCollectionDetailScreen(
+                              collectionId:
+                                  state.pathParameters['collectionId']!,
+                            ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: ':surahNumber',
+                    builder: (context, state) => QuranApiSurahScreen(
+                      surahNumber: int.parse(
+                        state.pathParameters['surahNumber']!,
+                      ),
+                      initialAyah: int.tryParse(
+                        state.uri.queryParameters['ayah'] ?? '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'hadith',
+                builder: (context, state) => const HadithBrowserScreen(),
+              ),
+              GoRoute(
+                path: 'dua-azkar',
+                builder: (context, state) =>
+                    const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+              ),
+              GoRoute(
+                path: 'ruqyah',
+                builder: (context, state) =>
+                    const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
+              ),
+              for (final slug in const [
+                'books-pdfs',
+                'articles-guides',
+                'audio',
+                'video',
+              ])
+                GoRoute(
+                  path: slug,
+                  builder: (context, state) => ResourceCategoryScreen(
+                    section: resourceSectionBySlug(slug)!,
+                  ),
+                ),
+              GoRoute(
+                path: ':resourceId',
+                builder: (context, state) => ResourceDetailScreen(
+                  resourceId: state.pathParameters['resourceId']!,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/patient/home',
+            builder: (context, state) => UnifiedHomeScreen(
+              isPatient: true,
+              displayName: _patientSession(session)?.displayName,
+            ),
+          ),
+          GoRoute(
+            path: '/patient/today',
+            builder: (context, state) => PatientHomeScreen(
+              displayName: _patientSession(session)?.displayName,
+              openTaskId: state.uri.queryParameters['task'],
+            ),
+          ),
+          GoRoute(
+            path: '/patient/change-password',
+            builder: (context, state) => const ChangePasswordScreen(),
+          ),
+          GoRoute(
+            path: '/patient/plan',
+            builder: (context, state) => const MyPlanScreen(),
+          ),
+          GoRoute(
+            path: '/patient/resources',
+            builder: (context, state) => PatientScaffold(
+              title: 'ইসলামিক পাঠ ও অডিও',
+              selectedIndex: 2,
+              body: ResourcesHomeScreen(
+                initialSectionSlug: state.uri.queryParameters['section'],
+                embedded: true,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/notifications',
+            builder: (context, state) => const PatientNotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/patient/progress',
+            builder: (context, state) => const PatientProgressScreen(),
+          ),
+          GoRoute(
+            path: '/patient/resources/:resourceId',
             builder: (context, state) => ResourceDetailScreen(
               resourceId: state.pathParameters['resourceId']!,
             ),
           ),
-        ],
-      ),
-      GoRoute(
-        path: '/patient/home',
-        builder: (context, state) => UnifiedHomeScreen(
-          isPatient: true,
-          displayName: _patientSession(session)?.displayName,
-        ),
-      ),
-      GoRoute(
-        path: '/patient/today',
-        builder: (context, state) => PatientHomeScreen(
-          displayName: _patientSession(session)?.displayName,
-          openTaskId: state.uri.queryParameters['task'],
-        ),
-      ),
-      GoRoute(
-        path: '/patient/change-password',
-        builder: (context, state) => const ChangePasswordScreen(),
-      ),
-      GoRoute(
-        path: '/patient/plan',
-        builder: (context, state) => const MyPlanScreen(),
-      ),
-      GoRoute(
-        path: '/patient/resources',
-        builder: (context, state) => PatientScaffold(
-          title: 'ইসলামিক পাঠ ও অডিও',
-          selectedIndex: 2,
-          body: ResourcesHomeScreen(
-            initialSectionSlug: state.uri.queryParameters['section'],
-            embedded: true,
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/patient/notifications',
-        builder: (context, state) => const PatientNotificationsScreen(),
-      ),
-      GoRoute(
-        path: '/patient/progress',
-        builder: (context, state) => const PatientProgressScreen(),
-      ),
-      GoRoute(
-        path: '/patient/resources/:resourceId',
-        builder: (context, state) => ResourceDetailScreen(
-          resourceId: state.pathParameters['resourceId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/patient/profile',
-        builder: (context, state) => PatientProfileScreen(
-          displayName: _patientSession(session)?.displayName,
-        ),
-      ),
-      GoRoute(
-        path: '/admin/dashboard',
-        builder: (context, state) =>
-            AdminHomeScreen(displayName: _adminSession(session)?.displayName),
-      ),
-      GoRoute(
-        path: '/admin/patients',
-        builder: (context, state) => const PatientsListScreen(),
-        routes: [
           GoRoute(
-            path: 'new',
-            builder: (context, state) => const CreatePatientScreen(),
-          ),
-          GoRoute(
-            path: ':patientId',
-            builder: (context, state) => PatientDetailScreen(
-              patientId: state.pathParameters['patientId']!,
+            path: '/patient/profile',
+            builder: (context, state) => PatientProfileScreen(
+              displayName: _patientSession(session)?.displayName,
             ),
+          ),
+          GoRoute(
+            path: '/admin/dashboard',
+            builder: (context, state) => AdminHomeScreen(
+              displayName: _adminSession(session)?.displayName,
+            ),
+          ),
+          GoRoute(
+            path: '/admin/patients',
+            builder: (context, state) => const PatientsListScreen(),
             routes: [
               GoRoute(
-                path: 'prescriptions/new',
-                builder: (context, state) => CreatePrescriptionScreen(
-                  patientId: state.pathParameters['patientId']!,
-                ),
+                path: 'new',
+                builder: (context, state) => const CreatePatientScreen(),
               ),
               GoRoute(
-                path: 'plans/new',
-                builder: (context, state) => CreateCarePlanScreen(
+                path: ':patientId',
+                builder: (context, state) => PatientDetailScreen(
                   patientId: state.pathParameters['patientId']!,
-                  initialPrescriptionId:
-                      state.uri.queryParameters['prescriptionId'],
-                  copyFromPlanId: state.uri.queryParameters['copyFromPlanId'],
-                ),
-              ),
-              GoRoute(
-                path: 'plans/:planId',
-                builder: (context, state) => CarePlanBuilderScreen(
-                  patientId: state.pathParameters['patientId']!,
-                  planId: state.pathParameters['planId']!,
-                  openNewAction: state.uri.queryParameters['addAction'] == '1',
                 ),
                 routes: [
                   GoRoute(
-                    path: 'preview',
-                    builder: (context, state) => CarePlanPreviewScreen(
+                    path: 'prescriptions/new',
+                    builder: (context, state) => CreatePrescriptionScreen(
+                      patientId: state.pathParameters['patientId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'plans/new',
+                    builder: (context, state) => CreateCarePlanScreen(
+                      patientId: state.pathParameters['patientId']!,
+                      initialPrescriptionId:
+                          state.uri.queryParameters['prescriptionId'],
+                      copyFromPlanId:
+                          state.uri.queryParameters['copyFromPlanId'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'plans/:planId',
+                    builder: (context, state) => CarePlanBuilderScreen(
                       patientId: state.pathParameters['patientId']!,
                       planId: state.pathParameters['planId']!,
+                      openNewAction:
+                          state.uri.queryParameters['addAction'] == '1',
                     ),
-                  ),
-                  GoRoute(
-                    path: 'actions/suggest',
-                    builder: (context, state) => AiActionReviewScreen(
-                      patientId: state.pathParameters['patientId']!,
-                      planId: state.pathParameters['planId']!,
-                      prescriptionId:
-                          state.uri.queryParameters['prescriptionId'] ?? '',
-                      initialSeed: state.extra is AiActionReviewSeed
-                          ? state.extra! as AiActionReviewSeed
-                          : null,
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'actions/new',
-                    builder: (context, state) => PlanActionEditorScreen(
-                      planId: state.pathParameters['planId']!,
-                      copyActionId: state.uri.queryParameters['copyActionId'],
-                      initialResourceId:
-                          state.uri.queryParameters['resourceId'],
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'actions/:actionId',
-                    builder: (context, state) => PlanActionEditorScreen(
-                      planId: state.pathParameters['planId']!,
-                      actionId: state.pathParameters['actionId']!,
-                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'preview',
+                        builder: (context, state) => CarePlanPreviewScreen(
+                          patientId: state.pathParameters['patientId']!,
+                          planId: state.pathParameters['planId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'actions/suggest',
+                        builder: (context, state) => AiActionReviewScreen(
+                          patientId: state.pathParameters['patientId']!,
+                          planId: state.pathParameters['planId']!,
+                          prescriptionId:
+                              state.uri.queryParameters['prescriptionId'] ?? '',
+                          initialSeed: state.extra is AiActionReviewSeed
+                              ? state.extra! as AiActionReviewSeed
+                              : null,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'actions/new',
+                        builder: (context, state) => PlanActionEditorScreen(
+                          planId: state.pathParameters['planId']!,
+                          copyActionId:
+                              state.uri.queryParameters['copyActionId'],
+                          initialResourceId:
+                              state.uri.queryParameters['resourceId'],
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'actions/:actionId',
+                        builder: (context, state) => PlanActionEditorScreen(
+                          planId: state.pathParameters['planId']!,
+                          actionId: state.pathParameters['actionId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
-      GoRoute(
-        path: '/admin/announcements',
-        builder: (context, state) => const AdminAnnouncementsScreen(),
-        routes: [
           GoRoute(
-            path: 'new',
-            builder: (context, state) => const AdminAnnouncementEditorScreen(),
+            path: '/admin/announcements',
+            builder: (context, state) => const AdminAnnouncementsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) =>
+                    const AdminAnnouncementEditorScreen(),
+              ),
+              GoRoute(
+                path: ':announcementId/edit',
+                builder: (context, state) => AdminAnnouncementEditorScreen(
+                  id: state.pathParameters['announcementId']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
-            path: ':announcementId/edit',
-            builder: (context, state) => AdminAnnouncementEditorScreen(
-              id: state.pathParameters['announcementId']!,
-            ),
-          ),
-        ],
-      ),
-      GoRoute(
-        path: '/admin/content',
-        builder: (context, state) => const AdminContentListScreen(),
-        routes: [
-          GoRoute(
-            path: 'collections',
-            builder: (context, state) => const AdminContentCollectionsScreen(),
-          ),
-          GoRoute(
-            path: 'new',
-            builder: (context, state) => AdminContentEditorScreen(
-              initialKind: state.extra is AdminResourceKind
-                  ? state.extra! as AdminResourceKind
-                  : null,
-            ),
-          ),
-          GoRoute(
-            path: ':contentItemId/preview',
-            builder: (context, state) => AdminContentPreviewScreen(
-              contentItemId: state.pathParameters['contentItemId']!,
-            ),
-          ),
-          GoRoute(
-            path: ':contentItemId/edit',
-            builder: (context, state) => AdminContentEditorScreen(
-              contentItemId: state.pathParameters['contentItemId']!,
-            ),
+            path: '/admin/content',
+            builder: (context, state) => const AdminContentListScreen(),
+            routes: [
+              GoRoute(
+                path: 'collections',
+                builder: (context, state) =>
+                    const AdminContentCollectionsScreen(),
+              ),
+              GoRoute(
+                path: 'new',
+                builder: (context, state) => AdminContentEditorScreen(
+                  initialKind: state.extra is AdminResourceKind
+                      ? state.extra! as AdminResourceKind
+                      : null,
+                ),
+              ),
+              GoRoute(
+                path: ':contentItemId/preview',
+                builder: (context, state) => AdminContentPreviewScreen(
+                  contentItemId: state.pathParameters['contentItemId']!,
+                ),
+              ),
+              GoRoute(
+                path: ':contentItemId/edit',
+                builder: (context, state) => AdminContentEditorScreen(
+                  contentItemId: state.pathParameters['contentItemId']!,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Page unavailable')),
-      body: AppErrorState(message: FriendlyFailures.generic(context)),
+      appBar: AppBar(title: const Text('পৃষ্ঠাটি পাওয়া যায়নি')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppErrorState(message: FriendlyFailures.generic(context)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => context.go(
+              session?.isSuperAdmin == true
+                  ? '/admin/dashboard'
+                  : session?.isPatient == true
+                  ? '/patient/home'
+                  : '/',
+            ),
+            icon: const Icon(Icons.home_outlined),
+            label: const Text('হোমে ফিরুন'),
+          ),
+        ],
+      ),
     ),
   );
 });

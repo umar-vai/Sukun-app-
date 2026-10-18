@@ -285,47 +285,29 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         ],
       ),
       body: content,
-      bottomNavigationBar: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: NavigationBar(
-            selectedIndex: 0,
-            onDestinationSelected: (index) {
-              if (index == 1) context.go('/resources');
-              if (index == 2 && !_signingOut) {
-                if (widget.isSignedInMember) {
-                  _signOut();
-                } else {
-                  context.go('/login');
-                }
-              }
-            },
-            destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'হোম',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.menu_book_outlined),
-                label: 'পাঠ ও অডিও',
-              ),
-              NavigationDestination(
-                icon: Icon(
-                  widget.isSignedInMember
-                      ? Icons.logout_outlined
-                      : Icons.login_outlined,
-                ),
-                label: _signingOut
-                    ? 'লগআউট হচ্ছে…'
-                    : widget.isSignedInMember
-                    ? 'লগআউট'
-                    : 'লগইন',
-              ),
-            ],
+      bottomNavigationBar: SukunBottomNavigation(
+        selectedIndex: 0,
+        onSelected: (index) {
+          if (index == 1) context.go('/resources');
+          if (index == 2) context.go('/announcements');
+        },
+        destinations: const [
+          SukunNavDestination(
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home,
+            label: 'হোম',
           ),
-        ),
+          SukunNavDestination(
+            icon: Icons.menu_book_outlined,
+            selectedIcon: Icons.menu_book,
+            label: 'উপকরণ',
+          ),
+          SukunNavDestination(
+            icon: Icons.campaign_outlined,
+            selectedIcon: Icons.campaign,
+            label: 'নোটিশ',
+          ),
+        ],
       ),
     );
   }

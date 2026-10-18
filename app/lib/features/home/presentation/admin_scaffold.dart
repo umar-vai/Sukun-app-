@@ -95,7 +95,8 @@ class _AdminScaffoldState extends State<AdminScaffold> {
           context.go(switch (index) {
             0 => '/admin/dashboard',
             1 => '/admin/patients',
-            _ => '/admin/content',
+            2 => '/admin/content',
+            _ => '/admin/announcements',
           });
         },
         destinations: [
@@ -113,6 +114,11 @@ class _AdminScaffoldState extends State<AdminScaffold> {
             icon: Icons.library_books_outlined,
             selectedIcon: Icons.library_books,
             label: copy?.adminContent ?? 'উপকরণ',
+          ),
+          const SukunNavDestination(
+            icon: Icons.campaign_outlined,
+            selectedIcon: Icons.campaign,
+            label: 'নোটিশ',
           ),
         ],
       ),
