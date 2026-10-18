@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/app/app.dart';
@@ -26,7 +27,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
+    expect(
+      find.text(
+        kIsWeb
+            ? 'যত্ন, চর্চা ও প্রশান্তির পথে সুকুন লাইফ'
+            : 'আপনার প্রতিদিনের সুকুন',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Admin Dashboard'), findsNothing);
     expect(find.text('Today'), findsNothing);
   });

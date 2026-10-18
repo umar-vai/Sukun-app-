@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
+import 'package:sukun_life/features/home/presentation/public_welcome_screen.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 
 class GuestHomeScreen extends StatelessWidget {
   const GuestHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      const UnifiedHomeScreen(isPatient: false);
+  Widget build(BuildContext context) => kIsWeb
+      ? const PublicWelcomeScreen()
+      : const UnifiedHomeScreen(isPatient: false);
 }
 
 class MemberHomeScreen extends StatelessWidget {

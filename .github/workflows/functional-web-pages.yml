@@ -311,6 +311,8 @@ jobs:
 
       - name: Build role-aware Flutter Web (approved production or emergency guest)
         shell: bash
+        env:
+          ANDROID_APK_URL: ${{ vars.SUKUN_ANDROID_APK_URL }}
         run: |
           set -euo pipefail
           flutter build web --release \
@@ -319,6 +321,7 @@ jobs:
             --dart-define "APP_ENVIRONMENT=$APP_ENVIRONMENT" \
             --dart-define "SUPABASE_URL=$SUPABASE_URL" \
             --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define "ANDROID_APK_URL=$ANDROID_APK_URL" \
             --dart-define "ENABLE_MEMBER_SIGNUP=$ENABLE_MEMBER_SIGNUP" \
             --dart-define "ENABLE_EMAIL_OTP=$ENABLE_EMAIL_OTP" \
             --dart-define "ENABLE_PHONE_OTP=$ENABLE_PHONE_OTP" \
