@@ -100,24 +100,58 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
             children: [
-              Text(
-                widget.displayName == null
-                    ? 'আসসালামু আলাইকুম'
-                    : 'আসসালামু আলাইকুম, ${widget.displayName}',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: SukunColors.muted),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'আপনার প্রতিদিনের সুকুন',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                key: const Key('universal-announcements-shortcut'),
-                onPressed: () => context.push('/announcements'),
-                icon: const Icon(Icons.campaign_outlined),
-                label: const Text('গুরুত্বপূর্ণ নোটিশ দেখুন'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.displayName == null
+                              ? 'আসসালামু আলাইকুম'
+                              : 'আসসালামু আলাইকুম, ${widget.displayName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: SukunColors.muted),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'আপনার প্রতিদিনের সুকুন',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    key: const Key('universal-announcements-shortcut'),
+                    onPressed: () => context.push('/announcements'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF805300),
+                      backgroundColor: SukunColors.warningSoft,
+                      side: const BorderSide(color: Color(0xFFE5BF56)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 10,
+                      ),
+                      minimumSize: const Size(0, 42),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.notification_important_outlined,
+                        size: 18),
+                    label: const Text(
+                      'গুরুত্বপূর্ণ নোটিশ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               if (widget.isSignedInMember || widget.isPatient) ...[
