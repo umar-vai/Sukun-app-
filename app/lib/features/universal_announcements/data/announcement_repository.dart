@@ -86,6 +86,7 @@ class AnnouncementDraft {
 
 abstract interface class AnnouncementRepository {
   Future<List<UniversalAnnouncement>> published();
+  Future<List<UniversalAnnouncement>> recentPublished();
   Future<UniversalAnnouncement?> get(String id);
   Future<List<UniversalAnnouncement>> adminList();
   Future<UniversalAnnouncement> save(AnnouncementDraft draft);
@@ -126,6 +127,21 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
       if (page.length < pageSize) break;
     }
     return notices;
+  }
+
+  /// Small bounded feed for app foreground polling; never fetch the whole
+  /// history every minute. Published-only RLS still controls visibility.
+  @override
+  Future<List<UniversalAnnouncement>> recentPublished() async {
+    if (_client == null) return [];
+    final page = await client
+        .from('universal_announcements')
+        .select()
+        .eq('status', 'published')
+        .order('published_at', ascending: false)
+        .order('id', ascending: false)
+        .limit(25);
+    return page.map(UniversalAnnouncement.fromJson).toList(growable: false);
   }
 
   @override
