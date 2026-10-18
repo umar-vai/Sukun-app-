@@ -18,7 +18,11 @@ function respond(
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...jsonHeaders, ...quranCorsHeaders(origin), "Cache-Control": "no-store" },
+    headers: {
+      ...jsonHeaders,
+      ...quranCorsHeaders(origin),
+      "Cache-Control": "no-store",
+    },
   });
 }
 function upstreamEnvironment() {
@@ -192,7 +196,10 @@ async function openQuranResponse(body: any) {
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("origin");
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: quranCorsHeaders(origin) });
+    return new Response(null, {
+      status: 204,
+      headers: quranCorsHeaders(origin),
+    });
   }
   if (request.method !== "POST") {
     return respond(405, { error: "Method not allowed" }, origin);
