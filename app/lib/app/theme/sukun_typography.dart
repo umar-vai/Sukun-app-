@@ -127,18 +127,16 @@ abstract final class SukunTypography {
     );
   }
 
-  static TextStyle banglaDisplay({TextStyle? textStyle}) =>
-      previewBengaliFont(
-        BengaliFontSettings.instance.value,
-        textStyle: textStyle,
-        fontWeight: FontWeight.w600,
-      );
+  static TextStyle banglaDisplay({TextStyle? textStyle}) => previewBengaliFont(
+    BengaliFontSettings.instance.value,
+    textStyle: textStyle,
+    fontWeight: FontWeight.w600,
+  );
 
-  static TextStyle banglaBody({TextStyle? textStyle}) =>
-      previewBengaliFont(
-        BengaliFontSettings.instance.value,
-        textStyle: textStyle,
-      );
+  static TextStyle banglaBody({TextStyle? textStyle}) => previewBengaliFont(
+    BengaliFontSettings.instance.value,
+    textStyle: textStyle,
+  );
 
   static TextStyle canonicalReligiousText({TextStyle? textStyle}) {
     // Arabic scripture uses a clear Naskh face, not the Bangla display font.
