@@ -91,8 +91,9 @@ class _UniversalNoticeAutoPopupState
           !mounted ||
           _owner() != ownerId ||
           generation != _checkGeneration ||
-          !_eligibleRoute())
+          !_eligibleRoute()) {
         return;
+      }
 
       // Persist the exact publication before opening the panel so refreshes
       // and app restarts do not replay it. Cloud sync is owner-scoped by RLS.
