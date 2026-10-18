@@ -151,12 +151,33 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
                 else
                   for (final date in dates)
                     Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.calendar_today_outlined),
-                        title: Text(date),
-                        subtitle: Text(
-                          'সম্পন্ন ${byDay[date]!.where((r) => r['outcome'] == 'done').length}'
-                          ' · বাদ ${byDay[date]!.where((r) => r['outcome'] == 'skipped').length}',
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              date,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 6),
+                            for (final record in byDay[date]!)
+                              ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(
+                                  record['outcome'] == 'done'
+                                      ? Icons.check_circle_outline
+                                      : Icons.remove_circle_outline,
+                                ),
+                                title: Text(record['title'].toString()),
+                                subtitle: Text(
+                                  record['outcome'] == 'done'
+                                      ? 'সম্পন্ন'
+                                      : 'বাদ দিয়েছেন',
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
