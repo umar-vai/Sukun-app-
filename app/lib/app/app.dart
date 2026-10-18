@@ -14,6 +14,7 @@ import 'package:sukun_life/core/widgets/global_audio_dock.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
+import 'package:sukun_life/features/universal_announcements/presentation/universal_notice_auto_popup.dart';
 
 class SukunLifeApp extends ConsumerStatefulWidget {
   const SukunLifeApp({super.key});
@@ -169,8 +170,11 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
-      builder: (context, child) =>
-          Stack(children: [?child, const GlobalAudioDock()]),
+      builder: (context, child) => UniversalNoticeAutoPopup(
+        child: Stack(
+          children: [?child, const GlobalAudioDock()],
+        ),
+      ),
     );
   }
 }
