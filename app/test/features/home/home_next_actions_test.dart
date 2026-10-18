@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
+import 'package:sukun_life/features/islamic_utilities/domain/utility_location.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 void main() {
   final calculator = AdhanPrayerCalculationService();
@@ -101,6 +103,47 @@ void main() {
     );
     expect(items.map((action) => action.id).toList(), ['earlier', 'later']);
     expect(items.first.dueAt, isNotNull);
+  });
+
+  test('completed Fajr action schedules next local day, not day after', () {
+    const settings = PrayerUtilitySettings(
+      location: UtilityLocation(
+        id: 'dhaka',
+        name: 'Dhaka',
+        latitude: 23.8103,
+        longitude: 90.4125,
+        timezone: 'Asia/Dhaka',
+        source: UtilityLocationSource.manual,
+      ),
+      calculationMethod: PrayerCalculationMethodOption.karachi,
+      asrConvention: AsrConvention.hanafi,
+    );
+    final items = HomeNextActions.select(
+      now: now,
+      patientDay: null,
+      routines: routines,
+      actions: [
+        {
+          'id': 'fajr-action',
+          'routine_id': 'owned-routine',
+          'title': 'Morning amal',
+          'schedule_kind': 'fajr',
+          'prayer_offset_minutes': 5,
+          'is_active': true,
+        },
+      ],
+      outcomes: {'fajr-action': 'done'},
+      settings: settings,
+      calculator: calculator,
+    );
+    expect(items, hasLength(1));
+    final local = tz.TZDateTime.from(
+      items.single.dueAt!,
+      tz.getLocation('Asia/Dhaka'),
+    );
+    expect(local.year, 2026);
+    expect(local.month, 10);
+    expect(local.day, 20);
   });
 
   test('invalid timings and prayer preferences never invent a due time', () {
