@@ -84,8 +84,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated &&
-          (isPatientRoute || isAdminRoute ||
-              isPersonalRoutineRoute || isSharedUserRoute)) {
+          (isPatientRoute ||
+              isAdminRoute ||
+              isPersonalRoutineRoute ||
+              isSharedUserRoute)) {
         return '/login';
       }
       if (isAdminRoute && !session.isSuperAdmin) {
