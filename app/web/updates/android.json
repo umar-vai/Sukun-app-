@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "platform": "android",
+  "package_name": "com.sukunlife.app",
+  "enabled": false,
+  "version_code": 0,
+  "version_name": "0.0.0",
+  "min_supported_version_code": 0,
+  "apk_url": "",
+  "sha256": "",
+  "size_bytes": 0,
+  "notes_bn": "প্রথম অফিসিয়াল Signed APK এখনো প্রকাশ করা হয়নি।"
+}
