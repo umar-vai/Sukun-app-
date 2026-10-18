@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/features/universal_announcements/data/universal_notice_seen_store.dart';
 
 /// One public notice is always addressed by stable UUID. The route is valid
 /// on a cold start, while authorization comes solely from database RLS.
@@ -27,6 +31,17 @@ class _UniversalNoticeDetailScreenState
     _notice = ref
         .read(announcementRepositoryProvider)
         .get(widget.announcementId);
+    // Opening a notice manually counts as seeing that publication, too.
+    // This prevents an unnecessary automatic popup on the next visit.
+    final owner = ref.read(appSessionProvider);
+    if (owner.hasValue) {
+      final store = ref.read(universalNoticeSeenStoreProvider);
+      unawaited(_notice.then((notice) async {
+        if (notice != null) {
+          await store.mark(notice, owner.value?.userId);
+        }
+      }).catchError((Object _) {}));
+    }
   }
 
   void _close() {
