@@ -28,8 +28,9 @@ void main() {
 
   test('drafts and incomplete announcements never automatically pop up', () {
     expect(
-      universalNoticePublicationKey(notice('draft', status: 'draft',
-          publishedAt: first)),
+      universalNoticePublicationKey(
+        notice('draft', status: 'draft', publishedAt: first),
+      ),
       isNull,
     );
     expect(universalNoticePublicationKey(notice('missing-date')), isNull);
@@ -64,9 +65,13 @@ void main() {
   });
 
   test('guests and distinct users never share local seen identifiers', () {
-    expect(UniversalNoticeSeenStore.storageKey(null),
-        isNot(UniversalNoticeSeenStore.storageKey('account-a')));
-    expect(UniversalNoticeSeenStore.storageKey('account-a'),
-        isNot(UniversalNoticeSeenStore.storageKey('account-b')));
+    expect(
+      UniversalNoticeSeenStore.storageKey(null),
+      isNot(UniversalNoticeSeenStore.storageKey('account-a')),
+    );
+    expect(
+      UniversalNoticeSeenStore.storageKey('account-a'),
+      isNot(UniversalNoticeSeenStore.storageKey('account-b')),
+    );
   });
 }
