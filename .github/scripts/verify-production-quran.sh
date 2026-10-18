@@ -17,8 +17,8 @@ call_quran() {
     --header 'Content-Type: application/json' \
     --data "$body" "$SUPABASE_URL/functions/v1/quran-content" > "$tmp"
 }
-# Browser preflight must allow the real app subdomain. A successful
-# server-to-server curl without Origin is not a substitute for Web CORS.
+# The deployed Quran API must accept the live browser's OPTIONS preflight.
+# Server-side curl success alone cannot establish CORS correctness.
 preflight_headers="$(mktemp)"
 trap 'rm -f "$tmp" "$preflight_headers"' EXIT
 preflight_status="$(curl --silent --show-error --max-time 25 \
@@ -30,58 +30,15 @@ preflight_status="$(curl --silent --show-error --max-time 25 \
   "$SUPABASE_URL/functions/v1/quran-content" \
   --write-out '%{http_code}')"
 [[ "$preflight_status" == "204" ]] || {
-  echo "FAIL: Quran API custom-domain preflight status $preflight_status"
+  echo "FAIL: Quran API app-domain preflight HTTP $preflight_status"
   exit 1
 }
-grep -qi 
-jq -e '.provider == "Al Quran Cloud" and
-       (.chapters | length) == 114 and
-       .chapters[0].id == 1 and
-       .chapters[113].id == 114' "$tmp" > /dev/null
-echo "PASS: 114 surahs and attributed provider"
-sleep 2
-call_quran '{"action":"verses","chapter":1,"page":1}'
-jq -e '(.verses | length) == 7 and
-       .verses[0].verse_key == "1:1" and
-       .verses[6].verse_key == "1:7" and
-       .verses[0].text_uthmani != "" and
-       .verses[0].translations[0].text != "" and
-       (.verses[0].audio.url | startswith("https://"))' "$tmp" > /dev/null
-echo "PASS: Al-Fatihah Arabic, Bengali and recitation"
-sleep 2
-call_quran '{"action":"verses","chapter":114,"page":1}'
-jq -e '(.verses | length) == 6 and
-       .verses[0].verse_key == "114:1" and
-       .verses[5].verse_key == "114:6" and
-       .verses[0].translations[0].text != ""' "$tmp" > /dev/null
-echo "PASS: An-Nas six verses"
-^access-control-allow-origin: https://app\\.sukunlife\\.com\\r?
-jq -e '.provider == "Al Quran Cloud" and
-       (.chapters | length) == 114 and
-       .chapters[0].id == 1 and
-       .chapters[113].id == 114' "$tmp" > /dev/null
-echo "PASS: 114 surahs and attributed provider"
-sleep 2
-call_quran '{"action":"verses","chapter":1,"page":1}'
-jq -e '(.verses | length) == 7 and
-       .verses[0].verse_key == "1:1" and
-       .verses[6].verse_key == "1:7" and
-       .verses[0].text_uthmani != "" and
-       .verses[0].translations[0].text != "" and
-       (.verses[0].audio.url | startswith("https://"))' "$tmp" > /dev/null
-echo "PASS: Al-Fatihah Arabic, Bengali and recitation"
-sleep 2
-call_quran '{"action":"verses","chapter":114,"page":1}'
-jq -e '(.verses | length) == 6 and
-       .verses[0].verse_key == "114:1" and
-       .verses[5].verse_key == "114:6" and
-       .verses[0].translations[0].text != ""' "$tmp" > /dev/null
-echo "PASS: An-Nas six verses"
- "$preflight_headers" || {
-  echo "FAIL: Quran API does not authorize app.sukunlife.com browser origin"
-  exit 1
-}
-echo "PASS: Quran and Ruqyah audio API browser preflight CORS"
+tr -d '\r' < "$preflight_headers" |
+  grep -ixF 'access-control-allow-origin: https://app.sukunlife.com' >/dev/null || {
+    echo "FAIL: Quran API did not allow exact app.sukunlife.com Origin"
+    exit 1
+  }
+echo "PASS: Quran and Ruqyah audio browser preflight"
 
 call_quran '{"action":"chapters"}'
 jq -e '.provider == "Al Quran Cloud" and
