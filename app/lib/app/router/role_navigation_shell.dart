@@ -148,8 +148,8 @@ int navigationIndex(String path, AppSession? session) {
   if (session?.isMember == true || session?.isPatient == true) {
     return sharedUserNavigationIndex(path);
   }
-  if (path.startsWith('/resources')) return 1;
-  if (path.startsWith('/announcements')) return 2;
+  if (path.startsWith('/resources')) return 0;
+  if (path.startsWith('/announcements')) return 1;
   return 0;
 }
 
@@ -159,7 +159,7 @@ const _adminRoutes = [
   '/admin/content',
   '/admin/announcements',
 ];
-const _publicRoutes = ['/', '/resources', '/announcements'];
+const _publicRoutes = ['/', '/announcements'];
 
 const _adminDestinations = [
   SukunNavDestination(
@@ -188,11 +188,6 @@ const _publicDestinations = [
     icon: Icons.home_outlined,
     selectedIcon: Icons.home,
     label: 'হোম',
-  ),
-  SukunNavDestination(
-    icon: Icons.menu_book_outlined,
-    selectedIcon: Icons.menu_book,
-    label: 'উপকরণ',
   ),
   SukunNavDestination(
     icon: Icons.campaign_outlined,
