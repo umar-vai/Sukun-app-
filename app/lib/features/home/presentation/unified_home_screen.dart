@@ -10,6 +10,7 @@ import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_pro
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 /// Shared public landing page. Personal care is loaded only for patient sessions.
 class UnifiedHomeScreen extends ConsumerStatefulWidget {
@@ -49,7 +50,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         .read(prayerCalculationServiceProvider)
         .calculate(settings: settings, now: DateTime.now());
     return _PrayerSummary(
-      nextPrayer: schedule.nextPrayer,
+      schedule: schedule,
       locationName: settings.location!.name,
     );
   }
@@ -156,67 +157,18 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              if (widget.isSignedInMember || widget.isPatient) ...[
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/my-routines'),
-                  icon: const Icon(Icons.checklist_rtl_rounded),
-                  label: const Text('আমার রুটিন ও রিমাইন্ডার'),
-                ),
-                const SizedBox(height: 12),
-              ],
-              LayoutBuilder(
-                builder: (context, constraints) => constraints.maxWidth < 520
-                    ? Column(
-                        children: [
-                          _HomeUtilityTile(
-                            icon: Icons.schedule_outlined,
-                            title: 'নামাজের সময়',
-                            onTap: () => context.push('/prayer-times'),
-                            detail: FutureBuilder<_PrayerSummary?>(
-                              future: _prayer,
-                              builder: (context, snapshot) =>
-                                  _prayerStatus(context, snapshot),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _HomeUtilityTile(
-                            icon: Icons.explore_outlined,
-                            title: 'কিবলার দিক',
-                            onTap: () => context.push('/qibla'),
-                            detail: const Text('দিকনির্দেশনা দেখুন'),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _HomeUtilityTile(
-                              icon: Icons.schedule_outlined,
-                              title: 'নামাজের সময়',
-                              onTap: () => context.push('/prayer-times'),
-                              detail: FutureBuilder<_PrayerSummary?>(
-                                future: _prayer,
-                                builder: (context, snapshot) =>
-                                    _prayerStatus(context, snapshot),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _HomeUtilityTile(
-                              icon: Icons.explore_outlined,
-                              title: 'কিবলার দিক',
-                              onTap: () => context.push('/qibla'),
-                              detail: const Text('দিকনির্দেশনা দেখুন'),
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+              _CompactPrayerStrip(prayer: _prayer),
               if (widget.isPatient && _patientDay != null) ...[
                 const SizedBox(height: 14),
                 _PatientHomeSummary(dayFuture: _patientDay!),
+              ],
+              if (widget.isSignedInMember || widget.isPatient) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/my-routines'),
+                  icon: const Icon(Icons.checklist_rtl_rounded),
+                  label: const Text('আমার ব্যক্তিগত রুটিন'),
+                ),
               ],
               const SizedBox(height: 22),
               SukunSectionHeader(
@@ -238,23 +190,24 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisExtent: 116,
+                      mainAxisExtent: 96,
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
                     ),
-                    itemCount: _homeShortcuts.length,
+                    itemCount: resourceSections.length,
                     itemBuilder: (context, index) {
-                      final item = _homeShortcuts[index];
+                      final item = resourceSections[index];
                       return SukunSurface(
-                        padding: const EdgeInsets.all(8),
+                        key: Key('home-resource-${item.slug}'),
+                        padding: const EdgeInsets.all(7),
                         onTap: () => context.push('/resources/${item.slug}'),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SukunIconBadge(icon: item.icon, size: 36),
-                            const SizedBox(height: 7),
+                            SukunIconBadge(icon: item.icon, size: 32),
+                            const SizedBox(height: 5),
                             Text(
-                              item.title,
+                              item.titleBn,
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -346,86 +299,142 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     );
   }
 
-  Widget _prayerStatus(
-    BuildContext context,
-    AsyncSnapshot<_PrayerSummary?> snapshot,
-  ) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Text('হিসাব করা হচ্ছে…');
-    }
-    final info = snapshot.data;
-    if (snapshot.hasError || info == null) {
-      return const Text('অবস্থান সেট করুন');
-    }
-    final formatted = MaterialLocalizations.of(context)
-        .formatTimeOfDay(TimeOfDay.fromDateTime(info.nextPrayer.time));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${info.nextPrayer.label} · $formatted',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          info.locationName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
 }
 
 class _PrayerSummary {
-  const _PrayerSummary({required this.nextPrayer, required this.locationName});
+  const _PrayerSummary({required this.schedule, required this.locationName});
 
-  final PrayerTimeEntry nextPrayer;
+  final PrayerDaySchedule schedule;
   final String locationName;
 }
 
-class _HomeUtilityTile extends StatelessWidget {
-  const _HomeUtilityTile({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-  });
+/// Compact five-prayer preview; never guesses missing location or method.
+class _CompactPrayerStrip extends StatelessWidget {
+  const _CompactPrayerStrip({required this.prayer});
 
-  final IconData icon;
-  final String title;
-  final Widget detail;
-  final VoidCallback onTap;
+  final Future<_PrayerSummary?> prayer;
 
   @override
   Widget build(BuildContext context) => SukunSurface(
-    padding: const EdgeInsets.all(13),
-    onTap: onTap,
+    key: const Key('home-compact-prayer'),
+    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: SukunColors.deepTide, size: 20),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const Icon(Icons.schedule_outlined, size: 18),
+            const SizedBox(width: 6),
+            const Expanded(
+              child: Text(
+                'নামাজের সময়',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            IconButton(
+              tooltip: 'কিবলার দিক',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.explore_outlined, size: 20),
+              onPressed: () => context.push('/qibla'),
+            ),
+            IconButton(
+              tooltip: 'সম্পূর্ণ নামাজের সময়সূচি',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.chevron_right_rounded, size: 22),
+              onPressed: () => context.push('/prayer-times'),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        DefaultTextStyle(
-          style:
-              Theme.of(context).textTheme.bodySmall ??
-              const TextStyle(fontSize: 12),
-          child: detail,
+        FutureBuilder<_PrayerSummary?>(
+          future: prayer,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text('নামাজের সময় হিসাব হচ্ছে…'),
+              );
+            }
+            final data = snapshot.data;
+            if (snapshot.hasError || data == null) {
+              return TextButton.icon(
+                onPressed: () => context.push('/prayer-times/settings'),
+                icon: const Icon(Icons.location_on_outlined, size: 18),
+                label: const Text('নামাজের সময় দেখতে শহর সেট করুন'),
+              );
+            }
+            final prayers = data.schedule.entries
+                .where((entry) => entry.isPrayer)
+                .toList(growable: false);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final entry in prayers)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 5),
+                          child: Container(
+                            width: 61,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 2, vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: entry.id == data.schedule.nextPrayer.id
+                                  ? SukunColors.paleBlue
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  _prayerLabel(entry.id),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  MaterialLocalizations.of(context)
+                                      .formatTimeOfDay(
+                                        TimeOfDay.fromDateTime(entry.time),
+                                      ),
+                                  maxLines: 1,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  data.locationName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 6),
       ],
     ),
   );
 }
+
+String _prayerLabel(String id) => switch (id) {
+  'fajr' => 'ফজর',
+  'dhuhr' => 'যোহর',
+  'asr' => 'আসর',
+  'maghrib' => 'মাগরিব',
+  'isha' => 'ইশা',
+  _ => id,
+};
 
 class _PatientHomeSummary extends StatelessWidget {
   const _PatientHomeSummary({required this.dayFuture});
@@ -496,19 +505,3 @@ class _PatientHomeSummary extends StatelessWidget {
   );
 }
 
-class _HomeShortcut {
-  const _HomeShortcut(this.slug, this.title, this.icon);
-
-  final String slug;
-  final String title;
-  final IconData icon;
-}
-
-const _homeShortcuts = <_HomeShortcut>[
-  _HomeShortcut('dua-azkar', 'দোয়া ও যিকর', Icons.favorite_outline),
-  _HomeShortcut('ruqyah', 'রুকইয়াহ', Icons.graphic_eq),
-  _HomeShortcut('books-pdfs', 'বই ও পিডিএফ', Icons.picture_as_pdf_outlined),
-  _HomeShortcut('articles-guides', 'আর্টিকেল ও গাইড', Icons.article_outlined),
-  _HomeShortcut('audio', 'অডিও', Icons.headphones_outlined),
-  _HomeShortcut('video', 'ভিডিও', Icons.ondemand_video_outlined),
-];
