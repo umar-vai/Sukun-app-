@@ -408,7 +408,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                           tooltip: 'স্লিপ টাইমার',
                                           icon: Icon(
                                             Icons.bedtime_outlined,
-                                            color: controller.sleepDeadline == null
+                                            color:
+                                                controller.sleepDeadline == null
                                                 ? SukunColors.muted
                                                 : SukunColors.sukunBlue,
                                           ),
