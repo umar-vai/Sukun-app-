@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 
 abstract final class SukunTypography {
   static TextTheme englishTextTheme(TextTheme base) {
@@ -78,19 +79,66 @@ abstract final class SukunTypography {
     );
   }
 
-  static TextStyle banglaDisplay({TextStyle? textStyle}) {
-    return GoogleFonts.anekBangla(
+  static TextStyle previewBengaliFont(
+    BengaliFontChoice choice, {
+    TextStyle? textStyle,
+    FontWeight fontWeight = FontWeight.w400,
+  }) => switch (choice) {
+    BengaliFontChoice.hindSiliguri => GoogleFonts.hindSiliguri(
       textStyle: textStyle,
-      fontWeight: FontWeight.w600,
+      fontWeight: fontWeight,
+    ),
+    BengaliFontChoice.anekBangla => GoogleFonts.anekBangla(
+      textStyle: textStyle,
+      fontWeight: fontWeight,
+    ),
+    BengaliFontChoice.tiroBangla => GoogleFonts.tiroBangla(
+      textStyle: textStyle,
+      fontWeight: fontWeight,
+    ),
+  };
+
+  /// Apply a user-selected Bengali fallback while retaining Poppins for Latin.
+  static TextTheme withBengaliFallback(
+    TextTheme theme,
+    BengaliFontChoice choice,
+  ) {
+    final family = previewBengaliFont(choice).fontFamily;
+    if (family == null) return theme;
+    TextStyle? fallback(TextStyle? style) =>
+        style?.copyWith(fontFamilyFallback: [family]);
+
+    return theme.copyWith(
+      displayLarge: fallback(theme.displayLarge),
+      displayMedium: fallback(theme.displayMedium),
+      displaySmall: fallback(theme.displaySmall),
+      headlineLarge: fallback(theme.headlineLarge),
+      headlineMedium: fallback(theme.headlineMedium),
+      headlineSmall: fallback(theme.headlineSmall),
+      titleLarge: fallback(theme.titleLarge),
+      titleMedium: fallback(theme.titleMedium),
+      titleSmall: fallback(theme.titleSmall),
+      bodyLarge: fallback(theme.bodyLarge),
+      bodyMedium: fallback(theme.bodyMedium),
+      bodySmall: fallback(theme.bodySmall),
+      labelLarge: fallback(theme.labelLarge),
+      labelMedium: fallback(theme.labelMedium),
+      labelSmall: fallback(theme.labelSmall),
     );
   }
 
-  static TextStyle banglaBody({TextStyle? textStyle}) {
-    return GoogleFonts.hindSiliguri(
-      textStyle: textStyle,
-      fontWeight: FontWeight.w400,
-    );
-  }
+  static TextStyle banglaDisplay({TextStyle? textStyle}) =>
+      previewBengaliFont(
+        BengaliFontSettings.instance.value,
+        textStyle: textStyle,
+        fontWeight: FontWeight.w600,
+      );
+
+  static TextStyle banglaBody({TextStyle? textStyle}) =>
+      previewBengaliFont(
+        BengaliFontSettings.instance.value,
+        textStyle: textStyle,
+      );
 
   static TextStyle canonicalReligiousText({TextStyle? textStyle}) {
     // Arabic scripture uses a clear Naskh face, not the Bangla display font.
