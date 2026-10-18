@@ -95,6 +95,24 @@ void main() {
       'weekdays': [2, 4],
     });
   });
+
+  testWidgets('editing a Surah plus CMS link keeps the CMS UUID anchor', (
+    tester,
+  ) async {
+    final repo = _EditorRepository(const ActionFrequency.daily())
+      ..linkedResources = const [
+        LinkedResource(
+          id: 'quran:114',
+          title: 'An-Nas',
+          type: 'quran',
+          publicRoute: '/resources/quran/114',
+        ),
+        LinkedResource(id: 'cms-1', title: 'Reviewed guide', type: 'guide'),
+      ];
+    await _openEditor(tester, repo);
+    await _save(tester);
+    expect(repo.saved?.contentItemId, 'cms-1');
+  });
 }
 
 Future<void> _openEditor(
@@ -152,6 +170,12 @@ Future<void> _save(WidgetTester tester) async {
 
 final class _EditorRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,
@@ -169,6 +193,7 @@ final class _EditorRepository implements CarePlansRepository {
 
   final ActionFrequency frequency;
   SavePlanActionInput? saved;
+  List<LinkedResource> linkedResources = const [];
 
   final plan = CarePlan(
     id: 'plan-1',
@@ -190,6 +215,7 @@ final class _EditorRepository implements CarePlansRepository {
     sortOrder: 0,
     reviewStatus: ActionReviewStatus.approved,
     reminderEnabled: false,
+    resources: linkedResources,
   );
 
   @override

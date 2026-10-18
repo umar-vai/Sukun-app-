@@ -44,6 +44,7 @@ class _PlanActionEditorScreenState
   final _usageNoteController = TextEditingController();
   final _requestId = const Uuid().v4();
   final _resourceLinkRequestId = const Uuid().v4();
+  final _quranLinkRequestId = const Uuid().v4();
 
   late Future<_EditorData> _data;
   CarePlan? _plan;
@@ -56,6 +57,7 @@ class _PlanActionEditorScreenState
   ActionReviewStatus _reviewStatus = ActionReviewStatus.draft;
   bool _reminderEnabled = false;
   String _contentItemId = '';
+  String _selectedResourceId = '';
   final Set<String> _contentItemIds = <String>{};
   bool _submitting = false;
   bool _showOptionalDetails = false;
@@ -135,10 +137,17 @@ class _PlanActionEditorScreenState
     final notedResource = action.linkedResources
         .where((resource) => resource.usageNote?.isNotEmpty == true)
         .firstOrNull;
-    _contentItemId = notedResource?.id ?? action.resource?.id ?? '';
+    _contentItemId =
+        notedResource?.id ??
+        action.linkedResources
+            .where((resource) => !resource.id.startsWith('quran:'))
+            .firstOrNull
+            ?.id ??
+        '';
     _contentItemIds
       ..clear()
       ..addAll(action.linkedResources.map((resource) => resource.id));
+    _selectedResourceId = _contentItemIds.isEmpty ? '' : _contentItemIds.last;
     _usageNoteController.text = notedResource?.usageNote ?? '';
   }
 
@@ -148,8 +157,11 @@ class _PlanActionEditorScreenState
       return;
     }
     _contentItemIds.add(resource.id);
-    if (_contentItemId != resource.id) _usageNoteController.clear();
-    _contentItemId = resource.id;
+    _selectedResourceId = resource.id;
+    if (resource.canonicalSurahNumber == null) {
+      if (_contentItemId != resource.id) _usageNoteController.clear();
+      _contentItemId = resource.id;
+    }
     // Resource-first quick action: prefill editable labels, never invent a
     // practitioner instruction or mark the resulting action approved.
     if (_titleController.text.trim().isEmpty) {
@@ -180,7 +192,7 @@ class _PlanActionEditorScreenState
       children: [
         ResourcePickerField(
           resources: resources,
-          selectedId: _contentItemId,
+          selectedId: _selectedResourceId,
           enabled: true,
           onChanged: (id) {
             final resource = resources
@@ -192,6 +204,7 @@ class _PlanActionEditorScreenState
               } else if (id.isEmpty) {
                 _contentItemIds.clear();
                 _contentItemId = '';
+                _selectedResourceId = '';
                 _usageNoteController.clear();
               }
             });
@@ -237,10 +250,15 @@ class _PlanActionEditorScreenState
                     onPressed: () => setState(() {
                       _contentItemIds.remove(id);
                       if (_contentItemId == id) {
-                        _contentItemId = _contentItemIds.isEmpty
-                            ? ''
-                            : _contentItemIds.first;
+                        _contentItemId =
+                            _contentItemIds
+                                .where((item) => !item.startsWith('quran:'))
+                                .firstOrNull ??
+                            '';
                         _usageNoteController.clear();
+                      }
+                      if (_selectedResourceId == id) {
+                        _selectedResourceId = _contentItemIds.lastOrNull ?? '';
                       }
                     }),
                     icon: const Icon(Icons.close),
@@ -342,13 +360,26 @@ class _PlanActionEditorScreenState
           requestId: _requestId,
         ),
       );
-      if (_contentItemIds.length > 1) {
+      final cmsIds = _contentItemIds
+          .where((id) => !id.startsWith('quran:'))
+          .toList();
+      if (cmsIds.length > 1) {
         await repository.replaceActionResources(
           actionId: saved.id,
-          resourceIds: _contentItemIds.toList(),
+          resourceIds: cmsIds,
           requestId: _resourceLinkRequestId,
         );
       }
+      final availableResources = (await _data).resources;
+      await repository.replaceActionQuranSurahs(
+        actionId: saved.id,
+        surahs: [
+          for (final id in _contentItemIds)
+            if (id.startsWith('quran:'))
+              ...availableResources.where((item) => item.id == id),
+        ],
+        requestId: _quranLinkRequestId,
+      );
       if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;

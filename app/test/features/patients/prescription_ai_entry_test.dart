@@ -8,6 +8,7 @@ import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/ai_action_suggestion.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -320,6 +321,12 @@ class _CountingPrescriptions implements PatientsRepository {
 
 class _DraftPlans implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,
@@ -400,6 +407,12 @@ class _PdfRetryRepository implements PrescriptionDocumentsRepository {
 }
 
 class _RecoverableDraftPlans implements CarePlansRepository {
+  @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
   @override
   Future<void> replaceActionResources({
     required String actionId,

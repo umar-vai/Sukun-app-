@@ -13,6 +13,20 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-10-18 public Quran links in clinical plans
+
+- Applied additive migration `public_resource_action_links` to Production
+  (remote version `20261018013712`; repository file
+  `20261018012147_public_resource_action_links.sql`) after CI's disposable
+  migration rebuild and RLS suite passed.
+- It adds `plan_action_quran_surahs`, a draft-only audited replacement RPC,
+  and copying of chapter references into a new draft care-plan version.
+  Existing patient records and published care-plan rows were not edited.
+- Verified RLS is enabled, guests have no table read permission or RPC
+  execute permission, and the new relation contains zero rows before client
+  deployment. Production security advisors reported no finding on the new
+  table. The Flutter Pages client must be deployed after this migration.
+
 ### 2026-10-17 ordered clinical resource links
 
 - Applied additive migration `clinical_resource_order_and_note` to Production

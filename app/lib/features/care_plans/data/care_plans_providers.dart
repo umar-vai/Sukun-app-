@@ -17,6 +17,12 @@ final carePlansRepositoryProvider = Provider<CarePlansRepository>((ref) {
 
 final class UnavailableCarePlansRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async => _unavailable();
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,

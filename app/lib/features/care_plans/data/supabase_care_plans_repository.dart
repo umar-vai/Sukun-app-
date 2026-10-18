@@ -35,7 +35,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
     final response = await _client
         .from('plan_actions')
         .select(
-          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note))',
+          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order)',
         )
         .eq('care_plan_id', planId)
         .neq('review_status', 'rejected')
@@ -54,9 +54,59 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
           'content_categories(id,name,name_bn,slug,sort_order)',
         )
         .order('title');
-    final resources = response
-        .map(ContentResourceOption.fromJson)
-        .toList(growable: false);
+    final resources = response.map(ContentResourceOption.fromJson).toList();
+    // Same quran-content chapter response used by the public 114-surah screen.
+    // An unavailable/incomplete provider never creates invented chapters.
+    try {
+      final result = await _client.functions.invoke(
+        'quran-content',
+        body: {'action': 'chapters'},
+      );
+      final data = result.data;
+      final chapters = data is Map ? data['chapters'] : null;
+      if (chapters is List && chapters.length == 114) {
+        final chapterNumbers = <int>{};
+        final options = <ContentResourceOption>[];
+        for (final raw in chapters) {
+          if (raw is! Map) break;
+          final number = raw['id'];
+          if (number is! int ||
+              number < 1 ||
+              number > 114 ||
+              !chapterNumbers.add(number)) {
+            break;
+          }
+          final simple = raw['name_simple'];
+          final translated = raw['translated_name'];
+          final bangla = translated is Map ? translated['name'] : null;
+          final name = simple is String && simple.trim().isNotEmpty
+              ? simple.trim()
+              : 'Surah $number';
+          options.add(
+            ContentResourceOption(
+              id: 'quran:$number',
+              title: name,
+              titleBn: bangla is String && bangla.trim().isNotEmpty
+                  ? '$name — ${bangla.trim()}'
+                  : name,
+              type: 'quran',
+              visibility: 'public',
+              status: 'published',
+              categorySortOrder: -1,
+            ),
+          );
+        }
+        if (options.length == 114 && chapterNumbers.length == 114) {
+          options.sort(
+            (a, b) =>
+                a.canonicalSurahNumber!.compareTo(b.canonicalSurahNumber!),
+          );
+          resources.addAll(options);
+        }
+      }
+    } catch (_) {
+      // CMS resources remain usable if the independent Quran API is offline.
+    }
     resources.sort((left, right) {
       final categoryOrder = left.categorySortOrder.compareTo(
         right.categorySortOrder,
@@ -66,11 +116,17 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
         right.categoryLabel.toLowerCase(),
       );
       if (categoryName != 0) return categoryName;
+      if (left.canonicalSurahNumber != null &&
+          right.canonicalSurahNumber != null) {
+        return left.canonicalSurahNumber!.compareTo(
+          right.canonicalSurahNumber!,
+        );
+      }
       return left.displayTitle.toLowerCase().compareTo(
         right.displayTitle.toLowerCase(),
       );
     });
-    return resources;
+    return List.unmodifiable(resources);
   }
 
   @override
@@ -143,6 +199,32 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
         params: {
           'p_action_id': actionId,
           'p_resource_ids': resourceIds,
+          'p_request_id': requestId,
+        },
+      );
+    } on PostgrestException catch (error) {
+      throw CarePlanWorkflowException(error.message);
+    }
+  }
+
+  @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {
+    try {
+      await _client.rpc(
+        'replace_draft_action_quran_surahs',
+        params: {
+          'p_action_id': actionId,
+          'p_surahs': [
+            for (final surah in surahs)
+              {
+                'number': surah.canonicalSurahNumber,
+                'title': surah.displayTitle,
+              },
+          ],
           'p_request_id': requestId,
         },
       );

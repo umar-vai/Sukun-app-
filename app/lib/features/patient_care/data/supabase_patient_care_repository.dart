@@ -33,7 +33,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
       final response = await _client
           .from('task_instances')
           .select(
-            '*,plan_actions!inner(*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)))',
+            '*,plan_actions!inner(*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order))',
           )
           .eq('occurrence_date', _dateOnly(localDate))
           .eq('plan_actions.care_plan_id', plan.id)
@@ -74,7 +74,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
     final response = await _client
         .from('plan_actions')
         .select(
-          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note))',
+          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order)',
         )
         .eq('care_plan_id', planId)
         .eq('review_status', 'approved')
