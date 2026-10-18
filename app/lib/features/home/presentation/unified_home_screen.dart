@@ -506,10 +506,7 @@ class _HomeTasksData {
 }
 
 class _UnifiedNextTasks extends StatelessWidget {
-  const _UnifiedNextTasks({
-    required this.future,
-    required this.isPatient,
-  });
+  const _UnifiedNextTasks({required this.future, required this.isPatient});
 
   final Future<_HomeTasksData> future;
   final bool isPatient;
@@ -534,7 +531,9 @@ class _UnifiedNextTasks extends StatelessWidget {
               return const Text('আপনার করণীয় খোঁজা হচ্ছে…');
             }
             if (snapshot.hasError || snapshot.data == null) {
-              return const Text('এখন কাজগুলো আনা যাচ্ছে না। পরে আবার চেষ্টা করুন।');
+              return const Text(
+                'এখন কাজগুলো আনা যাচ্ছে না। পরে আবার চেষ্টা করুন।',
+              );
             }
             final data = snapshot.data!;
             return Column(
