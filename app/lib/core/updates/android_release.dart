@@ -30,8 +30,7 @@ final class AndroidRelease {
     if (json['schema_version'] != 1 || json['enabled'] != true) {
       return null;
     }
-    if (json['platform'] != 'android' ||
-        json['package_name'] != packageName) {
+    if (json['platform'] != 'android' || json['package_name'] != packageName) {
       throw const FormatException('Unsupported release identity.');
     }
     final code = json['version_code'];
