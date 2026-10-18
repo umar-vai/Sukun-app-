@@ -492,21 +492,26 @@ AppSession? _patientSession(AppSession? session) =>
 AppSession? _adminSession(AppSession? session) =>
     session?.isSuperAdmin == true ? session : null;
 
-class _SessionLanding extends StatelessWidget {
+class _SessionLanding extends ConsumerWidget {
   const _SessionLanding({required this.sessionState});
 
   final AsyncValue<AppSession> sessionState;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return sessionState.when(
       data: (session) => session.isMember
           ? MemberHomeScreen(displayName: session.displayName)
           : const GuestHomeScreen(),
       loading: () => const SukunLaunchScreen(),
-      error: (error, stackTrace) => const Scaffold(
+      // A transient profiles/roles fetch failure must not trap the user on a
+      // permanent error screen or silently downgrade their verified role.
+      // Restart the role lookup; server-side RLS remains the authority.
+      error: (error, stackTrace) => Scaffold(
         body: AppErrorState(
-          message: 'We could not verify your session. Please try again.',
+          message: 'অ্যাকাউন্টের তথ্য যাচাই করা যাচ্ছে না। সংযোগ ঠিক থাকলে আবার চেষ্টা করুন।',
+          showSafeMessage: true,
+          onRetry: () => ref.invalidate(appSessionProvider),
         ),
       ),
     );
