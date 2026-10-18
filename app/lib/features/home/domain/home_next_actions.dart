@@ -97,7 +97,9 @@ abstract final class HomeNextActions {
           dueAt = reminder.nextOccurrence(
             calculator: calculator,
             settings: settings,
-            after: doneToday ? now.add(const Duration(days: 1)) : now,
+            after: doneToday ? _nextLocalDayStart(now, settings).subtract(
+              const Duration(milliseconds: 1),
+            ) : now,
           );
         } catch (_) {
           // Never guess prayer-relative timings without compatible preferences.
@@ -128,6 +130,18 @@ abstract final class HomeNextActions {
       return byTime == 0 ? a.title.compareTo(b.title) : byTime;
     });
     return selected;
+  }
+
+  static DateTime _nextLocalDayStart(
+    DateTime now,
+    PrayerUtilitySettings settings,
+  ) {
+    tz_data.initializeTimeZones();
+    final location = tz.getLocation(settings.location!.timezone);
+    final local = tz.TZDateTime.from(now, location);
+    return tz.TZDateTime(
+      location, local.year, local.month, local.day + 1,
+    );
   }
 
   static DateTime? _nextFixed(
