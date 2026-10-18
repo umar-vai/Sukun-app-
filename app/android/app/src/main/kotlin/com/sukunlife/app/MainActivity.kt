@@ -10,7 +10,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import androidx.core.content.FileProvider
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -25,7 +25,7 @@ import java.util.Locale
  * monotonically increasing version are verified BEFORE opening the system
  * installer. This app does not silently install anything.
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceActivity() {
     private val updateChannel = "sukunlife/app_updates"
     private val apkMime = "application/vnd.android.package-archive"
     private val prefs by lazy {
