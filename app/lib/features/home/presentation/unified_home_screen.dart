@@ -298,7 +298,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       ),
     );
   }
-
 }
 
 class _PrayerSummary {
@@ -378,7 +377,8 @@ class _CompactPrayerStrip extends StatelessWidget {
                           child: Container(
                             width: 61,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 2, vertical: 7,
+                              horizontal: 2,
+                              vertical: 7,
                             ),
                             decoration: BoxDecoration(
                               color: entry.id == data.schedule.nextPrayer.id
@@ -504,4 +504,3 @@ class _PatientHomeSummary extends StatelessWidget {
     ),
   );
 }
-
