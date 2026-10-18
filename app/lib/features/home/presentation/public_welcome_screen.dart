@@ -10,6 +10,14 @@ import 'package:sukun_life/core/updates/android_update_service.dart';
 /// non-HTTPS value keeps the download action closed until a signed APK exists.
 const androidApkUrl = String.fromEnvironment('ANDROID_APK_URL');
 
+// Explicitly enabled only after the first signed APK is approved and
+// published. Keeps the initial Web preview, browser tests and public landing
+// free of speculative remote download requests before the release gate.
+const publicApkDownloadEnabled = bool.fromEnvironment(
+  'ENABLE_PUBLIC_APK_DOWNLOAD',
+  defaultValue: false,
+);
+
 Uri? approvedAndroidApkUri(String value) {
   final uri = Uri.tryParse(value.trim());
   return uri != null && isApprovedApkUri(uri) ? uri : null;
@@ -29,9 +37,11 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    _publishedRelease = _updateService
-        .check(installedVersionCodeOverride: 0)
-        .catchError((Object _) => null);
+    _publishedRelease = publicApkDownloadEnabled
+        ? _updateService
+              .check(installedVersionCodeOverride: 0)
+              .catchError((Object _) => null)
+        : Future<AndroidRelease?>.value(null);
   }
 
   @override
