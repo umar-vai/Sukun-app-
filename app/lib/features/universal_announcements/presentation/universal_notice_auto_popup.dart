@@ -101,8 +101,9 @@ class _UniversalNoticeAutoPopupState
       if (!mounted ||
           _owner() != ownerId ||
           generation != _checkGeneration ||
-          !_eligibleRoute())
+          !_eligibleRoute()) {
         return;
+      }
       setState(() {
         _active = fresh;
         _activeOwner = ownerId;
