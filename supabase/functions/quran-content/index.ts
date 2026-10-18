@@ -5,28 +5,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { useAttributedPublicQuran } from "./provider-selection.ts";
 import { openQuranGet } from "./upstream-resilience.ts";
+import { quranCorsHeaders } from "./cors.ts";
 
-const origins = new Set([
-  "https://umar-vai.github.io",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:8080",
-]);
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 let cachedToken = "";
 let tokenExpiresAt = 0;
 
-function cors(origin: string | null): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": origin && origins.has(origin)
-      ? origin
-      : "https://umar-vai.github.io",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Vary": "Origin",
-  };
-}
 function respond(
   status: number,
   body: unknown,
@@ -34,7 +18,11 @@ function respond(
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...jsonHeaders, ...cors(origin), "Cache-Control": "no-store" },
+    headers: {
+      ...jsonHeaders,
+      ...quranCorsHeaders(origin),
+      "Cache-Control": "no-store",
+    },
   });
 }
 function upstreamEnvironment() {
@@ -208,7 +196,10 @@ async function openQuranResponse(body: any) {
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("origin");
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: cors(origin) });
+    return new Response(null, {
+      status: 204,
+      headers: quranCorsHeaders(origin),
+    });
   }
   if (request.method !== "POST") {
     return respond(405, { error: "Method not allowed" }, origin);

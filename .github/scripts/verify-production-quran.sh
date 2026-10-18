@@ -17,6 +17,29 @@ call_quran() {
     --header 'Content-Type: application/json' \
     --data "$body" "$SUPABASE_URL/functions/v1/quran-content" > "$tmp"
 }
+# The deployed Quran API must accept the live browser's OPTIONS preflight.
+# Server-side curl success alone cannot establish CORS correctness.
+preflight_headers="$(mktemp)"
+trap 'rm -f "$tmp" "$preflight_headers"' EXIT
+preflight_status="$(curl --silent --show-error --max-time 25 \
+  --output /dev/null --dump-header "$preflight_headers" \
+  --request OPTIONS \
+  --header 'Origin: https://app.sukunlife.com' \
+  --header 'Access-Control-Request-Method: POST' \
+  --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info' \
+  "$SUPABASE_URL/functions/v1/quran-content" \
+  --write-out '%{http_code}')"
+[[ "$preflight_status" == "204" ]] || {
+  echo "FAIL: Quran API app-domain preflight HTTP $preflight_status"
+  exit 1
+}
+tr -d '\r' < "$preflight_headers" |
+  grep -ixF 'access-control-allow-origin: https://app.sukunlife.com' >/dev/null || {
+    echo "FAIL: Quran API did not allow exact app.sukunlife.com Origin"
+    exit 1
+  }
+echo "PASS: Quran and Ruqyah audio browser preflight"
+
 call_quran '{"action":"chapters"}'
 jq -e '.provider == "Al Quran Cloud" and
        (.chapters | length) == 114 and
