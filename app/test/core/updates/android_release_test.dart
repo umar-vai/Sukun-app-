@@ -7,7 +7,8 @@ import 'package:sukun_life/core/updates/android_release.dart';
 import 'package:sukun_life/core/updates/android_update_service.dart';
 
 void main() {
-  const sha = 'aabbccddeeff00112233445566778899'
+  const sha =
+      'aabbccddeeff00112233445566778899'
       'aabbccddeeff00112233445566778899';
   const asset =
       'https://github.com/umar-vai/Sukun-app-/releases/download/v1.0.2/SukunLife.apk';
@@ -83,20 +84,11 @@ void main() {
 
   test('rejects wrong package, checksum and version metadata', () {
     final wrongPackage = manifest()..['package_name'] = 'com.attacker.app';
-    expect(
-      () => AndroidRelease.fromJson(wrongPackage),
-      throwsFormatException,
-    );
+    expect(() => AndroidRelease.fromJson(wrongPackage), throwsFormatException);
     final wrongDigest = manifest()..['sha256'] = '123';
-    expect(
-      () => AndroidRelease.fromJson(wrongDigest),
-      throwsFormatException,
-    );
+    expect(() => AndroidRelease.fromJson(wrongDigest), throwsFormatException);
     final wrongVersion = manifest()..['version_code'] = 0;
-    expect(
-      () => AndroidRelease.fromJson(wrongVersion),
-      throwsFormatException,
-    );
+    expect(() => AndroidRelease.fromJson(wrongVersion), throwsFormatException);
   });
 
   test('HTTP feed only returns newer official releases', () async {
@@ -116,14 +108,17 @@ void main() {
     expect(await service.check(installedVersionCodeOverride: 2), isNull);
   });
 
-  test('offline feed raises a recoverable exception; app need not sign out', () async {
-    final service = AndroidUpdateService(
-      client: MockClient((request) async => http.Response('offline', 503)),
-    );
-    addTearDown(service.dispose);
-    await expectLater(
-      service.check(installedVersionCodeOverride: 1),
-      throwsFormatException,
-    );
-  });
+  test(
+    'offline feed raises a recoverable exception; app need not sign out',
+    () async {
+      final service = AndroidUpdateService(
+        client: MockClient((request) async => http.Response('offline', 503)),
+      );
+      addTearDown(service.dispose);
+      await expectLater(
+        service.check(installedVersionCodeOverride: 1),
+        throwsFormatException,
+      );
+    },
+  );
 }
