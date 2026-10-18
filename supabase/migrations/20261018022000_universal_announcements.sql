@@ -40,11 +40,17 @@ as $$
 begin
   new.updated_at := now();
   if tg_op = 'INSERT' then
+    if auth.uid() is not null then
+      new.created_by := auth.uid();
+    end if;
     if new.status = 'published' then
       new.published_at := now();
     else
       new.published_at := null;
     end if;
+  elsif new.created_by is distinct from old.created_by then
+    raise exception 'Announcement creator cannot be changed.'
+      using errcode = '23514';
   elsif new.status = 'published' and old.status is distinct from 'published' then
     new.published_at := now();
   elsif new.status <> 'published' then
@@ -63,7 +69,7 @@ for each row execute function private.stamp_universal_announcement();
 alter table public.universal_announcements enable row level security;
 revoke all on public.universal_announcements from public, anon, authenticated;
 grant select on public.universal_announcements to anon, authenticated;
-grant insert, update, delete on public.universal_announcements to authenticated;
+grant insert, update on public.universal_announcements to authenticated;
 
 create policy announcements_published_read on public.universal_announcements
   for select to anon, authenticated
@@ -83,9 +89,34 @@ create policy announcements_admin_update on public.universal_announcements
   for update to authenticated using ((select private.is_super_admin()))
   with check ((select private.is_super_admin()));
 
-create policy announcements_admin_delete_drafts on public.universal_announcements
-  for delete to authenticated
-  using ((select private.is_super_admin()) and status = 'draft');
+
+-- Retain notice history. Admins archive a notice instead of deleting it.
+create or replace function private.audit_universal_announcement()
+returns trigger language plpgsql security invoker set search_path = ''
+as $$
+begin
+  insert into public.admin_audit_logs (
+    actor_user_id, action, entity_type, entity_id, metadata
+  ) values (
+    auth.uid(),
+    case
+      when tg_op = 'INSERT' then 'universal_announcement_created'
+      when new.status = 'published' and old.status <> 'published'
+        then 'universal_announcement_published'
+      when new.status = 'archived' and old.status <> 'archived'
+        then 'universal_announcement_archived'
+      else 'universal_announcement_updated'
+    end,
+    'universal_announcement', new.id,
+    jsonb_build_object('status', new.status)
+  );
+  return new;
+end;
+$$;
+
+create trigger audit_universal_announcement_trigger
+after insert or update on public.universal_announcements
+for each row execute function private.audit_universal_announcement();
 
 -- Public assets only, with strict admin upload rights. NEVER store patient
 -- photographs, prescriptions, contact details or confidential media here.
@@ -164,6 +195,8 @@ for each row execute function private.enqueue_universal_announcement();
 revoke execute on function private.stamp_universal_announcement()
   from public, anon, authenticated;
 revoke execute on function private.enqueue_universal_announcement()
+  from public, anon, authenticated;
+revoke execute on function private.audit_universal_announcement()
   from public, anon, authenticated;
 
 comment on table public.universal_announcements is

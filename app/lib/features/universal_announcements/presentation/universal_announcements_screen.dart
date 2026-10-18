@@ -81,11 +81,15 @@ class _UniversalNoticeDetailScreenState
                         ),
                       );
                     }
-                    return _NoticePanel(
+                    return UniversalNoticePanel(
                       notice: snapshot.data!,
-                      imageUrl: (path) => ref
-                          .read(announcementRepositoryProvider)
-                          .imageUrl(path),
+                      image: snapshot.data!.imagePath == null
+                          ? null
+                          : NetworkImage(
+                              ref
+                                  .read(announcementRepositoryProvider)
+                                  .imageUrl(snapshot.data!.imagePath!),
+                            ),
                       onClose: _close,
                     );
                   },
@@ -99,16 +103,19 @@ class _UniversalNoticeDetailScreenState
   );
 }
 
-class _NoticePanel extends StatelessWidget {
-  const _NoticePanel({
+class UniversalNoticePanel extends StatelessWidget {
+  const UniversalNoticePanel({
     required this.notice,
-    required this.imageUrl,
+    required this.image,
     required this.onClose,
+    this.isPreview = false,
+    super.key,
   });
 
   final UniversalAnnouncement notice;
-  final String Function(String) imageUrl;
+  final ImageProvider? image;
   final VoidCallback onClose;
+  final bool isPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -125,10 +132,12 @@ class _NoticePanel extends StatelessWidget {
             children: [
               const Icon(Icons.campaign_outlined, color: SukunColors.deepTide),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  isPreview
+                      ? 'প্রকাশের আগে নোটিশ দেখুন'
+                      : 'সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               IconButton(
@@ -151,11 +160,11 @@ class _NoticePanel extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
-                if (notice.imagePath != null) ...[
+                if (image != null) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      imageUrl(notice.imagePath!),
+                    child: Image(
+                      image: image!,
                       width: double.infinity,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) =>

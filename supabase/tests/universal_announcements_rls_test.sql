@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(12);
 
 select is(
   (select c.relrowsecurity from pg_class c
@@ -17,6 +17,11 @@ select ok(
 select ok(
   not has_table_privilege('anon','public.universal_announcements','INSERT'),
   'guests cannot create or publish universal notices'
+);
+
+select ok(
+  not has_table_privilege('authenticated','public.universal_announcements','DELETE'),
+  'admins archive notices instead of erasing their history'
 );
 
 select ok(
@@ -50,6 +55,20 @@ insert into public.universal_announcements (
 select is(
   (select count(*) from private.universal_announcement_outbox),
   1::bigint, 'publication queues exactly one server-only dispatch'
+);
+
+select is(
+  (select count(*) from public.admin_audit_logs
+   where entity_type = 'universal_announcement'),
+  2::bigint, 'notice changes have admin audit entries'
+);
+
+select throws_ok(
+  $$update public.universal_announcements
+      set created_by = '00000000-0000-4000-8000-000000001899'
+    where id = '00000000-0000-4000-8000-000000001811'$$,
+  '23514', 'Announcement creator cannot be changed.',
+  'the original notice creator cannot be forged on edit'
 );
 
 select is(

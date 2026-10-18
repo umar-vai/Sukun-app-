@@ -224,7 +224,11 @@ Follow `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md`.
 - [x] Snooze behavior
 - [x] Firebase Cloud Messaging client/server architecture
 - [x] Plan-updated push
-- [x] Optional admin broadcast assessed and excluded from the MVP
+- [x] Public universal notices implemented separately from patient reminders
+- [x] Super Admin notice draft, preview, publish, archive and audit flow
+- [x] Guest/Member/Patient notice inbox and deep-linked detail panel
+- [ ] Native universal push release gate: device opt-in, background/cold-start and duplicate delivery verified
+- [ ] Browser-closed Web Push configured and verified, if required for Web
 - [x] Device token registration, refresh, removal, and invalid-token cleanup
 - [x] Android precise reminder timing requests user-controlled exact-alarm access with safe fallback
 - [x] Plan-update pushes use a dedicated high-importance Android channel

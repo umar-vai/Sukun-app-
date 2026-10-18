@@ -50,6 +50,10 @@ FIREBASE_PROJECT_ID
 - Direct authenticated insert/update/delete grants on `notification_devices` are revoked; the validated RPCs are the write boundary.
 - Existing RLS keeps device registrations, notification events, and reminder tasks isolated per patient.
 
-## Deliberate MVP boundary
+## Public universal notices
 
-Admin broadcast notifications are not included. Phase 7 supports only care-plan update delivery to the patient who owns that plan. This keeps the MVP within its patient-care scope and avoids introducing audience selection, consent, moderation, and unsubscribe rules without approved requirements.
+Universal notices are non-clinical announcements, separate from patient notification events and care reminders. A verified Super Admin can save a draft, preview its text/image/link, publish it to the public notice inbox, and archive it. Published, unexpired notices are readable by Guest, Member, and Patient through the same Flutter routes. Drafts are admin-only under database RLS. Notice changes have audit entries; archive preserves history.
+
+The inbox retains published notices for later reading. The prominent detail panel can be opened from the inbox or from a validated notice ID in a native push tap. An optional image is stored in a dedicated public, non-clinical Storage bucket; no patient images, prescriptions, or private links belong there. External links must use HTTPS.
+
+Native Android/iOS push is a separate opt-in FCM topic, `sukun_public_notices_v1`. The server-only sender claims publication outbox records and sends a public notice ID and title to the topic. A provider-accepted message does **not** prove delivery to every phone. The sender requires both a private cron token and the `SUKUN_UNIVERSAL_PUSH_RELEASE_READY` server gate; its GitHub schedule has a separate repository-variable gate. Keep both closed until native Firebase configuration, phone consent/topic registration, locked/background/cold-start tap, opt-out, and duplicate-send checks pass. Web browser-closed push requires a separately tested service worker/VAPID path; the Pages preview supplies the in-app inbox.

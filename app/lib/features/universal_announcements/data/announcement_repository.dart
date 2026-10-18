@@ -112,13 +112,20 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
   @override
   Future<List<UniversalAnnouncement>> published() async {
     if (_client == null) return [];
-    final result = await client
-        .from('universal_announcements')
-        .select()
-        .eq('status', 'published')
-        .order('published_at', ascending: false)
-        .limit(60);
-    return result.map(UniversalAnnouncement.fromJson).toList();
+    const pageSize = 100;
+    final notices = <UniversalAnnouncement>[];
+    for (var offset = 0; ; offset += pageSize) {
+      final page = await client
+          .from('universal_announcements')
+          .select()
+          .eq('status', 'published')
+          .order('published_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + pageSize - 1);
+      notices.addAll(page.map(UniversalAnnouncement.fromJson));
+      if (page.length < pageSize) break;
+    }
+    return notices;
   }
 
   @override

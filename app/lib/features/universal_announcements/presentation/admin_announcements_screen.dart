@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
+import 'package:sukun_life/features/universal_announcements/presentation/universal_announcements_screen.dart';
 
 /// Uses verified Super Admin RLS. Hiding routes/buttons never grants privilege.
 class AdminAnnouncementsScreen extends ConsumerStatefulWidget {
@@ -194,6 +195,53 @@ class _AdminAnnouncementEditorScreenState
     });
   }
 
+  void _preview() {
+    final draft = AnnouncementDraft(
+      title: _title.text,
+      body: _body.text,
+      imagePath: _imagePath,
+      linkUrl: _link.text,
+    );
+    final problem = draft.validate();
+    if (problem != null) {
+      setState(() => _error = problem);
+      return;
+    }
+    setState(() => _error = null);
+    final repository = ref.read(announcementRepositoryProvider);
+    final ImageProvider? image = _imageBytes != null
+        ? MemoryImage(_imageBytes!)
+        : _imagePath != null
+        ? NetworkImage(repository.imageUrl(_imagePath!))
+        : null;
+    final notice = UniversalAnnouncement(
+      id: widget.id ?? '',
+      title: draft.title.trim(),
+      body: draft.body.trim(),
+      status: 'draft',
+      imagePath: draft.imagePath,
+      linkUrl: draft.linkUrl,
+    );
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 510,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.82,
+          ),
+          child: UniversalNoticePanel(
+            notice: notice,
+            image: image,
+            isPreview: true,
+            onClose: () => Navigator.of(dialogContext).pop(),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _save(String newStatus) async {
     if (_busy) return;
     final repo = ref.read(announcementRepositoryProvider);
@@ -344,6 +392,12 @@ class _AdminAnnouncementEditorScreenState
                   spacing: 9,
                   runSpacing: 9,
                   children: [
+                    OutlinedButton.icon(
+                      key: const Key('notice-preview'),
+                      onPressed: _preview,
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: const Text('আগে দেখে নিন'),
+                    ),
                     OutlinedButton.icon(
                       key: const Key('notice-save-draft'),
                       onPressed: () => _save('draft'),
