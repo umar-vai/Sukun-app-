@@ -27,13 +27,14 @@ abstract final class SukunTheme {
       ),
       scaffoldBackgroundColor: SukunColors.canvas,
     );
-    final textTheme = SukunTypography.withBengaliFallback(
-      SukunTypography.englishTextTheme(base.textTheme),
-      bengaliFont,
-    ).apply(
-      bodyColor: SukunColors.nightNavy,
-      displayColor: SukunColors.nightNavy,
-    );
+    final textTheme =
+        SukunTypography.withBengaliFallback(
+          SukunTypography.englishTextTheme(base.textTheme),
+          bengaliFont,
+        ).apply(
+          bodyColor: SukunColors.nightNavy,
+          displayColor: SukunColors.nightNavy,
+        );
 
     return base.copyWith(
       textTheme: textTheme,
