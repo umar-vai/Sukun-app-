@@ -38,7 +38,7 @@ class _AdminAnnouncementsScreenState
   @override
   Widget build(BuildContext context) => AdminScaffold(
     title: 'সবার জন্য নোটিশ',
-    selectedIndex: 2,
+    selectedIndex: 3,
     actions: [
       IconButton(
         tooltip: 'রিফ্রেশ',
