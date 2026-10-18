@@ -25,6 +25,7 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_pre
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
 import 'package:sukun_life/features/account/presentation/unified_account_screen.dart';
+import 'package:sukun_life/features/account/presentation/bengali_font_settings_screen.dart';
 import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_action_detail_screen.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
@@ -189,6 +190,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/progress',
             builder: (context, state) => const UnifiedProgressScreen(),
+          ),
+          GoRoute(
+            path: '/settings/bengali-font',
+            builder: (context, state) => const BengaliFontSettingsScreen(),
           ),
           GoRoute(
             path: '/account',
