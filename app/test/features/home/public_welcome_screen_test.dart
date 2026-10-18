@@ -51,10 +51,7 @@ void main() {
       );
       expect(find.text('Android অ্যাপ শীঘ্রই'), findsWidgets);
       expect(tester.takeException(), isNull);
-      await tester.scrollUntilVisible(
-        find.text('রুকইয়াহ রিসোর্স দেখুন'),
-        500,
-      );
+      await tester.scrollUntilVisible(find.text('রুকইয়াহ রিসোর্স দেখুন'), 500);
       await tester.pumpAndSettle();
       await tester.tap(find.text('রুকইয়াহ রিসোর্স দেখুন'));
       await tester.pumpAndSettle();
