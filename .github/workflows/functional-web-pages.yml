@@ -313,6 +313,7 @@ jobs:
         shell: bash
         env:
           ANDROID_APK_URL: ${{ vars.SUKUN_ANDROID_APK_URL }}
+          PUBLIC_APK_DOWNLOAD_ENABLED: ${{ vars.SUKUN_PUBLIC_APK_DOWNLOAD_ENABLED }}
         run: |
           set -euo pipefail
           flutter build web --release \
@@ -322,6 +323,7 @@ jobs:
             --dart-define "SUPABASE_URL=$SUPABASE_URL" \
             --dart-define "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" \
             --dart-define "ANDROID_APK_URL=$ANDROID_APK_URL" \
+            --dart-define "ENABLE_PUBLIC_APK_DOWNLOAD=${PUBLIC_APK_DOWNLOAD_ENABLED:-false}" \
             --dart-define "ENABLE_MEMBER_SIGNUP=$ENABLE_MEMBER_SIGNUP" \
             --dart-define "ENABLE_EMAIL_OTP=$ENABLE_EMAIL_OTP" \
             --dart-define "ENABLE_PHONE_OTP=$ENABLE_PHONE_OTP" \
