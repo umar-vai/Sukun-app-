@@ -47,10 +47,7 @@ void main() {
     ]);
     expect(sharedUserDestinations.length, 5);
     for (final path in sharedUserRoutes) {
-      expect(
-        navigationIndex(path, member),
-        navigationIndex(path, patient),
-      );
+      expect(navigationIndex(path, member), navigationIndex(path, patient));
     }
     expect(navigationIndex('/my-routines/action/a', patient), 1);
     expect(navigationIndex('/patient/plan', patient), 1);
