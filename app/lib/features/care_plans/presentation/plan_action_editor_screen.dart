@@ -137,8 +137,13 @@ class _PlanActionEditorScreenState
     final notedResource = action.linkedResources
         .where((resource) => resource.usageNote?.isNotEmpty == true)
         .firstOrNull;
-    _contentItemId = notedResource?.id ?? action.resource?.id ?? '';
-    if (_contentItemId.startsWith('quran:')) _contentItemId = '';
+    _contentItemId =
+        notedResource?.id ??
+        action.linkedResources
+            .where((resource) => !resource.id.startsWith('quran:'))
+            .firstOrNull
+            ?.id ??
+        '';
     _contentItemIds
       ..clear()
       ..addAll(action.linkedResources.map((resource) => resource.id));
