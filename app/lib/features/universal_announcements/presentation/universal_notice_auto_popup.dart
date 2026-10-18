@@ -21,7 +21,8 @@ class UniversalNoticeAutoPopup extends ConsumerStatefulWidget {
 }
 
 class _UniversalNoticeAutoPopupState
-    extends ConsumerState<UniversalNoticeAutoPopup> with WidgetsBindingObserver {
+    extends ConsumerState<UniversalNoticeAutoPopup>
+    with WidgetsBindingObserver {
   Timer? _pollTimer;
   bool _checking = false;
   UniversalAnnouncement? _active;
@@ -51,8 +52,12 @@ class _UniversalNoticeAutoPopupState
   String? _owner() => ref.read(appSessionProvider).value?.userId;
 
   bool _eligibleRoute() {
-    final route = ref.read(appRouterProvider)
-        .routeInformationProvider.value.uri.path;
+    final route = ref
+        .read(appRouterProvider)
+        .routeInformationProvider
+        .value
+        .uri
+        .path;
     // Never interrupt login, patient credential updates or the admin editor.
     if (route.startsWith('/announcements') ||
         route.startsWith('/admin/announcements') ||
@@ -86,7 +91,8 @@ class _UniversalNoticeAutoPopupState
           !mounted ||
           _owner() != ownerId ||
           generation != _checkGeneration ||
-          !_eligibleRoute()) return;
+          !_eligibleRoute())
+        return;
 
       // Persist the exact publication before opening the panel so refreshes
       // and app restarts do not replay it. Cloud sync is owner-scoped by RLS.
@@ -94,7 +100,8 @@ class _UniversalNoticeAutoPopupState
       if (!mounted ||
           _owner() != ownerId ||
           generation != _checkGeneration ||
-          !_eligibleRoute()) return;
+          !_eligibleRoute())
+        return;
       setState(() {
         _active = fresh;
         _activeOwner = ownerId;
@@ -128,7 +135,8 @@ class _UniversalNoticeAutoPopupState
     ref.listen(appSessionProvider, (previous, next) {
       final oldUser = previous?.value?.userId;
       final newUser = next.value?.userId;
-      if (!next.hasValue || (previous?.hasValue == true && oldUser == newUser)) {
+      if (!next.hasValue ||
+          (previous?.hasValue == true && oldUser == newUser)) {
         return;
       }
       _checkGeneration++;
@@ -149,10 +157,7 @@ class _UniversalNoticeAutoPopupState
         widget.child,
         if (notice != null && _activeOwner == _owner()) ...[
           const Positioned.fill(
-            child: ModalBarrier(
-              dismissible: false,
-              color: Color(0x990D2B45),
-            ),
+            child: ModalBarrier(dismissible: false, color: Color(0x990D2B45)),
           ),
           Positioned.fill(
             child: SafeArea(
@@ -172,10 +177,7 @@ class _UniversalNoticeAutoPopupState
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            height: 5,
-                            color: const Color(0xFFE6B53D),
-                          ),
+                          Container(height: 5, color: const Color(0xFFE6B53D)),
                           Flexible(
                             child: UniversalNoticePanel(
                               notice: notice,
