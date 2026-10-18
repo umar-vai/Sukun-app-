@@ -81,9 +81,8 @@ class _AppAppearanceSettingsScreenState
               divisions: 11,
               label: '${(_bengaliScale * 100).round()}%',
               onChanged: (value) => setState(() => _bengaliScale = value),
-              onChangeEnd: (value) => unawaited(
-                AppDisplaySettings.instance.setBengaliScale(value),
-              ),
+              onChangeEnd: (value) =>
+                  unawaited(AppDisplaySettings.instance.setBengaliScale(value)),
             ),
             Text(
               'সুকুন লাইফ — আজকের আমল',
@@ -101,9 +100,8 @@ class _AppAppearanceSettingsScreenState
               divisions: 15,
               label: '${(_arabicScale * 100).round()}%',
               onChanged: (value) => setState(() => _arabicScale = value),
-              onChangeEnd: (value) => unawaited(
-                AppDisplaySettings.instance.setArabicScale(value),
-              ),
+              onChangeEnd: (value) =>
+                  unawaited(AppDisplaySettings.instance.setArabicScale(value)),
             ),
             Text(
               'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
@@ -113,7 +111,10 @@ class _AppAppearanceSettingsScreenState
               ),
             ),
             const SizedBox(height: 20),
-            Text('প্রার্থনা ও রিমাইন্ডার', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'প্রার্থনা ও রিমাইন্ডার',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             ListTile(
               leading: const Icon(Icons.access_time_rounded),
               title: const Text('নামাজের সময় ও হিসাবপদ্ধতি'),
