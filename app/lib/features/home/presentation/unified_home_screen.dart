@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
+import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
-import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 
 /// Shared public landing page. Personal care is loaded only for patient sessions.
 class UnifiedHomeScreen extends ConsumerStatefulWidget {
@@ -72,7 +72,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
   }
 
   Future<void> _signOut() async {
-    if (_signingOut || !widget.isSignedInMember) return;
+    if (_signingOut || (!widget.isSignedInMember && !widget.isPatient)) return;
     setState(() => _signingOut = true);
     try {
       await ref.read(authRepositoryProvider).signOut();
@@ -292,14 +292,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       ),
     );
 
-    if (widget.isPatient) {
-      return PatientScaffold(
-        title: 'সুকুন লাইফ',
-        selectedIndex: 0,
-        body: content,
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const SukunLifeLogo(height: 36),
@@ -307,13 +299,13 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
           TextButton(
             onPressed: _signingOut
                 ? null
-                : widget.isSignedInMember
+                : widget.isSignedInMember || widget.isPatient
                 ? _signOut
                 : () => context.push('/login'),
             child: Text(
               _signingOut
                   ? 'লগআউট হচ্ছে…'
-                  : widget.isSignedInMember
+                  : widget.isSignedInMember || widget.isPatient
                   ? 'লগআউট'
                   : 'লগইন',
             ),
@@ -324,26 +316,32 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: 0,
         onSelected: (index) {
-          if (index == 1) context.go('/resources');
-          if (index == 2) context.go('/announcements');
+          if (widget.isSignedInMember || widget.isPatient) {
+            context.go(sharedUserRoutes[index]);
+          } else {
+            if (index == 1) context.go('/resources');
+            if (index == 2) context.go('/announcements');
+          }
         },
-        destinations: const [
-          SukunNavDestination(
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home,
-            label: 'হোম',
-          ),
-          SukunNavDestination(
-            icon: Icons.menu_book_outlined,
-            selectedIcon: Icons.menu_book,
-            label: 'উপকরণ',
-          ),
-          SukunNavDestination(
-            icon: Icons.campaign_outlined,
-            selectedIcon: Icons.campaign,
-            label: 'নোটিশ',
-          ),
-        ],
+        destinations: widget.isSignedInMember || widget.isPatient
+            ? sharedUserDestinations
+            : const [
+                SukunNavDestination(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home,
+                  label: 'হোম',
+                ),
+                SukunNavDestination(
+                  icon: Icons.menu_book_outlined,
+                  selectedIcon: Icons.menu_book,
+                  label: 'উপকরণ',
+                ),
+                SukunNavDestination(
+                  icon: Icons.campaign_outlined,
+                  selectedIcon: Icons.campaign,
+                  label: 'নোটিশ',
+                ),
+              ],
       ),
     );
   }
