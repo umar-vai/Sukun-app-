@@ -30,9 +30,9 @@ class UniversalNoticeSeenStore {
   const UniversalNoticeSeenStore(this._client);
   final SupabaseClient? _client;
 
-  static String storageKey(String? userId) =>
-      userId == null ? 'sukun_public_notice_seen_guest_v1'
-          : 'sukun_public_notice_seen_user_${userId}_v1';
+  static String storageKey(String? userId) => userId == null
+      ? 'sukun_public_notice_seen_guest_v1'
+      : 'sukun_public_notice_seen_user_${userId}_v1';
 
   Future<Set<String>> read(String? userId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,7 +48,9 @@ class UniversalNoticeSeenStore {
           .limit(500);
       for (final row in rows) {
         final id = row['announcement_id'] as String?;
-        final published = DateTime.tryParse(row['published_at'] as String? ?? '');
+        final published = DateTime.tryParse(
+          row['published_at'] as String? ?? '',
+        );
         if (id != null && published != null) {
           seen.add('$id@${published.toUtc().toIso8601String()}');
         }
