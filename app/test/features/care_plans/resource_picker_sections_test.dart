@@ -28,6 +28,22 @@ const _ruqyahAudio = ContentResourceOption(
   status: 'published',
   categorySlug: 'ruqyah-audio',
 );
+const _surah = ContentResourceOption(
+  id: 'quran:114',
+  title: 'An-Nas',
+  titleBn: 'আন-নাস',
+  type: 'quran',
+  visibility: 'public',
+  status: 'published',
+);
+const _ruqyahAyat = ContentResourceOption(
+  id: 'ayat-1',
+  slug: 'srg2024-qur-001',
+  title: 'Reviewed excerpt',
+  type: 'article',
+  visibility: 'public',
+  status: 'published',
+);
 
 void main() {
   test('Admin main sections use the public Resources taxonomy', () {
@@ -42,6 +58,20 @@ void main() {
     expect(resourceMatchesPickerSection(_dua, dua), isTrue);
     expect(resourceMatchesPickerSection(_ruqyahAudio, ruqyah), isTrue);
     expect(resourceMatchesPickerSection(_ruqyahAudio, audio), isTrue);
+    expect(_surah.canonicalSurahNumber, 114);
+    expect(_surah.isLinkable, isTrue);
+    expect(
+      resourceMatchesPickerSection(_surah, resourceSectionBySlug('quran')!),
+      isTrue,
+    );
+    expect(
+      resourceMatchesPickerSection(
+        _ruqyahAyat,
+        resourceSectionBySlug('quran')!,
+      ),
+      isTrue,
+    );
+    expect(resourceMatchesPickerSection(_ruqyahAyat, ruqyah), isTrue);
   });
 
   testWidgets('wheel and arrow change the visible resource section', (

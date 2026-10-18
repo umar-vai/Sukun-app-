@@ -152,6 +152,12 @@ Future<void> _save(WidgetTester tester) async {
 
 final class _EditorRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,

@@ -31,9 +31,16 @@ class VerifiedQuranLink {
 /// Do not add references when an instruction does not explicitly name them.
 List<VerifiedQuranLink> verifiedQuranLinksForAction(PlanAction action) =>
     verifiedQuranLinksForText(
-      title: action.title,
-      instruction: action.instruction,
-    );
+          title: action.title,
+          instruction: action.instruction,
+        )
+        .where(
+          (link) => !action.linkedResources.any(
+            (resource) =>
+                resource.publicRoute == '/resources/quran/${link.surahNumber}',
+          ),
+        )
+        .toList(growable: false);
 
 /// Exposes the same deterministic Quran-reader references during Admin review.
 /// No Quran text or third-party audio is inserted into the CMS, and a reader

@@ -24,6 +24,13 @@ abstract interface class CarePlansRepository {
     required String requestId,
   });
 
+  /// Link canonical public Quran chapters without copying verse text.
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  });
+
   Future<List<PlanAction>> reorderActions(
     String planId,
     List<String> actionIds,

@@ -193,9 +193,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     final currentSection =
         sections[_sectionIndex.clamp(0, sections.length - 1)];
     final visible = _filteredResources(currentSection);
-    final grouped = currentSection.section == null && !currentSection.isOther
-        ? _groupByCategory(visible)
-        : <String, List<ContentResourceOption>>{currentSection.label: visible};
+    final grouped = currentSection.isOther
+        ? <String, List<ContentResourceOption>>{currentSection.label: visible}
+        : _groupByCategory(visible);
     final selected = widget.resources
         .where((resource) => resource.id == widget.selectedId)
         .firstOrNull;
@@ -248,9 +248,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'এখানে প্রকাশিত CMS উপকরণ যুক্ত করা যায়। ১১৪ সূরার '
-                              'কুরআন তালিকা এখনো এই picker-এ নেই। রোগীর মূল '
-                              'নির্দেশনায় শুনতে বলা থাকলেই অডিও বাছুন।',
+                              'Public Resources-এর প্রকাশিত উপকরণ, ১১৪ সূরা ও '
+                              'রুকইয়াহ আয়াত থেকে বাছুন। রোগীর মূল নির্দেশনার '
+                              'সঙ্গে মিলিয়ে সহায়ক পাঠ বা অডিও দিন।',
                               style: TextStyle(color: SukunColors.muted),
                             ),
                           ],
@@ -360,6 +360,13 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                 children: [
                   _ClearResourceTile(selected: selected == null),
                   const SizedBox(height: 16),
+                  if (currentSection.slug == 'quran' &&
+                      !widget.resources.any(
+                        (item) => item.canonicalSurahNumber != null,
+                      )) ...[
+                    const _EmptyQuranResources(),
+                    const SizedBox(height: 12),
+                  ],
                   if (visible.isEmpty)
                     const _EmptyResources()
                   else
@@ -403,7 +410,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   ) {
     final grouped = <String, List<ContentResourceOption>>{};
     for (final resource in resources) {
-      final label = resource.isEditorialRuqyahExcerpt
+      final label = resource.canonicalSurahNumber != null
+          ? '১১৪ সূরার কুরআন'
+          : resource.isEditorialRuqyahExcerpt
           ? resource.categoryLabel
           : resource.categoryId == null
           ? 'অন্যান্য · ${_displayType(resource.type)}'
@@ -599,6 +608,8 @@ class _ResourceTile extends StatelessWidget {
       title: resource.displayTitle,
       subtitle: !resource.isLinkable
           ? _unavailableReason(resource)
+          : resource.canonicalSurahNumber != null
+          ? 'Public কুরআন পাঠে খুলবে · সূরা ${resource.canonicalSurahNumber}'
           : resource.isEditorialRuqyahExcerpt
           ? 'সম্পাদিত উৎস-উদ্ধৃতি · পূর্ণ যাচাইকৃত আয়াত নয়'
           : resource.titleBn?.trim().isNotEmpty == true
@@ -746,6 +757,20 @@ class _SelectedMark extends StatelessWidget {
       shape: BoxShape.circle,
     ),
     child: const Icon(Icons.check_rounded, size: 17, color: Colors.white),
+  );
+}
+
+class _EmptyQuranResources extends StatelessWidget {
+  const _EmptyQuranResources();
+
+  @override
+  Widget build(BuildContext context) => const _PickerCard(
+    selected: false,
+    enabled: false,
+    onTap: null,
+    icon: Icons.cloud_off_outlined,
+    title: '১১৪ সূরার তালিকা আনা যায়নি',
+    subtitle: 'কুরআন সংযোগ চালু হলে আবার খুলুন। তালিকা না এলে কোনো সূরা অনুমান করে যুক্ত করা হবে না।',
   );
 }
 

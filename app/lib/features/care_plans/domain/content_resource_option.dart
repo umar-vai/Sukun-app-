@@ -68,15 +68,21 @@ class ContentResourceOption {
   final String? categorySlug;
   final int categorySortOrder;
 
+  /// A public Quran API chapter has a stable route, not a CMS UUID.
+  int? get canonicalSurahNumber =>
+      id.startsWith('quran:') ? int.tryParse(id.substring(6)) : null;
+
   bool get isPatientAccessible =>
       visibility == 'public' ||
       visibility == 'patient_only' ||
       visibility == 'assigned_only';
 
   bool get isLinkable =>
-      status == 'published' &&
+      (canonicalSurahNumber != null || status == 'published') &&
       isPatientAccessible &&
-      (type != 'quran' || verificationStatus == 'verified');
+      (type != 'quran' ||
+          canonicalSurahNumber != null ||
+          verificationStatus == 'verified');
 
   String get displayTitle {
     final bangla = titleBn?.trim();
@@ -87,6 +93,7 @@ class ContentResourceOption {
       type == 'article' && (slug?.startsWith('srg2024-qur-') ?? false);
 
   String get categoryLabel {
+    if (canonicalSurahNumber != null) return '১১৪ সূরার কুরআন';
     if (isEditorialRuqyahExcerpt) {
       return 'রুকইয়াহ আয়াত · সম্পাদিত উদ্ধৃতি';
     }

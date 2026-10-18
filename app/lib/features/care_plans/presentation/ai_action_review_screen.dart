@@ -309,12 +309,28 @@ class _AiActionReviewScreenState extends ConsumerState<AiActionReviewScreen> {
             humanEdited: draft.wasEdited,
           ),
         );
-        if (draft.contentItemIds.length > 1) {
-          final links = draft.contentItemIds.toList()..sort();
+        final cmsLinks =
+            draft.contentItemIds
+                .where((id) => !id.startsWith('quran:'))
+                .toList()
+              ..sort();
+        if (cmsLinks.length > 1) {
           await repository.replaceActionResources(
             actionId: saved.id,
-            resourceIds: links,
+            resourceIds: cmsLinks,
             requestId: draft.resourceLinkRequestId,
+          );
+        }
+        final surahs = [
+          for (final id in draft.contentItemIds)
+            if (id.startsWith('quran:'))
+              ...data.resources.where((resource) => resource.id == id),
+        ];
+        if (surahs.isNotEmpty) {
+          await repository.replaceActionQuranSurahs(
+            actionId: saved.id,
+            surahs: surahs,
+            requestId: draft.quranLinkRequestId,
           );
         }
         draft.imported = true;
@@ -772,14 +788,12 @@ class _EditableSuggestion {
     // Only an exact, unambiguous, approved resource can be preselected.
     // The action still imports as unapproved and requires Admin review.
     if (!source.needsReview && !resourceDiscovery.requiresManualSelection) {
-      draft.contentItemId =
-          exactReviewResource(
-            resourceDiscovery.matches,
-            actionType: source.type,
-          )?.id ??
-          '';
-      if (draft.contentItemId.isNotEmpty) {
-        draft.contentItemIds.add(draft.contentItemId);
+      final exact = exactReviewResource(
+        resourceDiscovery.matches,
+        actionType: source.type,
+      );
+      if (exact != null) {
+        draft.selectContentItem(exact.id, selected: true);
       }
     }
     draft.selected = draft.isReady;
@@ -801,8 +815,10 @@ class _EditableSuggestion {
   String timeWindow;
   DateTime? exactTime;
   String contentItemId = '';
+  String selectedResourceId = '';
   final Set<String> contentItemIds = <String>{};
   final String resourceLinkRequestId = const Uuid().v4();
+  final String quranLinkRequestId = const Uuid().v4();
 
   void selectContentItem(String id, {required bool selected}) {
     if (selected && id.isNotEmpty && contentItemIds.length < 16) {
@@ -810,7 +826,12 @@ class _EditableSuggestion {
     } else if (!selected) {
       contentItemIds.remove(id);
     }
-    contentItemId = contentItemIds.isEmpty ? '' : contentItemIds.first;
+    selectedResourceId = contentItemIds.lastOrNull ?? '';
+    contentItemId =
+        contentItemIds
+            .where((item) => !item.startsWith('quran:'))
+            .firstOrNull ??
+        '';
   }
 
   bool selected = false;
@@ -851,7 +872,7 @@ class _EditableSuggestion {
         int.tryParse(duration.trim()) != source.durationMinutes ||
         timeWindow != (source.timeWindow ?? '') ||
         reminderEnabled ||
-        contentItemId.isNotEmpty) {
+        contentItemIds.isNotEmpty) {
       return true;
     }
     final sourceFrequency = source.frequency;
@@ -1325,14 +1346,15 @@ class _SuggestedActionCard extends StatelessWidget {
             const SizedBox(height: 10),
           ],
           ResourcePickerField(
-            key: ValueKey(draft.contentItemId),
+            key: ValueKey(draft.selectedResourceId),
             resources: resources,
-            selectedId: draft.contentItemId,
+            selectedId: draft.selectedResourceId,
             enabled: enabled && !draft.imported,
             onChanged: (value) {
               if (value.isEmpty) {
                 draft.contentItemIds.clear();
                 draft.contentItemId = '';
+                draft.selectedResourceId = '';
               } else {
                 draft.selectContentItem(value, selected: true);
               }
