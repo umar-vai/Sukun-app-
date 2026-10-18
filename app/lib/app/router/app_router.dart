@@ -24,6 +24,8 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_lis
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
+import 'package:sukun_life/features/account/presentation/unified_account_screen.dart';
+import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_action_detail_screen.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
@@ -64,7 +66,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (session == null) {
         if (path.startsWith('/patient') ||
             path.startsWith('/admin') ||
-            path.startsWith('/my-routines')) {
+            path.startsWith('/my-routines') ||
+            path == '/progress' ||
+            path == '/account') {
           return '/';
         }
         return null;
@@ -73,13 +77,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isPersonalRoutineRoute = path.startsWith('/my-routines');
+      final isSharedUserRoute = path == '/progress' || path == '/account';
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
       final isOtpRoute = path == '/login/otp';
       final isCredentialRoute = path == '/patient/change-password';
 
       if (!session.isAuthenticated &&
-          (isPatientRoute || isAdminRoute || isPersonalRoutineRoute)) {
+          (isPatientRoute || isAdminRoute ||
+              isPersonalRoutineRoute || isSharedUserRoute)) {
         return '/login';
       }
       if (isAdminRoute && !session.isSuperAdmin) {
@@ -87,6 +93,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (isPatientRoute && !session.isPatient) {
         return session.isSuperAdmin ? '/admin/dashboard' : '/';
+      }
+      if (isSharedUserRoute && !session.isMember && !session.isPatient) {
+        return session.isSuperAdmin ? '/admin/dashboard' : '/login';
       }
       if (session.isPatient && session.requiresCredentialChange) {
         return isCredentialRoute ? null : '/patient/change-password';
@@ -174,6 +183,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => MyRoutinesScreen(
               resourceId: state.uri.queryParameters['resourceId'],
             ),
+          ),
+          GoRoute(
+            path: '/progress',
+            builder: (context, state) => const UnifiedProgressScreen(),
+          ),
+          GoRoute(
+            path: '/account',
+            builder: (context, state) => const UnifiedAccountScreen(),
           ),
           GoRoute(
             path: '/resources',
