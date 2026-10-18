@@ -88,7 +88,7 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
         }
         if (snapshot.hasError) {
           return _ConnectionNotice(
-            message: 'কুরআন Foundation API-এর নিরাপদ সংযোগ এখনো সক্রিয় নয়।',
+            message: 'কুরআন পাঠের API সংযোগ পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।',
             onRetry: _retry,
           );
         }
