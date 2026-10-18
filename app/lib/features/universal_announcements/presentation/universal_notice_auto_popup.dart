@@ -128,7 +128,9 @@ class _UniversalNoticeAutoPopupState
     ref.listen(appSessionProvider, (previous, next) {
       final oldUser = previous?.value?.userId;
       final newUser = next.value?.userId;
-      if (!next.hasValue || oldUser == newUser) return;
+      if (!next.hasValue || (previous?.hasValue == true && oldUser == newUser)) {
+        return;
+      }
       _checkGeneration++;
       if (_active != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
