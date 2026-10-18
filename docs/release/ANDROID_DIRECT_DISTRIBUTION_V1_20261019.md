@@ -20,7 +20,7 @@
 
 ## Release metadata
 
-The static public feed source is `app/web/updates/android.json`, which is copied into the SAME Flutter Pages build and served at `https://app.sukunlife.com/updates/android.json`. The initial feed has `enabled: false`; no false download/update CTA. A reviewed release PR updates the manifest to exactly the staged artifact URL/checksum/version; CI builds the existing Flutter Pages URL.
+The static public feed source is `app/web/updates/android.json`, which is copied into the SAME Flutter Pages build and served at `https://app.sukunlife.com/updates/android.json`. The initial feed has `enabled: false`; no false download/update CTA. The **web landing's first-install CTA** only starts remote feed checking after the explicitly approved GitHub variable `SUKUN_PUBLIC_APK_DOWNLOAD_ENABLED=true` is configured for the build. Keep that variable absent/false until the very first signed APK has passed QA and is publicly downloadable. Existing installed Android APKs check the release feed independently. A reviewed release PR updates the manifest to exactly the staged artifact URL/checksum/version; CI builds the existing Flutter Pages URL.
 
 Sample after **real** artifact verification only (example hash not publishable):
 
