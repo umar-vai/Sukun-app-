@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/router/app_router.dart';
 import 'package:sukun_life/core/updates/android_update_panel.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
+import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
@@ -33,6 +34,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(BengaliFontSettings.instance.load());
     _openedSubscription = ref
         .read(notificationTapRelayProvider)
         .openedTaskIds
@@ -163,17 +165,20 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         }
       });
     }
-    return MaterialApp.router(
-      title: 'Sukun Life',
-      debugShowCheckedModeBanner: false,
-      theme: SukunTheme.light(),
-      locale: const Locale('bn', 'BD'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: ref.watch(appRouterProvider),
-      builder: (context, child) => AndroidUpdateAutoPopup(
-        child: UniversalNoticeAutoPopup(
-          child: Stack(children: [?child, const GlobalAudioDock()]),
+    return ValueListenableBuilder<BengaliFontChoice>(
+      valueListenable: BengaliFontSettings.instance,
+      builder: (context, selectedFont, _) => MaterialApp.router(
+        title: 'Sukun Life',
+        debugShowCheckedModeBanner: false,
+        theme: SukunTheme.light(bengaliFont: selectedFont),
+        locale: const Locale('bn', 'BD'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: ref.watch(appRouterProvider),
+        builder: (context, child) => AndroidUpdateAutoPopup(
+          child: UniversalNoticeAutoPopup(
+            child: Stack(children: [?child, const GlobalAudioDock()]),
+          ),
         ),
       ),
     );

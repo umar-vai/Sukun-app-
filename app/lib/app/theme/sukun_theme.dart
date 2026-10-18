@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
+import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 
 abstract final class SukunTheme {
-  static ThemeData light() {
+  static ThemeData light({
+    BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
+  }) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -24,10 +27,14 @@ abstract final class SukunTheme {
       ),
       scaffoldBackgroundColor: SukunColors.canvas,
     );
-    final textTheme = SukunTypography.englishTextTheme(base.textTheme).apply(
-      bodyColor: SukunColors.nightNavy,
-      displayColor: SukunColors.nightNavy,
-    );
+    final textTheme =
+        SukunTypography.withBengaliFallback(
+          SukunTypography.englishTextTheme(base.textTheme),
+          bengaliFont,
+        ).apply(
+          bodyColor: SukunColors.nightNavy,
+          displayColor: SukunColors.nightNavy,
+        );
 
     return base.copyWith(
       textTheme: textTheme,
