@@ -10,12 +10,14 @@ const androidUpdateManifestUrl =
 
 /// Uses the same signed Flutter APK package, without embedding release secrets.
 class AndroidUpdateService {
-  AndroidUpdateService({http.Client? client}) : _client = client ?? http.Client();
+  AndroidUpdateService({http.Client? client})
+    : _client = client ?? http.Client();
 
   final http.Client _client;
   static const nativeChannel = MethodChannel('sukunlife/app_updates');
 
-  bool get isSupported => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get isSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   Future<int?> installedVersionCode() async {
     if (!isSupported) return null;
@@ -23,21 +25,25 @@ class AndroidUpdateService {
     return value;
   }
 
-  Future<AndroidRelease?> check({
-    int? installedVersionCodeOverride,
-  }) async {
+  Future<AndroidRelease?> check({int? installedVersionCodeOverride}) async {
     final installed =
         installedVersionCodeOverride ?? await installedVersionCode();
     if (installed == null) return null;
     final uri = Uri.parse(androidUpdateManifestUrl).replace(
-      queryParameters: {'checked': DateTime.now().millisecondsSinceEpoch.toString()},
+      queryParameters: {
+        'checked': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
     );
-    final response = await _client.get(
-      uri,
-      headers: const {'Cache-Control': 'no-cache', 'Accept': 'application/json'},
-    ).timeout(const Duration(seconds: 9));
-    if (response.statusCode != 200 ||
-        response.bodyBytes.length > 64 * 1024) {
+    final response = await _client
+        .get(
+          uri,
+          headers: const {
+            'Cache-Control': 'no-cache',
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(const Duration(seconds: 9));
+    if (response.statusCode != 200 || response.bodyBytes.length > 64 * 1024) {
       throw const FormatException('The release feed is unavailable.');
     }
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
@@ -65,7 +71,8 @@ class AndroidUpdateService {
 
   Future<AndroidDownloadStatus> status(int id) async {
     final response = await nativeChannel.invokeMapMethod<String, dynamic>(
-      'downloadStatus', {'id': id},
+      'downloadStatus',
+      {'id': id},
     );
     final value = response ?? {};
     return AndroidDownloadStatus(
@@ -77,9 +84,9 @@ class AndroidUpdateService {
 
   /// Android shows its own install confirmation. No silent installation.
   Future<String> requestInstallation(int id) async {
-    final status = await nativeChannel.invokeMethod<String>(
-      'openInstaller', {'id': id},
-    );
+    final status = await nativeChannel.invokeMethod<String>('openInstaller', {
+      'id': id,
+    });
     return status ?? 'error';
   }
 
