@@ -1,0 +1,45 @@
+name: Universal Announcement Dispatch
+
+on:
+  schedule:
+    # GitHub Actions cadence is approximate, not an exact-time delivery SLA.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-universal-announcements-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    # Explicit manual production release gate, OFF by default.
+    if: >-
+      github.repository == 'umar-vai/Sukun-app-' &&
+      vars.SUKUN_UNIVERSAL_PUSH_RELEASE_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      CRON_TOKEN: ${{ secrets.SUKUN_UNIVERSAL_BROADCAST_CRON_TOKEN }}
+      DISPATCH_URL: https://vydfafumxptanpkmtrpr.supabase.co/functions/v1/dispatch-universal-announcements
+    steps:
+      - name: Validate protected dispatch setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${#CRON_TOKEN}" -ge 32
+      - name: Dispatch only queued published public notices
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+          status="$(curl --silent --show-error --retry 2 --max-time 60 \
+            -H 'Content-Type: application/json' \
+            -H "X-Sukun-Universal-Cron: $CRON_TOKEN" \
+            -X POST "$DISPATCH_URL" -o "$response" -w '%{http_code}')"
+          test "$status" = 200
+          jq -e '.status == "processed" and (.accepted|type=="number") and (.failed|type=="number")' "$response" > /dev/null
+          jq '{status,accepted,failed}' "$response"

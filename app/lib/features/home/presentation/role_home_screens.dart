@@ -182,6 +182,13 @@ class AdminHomeScreen extends StatelessWidget {
             actionLabel: 'Open content workspace',
             onTap: () => context.go('/admin/content'),
           ),
+          _DashboardAction(
+            icon: Icons.campaign_outlined,
+            title: 'সবার জন্য নোটিশ',
+            description: 'নোটিশ ড্রাফট, ছবি ও লিংক যোগ করে প্রকাশ করুন।',
+            actionLabel: 'নোটিশ পরিচালনা করুন',
+            onTap: () => context.go('/admin/announcements'),
+          ),
           const SizedBox(height: 28),
           SukunSectionHeader(
             title: 'Review & utilities',
