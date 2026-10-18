@@ -110,7 +110,9 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                   ListTile(
                     leading: const Icon(Icons.assignment_outlined),
                     title: const Text('সুকুন লাইফের দেওয়া পরিকল্পনা'),
-                    subtitle: const Text('আপনার অ্যাকাউন্টে অনুমোদিত পরিকল্পনা থাকলে দেখুন'),
+                    subtitle: const Text(
+                      'আপনার অ্যাকাউন্টে অনুমোদিত পরিকল্পনা থাকলে দেখুন',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/patient/plan'),
                   ),
