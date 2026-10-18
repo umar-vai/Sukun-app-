@@ -26,7 +26,7 @@ void main() {
     );
     expect(navigationParent('/prayer-times', null), '/');
     expect(navigationIndex('/admin/announcements/new', admin), 3);
-    expect(navigationIndex('/resources/ruqyah', patient), 3);
+    expect(navigationIndex('/resources/ruqyah', patient), 0);
     expect(showsNavigationShell('/patient/resources'), isFalse);
     expect(showsNavigationShell('/admin/dashboard'), isFalse);
     expect(showsNavigationShell('/admin/announcements/new'), isTrue);
@@ -38,22 +38,20 @@ void main() {
     const member = AppSession(role: UserRole.member, userId: 'member');
     const patient = AppSession(role: UserRole.patient, userId: 'patient');
     const admin = AppSession(role: UserRole.superAdmin, userId: 'admin');
-    expect(sharedUserRoutes, [
-      '/',
-      '/my-routines',
-      '/progress',
-      '/resources',
-      '/account',
-    ]);
-    expect(sharedUserDestinations.length, 5);
+    expect(sharedUserRoutes, ['/', '/my-routines', '/progress', '/account']);
+    expect(sharedUserDestinations.length, 4);
+    expect(
+      sharedUserDestinations.any((destination) => destination.label == 'উপকরণ'),
+      isFalse,
+    );
     for (final path in sharedUserRoutes) {
       expect(navigationIndex(path, member), navigationIndex(path, patient));
     }
     expect(navigationIndex('/my-routines/action/a', patient), 1);
     expect(navigationIndex('/patient/plan', patient), 1);
     expect(navigationIndex('/patient/progress', patient), 2);
-    expect(navigationIndex('/resources/audio', member), 3);
-    expect(navigationIndex('/account', member), 4);
+    expect(navigationIndex('/resources/audio', member), 0);
+    expect(navigationIndex('/account', member), 3);
     expect(navigationIndex('/admin/announcements/new', admin), 3);
     expect(navigationParent('/my-routines/action/a', member), '/my-routines');
   });

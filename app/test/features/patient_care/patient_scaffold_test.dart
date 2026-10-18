@@ -4,18 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
 
 void main() {
-  testWidgets('patient care subpages use the shared user navigation', (
+  testWidgets('patient resources deep link remains usable without bottom tab', (
     tester,
   ) async {
     final router = GoRouter(
-      initialLocation: '/patient/home',
+      initialLocation: '/resources',
       routes: [
         GoRoute(
-          path: '/patient/home',
+          path: '/',
           builder: (context, state) => const PatientScaffold(
-            title: 'Today',
+            title: 'Home',
             selectedIndex: 0,
-            body: SizedBox(),
+            body: Text('Home resources grid'),
           ),
         ),
         GoRoute(
@@ -32,16 +32,18 @@ void main() {
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('উপকরণ'));
-    await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/resources');
     expect(find.text('Islamic Resources'), findsOneWidget);
     expect(find.text('Resource content'), findsOneWidget);
     expect(find.text('হোম'), findsOneWidget);
     expect(find.text('রুটিন'), findsOneWidget);
-    expect(find.text('উপকরণ'), findsOneWidget);
     expect(find.text('অগ্রগতি'), findsOneWidget);
     expect(find.text('অ্যাকাউন্ট'), findsOneWidget);
+    expect(find.text('উপকরণ'), findsNothing);
+
+    await tester.tap(find.text('হোম'));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('Home resources grid'), findsOneWidget);
   });
 }

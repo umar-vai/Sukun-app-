@@ -3,13 +3,7 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// The same primary destinations for every authenticated non-admin account.
 /// Care assignments add content, never a second navigation system.
-const sharedUserRoutes = <String>[
-  '/',
-  '/my-routines',
-  '/progress',
-  '/resources',
-  '/account',
-];
+const sharedUserRoutes = <String>['/', '/my-routines', '/progress', '/account'];
 
 const sharedUserDestinations = <SukunNavDestination>[
   SukunNavDestination(
@@ -28,11 +22,6 @@ const sharedUserDestinations = <SukunNavDestination>[
     label: 'অগ্রগতি',
   ),
   SukunNavDestination(
-    icon: Icons.menu_book_outlined,
-    selectedIcon: Icons.menu_book,
-    label: 'উপকরণ',
-  ),
-  SukunNavDestination(
     icon: Icons.person_outline,
     selectedIcon: Icons.person,
     label: 'অ্যাকাউন্ট',
@@ -48,11 +37,13 @@ int sharedUserNavigationIndex(String path) {
   if (path.startsWith('/progress') || path.startsWith('/patient/progress')) {
     return 2;
   }
+  // Public resources remain directly reachable from the Home grid/search,
+  // and deep-linked readers still keep their safe Home navigation.
   if (path.startsWith('/resources') || path.startsWith('/patient/resources')) {
-    return 3;
+    return 0;
   }
   if (path.startsWith('/account') || path.startsWith('/patient/profile')) {
-    return 4;
+    return 3;
   }
   return 0;
 }
