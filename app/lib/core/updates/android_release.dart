@@ -86,14 +86,13 @@ bool isApprovedApkUri(Uri uri) {
   }
   if (uri.host == 'github.com') {
     final segments = uri.pathSegments;
-    return segments.length == 7 &&
+    return segments.length == 6 &&
         segments[0] == 'umar-vai' &&
         segments[1] == 'Sukun-app-' &&
         segments[2] == 'releases' &&
         segments[3] == 'download' &&
         segments[4].isNotEmpty &&
-        segments[5].isNotEmpty &&
-        segments[6].isNotEmpty;
+        segments[5].isNotEmpty;
   }
   if (uri.host == 'downloads.sukunlife.com') {
     return uri.pathSegments.length >= 2 &&
