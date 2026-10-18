@@ -45,16 +45,13 @@ int sharedUserNavigationIndex(String path) {
       path.startsWith('/patient/plan')) {
     return 1;
   }
-  if (path.startsWith('/progress') ||
-      path.startsWith('/patient/progress')) {
+  if (path.startsWith('/progress') || path.startsWith('/patient/progress')) {
     return 2;
   }
-  if (path.startsWith('/resources') ||
-      path.startsWith('/patient/resources')) {
+  if (path.startsWith('/resources') || path.startsWith('/patient/resources')) {
     return 3;
   }
-  if (path.startsWith('/account') ||
-      path.startsWith('/patient/profile')) {
+  if (path.startsWith('/account') || path.startsWith('/patient/profile')) {
     return 4;
   }
   return 0;
