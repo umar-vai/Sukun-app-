@@ -14,8 +14,7 @@ class AndroidUpdateAutoPopup extends StatefulWidget {
   final Widget child;
 
   @override
-  State<AndroidUpdateAutoPopup> createState() =>
-      _AndroidUpdateAutoPopupState();
+  State<AndroidUpdateAutoPopup> createState() => _AndroidUpdateAutoPopupState();
 }
 
 class _AndroidUpdateAutoPopupState extends State<AndroidUpdateAutoPopup>
@@ -58,7 +57,8 @@ class _AndroidUpdateAutoPopupState extends State<AndroidUpdateAutoPopup>
       final prefs = await SharedPreferences.getInstance();
       final dismissedCode = prefs.getInt('sukun_dismissed_apk_code');
       final dismissedAt = prefs.getInt('sukun_dismissed_apk_at') ?? 0;
-      final recentlyDismissed = dismissedCode == release.versionCode &&
+      final recentlyDismissed =
+          dismissedCode == release.versionCode &&
           DateTime.now().millisecondsSinceEpoch - dismissedAt <
               const Duration(hours: 24).inMilliseconds;
       if (mounted && !recentlyDismissed) {
@@ -99,10 +99,7 @@ class _AndroidUpdateAutoPopupState extends State<AndroidUpdateAutoPopup>
         widget.child,
         if (release != null) ...[
           const Positioned.fill(
-            child: ModalBarrier(
-              dismissible: false,
-              color: Color(0x990D2B45),
-            ),
+            child: ModalBarrier(dismissible: false, color: Color(0x990D2B45)),
           ),
           Positioned.fill(
             child: SafeArea(
@@ -172,7 +169,9 @@ Future<void> checkAndroidUpdateManually(BuildContext context) async {
   } catch (_) {
     if (context.mounted) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('আপডেট যাচাই করা যাচ্ছে না। পরে চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text('আপডেট যাচাই করা যাচ্ছে না। পরে চেষ্টা করুন।'),
+        ),
       );
     }
   } finally {
@@ -247,8 +246,7 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
       if (state.state == 'ready') {
         _poll?.cancel();
         await _install();
-      } else if (state.state == 'failed' ||
-          state.state == 'integrity_failed') {
+      } else if (state.state == 'failed' || state.state == 'integrity_failed') {
         _poll?.cancel();
         setState(() {
           _error = state.state == 'integrity_failed'
@@ -300,10 +298,11 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
 
   @override
   Widget build(BuildContext context) {
-    final sizeMb = (widget.release.sizeBytes / (1024 * 1024)).toStringAsFixed(1);
-    final busy = _status == 'pending' ||
-        _status == 'downloading' ||
-        _status == 'paused';
+    final sizeMb = (widget.release.sizeBytes / (1024 * 1024)).toStringAsFixed(
+      1,
+    );
+    final busy =
+        _status == 'pending' || _status == 'downloading' || _status == 'paused';
     final ready = _status == 'ready' || _status == 'permission_required';
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -311,8 +310,10 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
       children: [
         const Icon(Icons.system_update_alt, size: 36, color: Color(0xFF0F9BD7)),
         const SizedBox(height: 12),
-        Text('Sukun Life আপডেট পাওয়া গেছে',
-            style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Sukun Life আপডেট পাওয়া গেছে',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 8),
         Text('নতুন সংস্করণ ${widget.release.versionName} · প্রায় $sizeMb MB'),
         if (widget.release.notesBn.isNotEmpty) ...[
@@ -338,7 +339,10 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
         ],
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ],
         const SizedBox(height: 16),
         Wrap(
@@ -357,10 +361,7 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
                 icon: const Icon(Icons.install_mobile),
                 label: const Text('ইনস্টল করুন'),
               ),
-            TextButton(
-              onPressed: widget.onLater,
-              child: const Text('পরে করব'),
-            ),
+            TextButton(onPressed: widget.onLater, child: const Text('পরে করব')),
           ],
         ),
         const SizedBox(height: 8),
