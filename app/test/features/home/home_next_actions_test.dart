@@ -99,10 +99,7 @@ void main() {
         },
       ],
     );
-    expect(items.map((action) => action.id).toList(), [
-      'earlier',
-      'later',
-    ]);
+    expect(items.map((action) => action.id).toList(), ['earlier', 'later']);
     expect(items.first.dueAt, isNotNull);
   });
 
