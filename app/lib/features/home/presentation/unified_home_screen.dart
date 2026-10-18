@@ -272,8 +272,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
           if (widget.isSignedInMember || widget.isPatient) {
             context.go(sharedUserRoutes[index]);
           } else {
-            if (index == 1) context.go('/resources');
-            if (index == 2) context.go('/announcements');
+            if (index == 1) context.go('/announcements');
           }
         },
         destinations: widget.isSignedInMember || widget.isPatient
@@ -283,11 +282,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home,
                   label: 'হোম',
-                ),
-                SukunNavDestination(
-                  icon: Icons.menu_book_outlined,
-                  selectedIcon: Icons.menu_book,
-                  label: 'উপকরণ',
                 ),
                 SukunNavDestination(
                   icon: Icons.campaign_outlined,
