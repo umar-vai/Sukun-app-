@@ -68,7 +68,8 @@ abstract final class HomeNextActions {
         continue;
       }
 
-      final doneToday = outcomes[id] == 'done' ||
+      final doneToday =
+          outcomes[id] == 'done' ||
           outcomes[id] == 'completed' ||
           outcomes[id] == 'skipped';
       final kind = action['schedule_kind'] as String? ?? 'manual';
@@ -96,9 +97,7 @@ abstract final class HomeNextActions {
           dueAt = reminder.nextOccurrence(
             calculator: calculator,
             settings: settings,
-            after: doneToday
-                ? now.add(const Duration(days: 1))
-                : now,
+            after: doneToday ? now.add(const Duration(days: 1)) : now,
           );
         } catch (_) {
           // Never guess prayer-relative timings without compatible preferences.
@@ -142,20 +141,34 @@ abstract final class HomeNextActions {
     if (parts.length < 2) return null;
     final hour = int.tryParse(parts[0]);
     final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null || hour > 23 || minute > 59 ||
-        hour < 0 || minute < 0) return null;
+    if (hour == null ||
+        minute == null ||
+        hour > 23 ||
+        minute > 59 ||
+        hour < 0 ||
+        minute < 0)
+      return null;
 
     try {
       tz_data.initializeTimeZones();
       final location = tz.getLocation(timezoneName);
       final localNow = tz.TZDateTime.from(now, location);
       var candidate = tz.TZDateTime(
-        location, localNow.year, localNow.month, localNow.day, hour, minute,
+        location,
+        localNow.year,
+        localNow.month,
+        localNow.day,
+        hour,
+        minute,
       );
       if (!candidate.isAfter(now) || skipToday) {
         candidate = tz.TZDateTime(
-          location, localNow.year, localNow.month, localNow.day + 1,
-          hour, minute,
+          location,
+          localNow.year,
+          localNow.month,
+          localNow.day + 1,
+          hour,
+          minute,
         );
       }
       return candidate;
