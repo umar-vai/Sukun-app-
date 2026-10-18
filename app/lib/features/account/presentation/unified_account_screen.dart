@@ -104,10 +104,12 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.text_fields_outlined),
-                  title: const Text('বাংলা ফন্ট ও ডিসপ্লে'),
-                  subtitle: const Text('পছন্দের বাংলা ফন্ট নির্বাচন করুন'),
+                  title: const Text('অ্যাপ, ফন্ট ও রিডার সেটিংস'),
+                  subtitle: const Text(
+                    'অটো/ডার্ক মোড, বাংলা ও আরবি ফন্টের আকার',
+                  ),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/settings/bengali-font'),
+                  onTap: () => context.push('/settings/appearance'),
                 ),
                 if (!kIsWeb &&
                     defaultTargetPlatform == TargetPlatform.android) ...[

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
 
 abstract final class SukunTypography {
   static TextTheme englishTextTheme(TextTheme base) {
@@ -143,7 +144,7 @@ abstract final class SukunTypography {
     // Do not alter diacritics or apply decorative letter spacing.
     return GoogleFonts.notoNaskhArabic(
       textStyle: textStyle,
-      fontSize: 26,
+      fontSize: 26 * AppDisplaySettings.instance.value.arabicScale,
       fontWeight: FontWeight.w400,
       height: 2.0,
       letterSpacing: 0,

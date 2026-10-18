@@ -85,13 +85,19 @@ class SukunSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
     final color = switch (tone) {
-      SukunSurfaceTone.white => Colors.white,
-      SukunSurfaceTone.soft => SukunColors.paleBlue,
+      SukunSurfaceTone.white =>
+        night ? theme.colorScheme.surface : Colors.white,
+      SukunSurfaceTone.soft =>
+        night ? theme.colorScheme.surfaceContainerLow : SukunColors.paleBlue,
       SukunSurfaceTone.blue => SukunColors.sukunBlue,
       SukunSurfaceTone.navy => SukunColors.nightNavy,
-      SukunSurfaceTone.warning => SukunColors.warningSoft,
-      SukunSurfaceTone.success => SukunColors.successSoft,
+      SukunSurfaceTone.warning =>
+        night ? theme.colorScheme.surfaceContainerLow : SukunColors.warningSoft,
+      SukunSurfaceTone.success =>
+        night ? theme.colorScheme.surfaceContainerLow : SukunColors.successSoft,
     };
     final dark = tone == SukunSurfaceTone.blue || tone == SukunSurfaceTone.navy;
     final paddedContent = Padding(padding: padding, child: child);
@@ -107,10 +113,10 @@ class SukunSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        border: showBorder && !dark
+        border: showBorder && !dark && !night
             ? Border.all(color: SukunColors.border.withValues(alpha: 0.78))
             : null,
-        boxShadow: tone == SukunSurfaceTone.white
+        boxShadow: !night && tone == SukunSurfaceTone.white
             ? [
                 BoxShadow(
                   color: SukunColors.nightNavy.withValues(alpha: 0.065),

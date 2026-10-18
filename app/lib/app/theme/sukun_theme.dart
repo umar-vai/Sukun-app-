@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
     BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
+    double bengaliScale = 1.0,
   }) {
     final base = ThemeData(
       useMaterial3: true,
@@ -32,6 +34,7 @@ abstract final class SukunTheme {
           SukunTypography.englishTextTheme(base.textTheme),
           bengaliFont,
         ).apply(
+          fontSizeFactor: AppDisplaySettings.validBengaliScale(bengaliScale),
           bodyColor: SukunColors.nightNavy,
           displayColor: SukunColors.nightNavy,
         );
@@ -171,6 +174,66 @@ abstract final class SukunTheme {
         contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  static ThemeData dark({
+    BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
+    double bengaliScale = 1.0,
+  }) {
+    const background = Color(0xFF101C28);
+    const surface = Color(0xFF1A2A38);
+    const surfaceLow = Color(0xFF243848);
+    const lightText = Color(0xFFF2F7FA);
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: SukunColors.sukunBlue,
+        onPrimary: Colors.black,
+        secondary: Color(0xFF87CFEF),
+        surface: surface,
+        onSurface: lightText,
+        surfaceContainerLow: surfaceLow,
+        outline: Color(0xFF536674),
+      ),
+      scaffoldBackgroundColor: background,
+    );
+    final textTheme =
+        SukunTypography.withBengaliFallback(
+          SukunTypography.englishTextTheme(base.textTheme),
+          bengaliFont,
+        ).apply(
+          fontSizeFactor: AppDisplaySettings.validBengaliScale(bengaliScale),
+          bodyColor: lightText,
+          displayColor: lightText,
+        );
+    return base.copyWith(
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        foregroundColor: lightText,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleMedium,
+      ),
+      cardTheme: CardThemeData(
+        color: surface,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      dialogTheme: const DialogThemeData(backgroundColor: surface),
+      bottomSheetTheme: const BottomSheetThemeData(backgroundColor: surface),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceLow,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      dividerTheme: const DividerThemeData(color: Color(0xFF485968)),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: surfaceLow,
+        contentTextStyle: textTheme.bodyMedium,
       ),
     );
   }
