@@ -6,6 +6,10 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('sleep timer only allows reviewed pause intervals', () {
+    expect(AudioPlaybackController.supportedSleepMinutes, [0, 5, 15, 30, 60]);
+  });
+
   test('switching between audio resources requires a new source load', () {
     const first = LinkedResource(
       id: 'ruqyahbd-eight-surah',

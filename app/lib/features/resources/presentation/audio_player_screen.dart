@@ -404,6 +404,39 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                             ),
                                           ),
                                         ),
+                                        PopupMenuButton<int>(
+                                          tooltip: 'স্লিপ টাইমার',
+                                          icon: Icon(
+                                            Icons.bedtime_outlined,
+                                            color:
+                                                controller.sleepDeadline == null
+                                                ? SukunColors.muted
+                                                : SukunColors.sukunBlue,
+                                          ),
+                                          onSelected: controller.setSleepTimer,
+                                          itemBuilder: (context) => const [
+                                            PopupMenuItem(
+                                              value: 0,
+                                              child: Text('স্লিপ টাইমার বন্ধ'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 5,
+                                              child: Text('৫ মিনিট পরে থামুন'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 15,
+                                              child: Text('১৫ মিনিট পরে থামুন'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 30,
+                                              child: Text('৩০ মিনিট পরে থামুন'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 60,
+                                              child: Text('৬০ মিনিট পরে থামুন'),
+                                            ),
+                                          ],
+                                        ),
                                         StreamBuilder<LoopMode>(
                                           stream: player.loopModeStream,
                                           initialData: player.loopMode,
