@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
+import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// Keeps an exit and the role's primary destinations available on deep links.
@@ -22,16 +23,17 @@ class RoleNavigationShell extends StatelessWidget {
     if (!showsNavigationShell(path)) return child;
 
     final admin = session?.isSuperAdmin == true;
-    final patient = session?.isPatient == true;
+    final signedInUser =
+        session?.isMember == true || session?.isPatient == true;
     final destinations = admin
         ? _adminDestinations
-        : patient
-        ? _patientDestinations
+        : signedInUser
+        ? sharedUserDestinations
         : _publicDestinations;
     final routes = admin
         ? _adminRoutes
-        : patient
-        ? _patientRoutes
+        : signedInUser
+        ? sharedUserRoutes
         : _publicRoutes;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
@@ -143,17 +145,8 @@ int navigationIndex(String path, AppSession? session) {
     }
     return 0;
   }
-  if (session?.isPatient == true) {
-    if (path.startsWith('/patient/plan') || path.startsWith('/patient/today')) {
-      return 1;
-    }
-    if (path.startsWith('/resources') ||
-        path.startsWith('/patient/resources')) {
-      return 2;
-    }
-    if (path.startsWith('/patient/progress')) return 3;
-    if (path.startsWith('/patient/profile')) return 4;
-    return 0;
+  if (session?.isMember == true || session?.isPatient == true) {
+    return sharedUserNavigationIndex(path);
   }
   if (path.startsWith('/resources')) return 1;
   if (path.startsWith('/announcements')) return 2;
@@ -165,13 +158,6 @@ const _adminRoutes = [
   '/admin/patients',
   '/admin/content',
   '/admin/announcements',
-];
-const _patientRoutes = [
-  '/patient/home',
-  '/patient/plan',
-  '/patient/resources',
-  '/patient/progress',
-  '/patient/profile',
 ];
 const _publicRoutes = ['/', '/resources', '/announcements'];
 
@@ -195,33 +181,6 @@ const _adminDestinations = [
     icon: Icons.campaign_outlined,
     selectedIcon: Icons.campaign,
     label: 'নোটিশ',
-  ),
-];
-const _patientDestinations = [
-  SukunNavDestination(
-    icon: Icons.home_outlined,
-    selectedIcon: Icons.home,
-    label: 'হোম',
-  ),
-  SukunNavDestination(
-    icon: Icons.checklist_outlined,
-    selectedIcon: Icons.checklist,
-    label: 'পরিকল্পনা',
-  ),
-  SukunNavDestination(
-    icon: Icons.menu_book_outlined,
-    selectedIcon: Icons.menu_book,
-    label: 'উপকরণ',
-  ),
-  SukunNavDestination(
-    icon: Icons.insights_outlined,
-    selectedIcon: Icons.insights,
-    label: 'অগ্রগতি',
-  ),
-  SukunNavDestination(
-    icon: Icons.person_outline,
-    selectedIcon: Icons.person,
-    label: 'আমার তথ্য',
   ),
 ];
 const _publicDestinations = [
