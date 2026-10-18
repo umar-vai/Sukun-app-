@@ -319,10 +319,6 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
           const SizedBox(height: 10),
           Text(widget.release.notesBn),
         ],
-        if (widget.release.isMandatoryFor(0)) ...[
-          const SizedBox(height: 8),
-          const Text('এতে গুরুত্বপূর্ণ নিরাপত্তা/সামঞ্জস্য সংশোধন থাকতে পারে।'),
-        ],
         if (busy) ...[
           const SizedBox(height: 12),
           LinearProgressIndicator(value: _progress),
