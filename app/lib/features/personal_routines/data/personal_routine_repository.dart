@@ -226,12 +226,24 @@ final class PersonalRoutineRepository {
     final startDate = DateFormat('yyyy-MM-dd').format(start);
     final rows = await client
         .from('personal_routine_progress')
-        .select('local_date,outcome')
+        .select('action_id,local_date,outcome')
         .eq('owner_user_id', ownerId)
         .gte('local_date', startDate)
         .order('local_date', ascending: false)
         .limit(1000);
-    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+    final actions = await client
+        .from('personal_routine_actions')
+        .select('id,title')
+        .eq('owner_user_id', ownerId);
+    final titles = <String, String>{
+      for (final action in actions)
+        action['id'] as String: action['title'] as String,
+    };
+    return rows.map((row) {
+      final result = Map<String, dynamic>.from(row);
+      result['title'] = titles[row['action_id']] ?? 'করণীয়';
+      return result;
+    }).toList();
   }
 
   Future<Map<String, String>> todaysOutcomes(DateTime date) async {
