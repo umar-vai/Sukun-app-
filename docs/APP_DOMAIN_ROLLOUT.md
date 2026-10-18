@@ -22,7 +22,10 @@ does not alter the public `sukunlife.com` site or the legacy internal dashboard.
    Production Supabase Auth allow list, retaining the existing GitHub Pages
    callback for older sessions. Do not use a wildcard redirect. Test Google
    login, member login and patient login on the new origin with synthetic
-   accounts. Supabase project, RLS, and patient records are unchanged.
+   accounts. Set `SUKUN_APP_GOOGLE_REDIRECT_READY=true` only after that live
+   Google callback succeeds; until then the production Web build hides Google
+   login even if the provider is enabled. Supabase project, RLS, and patient
+   records are unchanged.
 6. Test guest resource routes, admin/patient deep links, browser refresh,
    mobile layout, and HTTPS on the new domain. GitHub may redirect the former
    Pages URL to the custom domain, so use the new origin for all new links.

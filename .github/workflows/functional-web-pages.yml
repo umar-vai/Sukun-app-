@@ -223,6 +223,7 @@ jobs:
           ENABLE_PROD_EMAIL_OTP: ${{ vars.SUKUN_PRODUCTION_ENABLE_EMAIL_OTP }}
           ENABLE_PROD_PHONE_OTP: ${{ vars.SUKUN_PRODUCTION_ENABLE_PHONE_OTP }}
           ENABLE_PROD_GOOGLE_OAUTH: ${{ vars.SUKUN_PRODUCTION_ENABLE_GOOGLE_OAUTH }}
+          APP_GOOGLE_REDIRECT_READY: ${{ vars.SUKUN_APP_GOOGLE_REDIRECT_READY }}
         run: |
           set -euo pipefail
           environment=local
@@ -233,7 +234,7 @@ jobs:
           phone_otp=false
           google_oauth=false
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
-            for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
+            for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH APP_GOOGLE_REDIRECT_READY; do
               case "${!flag}" in
                 ''|true|false) ;;
                 *) echo 'Production web feature flag must be true, false or unset.' >&2; exit 1 ;;
@@ -248,9 +249,8 @@ jobs:
               member_signup="${ENABLE_PROD_MEMBER_SIGNUP:-false}"
               email_otp="${ENABLE_PROD_EMAIL_OTP:-false}"
               phone_otp="${ENABLE_PROD_PHONE_OTP:-false}"
-              # User approved Google login: enable in the real Pages build
-              # only when Production GoTrue publicly reports Google enabled.
-              # Never let a client-side flag bypass the live provider gate.
+              # Both the provider and the exact custom-domain redirect must
+              # be approved before offering Google login on this origin.
               provider_settings="$(mktemp)"
               trap 'rm -f "$provider_settings"' EXIT
               curl --fail-with-body --silent --show-error --retry 2 \
@@ -258,12 +258,13 @@ jobs:
                 --header 'Accept: application/json' \
                 "https://vydfafumxptanpkmtrpr.supabase.co/auth/v1/settings" \
                 > "$provider_settings"
-              if jq -e '.external.google == true' "$provider_settings" > /dev/null; then
+              if jq -e '.external.google == true' "$provider_settings" > /dev/null &&
+                 [[ "${APP_GOOGLE_REDIRECT_READY:-false}" == true ]]; then
                 google_oauth=true
-                echo 'Google OAuth provider enabled: turning on the branded Pages login.'
+                echo 'Google OAuth provider and custom-domain redirect approved.'
               else
                 google_oauth=false
-                echo 'Google provider disabled in Production Supabase: login remains safely gated.'
+                echo 'Google login stays gated until provider and redirect are ready.'
               fi
             elif [[ "${ENABLE_PROD_MEMBER_SIGNUP:-false}" == true || "${ENABLE_PROD_EMAIL_OTP:-false}" == true || "${ENABLE_PROD_PHONE_OTP:-false}" == true || "${ENABLE_PROD_GOOGLE_OAUTH:-false}" == true ]]; then
               echo 'Guest-only emergency mode cannot enable OAuth or signup.' >&2
