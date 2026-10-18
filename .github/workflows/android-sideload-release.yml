@@ -1,0 +1,157 @@
+name: Official Android Sideload APK — Manual Only
+
+on:
+  workflow_dispatch:
+    inputs:
+      approve_native_apk:
+        description: 'I approve this one-off signed Android APK build (NOT a Play upload)'
+        type: boolean
+        required: true
+        default: false
+      version_name:
+        description: 'Approved version name (e.g. 1.0.1)'
+        type: string
+        required: true
+      version_code:
+        description: 'Unique incrementing Android versionCode'
+        type: number
+        required: true
+      release_channel:
+        description: 'Device QA before limited public distribution'
+        type: choice
+        options:
+          - internal
+          - public
+        default: internal
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-android-sideload-signing
+  cancel-in-progress: false
+
+jobs:
+  guarded-signed-apk:
+    name: Owner-approved, verified official Android APK
+    # Never package on push or PR, and never run on a non-main branch.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.approve_native_apk == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: android-sideload-release
+    defaults:
+      run:
+        working-directory: app
+    env:
+      APPROVED_PACKAGE: ${{ vars.SUKUN_ANDROID_PACKAGE_NAME }}
+      PREVIOUS_CODE: ${{ vars.SUKUN_ANDROID_LAST_VERSION_CODE }}
+      APPROVED_FINGERPRINT: ${{ vars.SUKUN_SIDELOAD_CERT_SHA256 }}
+      APPROVED_GOOGLE_OAUTH: ${{ vars.SUKUN_ANDROID_GOOGLE_OAUTH_TESTED }}
+      BUILD_NAME: ${{ inputs.version_name }}
+      BUILD_CODE: ${{ inputs.version_code }}
+      RELEASE_CHANNEL: ${{ inputs.release_channel }}
+      APK_KEYSTORE_BASE64: ${{ secrets.SUKUN_SIDELOAD_KEYSTORE_BASE64 }}
+      SUKUN_UPLOAD_STORE_PASSWORD: ${{ secrets.SUKUN_SIDELOAD_STORE_PASSWORD }}
+      SUKUN_UPLOAD_KEY_ALIAS: ${{ secrets.SUKUN_SIDELOAD_KEY_ALIAS }}
+      SUKUN_UPLOAD_KEY_PASSWORD: ${{ secrets.SUKUN_SIDELOAD_KEY_PASSWORD }}
+      PUBLIC_SUPABASE_URL: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_URL }}
+      PUBLIC_SUPABASE_KEY: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify release identity, build gates and ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$APPROVED_PACKAGE" == "com.sukunlife.app" ]] || { echo "::error::Package ID unapproved"; exit 1; }
+          [[ "$BUILD_CODE" =~ ^[1-9][0-9]*$ ]] || { echo "::error::Invalid versionCode"; exit 1; }
+          [[ "$PREVIOUS_CODE" =~ ^[0-9]+$ ]] || { echo "::error::Set approved previously distributed version"; exit 1; }
+          (( BUILD_CODE > PREVIOUS_CODE )) || { echo "::error::Never reuse/downgrade versionCode"; exit 1; }
+          [[ "$BUILD_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid versionName"; exit 1; }
+          [[ "$APPROVED_FINGERPRINT" =~ ^([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}$ ]] || { echo "::error::Certificate fingerprint missing"; exit 1; }
+          [[ "$PUBLIC_SUPABASE_URL" == "https://vydfafumxptanpkmtrpr.supabase.co" ]] || { echo "::error::Wrong backend"; exit 1; }
+          [[ "$PUBLIC_SUPABASE_KEY" == sb_publishable_* || "$PUBLIC_SUPABASE_KEY" == eyJ* ]] || exit 1
+          for key in APK_KEYSTORE_BASE64 SUKUN_UPLOAD_STORE_PASSWORD SUKUN_UPLOAD_KEY_ALIAS SUKUN_UPLOAD_KEY_PASSWORD; do
+            [[ -n "${!key:-}" ]] || { echo "::error::Missing protected signing secret $key"; exit 1; }
+          done
+          # API 36, main INTERNET and fail-closed release signing must already
+          # be merged from the audited Android release-hardening PR.
+          grep -q 'targetSdk = 36' android/app/build.gradle.kts
+          grep -q 'compileSdk = 36' android/app/build.gradle.kts
+          grep -q 'SUKUN_UPLOAD_KEYSTORE_PATH' android/app/build.gradle.kts
+          ! grep -q 'signingConfigs.getByName("debug")' android/app/build.gradle.kts
+          grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml
+          [[ "$RELEASE_CHANNEL" != "public" || "$APPROVED_GOOGLE_OAUTH" == "true" ]] || {
+            echo "::error::Public APK needs approved device-level Google OAuth QA"; exit 1;
+          }
+          echo "Manual release policy accepted; no Play upload is configured."
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Unwrap owner signing key and verify approved certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          store="$RUNNER_TEMP/sukun-sideload-key.jks"
+          printf '%s' "$APK_KEYSTORE_BASE64" | base64 --decode > "$store"
+          test -s "$store"
+          actual=$(keytool -exportcert -rfc -keystore "$store" -storepass "$SUKUN_UPLOAD_STORE_PASSWORD" -alias "$SUKUN_UPLOAD_KEY_ALIAS" |
+            openssl x509 -noout -fingerprint -sha256 | sed 's/^.*=//')
+          [[ "${actual^^}" == "${APPROVED_FINGERPRINT^^}" ]] || {
+            echo "::error::APK signing identity does not match the approved certificate"; exit 1;
+          }
+          echo "SUKUN_UPLOAD_KEYSTORE_PATH=$store" >> "$GITHUB_ENV"
+          echo "Verified owner-controlled sideload signing key."
+
+      - name: Verify Flutter and build the signed APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+          flutter build apk --release \
+            --build-name="$BUILD_NAME" \
+            --build-number="$BUILD_CODE" \
+            --dart-define=APP_ENVIRONMENT=production \
+            --dart-define="SUPABASE_URL=$PUBLIC_SUPABASE_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$PUBLIC_SUPABASE_KEY" \
+            --dart-define="ENABLE_GOOGLE_OAUTH=$APPROVED_GOOGLE_OAUTH"
+          test -s build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Record artifact checksum (NOT auto-publish)
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="build/app/outputs/flutter-apk/app-release.apk"
+          sha256sum "$file" > build/app/outputs/flutter-apk/SHA256SUMS.txt
+          echo "### Signed Android APK built for $RELEASE_CHANNEL device QA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Package: com.sukunlife.app — $BUILD_NAME ($BUILD_CODE)" >> "$GITHUB_STEP_SUMMARY"
+          echo "The APK is NOT automatically published to any users or Play Store." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload short-lived manual-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukunlife-signed-sideload-apk
+          path: |
+            app/build/app/outputs/flutter-apk/app-release.apk
+            app/build/app/outputs/flutter-apk/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Delete temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sukun-sideload-key.jks"
