@@ -25,9 +25,8 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
   }
 
   void _reload() {
-    _history = PersonalRoutineRepository(
-      Supabase.instance.client,
-    ).listProgress(days: _days);
+    _history = PersonalRoutineRepository(Supabase.instance.client)
+        .listProgress(days: _days);
   }
 
   void _changeDays(int days) {
@@ -65,9 +64,9 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
           }
           final records = snapshot.data ?? [];
           final done = records.where((row) => row['outcome'] == 'done').length;
-          final skipped = records.where(
-            (row) => row['outcome'] == 'skipped',
-          ).length;
+          final skipped = records
+              .where((row) => row['outcome'] == 'skipped')
+              .length;
           final total = done + skipped;
           final byDay = <String, List<Map<String, dynamic>>>{};
           for (final record in records) {
@@ -93,7 +92,9 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 6),
-                const Text('যে করণীয়গুলো Done বা Skip করেছেন, সেগুলোর ব্যক্তিগত ইতিহাস।'),
+                const Text(
+                  'যে করণীয়গুলো Done বা Skip করেছেন, সেগুলোর ব্যক্তিগত ইতিহাস।',
+                ),
                 const SizedBox(height: 14),
                 Wrap(
                   spacing: 10,
@@ -143,7 +144,9 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.event_note_outlined),
                       title: const Text('এখনো কোনো হিস্ট্রি নেই'),
-                      subtitle: const Text('রুটিনের করণীয় Done বা Skip করলে এখানে দেখা যাবে।'),
+                      subtitle: const Text(
+                        'রুটিনের করণীয় Done বা Skip করলে এখানে দেখা যাবে।',
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push('/my-routines'),
                     ),
@@ -187,7 +190,9 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.assignment_turned_in_outlined),
                       title: const Text('নির্ধারিত পরিকল্পনার অগ্রগতি'),
-                      subtitle: const Text('সুকুন লাইফের অনুমোদিত করণীয়র হিসাব'),
+                      subtitle: const Text(
+                        'সুকুন লাইফের অনুমোদিত করণীয়র হিসাব',
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push('/patient/progress'),
                     ),
