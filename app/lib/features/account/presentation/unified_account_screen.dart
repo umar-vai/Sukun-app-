@@ -105,7 +105,9 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                 ListTile(
                   leading: const Icon(Icons.text_fields_outlined),
                   title: const Text('অ্যাপ, ফন্ট ও রিডার সেটিংস'),
-                  subtitle: const Text('অটো/ডার্ক মোড, বাংলা ও আরবি ফন্টের আকার'),
+                  subtitle: const Text(
+                    'অটো/ডার্ক মোড, বাংলা ও আরবি ফন্টের আকার',
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/settings/appearance'),
                 ),
