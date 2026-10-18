@@ -8,8 +8,12 @@ bool resourceMatchesPickerSection(
   ContentResourceOption resource,
   ResourceSection section,
 ) {
-  // These book-derived excerpts are deliberately outside public CMS browsing.
-  if (resource.isEditorialRuqyahExcerpt) return false;
+  // The public Quran reader and Ruqyah Ayat reader are both under Quran.
+  if (resource.isEditorialRuqyahExcerpt ||
+      resource.slug?.startsWith('srg2024-dua-') == true) {
+    return section.slug == 'quran' || section.slug == 'ruqyah';
+  }
+  if (resource.canonicalSurahNumber != null) return section.slug == 'quran';
   if (!section.types.contains(resource.type)) return false;
   if (section.categoryPrefixes.isEmpty) return true;
 

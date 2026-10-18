@@ -425,3 +425,11 @@ Minimum first release of the Resources hub should include:
 ## 18. Non-negotiable rule
 
 **Qur'an/Hadith content must never be treated as generic AI-generated copy. Canonical text and references must come from approved, traceable sources with complete metadata, pass explicit source verification, and remain accountable through audit history.**
+
+## 19. Clinical links to the public Quran catalog (2026-10-18)
+
+The public 114-surah reader is sourced through the `quran-content` Edge Function, not through `content_items`. The Admin action picker loads that same chapter catalog and stores only the validated chapter number and display title in `plan_action_quran_surahs`. Patient Today and My Plan open the existing `/resources/quran/{number}` reader. No verse, translation, or recording is copied into a clinical plan.
+
+The 101 reviewed Ruqyah Ayat editorial excerpts already live in `content_items`; they remain linked by their existing IDs. The Admin picker now shows them under Quran and Ruqyah, with their editorial status made explicit. Its chapter catalog must contain all 114 distinct numbers before it offers canonical chapter selection. If the API is unavailable or incomplete, the picker keeps CMS resources available and clearly reports the missing chapter catalog.
+
+`plan_action_quran_surahs` is RLS scoped to a permitted plan action, writable only for a draft by a database-verified Super Admin, immutable after publication, and audited through its replacement RPC. A new draft version copied from an older approved plan retains these links for fresh review. Keep the backend migration ahead of the Flutter web deployment because patient and Admin queries include this relation.

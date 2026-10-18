@@ -184,6 +184,12 @@ void main() {
 
 class _FakeCarePlansRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,

@@ -400,6 +400,12 @@ final class _GeneratedAiActionsRepository implements AiActionsRepository {
 
 final class _ReviewCarePlansRepository implements CarePlansRepository {
   @override
+  Future<void> replaceActionQuranSurahs({
+    required String actionId,
+    required List<ContentResourceOption> surahs,
+    required String requestId,
+  }) async {}
+  @override
   Future<void> replaceActionResources({
     required String actionId,
     required List<String> resourceIds,

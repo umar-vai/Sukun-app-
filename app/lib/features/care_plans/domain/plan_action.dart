@@ -86,6 +86,7 @@ class LinkedResource {
     this.youtubeVideoId,
     this.thumbnailUrl,
     this.rightsNote,
+    this.publicRoute,
   });
 
   final String id;
@@ -99,12 +100,13 @@ class LinkedResource {
   final String? youtubeVideoId;
   final String? thumbnailUrl;
   final String? rightsNote;
+  final String? publicRoute;
 
   bool get canOpen {
     if (mediaSourceType == 'youtube') {
       return youtubeVideoId?.trim().isNotEmpty == true;
     }
-    return mediaUrl?.trim().isNotEmpty == true;
+    return publicRoute != null || mediaUrl?.trim().isNotEmpty == true;
   }
 }
 
@@ -158,6 +160,29 @@ class PlanAction {
           youtubeVideoId: item['youtube_video_id'] as String?,
           thumbnailUrl: item['thumbnail_url'] as String?,
           rightsNote: item['rights_note'] as String?,
+        ),
+      );
+    }
+    for (final entry
+        in json['plan_action_quran_surahs'] as List<dynamic>? ?? const []) {
+      final row = entry as Map<String, dynamic>;
+      final number = row['surah_number'];
+      final title = row['title'];
+      if (number is! int ||
+          number < 1 ||
+          number > 114 ||
+          title is! String ||
+          title.trim().isEmpty) {
+        continue;
+      }
+      resources.add(
+        LinkedResource(
+          id: 'quran:$number',
+          title: title,
+          titleBn: title,
+          type: 'quran',
+          sortOrder: row['sort_order'] as int? ?? 0,
+          publicRoute: '/resources/quran/$number',
         ),
       );
     }

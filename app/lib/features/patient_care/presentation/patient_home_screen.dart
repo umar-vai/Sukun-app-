@@ -115,6 +115,10 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   }
 
   Future<void> _openResource(LinkedResource resource) async {
+    if (resource.publicRoute != null) {
+      await context.push<void>(resource.publicRoute!);
+      return;
+    }
     await context.push<void>(
       '/patient/resources/${Uri.encodeComponent(resource.id)}',
     );
