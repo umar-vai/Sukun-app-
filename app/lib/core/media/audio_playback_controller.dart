@@ -104,8 +104,10 @@ class AudioPlaybackController extends ChangeNotifier {
   /// Browsers may throttle timers when backgrounded; native device QA is separate.
   DateTime? get sleepDeadline => _sleepDeadline;
 
+  static const supportedSleepMinutes = [0, 5, 15, 30, 60];
+
   void setSleepTimer(int minutes) {
-    if (!const [0, 5, 15, 30, 60].contains(minutes)) {
+    if (!supportedSleepMinutes.contains(minutes)) {
       throw ArgumentError.value(minutes, 'minutes', 'Unsupported sleep timer');
     }
     _sleepTimer?.cancel();
