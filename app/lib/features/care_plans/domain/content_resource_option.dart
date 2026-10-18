@@ -94,6 +94,7 @@ class ContentResourceOption {
 
   String get categoryLabel {
     if (canonicalSurahNumber != null) return '১১৪ সূরার কুরআন';
+    if (slug?.startsWith('srg2024-dua-') == true) return 'রুকইয়াহ দোয়া';
     if (isEditorialRuqyahExcerpt) {
       return 'রুকইয়াহ আয়াত · সম্পাদিত উদ্ধৃতি';
     }

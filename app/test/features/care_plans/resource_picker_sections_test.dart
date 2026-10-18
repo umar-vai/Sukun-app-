@@ -44,6 +44,14 @@ const _ruqyahAyat = ContentResourceOption(
   visibility: 'public',
   status: 'published',
 );
+const _ruqyahDua = ContentResourceOption(
+  id: 'dua-2',
+  slug: 'srg2024-dua-001',
+  title: 'Reviewed ruqyah dua',
+  type: 'dua',
+  visibility: 'public',
+  status: 'published',
+);
 
 void main() {
   test('Admin main sections use the public Resources taxonomy', () {
@@ -72,6 +80,8 @@ void main() {
       isTrue,
     );
     expect(resourceMatchesPickerSection(_ruqyahAyat, ruqyah), isTrue);
+    expect(_ruqyahDua.categoryLabel, 'রুকইয়াহ দোয়া');
+    expect(resourceMatchesPickerSection(_ruqyahDua, ruqyah), isTrue);
   });
 
   testWidgets('wheel and arrow change the visible resource section', (
