@@ -38,14 +38,12 @@ void main() {
     const member = AppSession(role: UserRole.member, userId: 'member');
     const patient = AppSession(role: UserRole.patient, userId: 'patient');
     const admin = AppSession(role: UserRole.superAdmin, userId: 'admin');
-    expect(sharedUserRoutes, [
-      '/',
-      '/my-routines',
-      '/progress',
-      '/account',
-    ]);
+    expect(sharedUserRoutes, ['/', '/my-routines', '/progress', '/account']);
     expect(sharedUserDestinations.length, 4);
-    expect(sharedUserDestinations.any((destination) => destination.label == 'উপকরণ'), isFalse);
+    expect(
+      sharedUserDestinations.any((destination) => destination.label == 'উপকরণ'),
+      isFalse,
+    );
     for (final path in sharedUserRoutes) {
       expect(navigationIndex(path, member), navigationIndex(path, patient));
     }
