@@ -168,18 +168,18 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     return ValueListenableBuilder<BengaliFontChoice>(
       valueListenable: BengaliFontSettings.instance,
       builder: (context, selectedFont, _) => MaterialApp.router(
-      title: 'Sukun Life',
-      debugShowCheckedModeBanner: false,
-      theme: SukunTheme.light(bengaliFont: selectedFont),
-      locale: const Locale('bn', 'BD'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: ref.watch(appRouterProvider),
-      builder: (context, child) => AndroidUpdateAutoPopup(
-        child: UniversalNoticeAutoPopup(
-          child: Stack(children: [?child, const GlobalAudioDock()]),
+        title: 'Sukun Life',
+        debugShowCheckedModeBanner: false,
+        theme: SukunTheme.light(bengaliFont: selectedFont),
+        locale: const Locale('bn', 'BD'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: ref.watch(appRouterProvider),
+        builder: (context, child) => AndroidUpdateAutoPopup(
+          child: UniversalNoticeAutoPopup(
+            child: Stack(children: [?child, const GlobalAudioDock()]),
+          ),
         ),
-      ),
       ),
     );
   }
