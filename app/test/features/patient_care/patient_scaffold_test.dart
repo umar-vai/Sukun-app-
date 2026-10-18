@@ -35,10 +35,7 @@ void main() {
     await tester.tap(find.text('উপকরণ'));
     await tester.pumpAndSettle();
 
-    expect(
-      router.routeInformationProvider.value.uri.path,
-      '/resources',
-    );
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
     expect(find.text('Islamic Resources'), findsOneWidget);
     expect(find.text('Resource content'), findsOneWidget);
     expect(find.text('হোম'), findsOneWidget);
