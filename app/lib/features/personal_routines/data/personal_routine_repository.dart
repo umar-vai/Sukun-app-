@@ -216,6 +216,36 @@ final class PersonalRoutineRepository {
     }, onConflict: 'action_id,local_date');
   }
 
+  /// Read only this signed-in owner's check-ins; both Member and Patient use it.
+  /// These events are not a clinical adherence or diagnosis metric.
+  Future<List<Map<String, dynamic>>> listProgress({int days = 7}) async {
+    if (days != 7 && days != 30) {
+      throw ArgumentError.value(days, 'days', 'Only 7 or 30 days supported');
+    }
+    final start = DateTime.now().subtract(Duration(days: days - 1));
+    final startDate = DateFormat('yyyy-MM-dd').format(start);
+    final rows = await client
+        .from('personal_routine_progress')
+        .select('action_id,local_date,outcome')
+        .eq('owner_user_id', ownerId)
+        .gte('local_date', startDate)
+        .order('local_date', ascending: false)
+        .limit(1000);
+    final actions = await client
+        .from('personal_routine_actions')
+        .select('id,title')
+        .eq('owner_user_id', ownerId);
+    final titles = <String, String>{
+      for (final action in actions)
+        action['id'] as String: action['title'] as String,
+    };
+    return rows.map((row) {
+      final result = Map<String, dynamic>.from(row);
+      result['title'] = titles[row['action_id']] ?? 'করণীয়';
+      return result;
+    }).toList();
+  }
+
   Future<Map<String, String>> todaysOutcomes(DateTime date) async {
     final day = DateFormat('yyyy-MM-dd').format(date);
     final rows = await client

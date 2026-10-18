@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/router/role_navigation_shell.dart';
+import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
 
@@ -25,12 +26,36 @@ void main() {
     );
     expect(navigationParent('/prayer-times', null), '/');
     expect(navigationIndex('/admin/announcements/new', admin), 3);
-    expect(navigationIndex('/resources/ruqyah', patient), 2);
+    expect(navigationIndex('/resources/ruqyah', patient), 3);
     expect(showsNavigationShell('/patient/resources'), isFalse);
     expect(showsNavigationShell('/admin/dashboard'), isFalse);
     expect(showsNavigationShell('/admin/announcements/new'), isTrue);
     expect(showsNavigationShell('/patient/notifications'), isTrue);
     expect(showsNavigationShell('/resources/quran/2'), isTrue);
+  });
+
+  test('Member and Patient have identical primary navigation', () {
+    const member = AppSession(role: UserRole.member, userId: 'member');
+    const patient = AppSession(role: UserRole.patient, userId: 'patient');
+    const admin = AppSession(role: UserRole.superAdmin, userId: 'admin');
+    expect(sharedUserRoutes, [
+      '/',
+      '/my-routines',
+      '/progress',
+      '/resources',
+      '/account',
+    ]);
+    expect(sharedUserDestinations.length, 5);
+    for (final path in sharedUserRoutes) {
+      expect(navigationIndex(path, member), navigationIndex(path, patient));
+    }
+    expect(navigationIndex('/my-routines/action/a', patient), 1);
+    expect(navigationIndex('/patient/plan', patient), 1);
+    expect(navigationIndex('/patient/progress', patient), 2);
+    expect(navigationIndex('/resources/audio', member), 3);
+    expect(navigationIndex('/account', member), 4);
+    expect(navigationIndex('/admin/announcements/new', admin), 3);
+    expect(navigationParent('/my-routines/action/a', member), '/my-routines');
   });
 
   testWidgets('guest resource deep link keeps back and home available', (
