@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sukun_life/core/updates/android_release.dart';
+import 'package:sukun_life/core/updates/android_update_service.dart';
 
 /// The approved native release URL is supplied at web build time. An empty or
 /// non-HTTPS value keeps the download action closed until a signed APK exists.
@@ -10,15 +12,35 @@ const androidApkUrl = String.fromEnvironment('ANDROID_APK_URL');
 
 Uri? approvedAndroidApkUri(String value) {
   final uri = Uri.tryParse(value.trim());
-  if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
-  return uri;
+  return uri != null && isApprovedApkUri(uri) ? uri : null;
 }
 
-class PublicWelcomeScreen extends StatelessWidget {
+class PublicWelcomeScreen extends StatefulWidget {
   const PublicWelcomeScreen({super.key});
 
-  Future<void> _downloadAndroid(BuildContext context) async {
-    final uri = approvedAndroidApkUri(androidApkUrl);
+  @override
+  State<PublicWelcomeScreen> createState() => _PublicWelcomeScreenState();
+}
+
+class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
+  late final AndroidUpdateService _updateService = AndroidUpdateService();
+  late final Future<AndroidRelease?> _publishedRelease;
+
+  @override
+  void initState() {
+    super.initState();
+    _publishedRelease = _updateService
+        .check(installedVersionCodeOverride: 0)
+        .catchError((Object _) => null);
+  }
+
+  @override
+  void dispose() {
+    _updateService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _downloadAndroid(BuildContext context, Uri? uri) async {
     if (uri == null) return;
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
         context.mounted) {
@@ -30,9 +52,14 @@ class PublicWelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canDownload = approvedAndroidApkUri(androidApkUrl) != null;
-    final small = MediaQuery.sizeOf(context).width < 700;
-    return Scaffold(
+    return FutureBuilder<AndroidRelease?>(
+      future: _publishedRelease,
+      builder: (context, snapshot) {
+        final uri = snapshot.data?.apkUrl ??
+            approvedAndroidApkUri(androidApkUrl);
+        final canDownload = uri != null;
+        final small = MediaQuery.sizeOf(context).width < 700;
+        return Scaffold(
       backgroundColor: SukunColors.canvas,
       body: SafeArea(
         child: ListView(
@@ -53,7 +80,7 @@ class PublicWelcomeScreen extends StatelessWidget {
                       _WelcomeHero(
                         small: small,
                         canDownload: canDownload,
-                        onDownload: () => _downloadAndroid(context),
+                        onDownload: () => _downloadAndroid(context, uri),
                       ),
                       SizedBox(height: small ? 42 : 64),
                       Text(
@@ -101,7 +128,7 @@ class PublicWelcomeScreen extends StatelessWidget {
                       const SizedBox(height: 44),
                       _WelcomeAccess(
                         canDownload: canDownload,
-                        onDownload: () => _downloadAndroid(context),
+                        onDownload: () => _downloadAndroid(context, uri),
                       ),
                       const SizedBox(height: 34),
                       Text(
@@ -117,6 +144,8 @@ class PublicWelcomeScreen extends StatelessWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }
