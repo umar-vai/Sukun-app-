@@ -97,6 +97,33 @@ class AudioPlaybackController extends ChangeNotifier {
   int _lastSavedSecond = -1;
   Future<void> _loadQueue = Future<void>.value();
   int _requestedLoad = 0;
+  Timer? _sleepTimer;
+  DateTime? _sleepDeadline;
+
+  /// Timer belongs to the shared playback session, not the player screen.
+  /// Browsers may throttle timers when backgrounded; native device QA is separate.
+  DateTime? get sleepDeadline => _sleepDeadline;
+
+  void setSleepTimer(int minutes) {
+    if (!const [0, 5, 15, 30, 60].contains(minutes)) {
+      throw ArgumentError.value(minutes, 'minutes', 'Unsupported sleep timer');
+    }
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepDeadline = null;
+    if (minutes != 0) {
+      _sleepDeadline = DateTime.now().add(Duration(minutes: minutes));
+      _sleepTimer = Timer(Duration(minutes: minutes), () {
+        _sleepTimer = null;
+        _sleepDeadline = null;
+        // Pause rather than clearing the queue: resume positions stay intact.
+        unawaited(_player.pause());
+        notifyListeners();
+      });
+    }
+    notifyListeners();
+  }
+
 
   AudioPlayer get player => _player;
   LinkedResource? get resource => _resource;
@@ -310,6 +337,7 @@ class AudioPlaybackController extends ChangeNotifier {
   Future<void> next() => _player.seekToNext();
 
   Future<void> stopAndClear() async {
+    setSleepTimer(0);
     ++_requestedLoad;
     await _loadQueue;
     try {
@@ -383,6 +411,9 @@ class AudioPlaybackController extends ChangeNotifier {
 
   @override
   Future<void> dispose() async {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepDeadline = null;
     await _persistCurrentPosition();
     await _positionSubscription.cancel();
     await _stateSubscription.cancel();
