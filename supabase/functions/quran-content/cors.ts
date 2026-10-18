@@ -8,7 +8,9 @@ export const quranAllowedOrigins = new Set([
   "http://localhost:8080",
 ]);
 
-export function quranCorsHeaders(origin: string | null): Record<string, string> {
+export function quranCorsHeaders(
+  origin: string | null,
+): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers":
