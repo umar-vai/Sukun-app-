@@ -177,6 +177,7 @@ abstract final class SukunTheme {
       ),
     );
   }
+
   static ThemeData dark({
     BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
     double bengaliScale = 1.0,
@@ -199,14 +200,15 @@ abstract final class SukunTheme {
       ),
       scaffoldBackgroundColor: background,
     );
-    final textTheme = SukunTypography.withBengaliFallback(
-      SukunTypography.englishTextTheme(base.textTheme),
-      bengaliFont,
-    ).apply(
-      fontSizeFactor: AppDisplaySettings.validBengaliScale(bengaliScale),
-      bodyColor: lightText,
-      displayColor: lightText,
-    );
+    final textTheme =
+        SukunTypography.withBengaliFallback(
+          SukunTypography.englishTextTheme(base.textTheme),
+          bengaliFont,
+        ).apply(
+          fontSizeFactor: AppDisplaySettings.validBengaliScale(bengaliScale),
+          bodyColor: lightText,
+          displayColor: lightText,
+        );
     return base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
@@ -219,9 +221,7 @@ abstract final class SukunTheme {
       cardTheme: CardThemeData(
         color: surface,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       dialogTheme: const DialogThemeData(backgroundColor: surface),
       bottomSheetTheme: const BottomSheetThemeData(backgroundColor: surface),
@@ -237,5 +237,4 @@ abstract final class SukunTheme {
       ),
     );
   }
-
 }
