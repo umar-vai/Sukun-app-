@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -475,24 +476,30 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     for (final raw in verses) {
       if (raw is! Map || raw['verse_key'] != '$surah:$ayah') continue;
       final translations = raw['translations'];
-      if (translations is! List) return null;
-      for (final item in translations) {
-        if (item is! Map) continue;
-        if (item['language_name']?.toString().toLowerCase() != 'bengali') {
-          continue;
+      var translation = '';
+      var editionName = data['translation_name']?.toString() ?? 'বাংলা অনুবাদ';
+      if (translations is List) {
+        for (final item in translations) {
+          if (item is! Map ||
+              item['language_name']?.toString().toLowerCase() != 'bengali') {
+            continue;
+          }
+          translation = item['text']?.toString().trim() ?? '';
+          final edition = item['resource_name']?.toString().trim();
+          if (edition != null && edition.isNotEmpty) editionName = edition;
+          break;
         }
-        final translation = item['text']?.toString().trim() ?? '';
-        if (translation.isEmpty) return null;
-        final edition = item['resource_name']?.toString().trim();
-        return _FirstAyahBangla(
-          translation,
-          (edition?.isNotEmpty ?? false)
-              ? edition!
-              : data['translation_name']?.toString() ?? 'বাংলা অনুবাদ',
-          data['provider']?.toString() ?? 'Quran Foundation',
-          ruqyahTrustedVerseAudioUrl(raw['audio']),
-        );
       }
+      // An unavailable translation must not suppress the independently
+      // verified recitation of this exact canonical starting ayah.
+      final audioUrl = ruqyahTrustedVerseAudioUrl(raw['audio']);
+      if (translation.isEmpty && audioUrl == null) return null;
+      return _FirstAyahBangla(
+        translation,
+        editionName,
+        data['provider']?.toString() ?? 'Quran Content API',
+        audioUrl,
+      );
     }
     return null;
   }
@@ -529,6 +536,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
   Future<void> _playStartAyah(_RuqyahEntry entry) async {
     if (_loadingAudio || entry.citation == null) return;
     setState(() => _loadingAudio = true);
+    Uri? verifiedAudioUri;
     try {
       if (_playingSlug == entry.slug) {
         if (_audioPlayer.playing) {
@@ -548,6 +556,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
         if (url == null) {
           throw const FormatException('Missing verified Quran recitation');
         }
+        verifiedAudioUri = Uri.parse(url);
         await _audioPlayer.stop();
         await _audioPlayer.setUrl(url);
         if (!mounted) return;
@@ -559,10 +568,21 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       _banglaRequests.remove(entry.slug);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'শুরুর আয়াতের তিলাওয়াত পাওয়া যায়নি। আবার চেষ্টা করুন।',
+          SnackBar(
+            content: const Text(
+              'শুরুর আয়াতের তিলাওয়াত চালু হয়নি। আবার চেষ্টা করুন।',
             ),
+            action: verifiedAudioUri == null
+                ? null
+                : SnackBarAction(
+                    label: 'ব্রাউজারে শুনুন',
+                    onPressed: () async {
+                      await launchUrl(
+                        verifiedAudioUri!,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
           ),
         );
       }
@@ -597,8 +617,17 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('অডিও চালু হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।'),
+          SnackBar(
+            content: const Text('অডিও চালু হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।'),
+            action: SnackBarAction(
+              label: 'ব্রাউজারে শুনুন',
+              onPressed: () async {
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+            ),
           ),
         );
       }
@@ -861,6 +890,10 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                   }),
                                   icon: const Icon(Icons.refresh),
                                   label: const Text('আবার চেষ্টা করুন'),
+                                ),
+                              ] else if (result.translation.isEmpty) ...[
+                                const Text(
+                                  'এই সূত্রের বাংলা অনুবাদ এখন পাওয়া যাচ্ছে না।',
                                 ),
                               ] else ...[
                                 SelectableText(result.translation),
