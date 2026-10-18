@@ -171,9 +171,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) => UniversalNoticeAutoPopup(
-        child: Stack(
-          children: [?child, const GlobalAudioDock()],
-        ),
+        child: Stack(children: [?child, const GlobalAudioDock()]),
       ),
     );
   }
