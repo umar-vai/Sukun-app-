@@ -13,6 +13,24 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-10-18 universal public notices
+
+- Applied additive `universal_announcements` and
+  `universal_announcement_dispatch_rpc` migrations to the existing Production
+  project (remote versions `20261018065326` and `20261018065335`). They add a
+  public notice inbox with draft/published/archived lifecycle, a dedicated
+  non-clinical public image bucket, admin audit entries, and a private dispatch
+  outbox. Existing patient and notification records were not changed.
+- Verified RLS on both new tables. Guests can select only published,
+  unexpired notices; guests cannot insert; ordinary authenticated users cannot
+  delete notices or claim dispatch jobs. The new tables and queue had zero
+  records as deployed.
+- Deployed protected `dispatch-universal-announcements` Edge Function v1.
+  A request without its private cron token returns HTTP 401. Its server-side
+  release flag and separate GitHub workflow gate remain closed; no universal
+  push has been sent. Native phone opt-in, Firebase topic receipt and tap
+  behavior require release validation before either gate is enabled.
+
 ### 2026-10-18 public Quran links in clinical plans
 
 - Applied additive migration `public_resource_action_links` to Production

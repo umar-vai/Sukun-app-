@@ -1,6 +1,6 @@
 -- Public Sukun Life announcements are deliberately separate from private
 -- patient notification_events and medical/care-plan records.
--- This migration is source-only until the Supabase deployment gate passes.
+-- Public notice publication does not by itself enable FCM broadcast dispatch.
 
 create table public.universal_announcements (
   id uuid primary key default gen_random_uuid(),
