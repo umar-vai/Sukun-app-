@@ -23,16 +23,20 @@ class PublicSignInException implements Exception {
   const PublicSignInException();
 }
 
-const approvedGoogleWebCallback = 'https://umar-vai.github.io/Sukun-app-/';
+const approvedGoogleWebCallback = 'https://app.sukunlife.com/';
+const legacyGoogleWebCallback = 'https://umar-vai.github.io/Sukun-app-/';
 
 /// Return to the real Flutter app, not the legacy website or a guessed
 /// Supabase Site URL. OAuth sessions are still verified by Supabase Auth.
 String googleOAuthWebRedirectUrl(Uri current) {
+  if (current.scheme == 'https' && current.host == 'app.sukunlife.com') {
+    return approvedGoogleWebCallback;
+  }
   if (current.scheme == 'https' &&
       current.host == 'umar-vai.github.io' &&
       (current.path == '/Sukun-app-' ||
           current.path.startsWith('/Sukun-app-/'))) {
-    return approvedGoogleWebCallback;
+    return legacyGoogleWebCallback;
   }
   if (current.host == 'localhost' || current.host == '127.0.0.1') {
     return '${current.origin}/';

@@ -2,23 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/auth/public_signin_gateway.dart';
 
 void main() {
-  test(
-    'Google returns to approved Pages Flutter app, never legacy website',
-    () {
-      expect(
-        googleOAuthWebRedirectUrl(
-          Uri.parse('https://umar-vai.github.io/Sukun-app-/#/login'),
-        ),
-        approvedGoogleWebCallback,
-      );
-      expect(
-        googleOAuthWebRedirectUrl(
-          Uri.parse('https://umar-vai.github.io/Sukun-app-/resources?q=1'),
-        ),
-        approvedGoogleWebCallback,
-      );
-    },
-  );
+  test('Google returns to approved Flutter Web origins', () {
+    expect(
+      googleOAuthWebRedirectUrl(Uri.parse('https://app.sukunlife.com/#/login')),
+      approvedGoogleWebCallback,
+    );
+    expect(
+      googleOAuthWebRedirectUrl(
+        Uri.parse('https://umar-vai.github.io/Sukun-app-/#/login'),
+      ),
+      legacyGoogleWebCallback,
+    );
+    expect(
+      googleOAuthWebRedirectUrl(
+        Uri.parse('https://umar-vai.github.io/Sukun-app-/resources?q=1'),
+      ),
+      legacyGoogleWebCallback,
+    );
+  });
 
   test('Google OAuth will not redirect to an unapproved origin', () {
     expect(
@@ -28,6 +29,16 @@ void main() {
     expect(
       () => googleOAuthWebRedirectUrl(
         Uri.parse('https://malicious.example/Sukun-app-/'),
+      ),
+      throwsA(isA<PublicSignInException>()),
+    );
+    expect(
+      () => googleOAuthWebRedirectUrl(Uri.parse('http://app.sukunlife.com/')),
+      throwsA(isA<PublicSignInException>()),
+    );
+    expect(
+      () => googleOAuthWebRedirectUrl(
+        Uri.parse('https://app.sukunlife.com.evil.example/'),
       ),
       throwsA(isA<PublicSignInException>()),
     );

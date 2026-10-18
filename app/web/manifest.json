@@ -1,10 +1,10 @@
 {
-  "name": "Sukun Life Preview",
+  "name": "Sukun Life",
   "short_name": "Sukun Life",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#E8F5FC",
   "theme_color": "#0F9BD7",
-  "description": "Development preview for the Sukun Life Flutter app",
+  "description": "সুকুন লাইফ: ইসলামিক রিসোর্স ও রোগীর ব্যক্তিগত কেয়ার প্ল্যান",
   "orientation": "portrait-primary"
 }
