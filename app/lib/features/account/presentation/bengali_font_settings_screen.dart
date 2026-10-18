@@ -36,9 +36,8 @@ class BengaliFontSettingsScreen extends StatelessWidget {
                 trailing: selected == font
                     ? const Icon(Icons.check_circle_rounded)
                     : const Icon(Icons.circle_outlined),
-                onTap: () => unawaited(
-                  BengaliFontSettings.instance.select(font),
-                ),
+                onTap: () =>
+                    unawaited(BengaliFontSettings.instance.select(font)),
               ),
             ),
           const SizedBox(height: 16),
