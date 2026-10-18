@@ -35,8 +35,11 @@ class PatientScaffold extends StatelessWidget {
       bottomNavigationBar: SukunBottomNavigation(
         // Legacy clinical screens keep their old selectedIndex contract.
         selectedIndex: switch (selectedIndex) {
-          2 => 3,
+          // Legacy patient 'Resources' page still exists, but Home is its
+          // primary-nav destination. Clinical paths keep their contracts.
+          2 => 0,
           3 => 2,
+          4 => 3,
           _ => selectedIndex,
         },
         onSelected: (index) => context.go(sharedUserRoutes[index]),
