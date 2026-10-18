@@ -10,6 +10,9 @@ import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_pro
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
+import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/home/domain/home_next_actions.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 /// Shared public landing page. Personal care is loaded only for patient sessions.
@@ -31,15 +34,15 @@ class UnifiedHomeScreen extends ConsumerStatefulWidget {
 
 class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
   late Future<_PrayerSummary?> _prayer;
-  Future<PatientDay>? _patientDay;
+  Future<_HomeTasksData>? _upcoming;
   bool _signingOut = false;
 
   @override
   void initState() {
     super.initState();
     _prayer = _readPrayer();
-    if (widget.isPatient) {
-      _patientDay = ref.read(patientCareRepositoryProvider).getToday();
+    if (widget.isSignedInMember || widget.isPatient) {
+      _upcoming = _readUpcoming();
     }
   }
 
@@ -55,20 +58,77 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     );
   }
 
+  Future<_HomeTasksData> _readUpcoming() async {
+    // Re-check the verified auth identity after awaits. Old account data must
+    // never appear when a different person signs in on the same device.
+    final ownerAtStart = ref.read(appSessionProvider).value?.userId;
+    if (ownerAtStart == null) {
+      return const _HomeTasksData(actions: []);
+    }
+
+    PatientDay? day;
+    bool planUnavailable = false;
+    if (widget.isPatient) {
+      try {
+        day = await ref.read(patientCareRepositoryProvider).getToday();
+      } catch (_) {
+        planUnavailable = true;
+      }
+    }
+
+    List<Map<String, dynamic>> routines = [];
+    List<Map<String, dynamic>> actions = [];
+    Map<String, String> outcomes = {};
+    bool personalUnavailable = false;
+    try {
+      final repo = PersonalRoutineRepository(Supabase.instance.client);
+      final rows = await Future.wait<Object>([
+        repo.listRoutines(),
+        repo.listActions(),
+        repo.todaysOutcomes(DateTime.now()),
+      ]);
+      routines = rows[0] as List<Map<String, dynamic>>;
+      actions = rows[1] as List<Map<String, dynamic>>;
+      outcomes = rows[2] as Map<String, String>;
+    } catch (_) {
+      personalUnavailable = true;
+    }
+
+    if (ref.read(appSessionProvider).value?.userId != ownerAtStart) {
+      return const _HomeTasksData(actions: []);
+    }
+
+    final settings = await ref.read(utilityPreferencesStoreProvider).load();
+    return _HomeTasksData(
+      patientDay: day,
+      planUnavailable: planUnavailable,
+      personalUnavailable: personalUnavailable,
+      actions: HomeNextActions.select(
+        now: DateTime.now(),
+        patientDay: day,
+        routines: routines,
+        actions: actions,
+        outcomes: outcomes,
+        settings: settings,
+        calculator: ref.read(prayerCalculationServiceProvider),
+      ),
+    );
+  }
+
   Future<void> _refresh() async {
     final prayer = _readPrayer();
-    final patient = widget.isPatient
-        ? ref.read(patientCareRepositoryProvider).getToday()
+    final upcoming = widget.isPatient || widget.isSignedInMember
+        ? _readUpcoming()
         : null;
     setState(() {
       _prayer = prayer;
-      _patientDay = patient;
+      _upcoming = upcoming;
     });
     try {
       await prayer;
-      if (patient != null) await patient;
+      if (upcoming != null) await upcoming;
     } catch (_) {
-      // Each tile presents a friendly, independently retryable state.
+      // Keep independent prayer/resource UI usable on a transient failure.
     }
   }
 
@@ -158,16 +218,11 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               ),
               const SizedBox(height: 16),
               _CompactPrayerStrip(prayer: _prayer),
-              if (widget.isPatient && _patientDay != null) ...[
-                const SizedBox(height: 14),
-                _PatientHomeSummary(dayFuture: _patientDay!),
-              ],
-              if (widget.isSignedInMember || widget.isPatient) ...[
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/my-routines'),
-                  icon: const Icon(Icons.checklist_rtl_rounded),
-                  label: const Text('আমার ব্যক্তিগত রুটিন'),
+              if (_upcoming != null) ...[
+                const SizedBox(height: 12),
+                _UnifiedNextTasks(
+                  future: _upcoming!,
+                  isPatient: widget.isPatient,
                 ),
               ],
               const SizedBox(height: 22),
@@ -436,66 +491,102 @@ String _prayerLabel(String id) => switch (id) {
   _ => id,
 };
 
-class _PatientHomeSummary extends StatelessWidget {
-  const _PatientHomeSummary({required this.dayFuture});
+class _HomeTasksData {
+  const _HomeTasksData({
+    required this.actions,
+    this.patientDay,
+    this.planUnavailable = false,
+    this.personalUnavailable = false,
+  });
 
-  final Future<PatientDay> dayFuture;
+  final List<HomeNextAction> actions;
+  final PatientDay? patientDay;
+  final bool planUnavailable;
+  final bool personalUnavailable;
+}
+
+class _UnifiedNextTasks extends StatelessWidget {
+  const _UnifiedNextTasks({
+    required this.future,
+    required this.isPatient,
+  });
+
+  final Future<_HomeTasksData> future;
+  final bool isPatient;
 
   @override
   Widget build(BuildContext context) => SukunSurface(
+    key: const Key('home-unified-next-tasks'),
     tone: SukunSurfaceTone.soft,
     padding: const EdgeInsets.all(14),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'আজকের কাজ',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            TextButton(
-              onPressed: () => context.push('/patient/today'),
-              child: const Text('সব কাজ দেখুন'),
-            ),
-          ],
+        Text(
+          'আপনার পরবর্তী কাজ',
+          style: Theme.of(context).textTheme.titleMedium,
         ),
-        FutureBuilder<PatientDay>(
-          future: dayFuture,
+        const SizedBox(height: 7),
+        FutureBuilder<_HomeTasksData>(
+          future: future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('কাজের সারাংশ আনা হচ্ছে…');
+              return const Text('আপনার করণীয় খোঁজা হচ্ছে…');
             }
-            if (snapshot.hasError) {
-              return const Text('এখন কাজের সারাংশ আনা যাচ্ছে না।');
+            if (snapshot.hasError || snapshot.data == null) {
+              return const Text('এখন কাজগুলো আনা যাচ্ছে না। পরে আবার চেষ্টা করুন।');
             }
-            final day = snapshot.data!;
-            if (day.activePlan == null) {
-              return const Text('আপনার জন্য এখনো কোনো পরিকল্পনা চালু হয়নি।');
-            }
+            final data = snapshot.data!;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${day.tasks.length}টির মধ্যে ${day.completedCount}টি সম্পন্ন',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: day.completionRatio,
-                  borderRadius: BorderRadius.circular(12),
-                  minHeight: 5,
-                ),
-                if (day.nextTask != null) ...[
-                  const SizedBox(height: 8),
+                if (data.patientDay?.activePlan != null) ...[
                   Text(
-                    'পরবর্তী কাজ: ${day.nextTask!.action.title}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    'আজকের পরিকল্পনা: ${data.patientDay!.completedCount}/${data.patientDay!.tasks.length} সম্পন্ন',
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  const SizedBox(height: 5),
+                  LinearProgressIndicator(
+                    value: data.patientDay!.completionRatio,
+                  ),
+                  const SizedBox(height: 7),
                 ],
+                if (data.actions.isEmpty)
+                  const Text('এই মুহূর্তে কোনো বাকি কাজ নেই।'),
+                for (final action in data.actions.take(3))
+                  ListTile(
+                    key: Key('upcoming-${action.id}'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(
+                      action.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      '${action.origin} · ${HomeNextActions.dueLabel(action)}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push(action.route),
+                  ),
+                if (data.planUnavailable || data.personalUnavailable)
+                  const Text(
+                    'কিছু কাজ লোড হয়নি। নিচের রুটিন বা পরিকল্পনা খুলে দেখুন।',
+                  ),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    if (isPatient)
+                      TextButton(
+                        onPressed: () => context.push('/patient/today'),
+                        child: const Text('সব রোগীর কাজ'),
+                      ),
+                    TextButton(
+                      onPressed: () => context.push('/my-routines'),
+                      child: const Text('আমার রুটিন'),
+                    ),
+                  ],
+                ),
               ],
             );
           },
