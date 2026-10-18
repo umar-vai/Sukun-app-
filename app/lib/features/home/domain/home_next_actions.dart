@@ -146,8 +146,9 @@ abstract final class HomeNextActions {
         hour > 23 ||
         minute > 59 ||
         hour < 0 ||
-        minute < 0)
+        minute < 0) {
       return null;
+    }
 
     try {
       tz_data.initializeTimeZones();
