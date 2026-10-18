@@ -32,6 +32,10 @@ void main() {
             builder: (_, _) => const Text('Resources route'),
           ),
           GoRoute(
+            path: '/resources/ruqyah',
+            builder: (_, _) => const Text('Ruqyah route'),
+          ),
+          GoRoute(
             path: '/announcements',
             builder: (_, _) => const Text('Notices route'),
           ),
@@ -47,6 +51,16 @@ void main() {
       );
       expect(find.text('Android অ্যাপ শীঘ্রই'), findsWidgets);
       expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        find.text('রুকইয়াহ রিসোর্স দেখুন'),
+        500,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('রুকইয়াহ রিসোর্স দেখুন'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ruqyah route'), findsOneWidget);
+      router.go('/');
+      await tester.pumpAndSettle();
       await tester.tap(find.text('লগইন'));
       await tester.pumpAndSettle();
       expect(find.text('Login route'), findsOneWidget);
