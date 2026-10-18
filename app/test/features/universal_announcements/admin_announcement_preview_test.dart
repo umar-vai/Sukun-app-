@@ -20,6 +20,9 @@ class _PreviewRepository implements AnnouncementRepository {
   Future<List<UniversalAnnouncement>> published() async => [];
 
   @override
+  Future<List<UniversalAnnouncement>> recentPublished() async => [];
+
+  @override
   Future<UniversalAnnouncement> save(AnnouncementDraft draft) async {
     saves++;
     throw StateError('Preview must not save.');
