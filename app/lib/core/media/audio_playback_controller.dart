@@ -126,7 +126,6 @@ class AudioPlaybackController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   AudioPlayer get player => _player;
   LinkedResource? get resource => _resource;
   bool get hasSelection => _resource != null || _quranTitle != null;
