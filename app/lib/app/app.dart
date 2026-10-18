@@ -171,30 +171,30 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
       valueListenable: BengaliFontSettings.instance,
       builder: (context, selectedFont, _) =>
           ValueListenableBuilder<AppDisplayPreferences>(
-        valueListenable: AppDisplaySettings.instance,
-        builder: (context, display, _) => MaterialApp.router(
-          title: 'Sukun Life',
-          debugShowCheckedModeBanner: false,
-          theme: SukunTheme.light(
-            bengaliFont: selectedFont,
-            bengaliScale: display.bengaliScale,
-          ),
-          darkTheme: SukunTheme.dark(
-            bengaliFont: selectedFont,
-            bengaliScale: display.bengaliScale,
-          ),
-          themeMode: display.themeMode,
-          locale: const Locale('bn', 'BD'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: ref.watch(appRouterProvider),
-          builder: (context, child) => AndroidUpdateAutoPopup(
-            child: UniversalNoticeAutoPopup(
-              child: Stack(children: [?child, const GlobalAudioDock()]),
+            valueListenable: AppDisplaySettings.instance,
+            builder: (context, display, _) => MaterialApp.router(
+              title: 'Sukun Life',
+              debugShowCheckedModeBanner: false,
+              theme: SukunTheme.light(
+                bengaliFont: selectedFont,
+                bengaliScale: display.bengaliScale,
+              ),
+              darkTheme: SukunTheme.dark(
+                bengaliFont: selectedFont,
+                bengaliScale: display.bengaliScale,
+              ),
+              themeMode: display.themeMode,
+              locale: const Locale('bn', 'BD'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: ref.watch(appRouterProvider),
+              builder: (context, child) => AndroidUpdateAutoPopup(
+                child: UniversalNoticeAutoPopup(
+                  child: Stack(children: [?child, const GlobalAudioDock()]),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 }
