@@ -72,7 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path.startsWith('/my-routines') ||
             path == '/progress' ||
             path == '/account' ||
-            path.startsWith('/settings/')) {
+            path == '/settings/notifications') {
           return '/';
         }
         return null;
@@ -84,7 +84,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isSharedUserRoute =
           path == '/progress' ||
           path == '/account' ||
-          path.startsWith('/settings/');
+          path == '/settings/notifications';
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
       final isOtpRoute = path == '/login/otp';
