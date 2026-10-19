@@ -27,12 +27,15 @@ enum SukunAccentPalette {
     (SukunAccentPalette.sukunBlue, Brightness.dark) => const Color(0xFF243848),
     (SukunAccentPalette.calmTeal, Brightness.light) => const Color(0xFFE4F4EF),
     (SukunAccentPalette.calmTeal, Brightness.dark) => const Color(0xFF253D39),
-    (SukunAccentPalette.twilightPlum, Brightness.light) => const Color(0xFFF0EAF8),
-    (SukunAccentPalette.twilightPlum, Brightness.dark) => const Color(0xFF352C42),
+    (SukunAccentPalette.twilightPlum, Brightness.light) => const Color(
+      0xFFF0EAF8,
+    ),
+    (SukunAccentPalette.twilightPlum, Brightness.dark) => const Color(
+      0xFF352C42,
+    ),
   };
 
-  Color onContainer(Brightness brightness) =>
-      brightness == Brightness.light
+  Color onContainer(Brightness brightness) => brightness == Brightness.light
       ? const Color(0xFF142C34)
       : const Color(0xFFF2F7FA);
 }
