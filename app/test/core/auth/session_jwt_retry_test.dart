@@ -11,10 +11,7 @@ void main() {
       load: () async {
         attempts++;
         if (attempts == 1) {
-          throw PostgrestException(
-            message: 'Invalid JWT',
-            code: 'PGRST301',
-          );
+          throw PostgrestException(message: 'Invalid JWT', code: 'PGRST301');
         }
         return 'patient';
       },
@@ -33,10 +30,7 @@ void main() {
     await expectLater(
       retryRoleLookupOnJwtFailure<void>(
         load: () async {
-          throw PostgrestException(
-            message: 'Permission denied',
-            code: '42501',
-          );
+          throw PostgrestException(message: 'Permission denied', code: '42501');
         },
         refresh: () async {
           refreshes++;
