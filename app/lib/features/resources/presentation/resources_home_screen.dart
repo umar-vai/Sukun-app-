@@ -397,8 +397,9 @@ class ResourceCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     resource.title,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: SukunColors.muted),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
                 if (resource.summary?.isNotEmpty == true) ...[
@@ -418,7 +419,10 @@ class ResourceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ],
       ),
     );

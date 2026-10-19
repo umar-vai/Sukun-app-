@@ -175,6 +175,9 @@ jobs:
           flutter test --platform chrome \
             test/core/config/web_preview_config_test.dart \
             test/app/role_routing_test.dart \
+            test/app/role_navigation_shell_test.dart \
+            test/core/widgets/global_audio_dock_test.dart \
+            test/core/widgets/palette_navigation_test.dart \
             test/app/preauth_protected_routes_test.dart \
             test/features/auth/member_signup_screen_test.dart \
             test/features/patient_care/patient_scaffold_test.dart \
@@ -232,6 +235,14 @@ jobs:
           email_otp=false
           phone_otp=false
           google_oauth=false
+          # PR artifacts use the isolated staging backend: real Flutter UI,
+          # public publishable key, no production patients or admin credentials.
+          # Main Pages deploys retain their existing production/guest policy.
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            environment=staging
+            url=https://qacklgqvxvjjzsimjoip.supabase.co
+            key=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          fi
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
             for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
               case "${!flag}" in
@@ -335,6 +346,91 @@ jobs:
             "$(git rev-parse HEAD)" "${{ steps.preview-config.outputs.backend_mode }}" \
             "$ENABLE_MEMBER_SIGNUP" "$ENABLE_EMAIL_OTP" "$ENABLE_PHONE_OTP" "$ENABLE_GOOGLE_OAUTH" \
             > build/web/preview-build.json
+
+      - name: Capture isolated Guest web screenshots for UI review
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$browser"
+          qa_root="$(mktemp -d)"
+          mkdir -p "$qa_root/Sukun-app-" "$GITHUB_WORKSPACE/qa-screenshots"
+          cp -a build/web/. "$qa_root/Sukun-app-/"
+          python3 "$GITHUB_WORKSPACE/.github/scripts/serve_flutter_qa.py" "$qa_root" 8794 > /tmp/sukun-guest-qa-http.log 2>&1 &
+          server_pid="$!"
+          trap 'kill "$server_pid" 2>/dev/null || true; rm -rf "$qa_root"' EXIT
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS http://127.0.0.1:8794/Sukun-app-/index.html >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          # Direct Flutter deep links must return index.html, never 404.
+          curl -fsS http://127.0.0.1:8794/Sukun-app-/resources/quran/2 | grep -Fq '<html'
+          for spec in 360x760 430x932 1280x800; do
+            width="${spec%x*}"
+            height="${spec#*x}"
+            timeout 55s "$browser" --headless=new --no-sandbox               --disable-dev-shm-usage --hide-scrollbars               --enable-unsafe-swiftshader --use-gl=angle               --use-angle=swiftshader               --virtual-time-budget=14000 --window-size="$width,$height"               --screenshot="$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"               http://127.0.0.1:8794/Sukun-app/               > /tmp/sukun-chrome-$spec.log 2>&1
+            test -s "$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"
+          done
+          # Seed the real app's persisted Light/Dark setting on the SAME
+          # localhost origin, then redirect to Flutter's HASH route. This
+          # avoids Chrome's unrelated --force-dark-mode page auto-darkening.
+          # These are Guest Quran screens only, not authenticated role QA.
+          for mode in light dark; do
+            cat > "$qa_root/Sukun-app-/_qa-quran-$mode.html" <<EOF
+          <!doctype html><html><meta charset="utf-8"><script>
+          localStorage.setItem('flutter.sukun_display_mode_v1', JSON.stringify('$mode'));
+          location.replace('/Sukun-app-/#/resources/quran/2');
+          </script></html>
+          EOF
+            for spec in 430x932 1280x800; do
+              width="${spec%x*}"
+              height="${spec#*x}"
+              timeout 55s "$browser" --headless=new --no-sandbox \
+                --disable-dev-shm-usage --hide-scrollbars \
+                --enable-unsafe-swiftshader --use-gl=angle \
+                --use-angle=swiftshader \
+                --virtual-time-budget=18000 \
+                --window-size="$width,$height" \
+                --screenshot="$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png" \
+                "http://127.0.0.1:8794/Sukun-app-/_qa-quran-$mode.html" \
+                > "/tmp/sukun-quran-$mode-$spec.log" 2>&1
+              test -s "$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png"
+            done
+          done
+          timeout 55s "$browser" --headless=new --no-sandbox \
+                --disable-dev-shm-usage --hide-scrollbars \
+                --enable-unsafe-swiftshader --use-gl=angle \
+                --use-angle=swiftshader "${flags[@]}" \
+                --virtual-time-budget=18000 \
+                --window-size="$width,$height" \
+                --screenshot="$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png" \
+                http://127.0.0.1:8794/Sukun-app-/resources/quran/2 \
+                > "/tmp/sukun-quran-$mode-$spec.log" 2>&1
+              test -s "$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png"
+            done
+          done
+          timeout 55s "$browser" --headless=new --no-sandbox --disable-dev-shm-usage --enable-unsafe-swiftshader --virtual-time-budget=14000 --dump-dom http://127.0.0.1:8794/Sukun-app/ > "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html" 2>/tmp/sukun-chrome-dom.log
+          if grep -Fqi 'Error response' "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html"; then
+            echo 'Guest screenshot route rendered HTTP error instead of Flutter.' >&2
+            exit 1
+          fi
+          if ! grep -Eq 'flutter-view|flt-glass-pane' "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html"; then
+            echo 'Guest screenshot browser did not initialize Flutter.' >&2
+            exit 1
+          fi
+
+      - name: Upload Guest screenshot evidence (review required)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-guest-ui-review
+          path: qa-screenshots/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Configure optional scoped Web Push assets
         shell: bash

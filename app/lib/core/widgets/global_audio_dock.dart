@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// Keep the player constrained to its *content height*. A Positioned widget
 /// anchored only by bottom/left/right gives its child almost the full screen
@@ -16,9 +17,11 @@ class AudioDockPositioner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Bottom navigation is visible at desktop widths too. Reserve one
+    // consistent clearance for its safe area and interactive controls.
     final bottom =
         MediaQuery.paddingOf(context).bottom +
-        (MediaQuery.sizeOf(context).width < 700 ? 78.0 : 12.0);
+        SukunBottomNavigation.audioDockClearance;
     return Positioned(
       bottom: bottom,
       left: 12,
@@ -58,6 +61,10 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
         unawaited(controller.stopAndClear());
       }
     });
+    // When typing, avoid placing the player over fields or the soft keyboard.
+    if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+      return const SizedBox.shrink();
+    }
     final scheme = Theme.of(context).colorScheme;
     return AudioDockPositioner(
       child: TooltipVisibility(

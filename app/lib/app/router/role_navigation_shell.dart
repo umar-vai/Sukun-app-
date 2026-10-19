@@ -44,7 +44,7 @@ class RoleNavigationShell extends StatelessWidget {
           : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (path != '/resources')
+                if (path != '/resources' && !path.startsWith('/resources/'))
                   SafeArea(
                     top: false,
                     bottom: false,
@@ -76,6 +76,20 @@ class RoleNavigationShell extends StatelessWidget {
                     ),
                   ),
                 SukunBottomNavigation(
+                  leadingAction: path.startsWith('/resources/')
+                      ? IconButton(
+                          key: const Key('navigation-back'),
+                          tooltip: 'ফিরুন',
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go(navigationParent(path, session));
+                            }
+                          },
+                          icon: const Icon(Icons.arrow_back_rounded),
+                        )
+                      : null,
                   selectedIndex: navigationIndex(path, session),
                   destinations: destinations,
                   onSelected: (index) => context.go(routes[index]),

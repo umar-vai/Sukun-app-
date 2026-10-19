@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 void main() {
   testWidgets('floating audio dock occupies only its own height on desktop', (
@@ -33,7 +34,7 @@ void main() {
     final frame = find.byType(AudioDockPositioner);
     final layout = find.descendant(of: frame, matching: find.byType(Align));
     expect(tester.getSize(layout).height, 76);
-    expect(tester.getRect(layout).bottom, 888);
+    expect(tester.getRect(layout).bottom, 802);
     expect(tester.getSize(find.byKey(const Key('mini-player'))).width, 550);
   });
 
@@ -66,7 +67,7 @@ void main() {
       matching: find.byType(Align),
     );
     expect(tester.getSize(layout).height, 160);
-    expect(tester.getRect(layout).bottom, 766);
+    expect(tester.getRect(layout).bottom, 746);
   });
 
   testWidgets(
@@ -117,7 +118,7 @@ void main() {
       );
       expect(tester.getSize(outerAlign.first).height, 150);
       expect(tester.getSize(find.byType(Slider)).height, 40);
-      expect(tester.getRect(outerAlign.first).top, greaterThan(700));
+      expect(tester.getRect(outerAlign.first).top, greaterThan(600));
 
       await tester.drag(find.byType(Slider), const Offset(100, 0));
       await tester.pump();
@@ -171,8 +172,50 @@ void main() {
       matching: find.byType(Align),
     );
     expect(tester.getSize(outerAlign.first).height, 150);
-    expect(tester.getRect(outerAlign.first).bottom, 766);
+    expect(tester.getRect(outerAlign.first).bottom, 746);
   });
+
+  testWidgets(
+    'floating audio player never covers bottom navigation on desktop',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Stack(
+            children: [
+              Scaffold(
+                body: const SizedBox.expand(),
+                bottomNavigationBar: SukunBottomNavigation(
+                  selectedIndex: 0,
+                  destinations: const [
+                    SukunNavDestination(
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: 'হোম',
+                    ),
+                    SukunNavDestination(
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person,
+                      label: 'অ্যাকাউন্ট',
+                    ),
+                  ],
+                  onSelected: (_) {},
+                ),
+              ),
+              const AudioDockPositioner(
+                child: SizedBox(key: Key('playing'), height: 76),
+              ),
+            ],
+          ),
+        ),
+      );
+      final dock = tester.getRect(find.byKey(const Key('playing')));
+      final bar = tester.getRect(find.byType(SukunBottomNavigation));
+      expect(dock.bottom, lessThan(bar.top));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('hovering dock controls never creates a tooltip overlay', (
     tester,

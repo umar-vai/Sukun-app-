@@ -17,7 +17,9 @@ abstract final class SukunTheme {
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
         primary: SukunColors.sukunBlue,
-        onPrimary: Colors.white,
+        onPrimary: SukunColors.nightNavy,
+        primaryContainer: SukunColors.softBlue,
+        onPrimaryContainer: SukunColors.deepTide,
         secondary: SukunColors.deepTide,
         onSecondary: Colors.white,
         surface: SukunColors.surface,
@@ -71,7 +73,7 @@ abstract final class SukunTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SukunColors.sukunBlue,
-          foregroundColor: Colors.white,
+          foregroundColor: SukunColors.nightNavy,
           minimumSize: const Size(48, 54),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
@@ -161,7 +163,7 @@ abstract final class SukunTheme {
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: SukunColors.sukunBlue,
-        foregroundColor: Colors.white,
+        foregroundColor: SukunColors.nightNavy,
         elevation: 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
@@ -197,6 +199,8 @@ abstract final class SukunTheme {
       colorScheme: const ColorScheme.dark(
         primary: SukunColors.sukunBlue,
         onPrimary: Colors.black,
+        primaryContainer: surfaceLow,
+        onPrimaryContainer: lightText,
         secondary: Color(0xFF87CFEF),
         surface: surface,
         onSurface: lightText,

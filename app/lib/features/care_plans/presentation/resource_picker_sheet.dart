@@ -259,7 +259,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                       IconButton(
                         tooltip: 'বন্ধ করুন',
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: SukunColors.nightNavy,
+                        ),
                       ),
                     ],
                   ),
@@ -305,7 +308,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                               ),
                         icon: const Icon(Icons.chevron_left_rounded),
                       ),
-                      Text('${_sectionIndex + 1}/${sections.length}'),
+                      Text(
+                        '${_sectionIndex + 1}/${sections.length}',
+                        style: const TextStyle(color: SukunColors.nightNavy),
+                      ),
                       IconButton(
                         key: const Key('resource-section-next'),
                         tooltip: 'পরের বিভাগ',
@@ -533,7 +539,10 @@ class _SectionCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text('${section.count}'),
+                Text(
+                  '${section.count}',
+                  style: const TextStyle(color: SukunColors.nightNavy),
+                ),
               ],
             ),
           ),
@@ -655,8 +664,10 @@ class _PickerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Disabled entries stay readable; the lock icon and disabled tap
+    // communicate restricted/unverified resources without fading text.
     return Opacity(
-      opacity: enabled ? 1 : .62,
+      opacity: 1,
       child: Material(
         color: selected ? SukunColors.mist : Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -693,8 +704,10 @@ class _PickerCard extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: SukunColors.nightNavy,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(

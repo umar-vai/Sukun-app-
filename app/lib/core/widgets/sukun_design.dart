@@ -90,9 +90,8 @@ class SukunSurface extends StatelessWidget {
     final color = switch (tone) {
       SukunSurfaceTone.white =>
         night ? theme.colorScheme.surface : Colors.white,
-      SukunSurfaceTone.soft =>
-        night ? theme.colorScheme.surfaceContainerLow : SukunColors.paleBlue,
-      SukunSurfaceTone.blue => SukunColors.sukunBlue,
+      SukunSurfaceTone.soft => theme.colorScheme.primaryContainer,
+      SukunSurfaceTone.blue => theme.colorScheme.primary,
       SukunSurfaceTone.navy => SukunColors.nightNavy,
       SukunSurfaceTone.warning =>
         night ? theme.colorScheme.surfaceContainerLow : SukunColors.warningSoft,
@@ -252,14 +251,14 @@ class SukunIconBadge extends StatelessWidget {
   const SukunIconBadge({
     super.key,
     required this.icon,
-    this.color = SukunColors.deepTide,
-    this.backgroundColor = SukunColors.softBlue,
+    this.color,
+    this.backgroundColor,
     this.size = 48,
   });
 
   final IconData icon;
-  final Color color;
-  final Color backgroundColor;
+  final Color? color;
+  final Color? backgroundColor;
   final double size;
 
   @override
@@ -267,11 +266,15 @@ class SukunIconBadge extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: backgroundColor,
+      color: backgroundColor ?? Theme.of(context).colorScheme.primaryContainer,
       borderRadius: BorderRadius.circular(size * 0.34),
     ),
     alignment: Alignment.center,
-    child: Icon(icon, color: color, size: size * 0.48),
+    child: Icon(
+      icon,
+      color: color ?? Theme.of(context).colorScheme.onPrimaryContainer,
+      size: size * 0.48,
+    ),
   );
 }
 
@@ -290,7 +293,10 @@ class SukunStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (background, foreground) = switch (tone) {
-      SukunStatusTone.brand => (SukunColors.softBlue, SukunColors.deepTide),
+      SukunStatusTone.brand => (
+        Theme.of(context).colorScheme.primaryContainer,
+        Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
       SukunStatusTone.success => (SukunColors.successSoft, SukunColors.success),
       SukunStatusTone.warning => (
         SukunColors.warningSoft,
@@ -666,16 +672,22 @@ class SukunBottomNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.destinations,
     required this.onSelected,
+    this.leadingAction,
   });
+
+  /// The bar is 70 high plus 8/10 safe-area margins. A floating player also
+  /// needs a small gap to avoid obscuring navigation across desktop and mobile.
+  static const double audioDockClearance = 98;
 
   final int selectedIndex;
   final List<SukunNavDestination> destinations;
   final ValueChanged<int> onSelected;
+  final Widget? leadingAction;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: SukunColors.canvas,
+      color: Theme.of(context).scaffoldBackgroundColor,
       boxShadow: [
         BoxShadow(
           color: SukunColors.nightNavy.withValues(alpha: 0.05),
@@ -691,12 +703,18 @@ class SukunBottomNavigation extends StatelessWidget {
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: SukunColors.border.withValues(alpha: 0.8)),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           children: [
+            if (leadingAction != null) ...[
+              SizedBox(width: 46, child: leadingAction),
+              const SizedBox(width: 3),
+            ],
             for (var index = 0; index < destinations.length; index++)
               Expanded(
                 child: _SukunNavItem(
@@ -735,7 +753,9 @@ class _SukunNavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? SukunColors.softBlue : Colors.transparent,
+          color: selected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -744,7 +764,9 @@ class _SukunNavItem extends StatelessWidget {
             Icon(
               selected ? destination.selectedIcon : destination.icon,
               size: 22,
-              color: selected ? SukunColors.deepTide : SukunColors.muted,
+              color: selected
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 3),
             FittedBox(
@@ -753,7 +775,9 @@ class _SukunNavItem extends StatelessWidget {
                 destination.label,
                 maxLines: 1,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: selected ? SukunColors.deepTide : SukunColors.muted,
+                  color: selected
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

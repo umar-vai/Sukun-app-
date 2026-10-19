@@ -5,6 +5,7 @@ import 'package:sukun_life/app/router/role_navigation_shell.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 void main() {
   test('deep links have a safe parent for each role', () {
@@ -100,7 +101,10 @@ void main() {
 
     expect(find.text('Detail'), findsOneWidget);
     expect(find.byKey(const Key('navigation-back')), findsOneWidget);
-    expect(find.byKey(const Key('navigation-home')), findsOneWidget);
+    // The Back action is now inside the same bottom bar (no second
+    // Back/Home strip above the navigation).
+    expect(find.byKey(const Key('navigation-home')), findsNothing);
+    expect(find.byType(SukunBottomNavigation), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.binding.setSurfaceSize(const Size(430, 932));
     await tester.pumpAndSettle();
@@ -118,5 +122,50 @@ void main() {
     await tester.tap(find.byKey(const Key('navigation-back')));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
+  });
+
+  testWidgets('all authenticated roles keep one accessible resource footer', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final session in <AppSession>[
+      const AppSession(role: UserRole.member, userId: 'synthetic-member'),
+      const AppSession(role: UserRole.patient, userId: 'synthetic-patient'),
+      const AppSession(role: UserRole.superAdmin, userId: 'synthetic-admin'),
+    ]) {
+      final router = GoRouter(
+        initialLocation: '/resources/detail',
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) => RoleNavigationShell(
+              path: state.uri.path,
+              session: session,
+              child: child,
+            ),
+            routes: [
+              GoRoute(
+                path: '/resources/detail',
+                builder: (context, state) =>
+                    const Scaffold(body: Text('Synthetic detail')),
+              ),
+            ],
+          ),
+        ],
+      );
+      for (final width in <double>[360, 430, 1280]) {
+        await tester.binding.setSurfaceSize(Size(width, 760));
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('navigation-back')), findsOneWidget);
+        expect(find.byKey(const Key('navigation-home')), findsNothing);
+        final footer = tester.widget<SukunBottomNavigation>(
+          find.byType(SukunBottomNavigation),
+        );
+        expect(footer.destinations, hasLength(4));
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      router.dispose();
+    }
   });
 }
