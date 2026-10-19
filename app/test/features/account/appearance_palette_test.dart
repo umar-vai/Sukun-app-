@@ -6,7 +6,9 @@ import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/features/account/presentation/app_appearance_settings_screen.dart';
 
 void main() {
-  testWidgets('theme choice is actionable and changes immediately', (tester) async {
+  testWidgets('theme choice is actionable and changes immediately', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await AppDisplaySettings.instance.setAccentPalette(
       SukunAccentPalette.sukunBlue,
@@ -16,7 +18,10 @@ void main() {
     );
     expect(find.byKey(const Key('accent-palette-sukunBlue')), findsOneWidget);
     expect(find.byKey(const Key('accent-palette-calmTeal')), findsOneWidget);
-    expect(find.byKey(const Key('accent-palette-twilightPlum')), findsOneWidget);
+    expect(
+      find.byKey(const Key('accent-palette-twilightPlum')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('accent-palette-calmTeal')));
     await tester.pump();
     expect(
