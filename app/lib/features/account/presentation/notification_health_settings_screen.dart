@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
-import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_coordinator.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
