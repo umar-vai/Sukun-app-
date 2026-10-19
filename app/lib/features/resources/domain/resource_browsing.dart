@@ -151,18 +151,12 @@ const duaAzkarNavigationGroups = <DuaAzkarNavigationGroup>[
   DuaAzkarNavigationGroup(
     slug: 'everyday',
     titleBn: 'দৈনন্দিন মাসনূন দোয়া',
-    categorySlugs: [
-      'dua-azkar-masnun',
-      'dua-azkar-travel',
-    ],
+    categorySlugs: ['dua-azkar-masnun', 'dua-azkar-travel'],
   ),
   DuaAzkarNavigationGroup(
     slug: 'support',
     titleBn: 'সুরক্ষা ও দুশ্চিন্তার দোয়া',
-    categorySlugs: [
-      'dua-azkar-protection',
-      'dua-azkar-distress',
-    ],
+    categorySlugs: ['dua-azkar-protection', 'dua-azkar-distress'],
   ),
 ];
 
