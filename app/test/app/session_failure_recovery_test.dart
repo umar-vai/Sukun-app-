@@ -65,7 +65,6 @@ void main() {
     expect(find.text('অ্যাকাউন্টে প্রবেশ'), findsOneWidget);
     expect(auth.signOutCalls, 0);
   });
-
 }
 
 final class _FailThenRecoverAuthRepository implements AuthRepository {
