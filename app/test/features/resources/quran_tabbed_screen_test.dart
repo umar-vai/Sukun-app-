@@ -18,6 +18,8 @@ void main() {
     expect(quranArabicFontSize(width: 390, scale: 1), 28);
     expect(quranArabicFontSize(width: 390, scale: 1.5), 42);
     expect(quranArabicFontSize(width: 1280, scale: 1.25), 40);
+    expect(quranBengaliTranslationFontSize(1), 15);
+    expect(quranBengaliTranslationFontSize(1.4), closeTo(21, 0.001));
   });
 
   testWidgets('Quran opens first with a separate Ruqyah Ayat tab', (
