@@ -20,11 +20,7 @@ class FlutterQaHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         requested = urlsplit(self.path).path
         target = self.root.joinpath(requested.lstrip("/"))
-        if (
-            requested.startswith("/Sukun-app-/")
-            and not target.exists()
-            and not Path(requested).suffix
-        ):
+        if not target.exists() and not Path(requested).suffix:
             self.path = "/Sukun-app-/index.html"
         return super().do_GET()
 
