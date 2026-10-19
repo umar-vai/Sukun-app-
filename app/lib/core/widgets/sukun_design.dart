@@ -90,9 +90,8 @@ class SukunSurface extends StatelessWidget {
     final color = switch (tone) {
       SukunSurfaceTone.white =>
         night ? theme.colorScheme.surface : Colors.white,
-      SukunSurfaceTone.soft =>
-        night ? theme.colorScheme.surfaceContainerLow : SukunColors.paleBlue,
-      SukunSurfaceTone.blue => SukunColors.sukunBlue,
+      SukunSurfaceTone.soft => theme.colorScheme.primaryContainer,
+      SukunSurfaceTone.blue => theme.colorScheme.primary,
       SukunSurfaceTone.navy => SukunColors.nightNavy,
       SukunSurfaceTone.warning =>
         night ? theme.colorScheme.surfaceContainerLow : SukunColors.warningSoft,
@@ -252,14 +251,14 @@ class SukunIconBadge extends StatelessWidget {
   const SukunIconBadge({
     super.key,
     required this.icon,
-    this.color = SukunColors.deepTide,
-    this.backgroundColor = SukunColors.softBlue,
+    this.color,
+    this.backgroundColor,
     this.size = 48,
   });
 
   final IconData icon;
-  final Color color;
-  final Color backgroundColor;
+  final Color? color;
+  final Color? backgroundColor;
   final double size;
 
   @override
@@ -267,11 +266,15 @@ class SukunIconBadge extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: backgroundColor,
+      color: backgroundColor ?? Theme.of(context).colorScheme.primaryContainer,
       borderRadius: BorderRadius.circular(size * 0.34),
     ),
     alignment: Alignment.center,
-    child: Icon(icon, color: color, size: size * 0.48),
+    child: Icon(
+      icon,
+      color: color ?? Theme.of(context).colorScheme.onPrimaryContainer,
+      size: size * 0.48,
+    ),
   );
 }
 
@@ -290,7 +293,10 @@ class SukunStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (background, foreground) = switch (tone) {
-      SukunStatusTone.brand => (SukunColors.softBlue, SukunColors.deepTide),
+      SukunStatusTone.brand => (
+        Theme.of(context).colorScheme.primaryContainer,
+        Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
       SukunStatusTone.success => (SukunColors.successSoft, SukunColors.success),
       SukunStatusTone.warning => (
         SukunColors.warningSoft,
