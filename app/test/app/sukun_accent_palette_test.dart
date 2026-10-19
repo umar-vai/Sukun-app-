@@ -25,7 +25,10 @@ void main() {
           palette.container(brightness),
         );
         expect(theme.colorScheme.onPrimary, Colors.white);
-        expect(theme.floatingActionButtonTheme.backgroundColor, palette.primary(brightness));
+        expect(
+          theme.floatingActionButtonTheme.backgroundColor,
+          palette.primary(brightness),
+        );
       }
     }
   });
