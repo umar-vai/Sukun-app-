@@ -78,7 +78,6 @@ class _NotificationHealthSettingsScreenState
         _personalEnabled = personal;
         _care = care;
         _loading = false;
-        _notice = null;
       });
     } catch (_) {
       if (!mounted) return;
@@ -91,7 +90,10 @@ class _NotificationHealthSettingsScreenState
 
   Future<void> _change(Future<void> Function() operation) async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _notice = null;
+    });
     try {
       await operation();
     } catch (_) {
@@ -194,7 +196,7 @@ class _NotificationHealthSettingsScreenState
                           child: OutlinedButton.icon(
                             onPressed: _busy ? null : () => unawaited(_requestPermission()),
                             icon: const Icon(Icons.notifications_active_outlined),
-                            label: const Text('অনুমতি চাইুন'),
+                            label: const Text('অনুমতি দিন'),
                           ),
                         ),
                       if (android) ...[
@@ -217,8 +219,8 @@ class _NotificationHealthSettingsScreenState
                                 : () => unawaited(
                                       _change(() async {
                                         await ref
-                                            .read(notificationCoordinatorProvider)
-                                            .requestPreciseTimingAccess();
+                                            .read(localNotificationsGatewayProvider)
+                                            .requestPreciseSchedulingPermission();
                                       }),
                                     ),
                             child: const Text('পরীক্ষা করুন'),
