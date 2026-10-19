@@ -176,6 +176,8 @@ void main() {
       tester.widget<Text>(find.text('Unpublished test item')).style?.color,
       SukunColors.nightNavy,
     );
+    // Unpublished records remain unavailable rather than becoming selectable.
+    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
