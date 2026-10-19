@@ -38,15 +38,19 @@ abstract final class SukunPaletteTheme {
       colorScheme: scheme,
       filledButtonTheme: FilledButtonThemeData(
         style: (theme.filledButtonTheme.style ?? FilledButton.styleFrom())
-            .copyWith(backgroundColor: enabledAccent, foregroundColor: enabledWhite),
+            .copyWith(
+              backgroundColor: enabledAccent,
+              foregroundColor: enabledWhite,
+            ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: (theme.outlinedButtonTheme.style ?? OutlinedButton.styleFrom())
             .copyWith(foregroundColor: enabledAccent),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: (theme.textButtonTheme.style ?? TextButton.styleFrom())
-            .copyWith(foregroundColor: enabledAccent),
+        style: (theme.textButtonTheme.style ?? TextButton.styleFrom()).copyWith(
+          foregroundColor: enabledAccent,
+        ),
       ),
       floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
         backgroundColor: accent,
