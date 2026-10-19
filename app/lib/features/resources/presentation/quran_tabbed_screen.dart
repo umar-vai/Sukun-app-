@@ -18,6 +18,10 @@ Color quranHighlightedVerseBackground(ColorScheme scheme) =>
     ? scheme.surfaceContainerHigh
     : const Color(0xFFE1F3FC);
 
+@visibleForTesting
+double quranArabicFontSize({required double width, required double scale}) =>
+    (width < 500 ? 28 : 32) * AppDisplaySettings.validArabicScale(scale);
+
 /// Keeps the original Uthmani Arabic untouched and responds to the reader
 /// slider without requiring a refresh or a new Quran API request.
 @visibleForTesting
