@@ -81,6 +81,14 @@ jobs:
         shell: bash
         run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
 
+      - name: Staging-only synthetic patient sign-in HTTP + forged IP gate
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/patient-login-ip-canonicalization-gate-20261020'
+        shell: bash
+        env:
+          # Publishable only; no real patient ID/password or service role secret.
+          STAGING_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/staging_patient_signin_http_gate.py"
+
       - name: Inspect Production Google OAuth provider readiness (read-only)
         if: github.event_name == 'pull_request'
         shell: bash
