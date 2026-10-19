@@ -180,5 +180,4 @@ void main() {
     expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets);
     expect(tester.takeException(), isNull);
   });
-
 }
