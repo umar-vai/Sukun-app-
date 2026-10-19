@@ -727,9 +727,8 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                 children: [
                   Text(
                     key,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: scheme.onSurface,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: scheme.onSurface),
                   ),
                   const Spacer(),
                   if (highlighted)
