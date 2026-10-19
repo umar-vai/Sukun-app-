@@ -102,7 +102,10 @@ class _AppAppearanceSettingsScreenState
               max: 1.6,
               divisions: 15,
               label: '${(_arabicScale * 100).round()}%',
-              onChanged: (value) => setState(() => _arabicScale = value),
+              onChanged: (value) {
+                setState(() => _arabicScale = value);
+                AppDisplaySettings.instance.previewArabicScale(value);
+              },
               onChangeEnd: (value) =>
                   unawaited(AppDisplaySettings.instance.setArabicScale(value)),
             ),
