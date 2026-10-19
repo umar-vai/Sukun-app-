@@ -82,7 +82,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAdminRoute = path.startsWith('/admin');
       final isPersonalRoutineRoute = path.startsWith('/my-routines');
       final isSharedUserRoute =
-          path == '/progress' || path == '/account' || path.startsWith('/settings/');
+          path == '/progress' ||
+          path == '/account' ||
+          path.startsWith('/settings/');
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
       final isOtpRoute = path == '/login/otp';
@@ -197,7 +199,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/settings/notifications',
-            builder: (context, state) => const NotificationHealthSettingsScreen(),
+            builder: (context, state) =>
+                const NotificationHealthSettingsScreen(),
           ),
           GoRoute(
             path: '/settings/appearance',
