@@ -79,7 +79,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: SukunColors.deepTide.withValues(alpha: 0.18),
+                    color: scheme.primary.withValues(alpha: 0.18),
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -95,8 +95,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                     player.duration!.inMilliseconds)
                                 .clamp(0, 1),
                       minHeight: 3,
-                      color: SukunColors.deepTide,
-                      backgroundColor: SukunColors.softBlue,
+                      color: scheme.primary,
+                      backgroundColor: scheme.primaryContainer,
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
