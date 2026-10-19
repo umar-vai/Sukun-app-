@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_picker_sections.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
@@ -128,4 +129,54 @@ void main() {
     expect(find.text('Dua resource'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('fixed light resource picker stays readable in dark theme', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const draftResource = ContentResourceOption(
+      id: 'draft-qa',
+      title: 'Unpublished test item',
+      type: 'dua',
+      visibility: 'public',
+      status: 'draft',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showResourcePickerSheet(
+                context: context,
+                resources: const [_hadith, draftResource],
+                selectedId: '',
+              ),
+              child: const Text('Open picker'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open picker'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Text>(find.text('কোনো উপকরণ নয়')).style?.color,
+      SukunColors.nightNavy,
+    );
+    expect(
+      tester.widget<Text>(find.text('Hadith resource')).style?.color,
+      SukunColors.nightNavy,
+    );
+    expect(
+      tester.widget<Text>(find.text('Unpublished test item')).style?.color,
+      SukunColors.nightNavy,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
 }
