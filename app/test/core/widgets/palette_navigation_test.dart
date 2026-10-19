@@ -106,7 +106,9 @@ void main() {
                 ),
               ),
             );
-            await tester.pump();
+            // MaterialApp animates ThemeData changes across palette/brightness.
+            // Inspect the settled visual state, not the prior animation frame.
+            await tester.pumpAndSettle();
             final badgeIcon = tester.widget<Icon>(
               find.descendant(
                 of: find.byType(SukunIconBadge),
