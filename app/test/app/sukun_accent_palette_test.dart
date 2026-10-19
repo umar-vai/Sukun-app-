@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
-import 'package:sukun_life/app/theme/sukun_theme.dart';
+import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('approved Sukun blue remains the default light and dark accent', () {
-    expect(SukunTheme.light().colorScheme.primary, SukunColors.sukunBlue);
-    expect(SukunTheme.dark().colorScheme.primary, SukunColors.sukunBlue);
+  test('approved blue leaves the original theme untouched', () {
+    final light = ThemeData.light();
+    final dark = ThemeData.dark();
+    expect(SukunPaletteTheme.apply(light, SukunAccentPalette.sukunBlue), same(light));
+    expect(SukunPaletteTheme.apply(dark, SukunAccentPalette.sukunBlue), same(dark));
+    expect(SukunAccentPalette.sukunBlue.previewColor, SukunColors.sukunBlue);
   });
 
   test('optional palettes update semantic controls in both modes', () {
@@ -18,9 +21,10 @@ void main() {
       SukunAccentPalette.twilightPlum,
     ]) {
       for (final brightness in Brightness.values) {
-        final theme = brightness == Brightness.light
-            ? SukunTheme.light(accentPalette: palette)
-            : SukunTheme.dark(accentPalette: palette);
+        final base = brightness == Brightness.light
+            ? ThemeData.light()
+            : ThemeData.dark();
+        final theme = SukunPaletteTheme.apply(base, palette);
         expect(theme.colorScheme.primary, palette.primary(brightness));
         expect(
           theme.colorScheme.primaryContainer,
