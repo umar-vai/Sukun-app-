@@ -10,8 +10,14 @@ void main() {
   test('approved blue leaves the original theme untouched', () {
     final light = ThemeData.light();
     final dark = ThemeData.dark();
-    expect(SukunPaletteTheme.apply(light, SukunAccentPalette.sukunBlue), same(light));
-    expect(SukunPaletteTheme.apply(dark, SukunAccentPalette.sukunBlue), same(dark));
+    expect(
+      SukunPaletteTheme.apply(light, SukunAccentPalette.sukunBlue),
+      same(light),
+    );
+    expect(
+      SukunPaletteTheme.apply(dark, SukunAccentPalette.sukunBlue),
+      same(dark),
+    );
     expect(SukunAccentPalette.sukunBlue.previewColor, SukunColors.sukunBlue);
   });
 
