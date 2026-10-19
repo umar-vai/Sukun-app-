@@ -3,11 +3,14 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
+import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
+import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
     BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
     double bengaliScale = 1.0,
+    SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
     final base = ThemeData(
       useMaterial3: true,
@@ -39,7 +42,7 @@ abstract final class SukunTheme {
           displayColor: SukunColors.nightNavy,
         );
 
-    return base.copyWith(
+    final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: SukunColors.canvas,
@@ -176,11 +179,13 @@ abstract final class SukunTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+    return SukunPaletteTheme.apply(normalTheme, accentPalette);
   }
 
   static ThemeData dark({
     BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
     double bengaliScale = 1.0,
+    SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
     const background = Color(0xFF101C28);
     const surface = Color(0xFF1A2A38);
@@ -209,7 +214,7 @@ abstract final class SukunTheme {
           bodyColor: lightText,
           displayColor: lightText,
         );
-    return base.copyWith(
+    final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: background,
@@ -236,5 +241,6 @@ abstract final class SukunTheme {
         contentTextStyle: textTheme.bodyMedium,
       ),
     );
+    return SukunPaletteTheme.apply(normalTheme, accentPalette);
   }
 }

@@ -57,6 +57,37 @@ class QuranArabicVerseText extends StatelessWidget {
       );
 }
 
+/// Center long Arabic/Bengali reading lines on wide browser windows, while
+/// using all available space on compact phones.
+@visibleForTesting
+class QuranReaderViewport extends StatelessWidget {
+  const QuranReaderViewport({
+    super.key,
+    required this.children,
+    this.controller,
+    this.padding = EdgeInsets.zero,
+  });
+
+  static const double maxReadingWidth = 900;
+
+  final List<Widget> children;
+  final ScrollController? controller;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: maxReadingWidth),
+      child: ListView(
+        controller: controller,
+        padding: padding,
+        children: children,
+      ),
+    ),
+  );
+}
+
 /// Two independent catalogs: remote canonical Quran content, and the owner's
 /// 101 source-book editorial excerpts. Never identify the latter as complete
 /// canonical verses or silently mix them into the 114-surah browser.
@@ -589,7 +620,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
           ),
         ],
       ),
-      body: ListView(
+      body: QuranReaderViewport(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 210),
         children: [
@@ -717,7 +748,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: highlighted ? const Color(0xFF0A70A8) : Colors.transparent,
+            color: highlighted ? scheme.primary : Colors.transparent,
             width: highlighted ? 2 : 0,
           ),
         ),
@@ -736,10 +767,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                   ),
                   const Spacer(),
                   if (highlighted)
-                    const Icon(
-                      Icons.equalizer_rounded,
-                      color: Color(0xFF0A70A8),
-                    ),
+                    Icon(Icons.equalizer_rounded, color: scheme.primary),
                   if (audioUrl != null)
                     IconButton(
                       tooltip: highlighted && !controller.isQuranSequence

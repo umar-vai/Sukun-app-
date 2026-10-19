@@ -3,6 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 
 void main() {
+  testWidgets('Quran reading is centered and width-limited on desktop', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: QuranReaderViewport(children: [Text('قرآن')])),
+      ),
+    );
+    expect(
+      tester.getSize(find.byType(ListView)).width,
+      QuranReaderViewport.maxReadingWidth,
+    );
+
+    await tester.binding.setSurfaceSize(const Size(390, 760));
+    await tester.pump();
+    expect(tester.getSize(find.byType(ListView)).width, 390);
+  });
+
   test('playing Quran verse remains legible in dark theme', () {
     final dark = ThemeData.dark().colorScheme;
     final light = ThemeData.light().colorScheme;

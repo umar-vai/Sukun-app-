@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
+import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 
 /// Non-clinical, on-device appearance and reading controls.
@@ -60,6 +61,32 @@ class _AppAppearanceSettingsScreenState
               onSelectionChanged: (value) => unawaited(
                 AppDisplaySettings.instance.setThemeMode(value.first),
               ),
+            ),
+            const SizedBox(height: 20),
+            Text('রঙের থিম', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+            const Text(
+              'সুকুনের মূল নীল রং ডিফল্ট। আপনার পছন্দের শান্ত রঙ নির্বাচন করুন।',
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                for (final palette in SukunAccentPalette.values)
+                  ChoiceChip(
+                    key: Key('accent-palette-${palette.name}'),
+                    label: Text(palette.label),
+                    avatar: CircleAvatar(
+                      radius: 10,
+                      backgroundColor: palette.previewColor,
+                    ),
+                    selected: settings.accentPalette == palette,
+                    onSelected: (_) => unawaited(
+                      AppDisplaySettings.instance.setAccentPalette(palette),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 22),
             Text('পড়ার সুবিধা', style: Theme.of(context).textTheme.titleMedium),

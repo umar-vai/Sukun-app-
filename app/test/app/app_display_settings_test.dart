@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
+import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -46,14 +47,33 @@ void main() {
     },
   );
 
+  test('accent theme choice persists and unknown values fail safe', () async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = AppDisplaySettings.instance;
+    await settings.setAccentPalette(SukunAccentPalette.calmTeal);
+    final stored = await SharedPreferences.getInstance();
+    expect(stored.getString(AppDisplaySettings.paletteKey), 'calmTeal');
+    expect(settings.value.accentPalette, SukunAccentPalette.calmTeal);
+    expect(
+      AppDisplaySettings.parseAccentPalette('unrecognized'),
+      SukunAccentPalette.sukunBlue,
+    );
+    await settings.setAccentPalette(SukunAccentPalette.sukunBlue);
+  });
+
   test('invalid saved appearance values are safely reset', () async {
     SharedPreferences.setMockInitialValues({
       AppDisplaySettings.themeKey: 'unsupported_mode',
+      AppDisplaySettings.paletteKey: 'invalid_palette',
       AppDisplaySettings.bengaliKey: 0.1,
       AppDisplaySettings.arabicKey: 10.0,
     });
     await AppDisplaySettings.instance.load();
     expect(AppDisplaySettings.instance.value.themeMode, ThemeMode.system);
+    expect(
+      AppDisplaySettings.instance.value.accentPalette,
+      SukunAccentPalette.sukunBlue,
+    );
     expect(AppDisplaySettings.instance.value.bengaliScale, 1.0);
     expect(AppDisplaySettings.instance.value.arabicScale, 1.0);
   });

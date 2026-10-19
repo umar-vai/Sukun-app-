@@ -178,10 +178,12 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
               theme: SukunTheme.light(
                 bengaliFont: selectedFont,
                 bengaliScale: display.bengaliScale,
+                accentPalette: display.accentPalette,
               ),
               darkTheme: SukunTheme.dark(
                 bengaliFont: selectedFont,
                 bengaliScale: display.bengaliScale,
+                accentPalette: display.accentPalette,
               ),
               themeMode: display.themeMode,
               locale: const Locale('bn', 'BD'),
