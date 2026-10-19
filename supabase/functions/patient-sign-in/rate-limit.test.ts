@@ -35,14 +35,18 @@ Deno.test("only trusted proxy IP header is accepted", () => {
   assertEquals(rejected, true);
 });
 
+function requestWithTrustedIp(ip: string): Request {
+  return new Request("https://example.test", {
+    headers: { "cf-connecting-ip": ip },
+  });
+}
+
 Deno.test("IPv6 aliases share one rate-limit bucket", async () => {
   const secret = "test-only-secret-not-for-production-123456789";
-  const compressed = trustedClientIp(new Request("https://example.test", {
-    headers: { "cf-connecting-ip": "2001:db8::1" },
-  }));
-  const expanded = trustedClientIp(new Request("https://example.test", {
-    headers: { "cf-connecting-ip": "2001:0DB8:0:0:0:0:0:1" },
-  }));
+  const compressed = trustedClientIp(requestWithTrustedIp("2001:db8::1"));
+  const expanded = trustedClientIp(
+    requestWithTrustedIp("2001:0DB8:0:0:0:0:0:1"),
+  );
   assertEquals(compressed, "2001:db8::1");
   assertEquals(expanded, compressed);
   assertEquals(
@@ -50,9 +54,7 @@ Deno.test("IPv6 aliases share one rate-limit bucket", async () => {
     await hashedLimiterKey(secret, "ip", expanded),
   );
   assertEquals(
-    trustedClientIp(new Request("https://example.test", {
-      headers: { "cf-connecting-ip": "::ffff:192.0.2.1" },
-    })),
+    trustedClientIp(requestWithTrustedIp("::ffff:192.0.2.1")),
     "::ffff:c000:201",
   );
 });
@@ -71,18 +73,13 @@ Deno.test("reject malformed or non-canonical proxy IP headers", () => {
     ]
   ) {
     assertThrows(
-      () =>
-        trustedClientIp(new Request("https://example.test", {
-          headers: { "cf-connecting-ip": invalid },
-        })),
+      () => trustedClientIp(requestWithTrustedIp(invalid)),
       Error,
       "Trusted client IP unavailable",
     );
   }
   assertEquals(
-    trustedClientIp(new Request("https://example.test", {
-      headers: { "cf-connecting-ip": "203.0.113.9" },
-    })),
+    trustedClientIp(requestWithTrustedIp("203.0.113.9")),
     "203.0.113.9",
   );
 });
