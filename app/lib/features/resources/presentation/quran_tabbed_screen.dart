@@ -57,6 +57,37 @@ class QuranArabicVerseText extends StatelessWidget {
       );
 }
 
+/// Center long Arabic/Bengali reading lines on wide browser windows, while
+/// using all available space on compact phones.
+@visibleForTesting
+class QuranReaderViewport extends StatelessWidget {
+  const QuranReaderViewport({
+    super.key,
+    required this.children,
+    this.controller,
+    this.padding = EdgeInsets.zero,
+  });
+
+  static const double maxReadingWidth = 900;
+
+  final List<Widget> children;
+  final ScrollController? controller;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: maxReadingWidth),
+      child: ListView(
+        controller: controller,
+        padding: padding,
+        children: children,
+      ),
+    ),
+  );
+}
+
 /// Two independent catalogs: remote canonical Quran content, and the owner's
 /// 101 source-book editorial excerpts. Never identify the latter as complete
 /// canonical verses or silently mix them into the 114-surah browser.
@@ -589,7 +620,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
           ),
         ],
       ),
-      body: ListView(
+      body: QuranReaderViewport(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 210),
         children: [
