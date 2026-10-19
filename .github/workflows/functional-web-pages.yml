@@ -339,6 +339,42 @@ jobs:
             "$ENABLE_MEMBER_SIGNUP" "$ENABLE_EMAIL_OTP" "$ENABLE_PHONE_OTP" "$ENABLE_GOOGLE_OAUTH" \
             > build/web/preview-build.json
 
+      - name: Capture isolated Guest web screenshots for UI review
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$browser"
+          qa_root="$(mktemp -d)"
+          mkdir -p "$qa_root/Sukun-app-" "$GITHUB_WORKSPACE/qa-screenshots"
+          cp -a build/web/. "$qa_root/Sukun-app-/"
+          python3 -m http.server 8794 --bind 127.0.0.1 --directory "$qa_root" > /tmp/sukun-guest-qa-http.log 2>&1 &
+          server_pid="$!"
+          trap 'kill "$server_pid" 2>/dev/null || true; rm -rf "$qa_root"' EXIT
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS http://127.0.0.1:8794/Sukun-app-/index.html >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          for spec in 360x760 430x932 1280x800; do
+            width="${spec%x*}"
+            height="${spec#*x}"
+            timeout 55s "$browser" --headless=new --no-sandbox               --disable-dev-shm-usage --hide-scrollbars               --enable-unsafe-swiftshader --use-gl=angle               --use-angle=swiftshader               --virtual-time-budget=14000 --window-size="$width,$height"               --screenshot="$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"               http://127.0.0.1:8794/Sukun-app/               > /tmp/sukun-chrome-$spec.log 2>&1
+            test -s "$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"
+          done
+
+      - name: Upload Guest screenshot evidence (review required)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-guest-ui-review
+          path: qa-screenshots/
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Configure optional scoped Web Push assets
         shell: bash
         env:
