@@ -748,7 +748,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: highlighted ? const Color(0xFF0A70A8) : Colors.transparent,
+            color: highlighted ? scheme.primary : Colors.transparent,
             width: highlighted ? 2 : 0,
           ),
         ),
@@ -767,10 +767,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                   ),
                   const Spacer(),
                   if (highlighted)
-                    const Icon(
-                      Icons.equalizer_rounded,
-                      color: Color(0xFF0A70A8),
-                    ),
+                    Icon(Icons.equalizer_rounded, color: scheme.primary),
                   if (audioUrl != null)
                     IconButton(
                       tooltip: highlighted && !controller.isQuranSequence
