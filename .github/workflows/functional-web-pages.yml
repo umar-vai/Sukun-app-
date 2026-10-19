@@ -350,7 +350,7 @@ jobs:
           qa_root="$(mktemp -d)"
           mkdir -p "$qa_root/Sukun-app-" "$GITHUB_WORKSPACE/qa-screenshots"
           cp -a build/web/. "$qa_root/Sukun-app-/"
-          python3 -m http.server 8794 --bind 127.0.0.1 --directory "$qa_root" > /tmp/sukun-guest-qa-http.log 2>&1 &
+          python3 "$GITHUB_WORKSPACE/.github/scripts/serve_flutter_qa.py" "$qa_root" 8794 > /tmp/sukun-guest-qa-http.log 2>&1 &
           server_pid="$!"
           trap 'kill "$server_pid" 2>/dev/null || true; rm -rf "$qa_root"' EXIT
           for attempt in 1 2 3 4 5; do
@@ -359,12 +359,23 @@ jobs:
             fi
             sleep 1
           done
+          # Direct Flutter deep links must return index.html, never 404.
+          curl -fsS http://127.0.0.1:8794/Sukun-app-/resources/quran/2 | grep -Fq '<html'
           for spec in 360x760 430x932 1280x800; do
             width="${spec%x*}"
             height="${spec#*x}"
             timeout 55s "$browser" --headless=new --no-sandbox               --disable-dev-shm-usage --hide-scrollbars               --enable-unsafe-swiftshader --use-gl=angle               --use-angle=swiftshader               --virtual-time-budget=14000 --window-size="$width,$height"               --screenshot="$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"               http://127.0.0.1:8794/Sukun-app/               > /tmp/sukun-chrome-$spec.log 2>&1
             test -s "$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"
           done
+          timeout 55s "$browser" --headless=new --no-sandbox --disable-dev-shm-usage --enable-unsafe-swiftshader --virtual-time-budget=14000 --dump-dom http://127.0.0.1:8794/Sukun-app/ > "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html" 2>/tmp/sukun-chrome-dom.log
+          if grep -Fqi 'Error response' "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html"; then
+            echo 'Guest screenshot route rendered HTTP error instead of Flutter.' >&2
+            exit 1
+          fi
+          if ! grep -Eq 'flutter-view|flt-glass-pane' "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html"; then
+            echo 'Guest screenshot browser did not initialize Flutter.' >&2
+            exit 1
+          fi
 
       - name: Upload Guest screenshot evidence (review required)
         if: github.event_name == 'pull_request'
