@@ -32,8 +32,8 @@ void main() {
             palette.container(brightness),
             palette == SukunAccentPalette.sukunBlue
                 ? (brightness == Brightness.light
-                    ? SukunColors.deepTide
-                    : const Color(0xFFF2F7FA))
+                      ? SukunColors.deepTide
+                      : const Color(0xFFF2F7FA))
                 : palette.onContainer(brightness),
           ),
           greaterThanOrEqualTo(4.5),
