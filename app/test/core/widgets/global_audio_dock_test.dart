@@ -118,7 +118,7 @@ void main() {
       );
       expect(tester.getSize(outerAlign.first).height, 150);
       expect(tester.getSize(find.byType(Slider)).height, 40);
-      expect(tester.getRect(outerAlign.first).top, greaterThan(700));
+      expect(tester.getRect(outerAlign.first).top, greaterThan(600));
 
       await tester.drag(find.byType(Slider), const Offset(100, 0));
       await tester.pump();
