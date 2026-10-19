@@ -15,19 +15,19 @@ final class SupabaseAuthRepository implements AuthRepository {
     // StreamProvider cannot rely on a *new* broadcast Auth event arriving.
     // Listen to future events before reading the snapshot to avoid losing
     // sign-in/sign-out changes during setup.
-    final signals = replaySnapshotAndEvents<
-        ({String? userId, bool allowRefresh})>(
-      events: _client.auth.onAuthStateChange.map(
-        (state) => (
-          userId: state.session?.user.id,
-          allowRefresh: state.event != AuthChangeEvent.tokenRefreshed,
-        ),
-      ),
-      snapshot: () => (
-        userId: _client.auth.currentSession?.user.id,
-        allowRefresh: true,
-      ),
-    );
+    final signals =
+        replaySnapshotAndEvents<({String? userId, bool allowRefresh})>(
+          events: _client.auth.onAuthStateChange.map(
+            (state) => (
+              userId: state.session?.user.id,
+              allowRefresh: state.event != AuthChangeEvent.tokenRefreshed,
+            ),
+          ),
+          snapshot: () => (
+            userId: _client.auth.currentSession?.user.id,
+            allowRefresh: true,
+          ),
+        );
 
     return signals.asyncMap((signal) async {
       final userId = signal.userId;
