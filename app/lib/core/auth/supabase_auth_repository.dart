@@ -1,5 +1,6 @@
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_repository.dart';
+import 'package:sukun_life/core/auth/replayed_auth_stream.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,26 +11,45 @@ final class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Stream<AppSession> watchSession() {
-    return _client.auth.onAuthStateChange.asyncMap((authState) async {
-      final user = authState.session?.user;
-      if (user == null) {
-        return const AppSession.guest();
-      }
+    // Replaying the current session is essential: an invalidated Riverpod
+    // StreamProvider cannot rely on a *new* broadcast Auth event arriving.
+    // Listen to future events before reading the snapshot to avoid losing
+    // sign-in/sign-out changes during setup.
+    final signals = replaySnapshotAndEvents<
+        ({String? userId, bool allowRefresh})>(
+      events: _client.auth.onAuthStateChange.map(
+        (state) => (
+          userId: state.session?.user.id,
+          allowRefresh: state.event != AuthChangeEvent.tokenRefreshed,
+        ),
+      ),
+      snapshot: () => (
+        userId: _client.auth.currentSession?.user.id,
+        allowRefresh: true,
+      ),
+    );
 
-      // A restored browser session can briefly contain a stale access JWT
-      // while GoTrue refreshes it. Do not mistake a 401 role lookup for a
-      // missing patient/admin role. Refresh once, then retry both queries.
-      // A token-refreshed event must never trigger another refresh loop.
-      return retryRoleLookupOnJwtFailure(
-        load: () => _loadVerifiedSession(user.id),
+    return signals.asyncMap((signal) async {
+      final userId = signal.userId;
+      if (userId == null) return const AppSession.guest();
+
+      final verified = await retryRoleLookupOnJwtFailure(
+        load: () => _loadVerifiedSession(userId),
         refresh: () async {
           final refreshed = await _client.auth.refreshSession();
-          if (refreshed.session?.user.id != user.id) {
+          if (refreshed.session?.user.id != userId) {
             throw StateError('Verified session identity changed.');
           }
         },
-        allowRefresh: authState.event != AuthChangeEvent.tokenRefreshed,
+        allowRefresh: signal.allowRefresh,
       );
+
+      // An event may race with sign-out or account switching while queries
+      // are in flight. Never show the previous user's patient/admin UI.
+      if (_client.auth.currentSession?.user.id != userId) {
+        return const AppSession.guest();
+      }
+      return verified;
     });
   }
 
@@ -153,4 +173,12 @@ Future<T> retryRoleLookupOnJwtFailure<T>({
     await refresh();
     return load();
   }
+}
+
+String safeSessionFailureCode(Object error) {
+  if (error is PostgrestException) {
+    return isJwtLookupFailure(error) ? 'S-AUTH-01' : 'S-DATA-02';
+  }
+  if (error is AuthException) return 'S-AUTH-03';
+  return 'S-CLIENT-04';
 }
