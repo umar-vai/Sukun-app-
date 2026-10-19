@@ -550,9 +550,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                       initiallyExpanded:
                           _selectedSlug == null && group.slug == 'time-based',
                       title: Text(group.titleBn),
-                      subtitle: Text(
-                        '${group.categorySlugs.length}টি বিভাগ',
-                      ),
+                      subtitle: Text('${group.categorySlugs.length}টি বিভাগ'),
                       children: [
                         for (final entry in _entries.where(
                           (entry) => group.categorySlugs.contains(entry.slug),
