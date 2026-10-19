@@ -123,4 +123,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
   });
+
+  testWidgets('all authenticated roles keep one accessible resource footer', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final session in <AppSession>[
+      const AppSession(role: UserRole.member, userId: 'synthetic-member'),
+      const AppSession(role: UserRole.patient, userId: 'synthetic-patient'),
+      const AppSession(role: UserRole.superAdmin, userId: 'synthetic-admin'),
+    ]) {
+      final router = GoRouter(
+        initialLocation: '/resources/detail',
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) => RoleNavigationShell(
+              path: state.uri.path,
+              session: session,
+              child: child,
+            ),
+            routes: [
+              GoRoute(
+                path: '/resources/detail',
+                builder: (context, state) =>
+                    const Scaffold(body: Text('Synthetic detail')),
+              ),
+            ],
+          ),
+        ],
+      );
+      for (final width in <double>[360, 430, 1280]) {
+        await tester.binding.setSurfaceSize(Size(width, 760));
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('navigation-back')), findsOneWidget);
+        expect(find.byKey(const Key('navigation-home')), findsNothing);
+        final footer = tester.widget<SukunBottomNavigation>(
+          find.byType(SukunBottomNavigation),
+        );
+        expect(footer.destinations, hasLength(4));
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      router.dispose();
+    }
+  });
+
 }
