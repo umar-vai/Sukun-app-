@@ -22,6 +22,10 @@ Color quranHighlightedVerseBackground(ColorScheme scheme) =>
 double quranArabicFontSize({required double width, required double scale}) =>
     (width < 500 ? 28 : 32) * AppDisplaySettings.validArabicScale(scale);
 
+@visibleForTesting
+double quranBengaliTranslationFontSize(double scale) =>
+    15 * AppDisplaySettings.validBengaliScale(scale);
+
 /// Keeps the original Uthmani Arabic untouched and responds to the reader
 /// slider without requiring a refresh or a new Quran API request.
 @visibleForTesting
@@ -757,12 +761,17 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               QuranArabicVerseText(arabic: arabic),
               if (bangla.isNotEmpty) ...[
                 const SizedBox(height: 14),
-                Text(
-                  _plainText(bangla.first['text']),
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.7,
-                    color: scheme.onSurface,
+                ValueListenableBuilder<AppDisplayPreferences>(
+                  valueListenable: AppDisplaySettings.instance,
+                  builder: (context, settings, _) => Text(
+                    _plainText(bangla.first['text']),
+                    style: TextStyle(
+                      fontSize: quranBengaliTranslationFontSize(
+                        settings.bengaliScale,
+                      ),
+                      height: 1.7,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
