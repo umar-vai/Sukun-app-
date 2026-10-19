@@ -40,6 +40,32 @@ void main() {
       expect(auth.signOutCalls, 0);
     },
   );
+
+  testWidgets('error offers safe re-login without automatic sign-out', (
+    tester,
+  ) async {
+    final auth = _FailThenRecoverAuthRepository();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(auth)],
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pump();
+    auth.failInitialLookup();
+    await tester.pumpAndSettle();
+
+    expect(find.text('আবার লগইন করুন'), findsOneWidget);
+    expect(find.textContaining('S-CLIENT-04'), findsOneWidget);
+    await tester.tap(find.text('আবার লগইন করুন'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('অ্যাকাউন্টে প্রবেশ'), findsOneWidget);
+    expect(auth.signOutCalls, 0);
+  });
+
 }
 
 final class _FailThenRecoverAuthRepository implements AuthRepository {
