@@ -9,17 +9,17 @@ enum SukunAccentPalette {
   twilightPlum;
 
   String get label => switch (this) {
-    sukunBlue => 'সুকুন ব্লু',
-    calmTeal => 'শান্ত সবুজ',
-    twilightPlum => 'সন্ধ্যার বেগুনি',
+    SukunAccentPalette.sukunBlue => 'সুকুন ব্লু',
+    SukunAccentPalette.calmTeal => 'শান্ত সবুজ',
+    SukunAccentPalette.twilightPlum => 'সন্ধ্যার বেগুনি',
   };
 
   Color get previewColor => primary(Brightness.light);
 
   Color primary(Brightness brightness) => switch (this) {
-    sukunBlue => SukunColors.sukunBlue,
-    calmTeal => const Color(0xFF146F63),
-    twilightPlum => const Color(0xFF67418F),
+    SukunAccentPalette.sukunBlue => SukunColors.sukunBlue,
+    SukunAccentPalette.calmTeal => const Color(0xFF146F63),
+    SukunAccentPalette.twilightPlum => const Color(0xFF67418F),
   };
 
   Color container(Brightness brightness) => switch ((this, brightness)) {
