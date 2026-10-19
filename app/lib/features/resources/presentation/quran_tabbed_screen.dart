@@ -41,9 +41,10 @@ class QuranArabicVerseText extends StatelessWidget {
             key: const Key('quran-arabic-verse-text'),
             textAlign: TextAlign.right,
             style: GoogleFonts.amiriQuran(
-              fontSize:
-                  (MediaQuery.sizeOf(context).width < 500 ? 28 : 32) *
-                  settings.arabicScale,
+              fontSize: quranArabicFontSize(
+                width: MediaQuery.sizeOf(context).width,
+                scale: settings.arabicScale,
+              ),
               height: 2.15,
               color: Theme.of(context).colorScheme.onSurface,
             ),
