@@ -1,5 +1,20 @@
 # Patient Sign-In — Production Limiter Release Gate (20 October 2026)
 
+## Latest deployment status — 20 October 2026
+
+**Production limiter DEPLOYED; final authenticated browser acceptance NOT YET COMPLETE.**
+
+- User confirmed they configured `SIGN_IN_RATE_LIMIT_SECRET` in Production Edge Secrets without sharing the value. No secret bytes were read or checked through the connector; operational readiness was indirectly confirmed by the live synthetic HTTP gate.
+- Immediately before rollout, live Production `patient-sign-in` was **ACTIVE v8**, last updated 03 October 2026, not v7 as stated by the earlier historical audit. Its handler had no persistent rate-limit call.
+- Production was upgraded **v8 → v9** by promoting the six reviewed ACTIVE staging v3 files as one function, retaining `verify_jwt=false`. Immediate Supabase get/read-back verified **ACTIVE v9** with a byte-for-byte match for all six files. No database migrations, patient records, DNS or public site changes.
+- Production SQL `public.check_patient_login_rate_limit` exists and permits EXECUTE to `service_role` only (not `anon` or `authenticated`). The private attempts table has no direct anon/authenticated SELECT, INSERT, UPDATE or DELETE grants. A rollback-only production SQL test allowed synthetic attempts 1–8 and denied the 9th; **zero synthetic rows** remained after rollback.
+- Staging live HTTP gate previously passed 405/400/413/401, forged CF-IP rejection and synthetic attempt-nine 429. Post-rollout **Production HTTP gate step passed** in [GitHub Web run 39315812926](https://github.com/umar-vai/Sukun-app-/actions/runs/39315812926) for the same pre-auth synthetic cases, with no real Patient IDs, passwords or tokens.
+- `main` and the existing Flutter Pages URL were **not** deployed by the PR Web workflow. This backend deploy does not imply a new Web release.
+- **Outstanding acceptance:** a real synthetic Patient account's successful password login, token/session refresh, Patient A/B isolation with actual bearer tokens and browser role tests; optional controlled 503 fault/rollback rehearsal. If the first real synthetic Patient login fails or unexpected 503s occur, immediately roll back `patient-sign-in` to the verified pre-rollout v8 source/previous version.
+- This PR remains **draft** until release acceptance/owner review is complete. Automated security tests and deployment status are not a claim that every role or live browser workflow is accepted.
+
+## Historical investigation (before Production v9 deployment)
+
 ## Verified read-only baseline
 
 - One Flutter source repo: `umar-vai/Sukun-app-`; preserve the existing Pages preview. No APK/AAB/IPA and no changes to `sukunlife.com` or the legacy dashboard.
