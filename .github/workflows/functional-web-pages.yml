@@ -175,6 +175,9 @@ jobs:
           flutter test --platform chrome \
             test/core/config/web_preview_config_test.dart \
             test/app/role_routing_test.dart \
+            test/app/role_navigation_shell_test.dart \
+            test/core/widgets/global_audio_dock_test.dart \
+            test/core/widgets/palette_navigation_test.dart \
             test/app/preauth_protected_routes_test.dart \
             test/features/auth/member_signup_screen_test.dart \
             test/features/patient_care/patient_scaffold_test.dart \
