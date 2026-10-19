@@ -5,6 +5,7 @@ import 'package:sukun_life/app/router/role_navigation_shell.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 void main() {
   test('deep links have a safe parent for each role', () {
@@ -100,7 +101,10 @@ void main() {
 
     expect(find.text('Detail'), findsOneWidget);
     expect(find.byKey(const Key('navigation-back')), findsOneWidget);
-    expect(find.byKey(const Key('navigation-home')), findsOneWidget);
+    // The Back action is now inside the same bottom bar (no second
+    // Back/Home strip above the navigation).
+    expect(find.byKey(const Key('navigation-home')), findsNothing);
+    expect(find.byType(SukunBottomNavigation), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.binding.setSurfaceSize(const Size(430, 932));
     await tester.pumpAndSettle();
