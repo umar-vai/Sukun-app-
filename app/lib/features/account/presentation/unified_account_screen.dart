@@ -110,7 +110,8 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/settings/appearance'),
-                ),                const Divider(height: 1),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.notifications_active_outlined),
                   title: const Text('নোটিফিকেশন ও রিমাইন্ডার'),
