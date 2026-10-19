@@ -313,7 +313,7 @@ class _Section extends StatelessWidget {
             Text(
               label.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: SukunColors.deepTide,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
               ),
