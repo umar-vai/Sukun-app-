@@ -381,11 +381,11 @@ jobs:
           # These are Guest Quran screens only, not authenticated role QA.
           for mode in light dark; do
             cat > "$qa_root/Sukun-app-/_qa-quran-$mode.html" <<EOF
-<!doctype html><html><meta charset="utf-8"><script>
-localStorage.setItem('flutter.sukun_display_mode_v1', JSON.stringify('$mode'));
-location.replace('/Sukun-app-/#/resources/quran/2');
-</script></html>
-EOF
+            <!doctype html><html><meta charset="utf-8"><script>
+            localStorage.setItem('flutter.sukun_display_mode_v1', JSON.stringify('$mode'));
+            location.replace('/Sukun-app-/#/resources/quran/2');
+            </script></html>
+            EOF
             for spec in 430x932 1280x800; do
               width="${spec%x*}"
               height="${spec#*x}"
