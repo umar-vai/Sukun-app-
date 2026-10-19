@@ -102,4 +102,29 @@ expect(
     body,
     {"x-forwarded-for": "forged-not-an-ip"},
 )
-print("PASS: limited staging-only pre-auth and ingress HTTP gate")
+# Limit-test ONE new synthetic identifier in isolated staging only. The
+# earlier ordinary and XFF probes each consumed one failed attempt; the
+# malformed/valid CF-header probes were blocked or overwritten by the gateway.
+# To avoid relying on exact proxy policy, use a fresh ID for the threshold test.
+# Never do this against production or with any existing Patient account.
+limit_id = "QA-LIMIT-" + uuid.uuid4().hex[:12].upper()
+limit_body = json.dumps({
+    "identifier": limit_id,
+    "password": "synthetic-never-a-patient-pass",
+}).encode()
+for attempt in range(1, 9):
+    expect(
+        f"Separate synthetic identity attempt {attempt}/8",
+        401,
+        "invalid_credentials",
+        "POST",
+        limit_body,
+    )
+expect(
+    "Separate synthetic identity ninth attempt blocked",
+    429,
+    "too_many_attempts",
+    "POST",
+    limit_body,
+)
+print("PASS: staging-only pre-auth, ingress, and 429 HTTP gates")
