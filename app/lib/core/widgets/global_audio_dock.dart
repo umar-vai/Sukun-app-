@@ -102,10 +102,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                       padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.graphic_eq_rounded,
-                            color: scheme.primary,
-                          ),
+                          Icon(Icons.graphic_eq_rounded, color: scheme.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
