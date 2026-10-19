@@ -7,11 +7,11 @@ void main() {
     final dark = ThemeData.dark().colorScheme;
     final light = ThemeData.light().colorScheme;
     expect(quranHighlightedVerseBackground(light), const Color(0xFFE1F3FC));
+    expect(quranHighlightedVerseBackground(dark), dark.surfaceContainerHigh);
     expect(
       quranHighlightedVerseBackground(dark),
-      dark.surfaceContainerHigh,
+      isNot(const Color(0xFFE1F3FC)),
     );
-    expect(quranHighlightedVerseBackground(dark), isNot(const Color(0xFFE1F3FC)));
   });
 
   test('Arabic size honors live scale on narrow and wide readers', () {
