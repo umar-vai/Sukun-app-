@@ -31,3 +31,12 @@
 - Production and staging live `get_edge_function` + read-only database privilege inspections on 20 October 2026.
 - GitHub main source and `supabase/migrations/20261015133400_production_parity_core_functions.sql`.
 - Supabase guidance: https://supabase.com/docs/guides/functions/auth-headers and https://supabase.com/docs/guides/functions/examples/rate-limiting
+
+## Staging deployment evidence — 20 October 2026
+
+- Staging `qacklgqvxvjjzsimjoip` `patient-sign-in` was updated from **ACTIVE v2** to **ACTIVE v3** using the reviewed `rate-limit.ts` from this PR. The other five deployed function files were preserved unchanged, and `verify_jwt=false` was retained for this pre-authentication endpoint.
+- The connected Supabase read-back confirmed **ACTIVE v3**, an exact byte-for-byte match between its deployed `rate-limit.ts` and the reviewed PR source, and the existing `check_patient_login_rate_limit` RPC call still present in `index.ts`.
+- On staging a **synthetic rollback-only database** test exercised the existing persistent limiter: attempts 1–8 for one synthetic identity were allowed and attempt 9 denied. A follow-up query confirmed **zero** synthetic bucket rows after rollback. This is SQL-level behavior, **not** an HTTP proxy/spoofing test or a successful patient sign-in.
+- GitHub PR check run [39304408331](https://github.com/umar-vai/Sukun-app-/actions/runs/39304408331) completed **success**, covering Flutter, Backend/Edge, local RLS, resource guards and backend-free Web build at commit `37967e21`. The separate Flutter Web Preview workflow was still running during the status inspection; do not infer its completion from main CI.
+- **Still blocked:** trusted edge gateway overwrite/reject behavior for caller-supplied `cf-connecting-ip`, staging endpoint's synthetic HTTP 400/401/413/429/503 compatibility, password-success path, secrets readiness and a production rollout/rollback approval. Do not promote staging v3 to production until those are verified.
+- Production project `vydfafumxptanpkmtrpr` remains on the old ACTIVE `patient-sign-in` **v7** and was **not** changed by this staging deploy.
