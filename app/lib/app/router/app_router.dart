@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/auth/supabase_auth_repository.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/errors/friendly_failures.dart';
 import 'package:sukun_life/core/widgets/sukun_launch_screen.dart';
@@ -528,10 +529,28 @@ class _SessionLanding extends ConsumerWidget {
       // permanent error screen or silently downgrade their verified role.
       // Restart the role lookup; server-side RLS remains the authority.
       error: (error, stackTrace) => Scaffold(
-        body: AppErrorState(
-          message: 'অ্যাকাউন্টের তথ্য যাচাই করা যাচ্ছে না। সংযোগ ঠিক থাকলে আবার চেষ্টা করুন।',
-          showSafeMessage: true,
-          onRetry: () => ref.invalidate(appSessionProvider),
+        body: Column(
+          children: [
+            Expanded(
+              child: AppErrorState(
+                message:
+                    'অ্যাকাউন্টের তথ্য যাচাই করা যাচ্ছে না। সংযোগ ঠিক থাকলে আবার চেষ্টা করুন। (কোড: ${safeSessionFailureCode(error)})',
+                showSafeMessage: true,
+                onRetry: () => ref.invalidate(appSessionProvider),
+              ),
+            ),
+            // Re-entering credentials is a user-controlled escape hatch
+            // when a stored session cannot recover. Do not silently sign
+            // out, clear offline queues, or infer a patient/admin role.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: TextButton.icon(
+                onPressed: () => context.go('/login'),
+                icon: const Icon(Icons.login_rounded),
+                label: const Text('আবার লগইন করুন'),
+              ),
+            ),
+          ],
         ),
       ),
     );
