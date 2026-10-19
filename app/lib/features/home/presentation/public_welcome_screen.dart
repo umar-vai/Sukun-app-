@@ -95,9 +95,8 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                           SizedBox(height: small ? 42 : 64),
                           Text(
                             'সুকুন লাইফে যা পাবেন',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: SukunColors.nightNavy,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(color: SukunColors.nightNavy),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -360,9 +359,8 @@ class _WelcomeBenefit extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: SukunColors.nightNavy,
-            ),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: SukunColors.nightNavy),
           ),
           const SizedBox(height: 7),
           Text(
@@ -400,9 +398,8 @@ class _WelcomeAccess extends StatelessWidget {
           children: [
             Text(
               'আপনার পছন্দের জায়গা থেকে শুরু করুন',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: SukunColors.nightNavy,
-              ),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(color: SukunColors.nightNavy),
             ),
             const SizedBox(height: 5),
             const Text(
