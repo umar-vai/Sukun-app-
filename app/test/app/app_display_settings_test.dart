@@ -23,6 +23,26 @@ void main() {
     await prefs.setArabicScale(1.0);
   });
 
+  test('drag preview is immediate but never persisted before release', () async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = AppDisplaySettings.instance;
+    await settings.setBengaliScale(1.0);
+    await settings.setArabicScale(1.0);
+    settings.previewBengaliScale(1.3);
+    settings.previewArabicScale(1.4);
+    expect(settings.value.bengaliScale, 1.3);
+    expect(settings.value.arabicScale, 1.4);
+    final stored = await SharedPreferences.getInstance();
+    expect(stored.getDouble(AppDisplaySettings.bengaliKey), 1.0);
+    expect(stored.getDouble(AppDisplaySettings.arabicKey), 1.0);
+    await settings.setBengaliScale(1.3);
+    await settings.setArabicScale(1.4);
+    expect(stored.getDouble(AppDisplaySettings.bengaliKey), 1.3);
+    expect(stored.getDouble(AppDisplaySettings.arabicKey), 1.4);
+    await settings.setBengaliScale(1.0);
+    await settings.setArabicScale(1.0);
+  });
+
   test('invalid saved appearance values are safely reset', () async {
     SharedPreferences.setMockInitialValues({
       AppDisplaySettings.themeKey: 'unsupported_mode',
