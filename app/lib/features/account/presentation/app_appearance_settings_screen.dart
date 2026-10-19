@@ -65,7 +65,9 @@ class _AppAppearanceSettingsScreenState
             const SizedBox(height: 20),
             Text('রঙের থিম', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 6),
-            const Text('সুকুনের মূল নীল রং ডিফল্ট। আপনার পছন্দের শান্ত রঙ নির্বাচন করুন।'),
+            const Text(
+              'সুকুনের মূল নীল রং ডিফল্ট। আপনার পছন্দের শান্ত রঙ নির্বাচন করুন।',
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 9,
