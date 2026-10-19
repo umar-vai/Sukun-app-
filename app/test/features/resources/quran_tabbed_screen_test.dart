@@ -10,11 +10,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: QuranReaderViewport(
-            children: [Text('قرآن')],
-          ),
-        ),
+        home: Scaffold(body: QuranReaderViewport(children: [Text('قرآن')])),
       ),
     );
     expect(
