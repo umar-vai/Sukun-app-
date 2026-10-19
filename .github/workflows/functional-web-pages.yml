@@ -375,6 +375,27 @@ jobs:
             timeout 55s "$browser" --headless=new --no-sandbox               --disable-dev-shm-usage --hide-scrollbars               --enable-unsafe-swiftshader --use-gl=angle               --use-angle=swiftshader               --virtual-time-budget=14000 --window-size="$width,$height"               --screenshot="$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"               http://127.0.0.1:8794/Sukun-app/               > /tmp/sukun-chrome-$spec.log 2>&1
             test -s "$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"
           done
+          # Guest Quran deep-link captures use staging public scripture only.
+          # Dark mode respects the browser's prefers-color-scheme. Screenshots
+          # are evidence for review, NOT an authenticated role E2E approval.
+          for mode in light dark; do
+            flags=()
+            if [[ "$mode" == dark ]]; then flags+=(--force-dark-mode); fi
+            for spec in 430x932 1280x800; do
+              width="${spec%x*}"
+              height="${spec#*x}"
+              timeout 55s "$browser" --headless=new --no-sandbox \
+                --disable-dev-shm-usage --hide-scrollbars \
+                --enable-unsafe-swiftshader --use-gl=angle \
+                --use-angle=swiftshader "${flags[@]}" \
+                --virtual-time-budget=18000 \
+                --window-size="$width,$height" \
+                --screenshot="$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png" \
+                http://127.0.0.1:8794/Sukun-app-/resources/quran/2 \
+                > "/tmp/sukun-quran-$mode-$spec.log" 2>&1
+              test -s "$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png"
+            done
+          done
           timeout 55s "$browser" --headless=new --no-sandbox --disable-dev-shm-usage --enable-unsafe-swiftshader --virtual-time-budget=14000 --dump-dom http://127.0.0.1:8794/Sukun-app/ > "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html" 2>/tmp/sukun-chrome-dom.log
           if grep -Fqi 'Error response' "$GITHUB_WORKSPACE/qa-screenshots/guest-dom.html"; then
             echo 'Guest screenshot route rendered HTTP error instead of Flutter.' >&2
