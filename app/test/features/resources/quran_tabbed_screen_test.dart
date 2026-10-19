@@ -3,6 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 
 void main() {
+  test('playing Quran verse remains legible in dark theme', () {
+    final dark = ThemeData.dark().colorScheme;
+    final light = ThemeData.light().colorScheme;
+    expect(quranHighlightedVerseBackground(light), const Color(0xFFE1F3FC));
+    expect(
+      quranHighlightedVerseBackground(dark),
+      dark.surfaceContainerHigh,
+    );
+    expect(quranHighlightedVerseBackground(dark), isNot(const Color(0xFFE1F3FC)));
+  });
+
+  test('Arabic size honors live scale on narrow and wide readers', () {
+    expect(quranArabicFontSize(width: 390, scale: 1), 28);
+    expect(quranArabicFontSize(width: 390, scale: 1.5), 42);
+    expect(quranArabicFontSize(width: 1280, scale: 1.25), 40);
+  });
+
   testWidgets('Quran opens first with a separate Ruqyah Ayat tab', (
     tester,
   ) async {
