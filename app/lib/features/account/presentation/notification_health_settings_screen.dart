@@ -62,7 +62,9 @@ class _NotificationHealthSettingsScreenState
       await gateway.initialize();
       final permission = await gateway.isPermissionGranted();
       final precise = await gateway.canSchedulePrecisely();
-      final personal = await ref.read(personalReminderServiceProvider).isEnabled();
+      final personal = await ref
+          .read(personalReminderServiceProvider)
+          .isEnabled();
       final isPatient = ref.read(appSessionProvider).value?.isPatient == true;
       final care = isPatient
           ? await ref.read(notificationCoordinatorProvider).status()
@@ -97,7 +99,9 @@ class _NotificationHealthSettingsScreenState
       await operation();
     } catch (_) {
       if (mounted) {
-        setState(() => _notice = 'সেটিংস পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।');
+        setState(
+          () => _notice = 'সেটিংস পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।',
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -110,7 +114,9 @@ class _NotificationHealthSettingsScreenState
     await gateway.initialize();
     if (!await gateway.requestPermission()) {
       if (mounted) {
-        setState(() => _notice = 'অনুমতি পাওয়া যায়নি। ডিভাইসের সেটিংস পরীক্ষা করুন।');
+        setState(
+          () => _notice = 'অনুমতি পাওয়া যায়নি। ডিভাইসের সেটিংস পরীক্ষা করুন।',
+        );
       }
     }
   });
@@ -193,8 +199,12 @@ class _NotificationHealthSettingsScreenState
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                           child: OutlinedButton.icon(
-                            onPressed: _busy ? null : () => unawaited(_requestPermission()),
-                            icon: const Icon(Icons.notifications_active_outlined),
+                            onPressed: _busy
+                                ? null
+                                : () => unawaited(_requestPermission()),
+                            icon: const Icon(
+                              Icons.notifications_active_outlined,
+                            ),
                             label: const Text('অনুমতি দিন'),
                           ),
                         ),
@@ -216,12 +226,14 @@ class _NotificationHealthSettingsScreenState
                             onPressed: _busy
                                 ? null
                                 : () => unawaited(
-                                      _change(() async {
-                                        await ref
-                                            .read(localNotificationsGatewayProvider)
-                                            .requestPreciseSchedulingPermission();
-                                      }),
-                                    ),
+                                    _change(() async {
+                                      await ref
+                                          .read(
+                                            localNotificationsGatewayProvider,
+                                          )
+                                          .requestPreciseSchedulingPermission();
+                                    }),
+                                  ),
                             child: const Text('পরীক্ষা করুন'),
                           ),
                         ),
@@ -241,7 +253,9 @@ class _NotificationHealthSettingsScreenState
                       SwitchListTile(
                         key: const Key('personal-reminder-opt-in'),
                         title: const Text('নিজের তৈরি রুটিন'),
-                        subtitle: const Text('আপনি তৈরি করা আমলের সময়সূচি অনুযায়ী'),
+                        subtitle: const Text(
+                          'আপনি তৈরি করা আমলের সময়সূচি অনুযায়ী',
+                        ),
                         value: _personalEnabled ?? false,
                         onChanged: _busy || _loading || _personalEnabled == null
                             ? null
@@ -252,7 +266,9 @@ class _NotificationHealthSettingsScreenState
                         SwitchListTile(
                           key: const Key('patient-care-reminder-opt-in'),
                           title: const Text('অনুমোদিত চিকিৎসা পরিকল্পনা'),
-                          subtitle: const Text('আপনার নিজের রোগী পরিকল্পনার রিমাইন্ডার'),
+                          subtitle: const Text(
+                            'আপনার নিজের রোগী পরিকল্পনার রিমাইন্ডার',
+                          ),
                           value: _care?.enabled ?? false,
                           onChanged: _busy || _loading || _care == null
                               ? null
@@ -261,7 +277,9 @@ class _NotificationHealthSettingsScreenState
                         if (_care != null && !_care!.lastSyncSucceeded)
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                            child: Text('শেষবার রিমাইন্ডার আপডেট সফল হয়নি। আবার পরীক্ষা করুন।'),
+                            child: Text(
+                              'শেষবার রিমাইন্ডার আপডেট সফল হয়নি। আবার পরীক্ষা করুন।',
+                            ),
                           ),
                       ],
                       const Divider(height: 1),
