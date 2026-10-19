@@ -45,3 +45,11 @@ An existing GitHub Actions Flutter Web artifact (guest/local backend build from 
 ## State legend
 
 `Source changed` != `CI passed` != `Web built` != `Pages deployed` != `Browser manually reviewed`. Leave production `main`, existing `sukunlife.com`, and current Pages site untouched until gates are met.
+
+## Staging-connected Quran browser artifact run — 20 October 2026
+
+- Browser acceptance requires **real Flutter Web**, not separate guest HTML. The PR's existing Web Preview workflow is amended to compile the same Flutter source with isolated staging's **publishable** key on PR builds. Default-branch Pages deployment remains production-backed and unchanged.
+- Existing Guest home screenshot captures are retained. Added direct Guest `/resources/quran/2` screenshot capture in **Light and Dark** at 430×932 and 1280×800; artifacts must be inspected before visual approval.
+- This capture is public scripture only. It is **not** Patient/Admin browser acceptance and does not prove that the *playing* Ayah, audio controls, keyboard or modal variants pass manual accessibility review.
+- PR #162 temporarily targets `main` to trigger isolated PR CI. **Retarget to #161 after verification**; do not merge this stacked feature directly into main.
+- Previous Chrome/widget suites for #159/#161/#162 passed on their prior source heads. All modified workflow code is pending new exact-commit CI/Flutter Web verification.
