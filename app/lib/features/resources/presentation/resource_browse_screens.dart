@@ -536,23 +536,56 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SukunFilterPill(
-                    label: 'All',
-                    selected: _selectedSlug == null,
-                    onTap: () => setState(() => _selectedSlug = null),
-                  ),
-                  for (final entry in _entries)
-                    SukunFilterPill(
-                      label: entry.titleBn,
-                      selected: _selectedSlug == entry.slug,
-                      onTap: () => setState(() => _selectedSlug = entry.slug),
+              if (isDua) ...[
+                TextButton.icon(
+                  key: const Key('dua-show-all'),
+                  onPressed: () => setState(() => _selectedSlug = null),
+                  icon: const Icon(Icons.all_inclusive_rounded),
+                  label: const Text('সব দোয়া ও আযকার'),
+                ),
+                for (final group in duaAzkarNavigationGroups)
+                  Card(
+                    child: ExpansionTile(
+                      key: PageStorageKey<String>('dua-group-${group.slug}'),
+                      initiallyExpanded:
+                          _selectedSlug == null && group.slug == 'time-based',
+                      title: Text(group.titleBn),
+                      subtitle: Text('${group.categorySlugs.length}টি বিভাগ'),
+                      children: [
+                        for (final entry in _entries.where(
+                          (entry) => group.categorySlugs.contains(entry.slug),
+                        ))
+                          ListTile(
+                            key: Key('dua-category-${entry.slug}'),
+                            selected: _selectedSlug == entry.slug,
+                            title: Text(entry.titleBn),
+                            trailing: _selectedSlug == entry.slug
+                                ? const Icon(Icons.check_circle_outline)
+                                : const Icon(Icons.chevron_right_rounded),
+                            onTap: () =>
+                                setState(() => _selectedSlug = entry.slug),
+                          ),
+                      ],
                     ),
-                ],
-              ),
+                  ),
+              ] else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    SukunFilterPill(
+                      label: 'All',
+                      selected: _selectedSlug == null,
+                      onTap: () => setState(() => _selectedSlug = null),
+                    ),
+                    for (final entry in _entries)
+                      SukunFilterPill(
+                        label: entry.titleBn,
+                        selected: _selectedSlug == entry.slug,
+                        onTap: () => setState(() => _selectedSlug = entry.slug),
+                      ),
+                  ],
+                ),
               if (!isDua &&
                   (_selectedSlug == null ||
                       _selectedSlug == 'ruqyah-ayat')) ...[

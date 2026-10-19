@@ -124,6 +124,42 @@ const duaAzkarTaxonomy = <ResourceTaxonomyEntry>[
   ),
 ];
 
+/// Display-only grouping for the seven existing approved dua categories.
+/// Group names organize navigation, not religious claims or new source text.
+class DuaAzkarNavigationGroup {
+  const DuaAzkarNavigationGroup({
+    required this.slug,
+    required this.titleBn,
+    required this.categorySlugs,
+  });
+
+  final String slug;
+  final String titleBn;
+  final List<String> categorySlugs;
+}
+
+const duaAzkarNavigationGroups = <DuaAzkarNavigationGroup>[
+  DuaAzkarNavigationGroup(
+    slug: 'time-based',
+    titleBn: 'সময়ভিত্তিক আমল',
+    categorySlugs: [
+      'dua-azkar-morning',
+      'dua-azkar-evening',
+      'dua-azkar-sleep',
+    ],
+  ),
+  DuaAzkarNavigationGroup(
+    slug: 'everyday',
+    titleBn: 'দৈনন্দিন মাসনূন দোয়া',
+    categorySlugs: ['dua-azkar-masnun', 'dua-azkar-travel'],
+  ),
+  DuaAzkarNavigationGroup(
+    slug: 'support',
+    titleBn: 'সুরক্ষা ও দুশ্চিন্তার দোয়া',
+    categorySlugs: ['dua-azkar-protection', 'dua-azkar-distress'],
+  ),
+];
+
 const ruqyahTaxonomy = <ResourceTaxonomyEntry>[
   ResourceTaxonomyEntry(
     slug: 'ruqyah-ayat',
