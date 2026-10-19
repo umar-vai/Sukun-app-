@@ -80,7 +80,10 @@ class _AppAppearanceSettingsScreenState
               max: 1.4,
               divisions: 11,
               label: '${(_bengaliScale * 100).round()}%',
-              onChanged: (value) => setState(() => _bengaliScale = value),
+              onChanged: (value) {
+                setState(() => _bengaliScale = value);
+                AppDisplaySettings.instance.previewBengaliScale(value);
+              },
               onChangeEnd: (value) =>
                   unawaited(AppDisplaySettings.instance.setBengaliScale(value)),
             ),
