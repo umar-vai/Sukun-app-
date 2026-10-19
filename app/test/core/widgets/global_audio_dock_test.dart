@@ -175,46 +175,47 @@ void main() {
     expect(tester.getRect(outerAlign.first).bottom, 746);
   });
 
-  testWidgets('floating audio player never covers bottom navigation on desktop', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(1280, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Stack(
-          children: [
-            Scaffold(
-              body: const SizedBox.expand(),
-              bottomNavigationBar: SukunBottomNavigation(
-                selectedIndex: 0,
-                destinations: const [
-                  SukunNavDestination(
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
-                    label: 'হোম',
-                  ),
-                  SukunNavDestination(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    label: 'অ্যাকাউন্ট',
-                  ),
-                ],
-                onSelected: (_) {},
+  testWidgets(
+    'floating audio player never covers bottom navigation on desktop',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Stack(
+            children: [
+              Scaffold(
+                body: const SizedBox.expand(),
+                bottomNavigationBar: SukunBottomNavigation(
+                  selectedIndex: 0,
+                  destinations: const [
+                    SukunNavDestination(
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: 'হোম',
+                    ),
+                    SukunNavDestination(
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person,
+                      label: 'অ্যাকাউন্ট',
+                    ),
+                  ],
+                  onSelected: (_) {},
+                ),
               ),
-            ),
-            const AudioDockPositioner(
-              child: SizedBox(key: Key('playing'), height: 76),
-            ),
-          ],
+              const AudioDockPositioner(
+                child: SizedBox(key: Key('playing'), height: 76),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    final dock = tester.getRect(find.byKey(const Key('playing')));
-    final bar = tester.getRect(find.byType(SukunBottomNavigation));
-    expect(dock.bottom, lessThan(bar.top));
-    expect(tester.takeException(), isNull);
-  });
+      );
+      final dock = tester.getRect(find.byKey(const Key('playing')));
+      final bar = tester.getRect(find.byType(SukunBottomNavigation));
+      expect(dock.bottom, lessThan(bar.top));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('hovering dock controls never creates a tooltip overlay', (
     tester,
