@@ -53,3 +53,10 @@ An existing GitHub Actions Flutter Web artifact (guest/local backend build from 
 - This capture is public scripture only. It is **not** Patient/Admin browser acceptance and does not prove that the *playing* Ayah, audio controls, keyboard or modal variants pass manual accessibility review.
 - PR #162 temporarily targets `main` to trigger isolated PR CI. **Retarget to #161 after verification**; do not merge this stacked feature directly into main.
 - Previous Chrome/widget suites for #159/#161/#162 passed on their prior source heads. All modified workflow code is pending new exact-commit CI/Flutter Web verification.
+
+## Quran screenshot route correction — 20 October 2026
+
+- First staging-connected screenshots (Web run [39309189251](https://github.com/umar-vai/Sukun-app-/actions/runs/39309189251)) did **not** establish Quran visual acceptance. The browser URLs were path-form `/Sukun-app-/resources/quran/2`; this Flutter Web build uses hash navigation. Screenshots therefore showed Guest Home instead of Surah Al-Baqarah.
+- The `--force-dark-mode` browser flag also visibly altered the Guest Home labels instead of demonstrating the persisted in-app Dark Theme; do **not** attribute those screenshots to the Quran selected-ayah fix.
+- Corrected QA must seed the exact Flutter SharedPreferences theme key in same-origin isolated staging screenshots and navigate to **`/Sukun-app-/#/resources/quran/2`**. Re-review both actual Quran screen images before any manual visual approval.
+- This is an automated QA fidelity correction, not a claim of fixed app navigation or passing contrast. Authenticated role E2E remains pending.
