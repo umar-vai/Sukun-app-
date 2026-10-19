@@ -59,6 +59,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
         unawaited(controller.stopAndClear());
       }
     });
+    final scheme = Theme.of(context).colorScheme;
     return AudioDockPositioner(
       child: TooltipVisibility(
         visible: false,
@@ -72,7 +73,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
             final verse = controller.currentVerseKey;
             return Material(
               elevation: 12,
-              color: Colors.white,
+              color: scheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(18),
               clipBehavior: Clip.antiAlias,
               child: Container(
@@ -101,10 +102,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                       padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.graphic_eq_rounded,
-                            color: SukunColors.deepTide,
-                          ),
+                          Icon(Icons.graphic_eq_rounded, color: scheme.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -114,9 +112,10 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                   controller.currentTitle ?? 'অডিও',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
+                                    color: scheme.onSurface,
                                   ),
                                 ),
                                 Text(
@@ -138,7 +137,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                             icon: playing
                                 ? Icons.pause_circle_filled_rounded
                                 : Icons.play_circle_fill_rounded,
-                            color: SukunColors.deepTide,
+                            color: scheme.primary,
                             iconSize: 34,
                           ),
                           AudioDockIconAction(

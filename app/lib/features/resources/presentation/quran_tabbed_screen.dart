@@ -6,9 +6,56 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/features/resources/presentation/ruqyah_ayat_library.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+/// Playing verses must never use a pale surface with dark-theme white text.
+@visibleForTesting
+Color quranHighlightedVerseBackground(ColorScheme scheme) =>
+    scheme.brightness == Brightness.dark
+    ? scheme.surfaceContainerHigh
+    : const Color(0xFFE1F3FC);
+
+@visibleForTesting
+double quranArabicFontSize({required double width, required double scale}) =>
+    (width < 500 ? 28 : 32) * AppDisplaySettings.validArabicScale(scale);
+
+@visibleForTesting
+double quranBengaliTranslationFontSize(double scale) =>
+    15 * AppDisplaySettings.validBengaliScale(scale);
+
+/// Keeps the original Uthmani Arabic untouched and responds to the reader
+/// slider without requiring a refresh or a new Quran API request.
+@visibleForTesting
+class QuranArabicVerseText extends StatelessWidget {
+  const QuranArabicVerseText({required this.arabic, super.key});
+
+  final String arabic;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<AppDisplayPreferences>(
+        valueListenable: AppDisplaySettings.instance,
+        builder: (context, settings, _) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: SelectableText(
+            arabic,
+            key: const Key('quran-arabic-verse-text'),
+            textAlign: TextAlign.right,
+            style: GoogleFonts.amiriQuran(
+              fontSize: quranArabicFontSize(
+                width: MediaQuery.sizeOf(context).width,
+                scale: settings.arabicScale,
+              ),
+              height: 2.15,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+      );
+}
 
 /// Two independent catalogs: remote canonical Quran content, and the owner's
 /// 101 source-book editorial excerpts. Never identify the latter as complete
@@ -662,10 +709,11 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
     final controller = ref.read(audioPlaybackControllerProvider);
     final highlighted =
         controller.currentVerseKey == key && controller.player.playing;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       key: _verseKeys.putIfAbsent(key, GlobalKey.new),
       child: Card(
-        color: highlighted ? const Color(0xFFE1F3FC) : null,
+        color: highlighted ? quranHighlightedVerseBackground(scheme) : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
@@ -681,7 +729,11 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
             children: [
               Row(
                 children: [
-                  Text(key, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    key,
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: scheme.onSurface),
+                  ),
                   const Spacer(),
                   if (highlighted)
                     const Icon(
@@ -700,31 +752,27 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                         highlighted && !controller.isQuranSequence
                             ? Icons.pause_circle_outline
                             : Icons.play_circle_outline,
+                        color: scheme.onSurface,
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 12),
-              Directionality(
-                textDirection: TextDirection.rtl,
-                child: SelectableText(
-                  arabic,
-                  textAlign: TextAlign.right,
-                  // Keep the Uthmani text untouched; improve Arabic glyph
-                  // shaping and harakat clarity in the canonical surah reader.
-                  // Bengali translation and other screens retain their fonts.
-                  style: GoogleFonts.amiriQuran(
-                    fontSize: MediaQuery.sizeOf(context).width < 500 ? 28 : 32,
-                    height: 2.15,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
+              QuranArabicVerseText(arabic: arabic),
               if (bangla.isNotEmpty) ...[
                 const SizedBox(height: 14),
-                Text(
-                  _plainText(bangla.first['text']),
-                  style: const TextStyle(fontSize: 15, height: 1.7),
+                ValueListenableBuilder<AppDisplayPreferences>(
+                  valueListenable: AppDisplaySettings.instance,
+                  builder: (context, settings, _) => Text(
+                    _plainText(bangla.first['text']),
+                    style: TextStyle(
+                      fontSize: quranBengaliTranslationFontSize(
+                        settings.bengaliScale,
+                      ),
+                      height: 1.7,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ],
             ],
