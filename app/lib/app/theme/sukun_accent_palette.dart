@@ -23,12 +23,12 @@ enum SukunAccentPalette {
   };
 
   Color container(Brightness brightness) => switch ((this, brightness)) {
-    (sukunBlue, Brightness.light) => SukunColors.softBlue,
-    (sukunBlue, Brightness.dark) => const Color(0xFF243848),
-    (calmTeal, Brightness.light) => const Color(0xFFE4F4EF),
-    (calmTeal, Brightness.dark) => const Color(0xFF253D39),
-    (twilightPlum, Brightness.light) => const Color(0xFFF0EAF8),
-    (twilightPlum, Brightness.dark) => const Color(0xFF352C42),
+    (SukunAccentPalette.sukunBlue, Brightness.light) => SukunColors.softBlue,
+    (SukunAccentPalette.sukunBlue, Brightness.dark) => const Color(0xFF243848),
+    (SukunAccentPalette.calmTeal, Brightness.light) => const Color(0xFFE4F4EF),
+    (SukunAccentPalette.calmTeal, Brightness.dark) => const Color(0xFF253D39),
+    (SukunAccentPalette.twilightPlum, Brightness.light) => const Color(0xFFF0EAF8),
+    (SukunAccentPalette.twilightPlum, Brightness.dark) => const Color(0xFF352C42),
   };
 
   Color onContainer(Brightness brightness) =>
