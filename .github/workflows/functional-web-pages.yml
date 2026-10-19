@@ -235,6 +235,14 @@ jobs:
           email_otp=false
           phone_otp=false
           google_oauth=false
+          # PR artifacts use the isolated staging backend: real Flutter UI,
+          # public publishable key, no production patients or admin credentials.
+          # Main Pages deploys retain their existing production/guest policy.
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            environment=staging
+            url=https://qacklgqvxvjjzsimjoip.supabase.co
+            key=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          fi
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
             for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
               case "${!flag}" in
