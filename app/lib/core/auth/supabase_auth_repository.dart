@@ -16,35 +16,54 @@ final class SupabaseAuthRepository implements AuthRepository {
         return const AppSession.guest();
       }
 
-      final profile = await _client
-          .from('profiles')
-          .select('display_name,requires_credential_change')
-          .eq('id', user.id)
-          .maybeSingle();
-      final roleRows = await _client
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-      final roles = roleRows
-          .map((row) => UserRole.fromDatabaseValue(row['role'] as String?))
-          .toSet();
-
-      final role = roles.contains(UserRole.superAdmin)
-          ? UserRole.superAdmin
-          : roles.contains(UserRole.patient)
-          ? UserRole.patient
-          : roles.contains(UserRole.member)
-          ? UserRole.member
-          : UserRole.guest;
-
-      return AppSession(
-        role: role,
-        userId: user.id,
-        displayName: profile?['display_name'] as String?,
-        requiresCredentialChange:
-            profile?['requires_credential_change'] as bool? ?? false,
+      // A restored browser session can briefly contain a stale access JWT
+      // while GoTrue refreshes it. Do not mistake a 401 role lookup for a
+      // missing patient/admin role. Refresh once, then retry both queries.
+      // A token-refreshed event must never trigger another refresh loop.
+      return retryRoleLookupOnJwtFailure(
+        load: () => _loadVerifiedSession(user.id),
+        refresh: () async {
+          final refreshed = await _client.auth.refreshSession();
+          if (refreshed.session?.user.id != user.id) {
+            throw StateError('Verified session identity changed.');
+          }
+        },
+        allowRefresh: authState.event != AuthChangeEvent.tokenRefreshed,
       );
     });
+  }
+
+  Future<AppSession> _loadVerifiedSession(String userId) async {
+    final profile = await _client
+        .from('profiles')
+        .select('display_name,requires_credential_change')
+        .eq('id', userId)
+        .maybeSingle();
+    final roleRows = await _client
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+    final roles = roleRows
+        .map((row) => UserRole.fromDatabaseValue(row['role'] as String?))
+        .toSet();
+
+    final role = roles.contains(UserRole.superAdmin)
+        ? UserRole.superAdmin
+        : roles.contains(UserRole.patient)
+        ? UserRole.patient
+        : roles.contains(UserRole.member)
+        ? UserRole.member
+        : UserRole.guest;
+
+    // Roles are always loaded from RLS-visible server data, never from a
+    // cached token claim or client metadata.
+    return AppSession(
+      role: role,
+      userId: userId,
+      displayName: profile?['display_name'] as String?,
+      requiresCredentialChange:
+          profile?['requires_credential_change'] as bool? ?? false,
+    );
   }
 
   @override
@@ -115,4 +134,23 @@ final class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() => _client.auth.signOut();
+}
+
+bool isJwtLookupFailure(PostgrestException error) =>
+    const {'PGRST301', 'PGRST302', 'PGRST303'}.contains(error.code);
+
+/// Retry a role lookup at most once for a PostgREST JWT rejection. Other
+/// errors (including authorization/RLS and network failures) fail closed.
+Future<T> retryRoleLookupOnJwtFailure<T>({
+  required Future<T> Function() load,
+  required Future<void> Function() refresh,
+  bool allowRefresh = true,
+}) async {
+  try {
+    return await load();
+  } on PostgrestException catch (error) {
+    if (!allowRefresh || !isJwtLookupFailure(error)) rethrow;
+    await refresh();
+    return load();
+  }
 }
