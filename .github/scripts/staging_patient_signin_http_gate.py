@@ -73,13 +73,26 @@ expect("Synthetic invalid credentials", 401, "invalid_credentials", "POST", body
 # cf-connecting-ip, the handler rejects it with 503 instead of processing
 # credentials. A 401 is required to show upstream sanitizes/overwrites the
 # forged value. A 503 is an unsafe-or-unavailable ingress, not a success.
+# The gateway may reject a forged malformed header outright (403) or
+# replace it with its own trusted value (401 from the application). In either
+# case the malformed caller value must never arrive at trustedClientIp.
+label = "Forged malformed CF IP rejected or overwritten"
+status, code = probe(
+    label, "POST", body, {"cf-connecting-ip": "forged-not-an-ip"}
+)
+if not ((status, code) == (401, "invalid_credentials") or status == 403):
+    sys.exit(f"BLOCKED: {label} returned HTTP {status}/{code}")
+
+# Valid syntax is a stronger attacker test: a 401 could mean the gateway
+# silently FORWARDED the forged address, so require an explicit 403 reject.
+# If this fails, stop the production rollout pending definitive proxy proof.
 expect(
-    "Forged invalid CF IP must be overwritten",
-    401,
-    "invalid_credentials",
+    "Forged syntactically valid CF IP must be rejected",
+    403,
+    None,
     "POST",
     body,
-    {"cf-connecting-ip": "forged-not-an-ip"},
+    {"cf-connecting-ip": "203.0.113.77"},
 )
 expect(
     "Untrusted X-Forwarded-For must not affect login",
