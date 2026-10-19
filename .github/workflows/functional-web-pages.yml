@@ -375,16 +375,33 @@ jobs:
             timeout 55s "$browser" --headless=new --no-sandbox               --disable-dev-shm-usage --hide-scrollbars               --enable-unsafe-swiftshader --use-gl=angle               --use-angle=swiftshader               --virtual-time-budget=14000 --window-size="$width,$height"               --screenshot="$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"               http://127.0.0.1:8794/Sukun-app/               > /tmp/sukun-chrome-$spec.log 2>&1
             test -s "$GITHUB_WORKSPACE/qa-screenshots/guest-$spec.png"
           done
-          # Guest Quran deep-link captures use staging public scripture only.
-          # Dark mode respects the browser's prefers-color-scheme. Screenshots
-          # are evidence for review, NOT an authenticated role E2E approval.
+          # Seed the real app's persisted Light/Dark setting on the SAME
+          # localhost origin, then redirect to Flutter's HASH route. This
+          # avoids Chrome's unrelated --force-dark-mode page auto-darkening.
+          # These are Guest Quran screens only, not authenticated role QA.
           for mode in light dark; do
-            flags=()
-            if [[ "$mode" == dark ]]; then flags+=(--force-dark-mode); fi
+            cat > "$qa_root/Sukun-app-/_qa-quran-$mode.html" <<EOF
+<!doctype html><html><meta charset="utf-8"><script>
+localStorage.setItem('flutter.sukun_display_mode_v1', JSON.stringify('$mode'));
+location.replace('/Sukun-app-/#/resources/quran/2');
+</script></html>
+EOF
             for spec in 430x932 1280x800; do
               width="${spec%x*}"
               height="${spec#*x}"
               timeout 55s "$browser" --headless=new --no-sandbox \
+                --disable-dev-shm-usage --hide-scrollbars \
+                --enable-unsafe-swiftshader --use-gl=angle \
+                --use-angle=swiftshader \
+                --virtual-time-budget=18000 \
+                --window-size="$width,$height" \
+                --screenshot="$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png" \
+                "http://127.0.0.1:8794/Sukun-app-/_qa-quran-$mode.html" \
+                > "/tmp/sukun-quran-$mode-$spec.log" 2>&1
+              test -s "$GITHUB_WORKSPACE/qa-screenshots/quran-$mode-$spec.png"
+            done
+          done
+          timeout 55s "$browser" --headless=new --no-sandbox \
                 --disable-dev-shm-usage --hide-scrollbars \
                 --enable-unsafe-swiftshader --use-gl=angle \
                 --use-angle=swiftshader "${flags[@]}" \
