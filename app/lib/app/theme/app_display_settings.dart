@@ -63,6 +63,16 @@ class AppDisplaySettings extends ValueNotifier<AppDisplayPreferences> {
     await _persist(themeKey, mode.name);
   }
 
+  /// Update the reader immediately while a slider is being dragged.
+  /// Persist only on release to avoid writing to storage on every frame.
+  void previewBengaliScale(double scale) {
+    value = value.copyWith(bengaliScale: validBengaliScale(scale));
+  }
+
+  void previewArabicScale(double scale) {
+    value = value.copyWith(arabicScale: validArabicScale(scale));
+  }
+
   Future<void> setBengaliScale(double scale) async {
     value = value.copyWith(bengaliScale: validBengaliScale(scale));
     await _persist(bengaliKey, value.bengaliScale);
