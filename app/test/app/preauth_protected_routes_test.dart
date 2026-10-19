@@ -35,6 +35,30 @@ void main() {
     expect(find.text('আজকের কাজ'), findsNothing);
   });
 
+  testWidgets('unresolved identity cannot open private notification settings', (
+    tester,
+  ) async {
+    final changes = StreamController<AppSession>.broadcast(sync: true);
+    addTearDown(changes.close);
+    final container = ProviderContainer(
+      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pump();
+
+    final router = container.read(appRouterProvider);
+    router.go('/settings/notifications');
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('নোটিফিকেশন স্বাস্থ্য পরীক্ষা'), findsNothing);
+  });
+
   testWidgets('unresolved session never builds an admin deep link', (
     tester,
   ) async {

@@ -123,10 +123,10 @@ class _AppAppearanceSettingsScreenState
             ),
             ListTile(
               leading: const Icon(Icons.notifications_active_outlined),
-              title: const Text('আমার রুটিন রিমাইন্ডার'),
-              subtitle: const Text('সময়সূচি ও নোটিফিকেশন অনুমতি'),
+              title: const Text('নোটিফিকেশন ও সমস্যা সমাধান'),
+              subtitle: const Text('অনুমতি, রোগীর কাজ ও ব্যক্তিগত রিমাইন্ডার'),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.push('/my-routines'),
+              onTap: () => context.push('/settings/notifications'),
             ),
             const Text(
               'ব্রাউজার বন্ধ থাকলে নির্ভরযোগ্য রিমাইন্ডার দিতে অতিরিক্ত '

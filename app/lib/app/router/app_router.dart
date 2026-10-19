@@ -27,6 +27,7 @@ import 'package:sukun_life/features/personal_routines/presentation/my_routines_s
 import 'package:sukun_life/features/account/presentation/unified_account_screen.dart';
 import 'package:sukun_life/features/account/presentation/bengali_font_settings_screen.dart';
 import 'package:sukun_life/features/account/presentation/app_appearance_settings_screen.dart';
+import 'package:sukun_life/features/account/presentation/notification_health_settings_screen.dart';
 import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_action_detail_screen.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
@@ -70,7 +71,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path.startsWith('/admin') ||
             path.startsWith('/my-routines') ||
             path == '/progress' ||
-            path == '/account') {
+            path == '/account' ||
+            path == '/settings/notifications') {
           return '/';
         }
         return null;
@@ -79,7 +81,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPatientRoute = path.startsWith('/patient');
       final isAdminRoute = path.startsWith('/admin');
       final isPersonalRoutineRoute = path.startsWith('/my-routines');
-      final isSharedUserRoute = path == '/progress' || path == '/account';
+      final isSharedUserRoute =
+          path == '/progress' ||
+          path == '/account' ||
+          path == '/settings/notifications';
       final isLoginRoute = path == '/login';
       final isSignupRoute = path == '/register';
       final isOtpRoute = path == '/login/otp';
@@ -191,6 +196,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/progress',
             builder: (context, state) => const UnifiedProgressScreen(),
+          ),
+          GoRoute(
+            path: '/settings/notifications',
+            builder: (context, state) =>
+                const NotificationHealthSettingsScreen(),
           ),
           GoRoute(
             path: '/settings/appearance',
