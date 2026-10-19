@@ -14,9 +14,7 @@ Stream<T> replaySnapshotAndEvents<T>({
 }) {
   late final StreamController<T> controller;
   late final StreamSubscription<T> subscription;
-  controller = StreamController<T>(
-    onCancel: () => subscription.cancel(),
-  );
+  controller = StreamController<T>(onCancel: () => subscription.cancel());
   subscription = events.listen(
     controller.add,
     onError: controller.addError,
