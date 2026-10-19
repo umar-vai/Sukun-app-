@@ -95,7 +95,9 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                           SizedBox(height: small ? 42 : 64),
                           Text(
                             'সুকুন লাইফে যা পাবেন',
-                            style: Theme.of(context).textTheme.headlineSmall,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: SukunColors.nightNavy,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -356,7 +358,12 @@ class _WelcomeBenefit extends StatelessWidget {
         children: [
           Icon(icon, color: SukunColors.deepTide, size: 30),
           const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: SukunColors.nightNavy,
+            ),
+          ),
           const SizedBox(height: 7),
           Text(
             description,
@@ -393,10 +400,15 @@ class _WelcomeAccess extends StatelessWidget {
           children: [
             Text(
               'আপনার পছন্দের জায়গা থেকে শুরু করুন',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: SukunColors.nightNavy,
+              ),
             ),
             const SizedBox(height: 5),
-            const Text('ব্রাউজারে ব্যবহার করুন, অথবা Android অ্যাপ নিন।'),
+            const Text(
+              'ব্রাউজারে ব্যবহার করুন, অথবা Android অ্যাপ নিন।',
+              style: TextStyle(color: SukunColors.nightNavy),
+            ),
           ],
         ),
         Wrap(
@@ -427,6 +439,10 @@ class _DownloadAction extends StatelessWidget {
     children: [
       OutlinedButton.icon(
         onPressed: canDownload ? onDownload : null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SukunColors.deepTide,
+          disabledForegroundColor: SukunColors.muted,
+        ),
         icon: const Icon(Icons.android_rounded),
         label: Text(
           canDownload ? 'Android অ্যাপ ডাউনলোড' : 'Android অ্যাপ শীঘ্রই',
