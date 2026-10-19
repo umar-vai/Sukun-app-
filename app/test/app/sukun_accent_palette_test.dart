@@ -5,6 +5,8 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('approved Sukun blue remains the default light and dark accent', () {
     expect(SukunTheme.light().colorScheme.primary, SukunColors.sukunBlue);
     expect(SukunTheme.dark().colorScheme.primary, SukunColors.sukunBlue);
