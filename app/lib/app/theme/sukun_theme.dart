@@ -18,6 +18,8 @@ abstract final class SukunTheme {
       colorScheme: const ColorScheme.light(
         primary: SukunColors.sukunBlue,
         onPrimary: Colors.white,
+        primaryContainer: SukunColors.softBlue,
+        onPrimaryContainer: SukunColors.deepTide,
         secondary: SukunColors.deepTide,
         onSecondary: Colors.white,
         surface: SukunColors.surface,
@@ -197,6 +199,8 @@ abstract final class SukunTheme {
       colorScheme: const ColorScheme.dark(
         primary: SukunColors.sukunBlue,
         onPrimary: Colors.black,
+        primaryContainer: surfaceLow,
+        onPrimaryContainer: lightText,
         secondary: Color(0xFF87CFEF),
         surface: surface,
         onSurface: lightText,
