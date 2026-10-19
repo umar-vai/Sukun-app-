@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "jsr:@std/assert@1";
+import { assertEquals, assertRejects, assertThrows } from "jsr:@std/assert@1";
 import { hashedLimiterKey, trustedClientIp } from "./rate-limit.ts";
 
 Deno.test("HMAC keys are stable and isolated by namespace", async () => {
@@ -33,4 +33,56 @@ Deno.test("only trusted proxy IP header is accepted", () => {
     rejected = true;
   }
   assertEquals(rejected, true);
+});
+
+Deno.test("IPv6 aliases share one rate-limit bucket", async () => {
+  const secret = "test-only-secret-not-for-production-123456789";
+  const compressed = trustedClientIp(new Request("https://example.test", {
+    headers: { "cf-connecting-ip": "2001:db8::1" },
+  }));
+  const expanded = trustedClientIp(new Request("https://example.test", {
+    headers: { "cf-connecting-ip": "2001:0DB8:0:0:0:0:0:1" },
+  }));
+  assertEquals(compressed, "2001:db8::1");
+  assertEquals(expanded, compressed);
+  assertEquals(
+    await hashedLimiterKey(secret, "ip", compressed),
+    await hashedLimiterKey(secret, "ip", expanded),
+  );
+  assertEquals(
+    trustedClientIp(new Request("https://example.test", {
+      headers: { "cf-connecting-ip": "::ffff:192.0.2.1" },
+    })),
+    "::ffff:c000:201",
+  );
+});
+
+Deno.test("reject malformed or non-canonical proxy IP headers", () => {
+  for (
+    const invalid of [
+      "127.1",
+      "001.2.3.4",
+      "256.1.2.3",
+      "1.2.3.4, 5.6.7.8",
+      "2001:db8:::1",
+      "2001:db8::1%eth0",
+      "not-an-ip",
+      "",
+    ]
+  ) {
+    assertThrows(
+      () =>
+        trustedClientIp(new Request("https://example.test", {
+          headers: { "cf-connecting-ip": invalid },
+        })),
+      Error,
+      "Trusted client IP unavailable",
+    );
+  }
+  assertEquals(
+    trustedClientIp(new Request("https://example.test", {
+      headers: { "cf-connecting-ip": "203.0.113.9" },
+    })),
+    "203.0.113.9",
+  );
 });
