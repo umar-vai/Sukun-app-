@@ -80,14 +80,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final sectionTitle = tester.widget<Text>(
-      find.text('সুকুন লাইফে যা পাবেন'),
-    );
+    final sectionTitle = tester.widget<Text>(find.text('সুকুন লাইফে যা পাবেন'));
     expect(sectionTitle.style?.color, SukunColors.nightNavy);
 
-    final whiteCardTitle = tester.widget<Text>(
-      find.text('ইসলামিক রিসোর্স'),
-    );
+    final whiteCardTitle = tester.widget<Text>(find.text('ইসলামিক রিসোর্স'));
     expect(whiteCardTitle.style?.color, SukunColors.nightNavy);
 
     final downloadButton = tester.widget<OutlinedButton>(
@@ -99,5 +95,4 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
-
 }
