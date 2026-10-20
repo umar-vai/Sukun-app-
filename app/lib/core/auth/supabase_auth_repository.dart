@@ -27,6 +27,10 @@ final class SupabaseAuthRepository implements AuthRepository {
             userId: _client.auth.currentSession?.user.id,
             allowRefresh: true,
           ),
+          // AuthChangeEvent stream errors are not role/permission failures.
+          // Re-read the current session and verify roles through Supabase.
+          // If access is invalid, the server query still fails closed.
+          replayOnError: (error) => error is AuthException,
         );
 
     return signals.asyncMap((signal) async {
