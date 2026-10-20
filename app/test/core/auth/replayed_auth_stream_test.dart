@@ -102,5 +102,4 @@ void main() {
     expect(errors.single, isA<StateError>());
     await sub.cancel();
   });
-
 }
