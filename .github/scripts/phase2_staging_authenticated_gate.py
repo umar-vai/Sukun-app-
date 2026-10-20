@@ -117,13 +117,23 @@ def first_id(data, label):
 
 
 def run():
+    mode = os.getenv("SUKUN_STAGE_GATE_MODE", "FULL")
+    require(mode in ("PATIENT_ONLY", "FULL"), "Invalid staging gate mode")
     required = (
         "SUKUN_STAGE_PUBLISHABLE_KEY",
-        "SUKUN_STAGE_PATIENT_A_ID", "SUKUN_STAGE_PATIENT_A_PASSWORD",
-        "SUKUN_STAGE_PATIENT_B_ID", "SUKUN_STAGE_PATIENT_B_PASSWORD",
-        "SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_ADMIN_PASSWORD",
-        "SUKUN_STAGE_MEMBER_EMAIL", "SUKUN_STAGE_MEMBER_PASSWORD",
+        "SUKUN_STAGE_PATIENT_A_ID", "SUKUN_STAGE_PATIENT_B_ID",
     )
+    if mode == "FULL":
+        required += (
+            "SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_ADMIN_PASSWORD",
+            "SUKUN_STAGE_MEMBER_EMAIL", "SUKUN_STAGE_MEMBER_PASSWORD",
+        )
+    shared_password = os.getenv("SUKUN_STAGE_PATIENT_SHARED_PASSWORD")
+    if not shared_password:
+        required += (
+            "SUKUN_STAGE_PATIENT_A_PASSWORD",
+            "SUKUN_STAGE_PATIENT_B_PASSWORD",
+        )
     require(os.getenv("SUKUN_STAGE_GATE_CONFIRM") == "STAGING_ONLY",
             "Explicit staging-only confirmation missing")
     missing = [name for name in required if not os.getenv(name)]
@@ -132,26 +142,41 @@ def run():
     require(key.startswith("sb_publishable_"), "A public staging publishable key is required")
     require(os.getenv("SUKUN_STAGE_PROJECT_REF") == STAGING_REF,
             "Incorrect staging project reference")
-    for item in ("SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_MEMBER_EMAIL"):
-        require("@" in os.environ[item], "Admin/Member QA login must use synthetic email")
+    if mode == "FULL":
+        for item in ("SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_MEMBER_EMAIL"):
+            require("@" in os.environ[item], "Admin/Member QA login must use synthetic email")
 
     a = login_patient(key, os.environ["SUKUN_STAGE_PATIENT_A_ID"],
-                      os.environ["SUKUN_STAGE_PATIENT_A_PASSWORD"])
+                      shared_password or os.environ["SUKUN_STAGE_PATIENT_A_PASSWORD"])
     b = login_patient(key, os.environ["SUKUN_STAGE_PATIENT_B_ID"],
-                      os.environ["SUKUN_STAGE_PATIENT_B_PASSWORD"])
-    admin = login_email(key, os.environ["SUKUN_STAGE_ADMIN_EMAIL"],
-                        os.environ["SUKUN_STAGE_ADMIN_PASSWORD"], "Admin")
-    member = login_email(key, os.environ["SUKUN_STAGE_MEMBER_EMAIL"],
-                         os.environ["SUKUN_STAGE_MEMBER_PASSWORD"], "Member")
-    print("PASS: all four synthetic identities authenticated through staging")
+                      shared_password or os.environ["SUKUN_STAGE_PATIENT_B_PASSWORD"])
+    user_ids = [
+        get_user_id(key, a, "Patient A"),
+        get_user_id(key, b, "Patient B"),
+    ]
+    require(len(set(user_ids)) == 2, "Patient A/B must be distinct accounts")
+    for label, token, user_id in (
+        ("Patient A", a, user_ids[0]),
+        ("Patient B", b, user_ids[1]),
+    ):
+        require("patient" in roles(key, token, user_id),
+                "Role mismatch for staging " + label)
+    print("PASS: two distinct synthetic Patient accounts authenticated with server roles")
 
-    user_ids = [get_user_id(key, token, label) for label, token in
-                (( "Patient A", a), ("Patient B", b), ("Admin", admin), ("Member", member))]
-    require(len(set(user_ids)) == 4, "QA roles must use distinct user accounts")
-    for index, expected in enumerate(("patient", "patient", "super_admin", "member")):
-        require(expected in roles(key, (a, b, admin, member)[index], user_ids[index]),
-                "Role mismatch for staging " + ("Patient A", "Patient B", "Admin", "Member")[index])
-    print("PASS: four distinct Auth users have DB-issued roles")
+    if mode == "FULL":
+        admin = login_email(key, os.environ["SUKUN_STAGE_ADMIN_EMAIL"],
+                            os.environ["SUKUN_STAGE_ADMIN_PASSWORD"], "Admin")
+        member = login_email(key, os.environ["SUKUN_STAGE_MEMBER_EMAIL"],
+                             os.environ["SUKUN_STAGE_MEMBER_PASSWORD"], "Member")
+        admin_id = get_user_id(key, admin, "Admin")
+        member_id = get_user_id(key, member, "Member")
+        require(len(set(user_ids + [admin_id, member_id])) == 4,
+                "All staging accounts must have distinct Auth users")
+        require("super_admin" in roles(key, admin, admin_id),
+                "Staging Admin role not verified")
+        require("member" in roles(key, member, member_id),
+                "Staging Member role not verified")
+        print("PASS: distinct Admin/Member authenticated with server roles")
 
     a_plan = first_id(rows(key, a, "care_plans", {"status": "eq.active"}),
                       "Patient A requires an active synthetic care plan")
@@ -173,15 +198,20 @@ def run():
                 "SECURITY: Patient B can read Patient A " + table)
     print("PASS: authenticated Patient B cannot read Patient A clinical rows")
 
-    require(len(rows(key, admin, "care_plans", {"id": "eq." + a_plan})) == 1,
-            "Admin cannot read synthetic Patient A plan")
+    if mode == "FULL":
+        require(len(rows(key, admin, "care_plans", {"id": "eq." + a_plan})) == 1,
+                "Admin cannot read synthetic Patient A plan")
     for table in ("patients", "care_plans", "prescriptions", "task_instances",
                   "task_completions"):
-        require(len(rows(key, member, table)) == 0,
-                "SECURITY: General Member can read " + table)
+        if mode == "FULL":
+            require(len(rows(key, member, table)) == 0,
+                    "SECURITY: General Member can read " + table)
         require(len(rows(key, None, table, allow_denial=True)) == 0,
                 "SECURITY: Guest can read " + table)
-    print("PASS: Admin clinical read, Member and Guest clinical denial")
+    if mode == "FULL":
+        print("PASS: Admin clinical read, Member and Guest clinical denial")
+    else:
+        print("PASS: Patient-only gate; Admin/Member login checks remain pending")
     print("PASS: read-only live JWT/RLS staging gate; no writes performed")
 
 
