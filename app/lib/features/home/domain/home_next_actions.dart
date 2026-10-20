@@ -234,7 +234,7 @@ abstract final class HomeNextActions {
         : 'বিকেল';
     final label =
         '${weekdays[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} · '
-        '$hour:${date.minute.toString().padLeft(2, '0')} $period';
+        '$period $hour:${date.minute.toString().padLeft(2, '0')}';
     const digits = '০১২৩৪৫৬৭৮৯';
     return label.replaceAllMapped(
       RegExp(r'[0-9]'),
