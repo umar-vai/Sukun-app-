@@ -7,6 +7,14 @@ on:
         description: 'Type STAGING_ONLY to run read-only checks against synthetic staging accounts'
         required: true
         type: string
+      qa_mode:
+        description: 'Select synthetic Patient A/B only or all four roles'
+        required: true
+        type: choice
+        default: PATIENT_ONLY
+        options:
+          - PATIENT_ONLY
+          - FULL
 
 permissions:
   contents: read
@@ -43,11 +51,14 @@ jobs:
         env:
           SUKUN_STAGE_GATE_CONFIRM: ${{ inputs.staging_only_confirmation }}
           SUKUN_STAGE_PROJECT_REF: qacklgqvxvjjzsimjoip
+          SUKUN_STAGE_GATE_MODE: ${{ inputs.qa_mode }}
           # This is intentionally a PUBLIC staging publishable key.
           SUKUN_STAGE_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
           SUKUN_STAGE_PATIENT_A_ID: ${{ secrets.SUKUN_STAGE_PATIENT_A_ID }}
           SUKUN_STAGE_PATIENT_A_PASSWORD: ${{ secrets.SUKUN_STAGE_PATIENT_A_PASSWORD }}
           SUKUN_STAGE_PATIENT_B_ID: ${{ secrets.SUKUN_STAGE_PATIENT_B_ID }}
+          # For patient-only mode, three secrets suffice: two IDs + one shared password.
+          SUKUN_STAGE_PATIENT_SHARED_PASSWORD: ${{ secrets.SUKUN_STAGE_PATIENT_SHARED_PASSWORD }}
           SUKUN_STAGE_PATIENT_B_PASSWORD: ${{ secrets.SUKUN_STAGE_PATIENT_B_PASSWORD }}
           SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
           SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
