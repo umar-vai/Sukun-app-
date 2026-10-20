@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
@@ -193,7 +192,53 @@ abstract final class HomeNextActions {
     }
   }
 
-  static String dueLabel(HomeNextAction action) => action.dueAt == null
-      ? 'সময় নির্ধারিত নয়'
-      : DateFormat('EEE, d MMM · h:mm a', 'en').format(action.dueAt!.toLocal());
+  /// Readable Bangla dates for the Bangla-first Home dashboard.
+  ///
+  /// The task scheduling logic stays unchanged. Only the visible date
+  /// label is localized, without depending on a device's Intl initialization.
+  static String dueLabel(HomeNextAction action) {
+    final dueAt = action.dueAt;
+    if (dueAt == null) return 'সময় নির্ধারিত নয়';
+
+    final date = dueAt.toLocal();
+    const weekdays = [
+      'সোমবার',
+      'মঙ্গলবার',
+      'বুধবার',
+      'বৃহস্পতিবার',
+      'শুক্রবার',
+      'শনিবার',
+      'রবিবার',
+    ];
+    const months = [
+      'জানুয়ারি',
+      'ফেব্রুয়ারি',
+      'মার্চ',
+      'এপ্রিল',
+      'মে',
+      'জুন',
+      'জুলাই',
+      'আগস্ট',
+      'সেপ্টেম্বর',
+      'অক্টোবর',
+      'নভেম্বর',
+      'ডিসেম্বর',
+    ];
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final period = date.hour < 4 || date.hour >= 19
+        ? 'রাত'
+        : date.hour < 11
+        ? 'সকাল'
+        : date.hour < 16
+        ? 'দুপুর'
+        : 'বিকেল';
+    final label =
+        '${weekdays[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} · '
+        '$period $hour:${date.minute.toString().padLeft(2, '0')}';
+    const digits = '০১২৩৪৫৬৭৮৯';
+    return label.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (match) => digits[int.parse(match.group(0)!)],
+    );
+  }
 }

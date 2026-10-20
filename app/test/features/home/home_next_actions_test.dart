@@ -171,4 +171,40 @@ void main() {
     );
     expect(items, isEmpty);
   });
+  test('renders scheduled next action with Bengali weekday, date and time', () {
+    const id = 'patient-plan-task';
+    final action = HomeNextAction(
+      id: id,
+      title: 'করণীয়',
+      origin: 'সুকুনের অনুমোদিত পরিকল্পনা',
+      route: '/patient/today?task=$id',
+      dueAt: DateTime(2026, 10, 21, 1, 52),
+    );
+    expect(HomeNextActions.dueLabel(action), 'বুধবার, ২১ অক্টোবর · রাত ১:৫২');
+  });
+
+  test('shows Bengali afternoon, padded minutes and no due time', () {
+    final upcoming = HomeNextAction(
+      id: 'owned',
+      title: 'রুটিন',
+      origin: 'আমার তৈরি রুটিন',
+      route: '/my-routines/action/owned',
+      dueAt: DateTime(2026, 10, 21, 13, 5),
+    );
+    expect(
+      HomeNextActions.dueLabel(upcoming),
+      'বুধবার, ২১ অক্টোবর · দুপুর ১:০৫',
+    );
+    expect(
+      HomeNextActions.dueLabel(
+        const HomeNextAction(
+          id: 'manual',
+          title: 'আমল',
+          origin: 'আমার তৈরি রুটিন',
+          route: '/my-routines/action/manual',
+        ),
+      ),
+      'সময় নির্ধারিত নয়',
+    );
+  });
 }
