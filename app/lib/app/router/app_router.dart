@@ -529,28 +529,16 @@ class _SessionLanding extends ConsumerWidget {
       // permanent error screen or silently downgrade their verified role.
       // Restart the role lookup; server-side RLS remains the authority.
       error: (error, stackTrace) => Scaffold(
-        body: Column(
-          children: [
-            Expanded(
-              child: AppErrorState(
-                message:
-                    'অ্যাকাউন্টের তথ্য যাচাই করা যাচ্ছে না। সংযোগ ঠিক থাকলে আবার চেষ্টা করুন। (কোড: ${safeSessionFailureCode(error)})',
-                showSafeMessage: true,
-                onRetry: () => ref.invalidate(appSessionProvider),
-              ),
-            ),
-            // Re-entering credentials is a user-controlled escape hatch
-            // when a stored session cannot recover. Do not silently sign
-            // out, clear offline queues, or infer a patient/admin role.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: TextButton.icon(
-                onPressed: () => context.go('/login'),
-                icon: const Icon(Icons.login_rounded),
-                label: const Text('আবার লগইন করুন'),
-              ),
-            ),
-          ],
+        body: AppErrorState(
+          message:
+              'অ্যাকাউন্টের তথ্য যাচাই করা যাচ্ছে না। সংযোগ ঠিক থাকলে আবার চেষ্টা করুন। (কোড: ${safeSessionFailureCode(error)})',
+          showSafeMessage: true,
+          onRetry: () => ref.invalidate(appSessionProvider),
+          // Keep the escape action inside the centered error card, visible
+          // on short mobile viewports instead of at the Scaffold bottom.
+          // This never clears Auth state or offline user data automatically.
+          onSecondaryAction: () => context.go('/login'),
+          secondaryActionLabel: 'আবার লগইন করুন',
         ),
       ),
     );

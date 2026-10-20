@@ -127,11 +127,15 @@ class AppErrorState extends StatelessWidget {
     super.key,
     required this.message,
     this.onRetry,
+    this.onSecondaryAction,
+    this.secondaryActionLabel,
     this.showSafeMessage = false,
   });
 
   final String message;
   final VoidCallback? onRetry;
+  final VoidCallback? onSecondaryAction;
+  final String? secondaryActionLabel;
   final bool showSafeMessage;
 
   @override
@@ -180,6 +184,14 @@ class AppErrorState extends StatelessWidget {
                           )?.tryAgain ??
                           'আবার চেষ্টা করুন',
                     ),
+                  ),
+                ],
+                if (onSecondaryAction != null) ...[
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: onSecondaryAction,
+                    icon: const Icon(Icons.login_rounded),
+                    label: Text(secondaryActionLabel ?? 'আবার লগইন করুন'),
                   ),
                 ],
               ],
