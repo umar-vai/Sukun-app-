@@ -44,6 +44,12 @@ void main() {
   testWidgets('error offers safe re-login without automatic sign-out', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     final auth = _FailThenRecoverAuthRepository();
     addTearDown(auth.dispose);
 
@@ -58,6 +64,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('আবার লগইন করুন'), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.text('আবার লগইন করুন')).dy,
+      lessThanOrEqualTo(667),
+    );
     expect(find.textContaining('S-CLIENT-04'), findsOneWidget);
     await tester.tap(find.text('আবার লগইন করুন'));
     await tester.pumpAndSettle();
