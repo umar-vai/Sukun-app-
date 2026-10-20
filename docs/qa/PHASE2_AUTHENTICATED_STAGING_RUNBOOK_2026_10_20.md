@@ -10,7 +10,7 @@ Earlier Phase 2 synthetic database transactions verified Admin prescription -> r
 
 - Staging-only Supabase project **`qacklgqvxvjjzsimjoip`**; rejects an unexpected project ref.
 - Runs from trusted GitHub `main` by explicit manual dispatch only; no public PR run may receive credentials.
-- No APK, no migration, no database inserts/updates/deletes, no service-role secret, no cross-origin patient-data screenshot. The Flutter Pages preview `https://app.sukunlife.com/` remains unchanged.
+- No APK, no migration, no database inserts/updates/deletes, no service-role secret, no cross-origin patient-data screenshot. The existing Flutter Pages preview is `https://umar-vai.github.io/Sukun-app-/`; this workflow does not deploy the browser app and does not touch `sukunlife.com` or a future `app.` subdomain.
 - The **public** staging publishable key comes from existing approved Flutter Web staging configuration and may be used in a browser. All login passwords/identifiers must be synthetic GitHub Actions Secrets, not `vars`, logs, public client or chat messages.
 
 ## Easier first step: Patient A/B only (three GitHub Secrets)
@@ -29,7 +29,7 @@ The other Admin/Member secrets are **not required** when running with `qa_mode=P
 
 After this PR is merged, open Actions → **Phase 2 Synthetic Staging Auth/RLS Gate** → Run workflow → branch `main` → `qa_mode: PATIENT_ONLY` → confirmation `STAGING_ONLY`.
 
-The test uses actual Staging Edge Patient Login, token exchange and authenticated REST calls, checking that Patient A can access their active plan but B cannot read A's clinical records; Guest must not read private rows. No clinical rows are modified. A real browser session/UI test is still pending.
+The test uses actual Staging Edge Patient Login, token exchange and authenticated REST calls. It requires **distinct patient identities**, exactly one owned active Patient A plan, readable A prescription/task/completion/plan-action fixtures, **no visible plan for Patient B**, and no privileged roles for either patient. It checks that neither patient can see the other's patient identity, that Patient B cannot read A's clinical records or plan actions, and that Guest cannot read private rows. Missing A fixtures fail closed instead of printing an inconclusive message and passing. No clinical rows are modified. A real browser session/UI test is still pending.
 
 ## Full four-role gate (later, when Admin/Member login methods are ready)
 
@@ -55,7 +55,7 @@ The original FULL mode remains available. Configure these additional secrets **o
 2. In GitHub Actions, open **Phase 2 Synthetic Staging Auth/RLS Gate**, choose **Run workflow**, branch **main**.
 3. Enter exactly `STAGING_ONLY` for `staging_only_confirmation`.
 4. The script authenticates A/B using the actual `patient-sign-in` endpoint + Supabase refresh-token exchange and Admin/Member using GoTrue password login. It validates identities and database roles from live Staging and reads clinical data through REST using **real bearer tokens**.
-5. The release gate **fails** if B can read A's patient, plan, prescription, task or completion; if Member/Guest can read clinical records; or if Admin cannot access A's plan. A's active synthetic plan is mandatory.
+5. The release gate **fails** if either patient has an additional privileged role; Patient A lacks prescription/task/completion/action fixtures or exactly one own active plan; B has a visible plan, can read A's patient, plan, action, prescription, task or completion; A can read B's patient; Member/Guest can read clinical records; or Admin cannot access A's plan. The fixture contract is intentionally strict.
 6. No tokens, names, emails, passwords, database IDs or response bodies are printed, stored in artifacts or sent to public Pages.
 
 ## What success proves — and does not prove
@@ -71,7 +71,7 @@ The original FULL mode remains available. Configure these additional secrets **o
 | Browser device acceptance (Safari mobile, Chrome desktop) | **NOT** verified by this workflow |
 | Runtime write-idempotency from live browser tokens | **NOT** verified (covered separately by rolled-back SQL/RPC tests) |
 
-The workflow runs network-free unit tests before calling Staging; those tests also run automatically on CI, even if secrets are not set. A failed manual gate is a **release blocker**. If secrets are absent, the workflow fails with a generic message and does not attempt login.
+The workflow runs network-free unit tests before calling Staging; **13 targeted tests** also run automatically on PR/main CI, even if secrets are not set. Successful offline CI does not establish real login or successful authenticated RLS. A failed manual gate is a **release blocker**. If secrets are absent, the workflow fails with a generic message and does not attempt login.
 
 ## Next browser acceptance
 

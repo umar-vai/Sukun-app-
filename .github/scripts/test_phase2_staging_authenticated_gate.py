@@ -31,6 +31,7 @@ OWNED = {
     "prescriptions": "rx-A",
     "task_instances": "task-A",
     "task_completions": "completion-A",
+    "plan_actions": "action-A",
 }
 
 
@@ -51,10 +52,16 @@ def fake_api(path, key, *, bearer=None, payload=None, params=None, leak=False):
     if path.startswith("/rest/v1/"):
         table = path.rsplit("/", 1)[-1]
         if bearer == "token-A":
+            if table == "patients" and params and params.get("id") == "eq.patient-B":
+                return 200, []
             return 200, [{"id": OWNED[table]}]
         if bearer == "token-admin":
             return 200, [{"id": OWNED[table]}]
-        if leak and bearer == "token-B" and table == "care_plans":
+        if bearer == "token-B" and table == "patients":
+            if params and params.get("id") == "eq.patient-A":
+                return 200, []
+            return 200, [{"id": "patient-B"}]
+        if leak and bearer == "token-B" and table == "care_plans" and params and "id" in params:
             return 200, [{"id": OWNED[table]}]
         return 200, []
     raise AssertionError("Unexpected synthetic endpoint")
@@ -158,6 +165,69 @@ class StagingGateTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     with self.assertRaisesRegex(gate.GateFailure, "SECURITY"):
                         gate.run()
+
+
+    def test_patient_only_rejects_privileged_patient_role(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ONLY")
+        def extra_privilege(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/user_roles" and bearer == "token-A":
+                return 200, [{"role": "patient"}, {"role": "super_admin"}]
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=extra_privilege):
+                with self.assertRaisesRegex(gate.GateFailure, "privileged role"):
+                    gate.run()
+
+    def test_patient_only_requires_every_positive_fixture(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ONLY")
+        def missing_completion(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/task_completions" and bearer == "token-A":
+                return 200, []
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=missing_completion):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "requires a synthetic fixture"):
+                        gate.run()
+
+    def test_patient_only_rejects_patient_b_with_plan(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ONLY")
+        def b_plan(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/care_plans" and bearer == "token-B" and "id" not in (params or {}):
+                return 200, [{"id": "unexpected-plan-B"}]
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=b_plan):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "Patient B must have no visible plan"):
+                        gate.run()
+
+    def test_patient_only_checks_plan_action_isolation(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ONLY")
+        def leaked_action(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/plan_actions" and bearer == "token-B":
+                return 200, [{"id": "action-A"}]
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=leaked_action):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "SECURITY"):
+                        gate.run()
+
+    def test_patient_only_scopes_positive_fixtures_to_patient_a(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ONLY")
+        checked = {}
+        def capture(path, key, *, bearer=None, payload=None, params=None):
+            if bearer == "token-A" and path.startswith("/rest/v1/"):
+                checked[path] = params
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=capture):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    gate.run()
+        for table in ("care_plans", "prescriptions", "task_instances", "task_completions"):
+            self.assertEqual(checked["/rest/v1/" + table]["patient_id"], "eq.patient-A")
+        self.assertEqual(checked["/rest/v1/plan_actions"]["care_plan_id"], "eq.plan-A")
 
     def test_explicit_anonymous_denial_is_accepted(self):
         with patch.object(gate, "request_json", return_value=(403, None)):
