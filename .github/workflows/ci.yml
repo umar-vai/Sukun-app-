@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v5
       - name: Test draft-only offline catalog adapter with synthetic text
         run: python3 -m unittest discover -s scripts/resources -p 'test_*.py' -v
+      - name: Phase 2 authenticated staging gate offline safety regressions
+        run: python3 -m unittest discover -s .github/scripts -p 'test_phase2_staging_authenticated_gate.py' -v
       # Never use the private uploaded Word source or actual editorial
       # catalog in CI. The local operator explicitly holds those files.
       - name: Read-only publisher audio fingerprint audit (non-blocking)
