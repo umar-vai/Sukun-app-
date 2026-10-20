@@ -180,10 +180,7 @@ void main() {
       route: '/patient/today?task=$id',
       dueAt: DateTime(2026, 10, 21, 1, 52),
     );
-    expect(
-      HomeNextActions.dueLabel(action),
-      'বুধবার, ২১ অক্টোবর · রাত ১:৫২',
-    );
+    expect(HomeNextActions.dueLabel(action), 'বুধবার, ২১ অক্টোবর · রাত ১:৫২');
   });
 
   test('shows Bengali afternoon, padded minutes and no due time', () {
@@ -210,5 +207,4 @@ void main() {
       'সময় নির্ধারিত নয়',
     );
   });
-
 }
