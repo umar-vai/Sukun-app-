@@ -89,13 +89,15 @@ def get_user_id(key, token, label):
     return user_id
 
 
-def rows(key, token, table, params=None):
+def rows(key, token, table, params=None, *, allow_denial=False):
     query = {"select": "id", "limit": "100"}
     if params:
         query.update(params)
     status, data = request_json(
         "/rest/v1/" + table, key, bearer=token, params=query,
     )
+    if allow_denial and status in (401, 403):
+        return []
     require(status == 200 and isinstance(data, list), "Clinical read failed: " + table)
     return data
 
@@ -177,7 +179,7 @@ def run():
                   "task_completions"):
         require(len(rows(key, member, table)) == 0,
                 "SECURITY: General Member can read " + table)
-        require(len(rows(key, None, table)) == 0,
+        require(len(rows(key, None, table, allow_denial=True)) == 0,
                 "SECURITY: Guest can read " + table)
     print("PASS: Admin clinical read, Member and Guest clinical denial")
     print("PASS: read-only live JWT/RLS staging gate; no writes performed")
