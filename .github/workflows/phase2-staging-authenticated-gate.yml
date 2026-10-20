@@ -1,0 +1,59 @@
+name: Phase 2 Synthetic Staging Auth/RLS Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_only_confirmation:
+        description: 'Type STAGING_ONLY to run read-only checks against synthetic staging accounts'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-phase2-staging-authenticated-gate
+  cancel-in-progress: false
+
+jobs:
+  staging-auth-rls:
+    name: Synthetic JWT and clinical data isolation
+    # Never run a credentials-bearing workflow from an untrusted PR/ref.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout trusted main source
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Verify current main checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+
+      - name: Offline gate unit tests (no credentials)
+        run: python3 -m unittest discover -s .github/scripts -p 'test_phase2_staging_authenticated_gate.py' -v
+
+      - name: Authenticated read-only staging role and RLS acceptance
+        shell: bash
+        env:
+          SUKUN_STAGE_GATE_CONFIRM: ${{ inputs.staging_only_confirmation }}
+          SUKUN_STAGE_PROJECT_REF: qacklgqvxvjjzsimjoip
+          # This is intentionally a PUBLIC staging publishable key.
+          SUKUN_STAGE_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+          SUKUN_STAGE_PATIENT_A_ID: ${{ secrets.SUKUN_STAGE_PATIENT_A_ID }}
+          SUKUN_STAGE_PATIENT_A_PASSWORD: ${{ secrets.SUKUN_STAGE_PATIENT_A_PASSWORD }}
+          SUKUN_STAGE_PATIENT_B_ID: ${{ secrets.SUKUN_STAGE_PATIENT_B_ID }}
+          SUKUN_STAGE_PATIENT_B_PASSWORD: ${{ secrets.SUKUN_STAGE_PATIENT_B_PASSWORD }}
+          SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
+          SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
+          SUKUN_STAGE_MEMBER_EMAIL: ${{ secrets.SUKUN_STAGE_MEMBER_EMAIL }}
+          SUKUN_STAGE_MEMBER_PASSWORD: ${{ secrets.SUKUN_STAGE_MEMBER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test "$SUKUN_STAGE_GATE_CONFIRM" = STAGING_ONLY
+          python3 .github/scripts/phase2_staging_authenticated_gate.py
