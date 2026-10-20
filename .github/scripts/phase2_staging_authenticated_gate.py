@@ -155,12 +155,15 @@ def run():
         get_user_id(key, b, "Patient B"),
     ]
     require(len(set(user_ids)) == 2, "Patient A/B must be distinct accounts")
+    require(os.environ["SUKUN_STAGE_PATIENT_A_ID"] !=
+            os.environ["SUKUN_STAGE_PATIENT_B_ID"],
+            "Patient A/B identifiers must be distinct")
     for label, token, user_id in (
         ("Patient A", a, user_ids[0]),
         ("Patient B", b, user_ids[1]),
     ):
-        require("patient" in roles(key, token, user_id),
-                "Role mismatch for staging " + label)
+        require(roles(key, token, user_id) == {"patient"},
+                "Unexpected or privileged role for staging " + label)
     print("PASS: two distinct synthetic Patient accounts authenticated with server roles")
 
     if mode == "FULL":
@@ -172,37 +175,47 @@ def run():
         member_id = get_user_id(key, member, "Member")
         require(len(set(user_ids + [admin_id, member_id])) == 4,
                 "All staging accounts must have distinct Auth users")
-        require("super_admin" in roles(key, admin, admin_id),
-                "Staging Admin role not verified")
-        require("member" in roles(key, member, member_id),
-                "Staging Member role not verified")
+        require(roles(key, admin, admin_id) == {"super_admin"},
+                "Staging Admin role not verified or has extra roles")
+        require(roles(key, member, member_id) == {"member"},
+                "Staging Member role not verified or has extra roles")
         print("PASS: distinct Admin/Member authenticated with server roles")
 
-    a_plan = first_id(rows(key, a, "care_plans", {"status": "eq.active"}),
-                      "Patient A requires an active synthetic care plan")
-    a_patient = first_id(rows(key, a, "patients"),
-                         "Patient A cannot read own synthetic patient record")
+    a_patients = rows(key, a, "patients")
+    b_patients = rows(key, b, "patients")
+    require(len(a_patients) == 1, "Patient A must read exactly one own synthetic record")
+    require(len(b_patients) == 1, "Patient B must read exactly one own synthetic record")
+    a_patient = first_id(a_patients, "Patient A identity unavailable")
+    b_patient = first_id(b_patients, "Patient B identity unavailable")
+    require(a_patient != b_patient, "Patient accounts share a patient record")
+    a_plans = rows(key, a, "care_plans",
+                   {"status": "eq.active", "patient_id": "eq." + a_patient})
+    require(len(a_plans) == 1, "Patient A requires exactly one own active plan")
+    a_plan = first_id(a_plans, "Patient A plan ID unavailable")
+    require(len(rows(key, b, "care_plans")) == 0,
+            "Patient B must have no visible plan in this synthetic fixture")
     require(len(rows(key, b, "patients", {"id": "eq." + a_patient})) == 0,
             "SECURITY: Patient B can read Patient A identity")
-    for table in ("care_plans", "prescriptions", "task_instances", "task_completions"):
-        if table == "care_plans":
-            target = a_plan
-            params = {"id": "eq." + target}
-        else:
-            owned = rows(key, a, table)
-            if not owned:
-                print("INCONCLUSIVE: Patient A has no synthetic fixture in " + table)
-                continue
-            params = {"id": "eq." + owned[0]["id"]}
-        require(len(rows(key, b, table, params)) == 0,
+    require(len(rows(key, a, "patients", {"id": "eq." + b_patient})) == 0,
+            "SECURITY: Patient A can read Patient B identity")
+    require(len(rows(key, b, "care_plans", {"id": "eq." + a_plan})) == 0,
+            "SECURITY: Patient B can read Patient A care_plans")
+    for table in ("prescriptions", "task_instances", "task_completions"):
+        owned = rows(key, a, table, {"patient_id": "eq." + a_patient})
+        target = first_id(owned, "Patient A requires a synthetic fixture in " + table)
+        require(len(rows(key, b, table, {"id": "eq." + target})) == 0,
                 "SECURITY: Patient B can read Patient A " + table)
-    print("PASS: authenticated Patient B cannot read Patient A clinical rows")
+    actions = rows(key, a, "plan_actions", {"care_plan_id": "eq." + a_plan})
+    a_action = first_id(actions, "Patient A requires an approved plan action fixture")
+    require(len(rows(key, b, "plan_actions", {"id": "eq." + a_action})) == 0,
+            "SECURITY: Patient B can read Patient A plan_actions")
+    print("PASS: authenticated Patients have distinct, complete clinical fixtures and no cross-patient reads")
 
     if mode == "FULL":
         require(len(rows(key, admin, "care_plans", {"id": "eq." + a_plan})) == 1,
                 "Admin cannot read synthetic Patient A plan")
-    for table in ("patients", "care_plans", "prescriptions", "task_instances",
-                  "task_completions"):
+    for table in ("patients", "care_plans", "prescriptions", "plan_actions",
+                  "task_instances", "task_completions"):
         if mode == "FULL":
             require(len(rows(key, member, table)) == 0,
                     "SECURITY: General Member can read " + table)
