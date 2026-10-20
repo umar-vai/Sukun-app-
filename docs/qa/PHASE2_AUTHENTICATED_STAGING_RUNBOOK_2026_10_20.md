@@ -13,7 +13,28 @@ Earlier Phase 2 synthetic database transactions verified Admin prescription -> r
 - No APK, no migration, no database inserts/updates/deletes, no service-role secret, no cross-origin patient-data screenshot. The Flutter Pages preview `https://app.sukunlife.com/` remains unchanged.
 - The **public** staging publishable key comes from existing approved Flutter Web staging configuration and may be used in a browser. All login passwords/identifiers must be synthetic GitHub Actions Secrets, not `vars`, logs, public client or chat messages.
 
-## Set these eight repository Actions Secrets (synthetic accounts only)
+## Easier first step: Patient A/B only (three GitHub Secrets)
+
+These existing staging accounts were verified in the staging database: **Patient A has an active synthetic plan** and **Patient B has no plan**. The owner confirmed they share one synthetic test password. This is not a claim that the password has successfully authenticated: it must be tested by the real GoTrue/Edge HTTP gate.
+
+In repository **Settings → Secrets and variables → Actions**, add exactly these three **Repository secrets**:
+
+| Secret name | What to enter |
+| --- | --- |
+| `SUKUN_STAGE_PATIENT_A_ID` | Patient A's staging Patient ID or phone as accepted by the Patient Login screen |
+| `SUKUN_STAGE_PATIENT_B_ID` | Patient B's staging Patient ID or phone |
+| `SUKUN_STAGE_PATIENT_SHARED_PASSWORD` | The shared *synthetic-only* password; never put it in source, screenshots or chat |
+
+The other Admin/Member secrets are **not required** when running with `qa_mode=PATIENT_ONLY`. Their verification remains pending. Do not modify or reset any Google OAuth user.
+
+After this PR is merged, open Actions → **Phase 2 Synthetic Staging Auth/RLS Gate** → Run workflow → branch `main` → `qa_mode: PATIENT_ONLY` → confirmation `STAGING_ONLY`.
+
+The test uses actual Staging Edge Patient Login, token exchange and authenticated REST calls, checking that Patient A can access their active plan but B cannot read A's clinical records; Guest must not read private rows. No clinical rows are modified. A real browser session/UI test is still pending.
+
+## Full four-role gate (later, when Admin/Member login methods are ready)
+
+The original FULL mode remains available. Configure these additional secrets **only for FULL**, noting that the existing synthetic Member users have no email-password credentials; a separate approved member login method or synthetic Member provisioning will be needed.
+
 
 | Secret | Staging account |
 | --- | --- |
@@ -28,7 +49,7 @@ Earlier Phase 2 synthetic database transactions verified Admin prescription -> r
 
 **Do not transmit these values to ChatGPT.** Add them directly in GitHub repository Settings -> Secrets and variables -> Actions -> Repository secrets. The chosen A account must own an active Staging care plan and the selected accounts must have canonical server-issued database roles. All four must be distinct users. Never use Production credentials.
 
-## How to run
+## How to run the FULL four-role gate
 
 1. Merge the reviewed gate PR after its CI tests pass.
 2. In GitHub Actions, open **Phase 2 Synthetic Staging Auth/RLS Gate**, choose **Run workflow**, branch **main**.
