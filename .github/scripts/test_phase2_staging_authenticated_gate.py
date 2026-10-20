@@ -102,6 +102,63 @@ class StagingGateTests(unittest.TestCase):
                     with self.assertRaisesRegex(gate.GateFailure, "SECURITY"):
                         gate.run()
 
+    def test_patient_only_with_shared_secret_requires_no_admin_credentials(self):
+        patient_env = {
+            "SUKUN_STAGE_GATE_CONFIRM": "STAGING_ONLY",
+            "SUKUN_STAGE_GATE_MODE": "PATIENT_ONLY",
+            "SUKUN_STAGE_PROJECT_REF": gate.STAGING_REF,
+            "SUKUN_STAGE_PUBLISHABLE_KEY": "sb_publishable_test_only",
+            "SUKUN_STAGE_PATIENT_A_ID": "QA-A",
+            "SUKUN_STAGE_PATIENT_B_ID": "QA-B",
+            "SUKUN_STAGE_PATIENT_SHARED_PASSWORD": "synthetic-only-value",
+        }
+        paths = []
+        def fake(path, key, *, bearer=None, payload=None, params=None):
+            paths.append(path)
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+
+        with patch.dict(os.environ, patient_env, clear=True):
+            with patch.object(gate, "request_json", side_effect=fake):
+                with contextlib.redirect_stdout(io.StringIO()) as out:
+                    gate.run()
+        self.assertIn("two distinct synthetic Patient", out.getvalue())
+        self.assertIn("Admin/Member login checks remain pending", out.getvalue())
+        self.assertNotIn("/auth/v1/token?grant_type=password", paths)
+
+    def test_patient_only_missing_shared_password_fails_before_network(self):
+        patient_env = {
+            "SUKUN_STAGE_GATE_CONFIRM": "STAGING_ONLY",
+            "SUKUN_STAGE_GATE_MODE": "PATIENT_ONLY",
+            "SUKUN_STAGE_PROJECT_REF": gate.STAGING_REF,
+            "SUKUN_STAGE_PUBLISHABLE_KEY": "sb_publishable_test_only",
+            "SUKUN_STAGE_PATIENT_A_ID": "QA-A",
+            "SUKUN_STAGE_PATIENT_B_ID": "QA-B",
+        }
+        with patch.dict(os.environ, patient_env, clear=True):
+            with patch.object(gate, "request_json") as api:
+                with self.assertRaisesRegex(gate.GateFailure, "secrets missing"):
+                    gate.run()
+                api.assert_not_called()
+
+    def test_patient_only_detects_cross_patient_leak(self):
+        patient_env = {
+            "SUKUN_STAGE_GATE_CONFIRM": "STAGING_ONLY",
+            "SUKUN_STAGE_GATE_MODE": "PATIENT_ONLY",
+            "SUKUN_STAGE_PROJECT_REF": gate.STAGING_REF,
+            "SUKUN_STAGE_PUBLISHABLE_KEY": "sb_publishable_test_only",
+            "SUKUN_STAGE_PATIENT_A_ID": "QA-A",
+            "SUKUN_STAGE_PATIENT_B_ID": "QA-B",
+            "SUKUN_STAGE_PATIENT_SHARED_PASSWORD": "synthetic-only-value",
+        }
+        def fake(path, key, *, bearer=None, payload=None, params=None):
+            return fake_api(path, key, bearer=bearer, payload=payload,
+                            params=params, leak=True)
+        with patch.dict(os.environ, patient_env, clear=True):
+            with patch.object(gate, "request_json", side_effect=fake):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "SECURITY"):
+                        gate.run()
+
     def test_explicit_anonymous_denial_is_accepted(self):
         with patch.object(gate, "request_json", return_value=(403, None)):
             self.assertEqual(
