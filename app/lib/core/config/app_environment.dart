@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract final class AppEnvironment {
+  static const stagingProjectRef = 'qacklgqvxvjjzsimjoip';
+  static const stagingSupabaseUrl = 'https://$stagingProjectRef.supabase.co';
+
   static const productionProjectRef = 'vydfafumxptanpkmtrpr';
   static const productionSupabaseUrl =
       'https://$productionProjectRef.supabase.co';
@@ -178,6 +181,10 @@ void validateSupabaseRuntimeConfiguration({
   final uri = Uri.tryParse(url);
   if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
     throw StateError('SUPABASE_URL must be a valid HTTPS URL.');
+  }
+  // No preview/mobile build may point staging at an arbitrary external project.
+  if (environment == 'staging' && url != AppEnvironment.stagingSupabaseUrl) {
+    throw StateError('Staging builds must target the approved isolated project.');
   }
   if (environment == 'production' &&
       url != AppEnvironment.productionSupabaseUrl) {
