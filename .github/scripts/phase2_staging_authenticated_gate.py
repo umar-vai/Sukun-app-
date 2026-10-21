@@ -118,16 +118,20 @@ def first_id(data, label):
 
 def run():
     mode = os.getenv("SUKUN_STAGE_GATE_MODE", "FULL")
-    require(mode in ("PATIENT_ONLY", "FULL"), "Invalid staging gate mode")
+    require(mode in ("PATIENT_ONLY", "PATIENT_ADMIN", "FULL"),
+            "Invalid staging gate mode")
     required = (
         "SUKUN_STAGE_PUBLISHABLE_KEY",
         "SUKUN_STAGE_PATIENT_A_ID", "SUKUN_STAGE_PATIENT_B_ID",
     )
-    if mode == "FULL":
-        required += (
-            "SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_ADMIN_PASSWORD",
-            "SUKUN_STAGE_MEMBER_EMAIL", "SUKUN_STAGE_MEMBER_PASSWORD",
-        )
+    if mode in ("PATIENT_ADMIN", "FULL"):
+        required += ("SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_ADMIN_PASSWORD")
+    # Existing staging Members use Google OAuth, not password auth.
+    # A short-lived OAuth access token can be supplied as a protected secret
+    # for one manual FULL gate run; token validity/role is checked by GoTrue/RLS.
+    member_access_token = os.getenv("SUKUN_STAGE_MEMBER_ACCESS_TOKEN")
+    if mode == "FULL" and not member_access_token:
+        required += ("SUKUN_STAGE_MEMBER_EMAIL", "SUKUN_STAGE_MEMBER_PASSWORD")
     shared_password = os.getenv("SUKUN_STAGE_PATIENT_SHARED_PASSWORD")
     if not shared_password:
         required += (
@@ -142,9 +146,17 @@ def run():
     require(key.startswith("sb_publishable_"), "A public staging publishable key is required")
     require(os.getenv("SUKUN_STAGE_PROJECT_REF") == STAGING_REF,
             "Incorrect staging project reference")
+    if mode in ("PATIENT_ADMIN", "FULL"):
+        require("@" in os.environ["SUKUN_STAGE_ADMIN_EMAIL"],
+                "Staging Admin login must use synthetic email")
     if mode == "FULL":
-        for item in ("SUKUN_STAGE_ADMIN_EMAIL", "SUKUN_STAGE_MEMBER_EMAIL"):
-            require("@" in os.environ[item], "Admin/Member QA login must use synthetic email")
+        if member_access_token:
+            parts = member_access_token.split(".")
+            require(len(parts) == 3 and all(parts) and len(member_access_token) < 8192,
+                    "Invalid staging Member JWT format")
+        else:
+            require("@" in os.environ["SUKUN_STAGE_MEMBER_EMAIL"],
+                    "Staging Member login must use synthetic email")
 
     a = login_patient(key, os.environ["SUKUN_STAGE_PATIENT_A_ID"],
                       shared_password or os.environ["SUKUN_STAGE_PATIENT_A_PASSWORD"])
@@ -166,20 +178,24 @@ def run():
                 "Unexpected or privileged role for staging " + label)
     print("PASS: two distinct synthetic Patient accounts authenticated with server roles")
 
-    if mode == "FULL":
+    if mode in ("PATIENT_ADMIN", "FULL"):
         admin = login_email(key, os.environ["SUKUN_STAGE_ADMIN_EMAIL"],
                             os.environ["SUKUN_STAGE_ADMIN_PASSWORD"], "Admin")
-        member = login_email(key, os.environ["SUKUN_STAGE_MEMBER_EMAIL"],
-                             os.environ["SUKUN_STAGE_MEMBER_PASSWORD"], "Member")
         admin_id = get_user_id(key, admin, "Admin")
-        member_id = get_user_id(key, member, "Member")
-        require(len(set(user_ids + [admin_id, member_id])) == 4,
-                "All staging accounts must have distinct Auth users")
+        require(admin_id not in user_ids, "Admin must be distinct from Patient accounts")
         require(roles(key, admin, admin_id) == {"super_admin"},
                 "Staging Admin role not verified or has extra roles")
+        print("PASS: distinct synthetic Admin authenticated with server role")
+    if mode == "FULL":
+        member = member_access_token or login_email(
+            key, os.environ["SUKUN_STAGE_MEMBER_EMAIL"],
+            os.environ["SUKUN_STAGE_MEMBER_PASSWORD"], "Member")
+        member_id = get_user_id(key, member, "Member")
+        require(member_id not in user_ids + [admin_id],
+                "General Member must be distinct from Patient/Admin")
         require(roles(key, member, member_id) == {"member"},
                 "Staging Member role not verified or has extra roles")
-        print("PASS: distinct Admin/Member authenticated with server roles")
+        print("PASS: distinct synthetic General Member authenticated with server role")
 
     a_patients = rows(key, a, "patients")
     b_patients = rows(key, b, "patients")
@@ -211,7 +227,7 @@ def run():
             "SECURITY: Patient B can read Patient A plan_actions")
     print("PASS: authenticated Patients have distinct, complete clinical fixtures and no cross-patient reads")
 
-    if mode == "FULL":
+    if mode in ("PATIENT_ADMIN", "FULL"):
         require(len(rows(key, admin, "care_plans", {"id": "eq." + a_plan})) == 1,
                 "Admin cannot read synthetic Patient A plan")
     for table in ("patients", "care_plans", "prescriptions", "plan_actions",
@@ -223,6 +239,8 @@ def run():
                 "SECURITY: Guest can read " + table)
     if mode == "FULL":
         print("PASS: Admin clinical read, Member and Guest clinical denial")
+    elif mode == "PATIENT_ADMIN":
+        print("PASS: Admin clinical read and Guest clinical denial; Member check pending")
     else:
         print("PASS: Patient-only gate; Admin/Member login checks remain pending")
     print("PASS: read-only live JWT/RLS staging gate; no writes performed")

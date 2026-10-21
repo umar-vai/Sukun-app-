@@ -36,6 +36,8 @@ OWNED = {
 
 
 def fake_api(path, key, *, bearer=None, payload=None, params=None, leak=False):
+    if bearer == "synthetic.member.jwt":
+        bearer = "token-member"
     if path == "/functions/v1/patient-sign-in":
         return 200, {"refresh_token": "refresh-A" if payload["identifier"] == "QA-A"
                      else "refresh-B"}
@@ -228,6 +230,94 @@ class StagingGateTests(unittest.TestCase):
         for table in ("care_plans", "prescriptions", "task_instances", "task_completions"):
             self.assertEqual(checked["/rest/v1/" + table]["patient_id"], "eq.patient-A")
         self.assertEqual(checked["/rest/v1/plan_actions"]["care_plan_id"], "eq.plan-A")
+
+    def test_patient_admin_mode_skips_oauth_member_credentials(self):
+        env = dict(ENV, SUKUN_STAGE_GATE_MODE="PATIENT_ADMIN")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        paths = []
+        def capture(path, key, *, bearer=None, payload=None, params=None):
+            paths.append((path, bearer))
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=capture):
+                with contextlib.redirect_stdout(io.StringIO()) as out:
+                    gate.run()
+        self.assertIn("Member check pending", out.getvalue())
+        self.assertEqual(
+            [p for p, b in paths if p == "/auth/v1/token?grant_type=password"],
+            ["/auth/v1/token?grant_type=password"])
+        self.assertFalse(any(b == "token-member" for p, b in paths))
+
+    def test_full_mode_uses_google_member_access_token(self):
+        env = dict(ENV, SUKUN_STAGE_MEMBER_ACCESS_TOKEN="synthetic.member.jwt")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        calls = []
+        def capture(path, key, *, bearer=None, payload=None, params=None):
+            calls.append((path, bearer))
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=capture):
+                with contextlib.redirect_stdout(io.StringIO()) as out:
+                    gate.run()
+        self.assertIn("General Member authenticated", out.getvalue())
+        self.assertIn(("/auth/v1/user", "synthetic.member.jwt"), calls)
+        self.assertEqual(sum(p == "/auth/v1/token?grant_type=password" for p, _ in calls), 1)
+        self.assertTrue(any(p == "/rest/v1/care_plans" and b == "synthetic.member.jwt"
+                            for p, b in calls))
+
+    def test_expired_google_member_token_fails_closed(self):
+        env = dict(ENV, SUKUN_STAGE_MEMBER_ACCESS_TOKEN="synthetic.member.jwt")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        def expired(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/auth/v1/user" and bearer == "synthetic.member.jwt":
+                return 401, None
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=expired):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "Member token invalid"):
+                        gate.run()
+
+    def test_invalid_member_access_token_fails_before_network(self):
+        env = dict(ENV, SUKUN_STAGE_MEMBER_ACCESS_TOKEN="not-a-jwt")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json") as api:
+                with self.assertRaisesRegex(gate.GateFailure, "JWT format"):
+                    gate.run()
+                api.assert_not_called()
+
+    def test_full_google_member_extra_admin_role_fails_closed(self):
+        env = dict(ENV, SUKUN_STAGE_MEMBER_ACCESS_TOKEN="synthetic.member.jwt")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        def privileged(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/user_roles" and bearer == "synthetic.member.jwt":
+                return 200, [{"role": "member"}, {"role": "super_admin"}]
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=privileged):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "Member role not verified"):
+                        gate.run()
+
+    def test_full_google_member_cannot_read_patient_data(self):
+        env = dict(ENV, SUKUN_STAGE_MEMBER_ACCESS_TOKEN="synthetic.member.jwt")
+        env.pop("SUKUN_STAGE_MEMBER_EMAIL")
+        env.pop("SUKUN_STAGE_MEMBER_PASSWORD")
+        def leaked(path, key, *, bearer=None, payload=None, params=None):
+            if path == "/rest/v1/patients" and bearer == "synthetic.member.jwt":
+                return 200, [{"id": "patient-A"}]
+            return fake_api(path, key, bearer=bearer, payload=payload, params=params)
+        with patch.dict(os.environ, env, clear=True):
+            with patch.object(gate, "request_json", side_effect=leaked):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(gate.GateFailure, "General Member can read"):
+                        gate.run()
 
     def test_explicit_anonymous_denial_is_accepted(self):
         with patch.object(gate, "request_json", return_value=(403, None)):
