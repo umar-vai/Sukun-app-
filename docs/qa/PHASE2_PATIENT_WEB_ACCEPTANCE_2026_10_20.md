@@ -4,9 +4,9 @@
 
 ## Environment and safety
 
-- Use the existing real Flutter Web preview at `https://app.sukunlife.com/` and the SHA from `/preview-build.json`. Do not create a parallel mockup or ship native APK/AAB.
+- The verified existing development preview destination is **`https://umar-vai.github.io/Sukun-app-/`**, not a future app subdomain. Read `/preview-build.json` to identify the exact deployed SHA and `backend_mode` before touching login. **Current main Pages builds use Production or guest mode; do not sign in with Staging Patient/Admin credentials there.** PR artifacts can compile the identical Flutter source with the isolated Staging public key for a trusted, non-public local browser QA session. Do not create a parallel hosted mockup, silently repoint the Pages site, or ship native APK/AAB.
 - Use only explicitly identified owner-controlled synthetic **Admin, Patient A, Patient B, General Member** accounts and synthetic care-plan text. Confirm each test account's actual server role before testing. Keep passwords, JWTs, service-role keys and any personal records out of screenshots/logs/public CI artifacts.
-- Prefer isolated Supabase Staging `qacklgqvxvjjzsimjoip` for destructive or adversarial test scenarios. Web preview currently uses production backend config; don't silently redirect or reseed production.
+- **Only** use isolated Supabase Staging `qacklgqvxvjjzsimjoip` for this patient/admin authenticated QA. Existing Pages main currently uses production backend config; never silently redirect or reseed production. Authenticated cross-patient read-only REST tests are proven for Patient A/B by GitHub Actions run #39541838856, but Flutter browser flows G2–G8 are still pending.
 - Do not bypass Auth/RLS, alter production clinical records, or turn off row-level security to make a browser test pass.
 
 ## Required checks in order
