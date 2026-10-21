@@ -212,7 +212,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Configure approved production backend for existing Pages URL
+      - name: Configure approved backend for existing Pages URL
         id: preview-config
         shell: bash
         env:
@@ -220,6 +220,7 @@ jobs:
           # service-role or Gemini secrets into a Flutter Web artifact.
           PUBLIC_PRODUCTION_KEY: sb_publishable_bRXqmJeOzc3Dq8BTzyqRKg_gzpAeCPz
           PREVIEW_FORCE_GUEST_ONLY: ${{ vars.SUKUN_PREVIEW_FORCE_GUEST_ONLY }}
+          PREVIEW_USE_STAGING: ${{ vars.SUKUN_PREVIEW_USE_STAGING }}
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           EVENT_NAME: ${{ github.event_name }}
           ENABLE_PROD_MEMBER_SIGNUP: ${{ vars.SUKUN_PRODUCTION_ENABLE_MEMBER_SIGNUP }}
@@ -237,22 +238,48 @@ jobs:
           google_oauth=false
           # PR artifacts use the isolated staging backend: real Flutter UI,
           # public publishable key, no production patients or admin credentials.
-          # Main Pages deploys retain their existing production/guest policy.
+          # Main Pages stay production/guest unless an operator explicitly
+          # enables the staging-only preview variable.
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             environment=staging
             url=https://qacklgqvxvjjzsimjoip.supabase.co
             key=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
           fi
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
-            for flag in PREVIEW_FORCE_GUEST_ONLY ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
+            for flag in PREVIEW_FORCE_GUEST_ONLY PREVIEW_USE_STAGING ENABLE_PROD_MEMBER_SIGNUP ENABLE_PROD_EMAIL_OTP ENABLE_PROD_PHONE_OTP ENABLE_PROD_GOOGLE_OAUTH; do
               case "${!flag}" in
                 ''|true|false) ;;
                 *) echo 'Production web feature flag must be true, false or unset.' >&2; exit 1 ;;
               esac
             done
-            if [[ "${PREVIEW_FORCE_GUEST_ONLY:-false}" != "true" ]]; then
-              # Source is ALWAYS the verified real Production project.
-              # Old SUKUN_PREVIEW_SUPABASE_* STAGING variables are ignored.
+            if [[ "${PREVIEW_USE_STAGING:-false}" == "true" && "${PREVIEW_FORCE_GUEST_ONLY:-false}" == "true" ]]; then
+              echo 'Staging preview and emergency guest-only mode cannot both be enabled.' >&2
+              exit 1
+            fi
+            if [[ "${PREVIEW_USE_STAGING:-false}" == "true" ]]; then
+              # Explicitly opt in to real, role-aware Flutter Web against
+              # isolated synthetic Staging. Never use Production user data.
+              environment=staging
+              url=https://qacklgqvxvjjzsimjoip.supabase.co
+              key=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+              # Public Member signup and OTP stay disabled. Existing staging
+              # Members use Google OAuth only; enable entrypoint only when
+              # staging GoTrue positively confirms the provider is active.
+              provider_settings="$(mktemp)"
+              trap 'rm -f "$provider_settings"' EXIT
+              curl --fail-with-body --silent --show-error --retry 2 \
+                --max-time 25 --header "apikey: $key" \
+                --header 'Accept: application/json' \
+                "$url/auth/v1/settings" > "$provider_settings"
+              if jq -e '.external.google == true' "$provider_settings" > /dev/null; then
+                google_oauth=true
+                echo 'Staging Google OAuth enabled; browser callback still requires real QA.'
+              else
+                google_oauth=false
+                echo 'Staging Google OAuth unavailable; do not show broken Google login.'
+              fi
+            elif [[ "${PREVIEW_FORCE_GUEST_ONLY:-false}" != "true" ]]; then
+              # Default main Pages retains its previously approved backend.
               environment=production
               url=https://vydfafumxptanpkmtrpr.supabase.co
               key="$PUBLIC_PRODUCTION_KEY"
@@ -298,16 +325,23 @@ jobs:
           echo "ENABLE_GOOGLE_OAUTH=$google_oauth" >> "$GITHUB_ENV"
           echo "backend_mode=$environment" >> "$GITHUB_OUTPUT"
 
-      - name: Verify Production anonymous data isolation before Pages deploy
+      - name: Verify anonymous data isolation before Pages deploy
         if: github.event_name == 'workflow_run'
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$APP_ENVIRONMENT" == "production" ]]; then
-            bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
-          else
-            echo "Explicit emergency guest-only web build."
-          fi
+          case "$APP_ENVIRONMENT" in
+            production|staging)
+              bash "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
+              ;;
+            local)
+              echo "Explicit emergency guest-only web build."
+              ;;
+            *)
+              echo 'Unsupported Pages backend mode.' >&2
+              exit 1
+              ;;
+          esac
 
       - name: Verify 114 Production Quran surahs, Bengali verses and audio
         if: github.event_name == 'workflow_run'
@@ -317,10 +351,10 @@ jobs:
           if [[ "$APP_ENVIRONMENT" == production ]]; then
             bash "$GITHUB_WORKSPACE/.github/scripts/verify-production-quran.sh"
           else
-            echo "Emergency guest-only build: Production Quran smoke not applicable."
+            echo "Production Quran smoke not applicable outside Production mode."
           fi
 
-      - name: Build role-aware Flutter Web (approved production or emergency guest)
+      - name: Build role-aware Flutter Web (approved production, staging or emergency guest)
         shell: bash
         env:
           ANDROID_APK_URL: ${{ vars.SUKUN_ANDROID_APK_URL }}
