@@ -55,6 +55,30 @@ void main() {
       );
     });
 
+    test('staging runtime is pinned to the synthetic Sukun project', () {
+      expect(
+        () => validateSupabaseRuntimeConfiguration(
+          environment: 'staging',
+          url: AppEnvironment.stagingSupabaseUrl,
+          publishableKey: 'sb_publishable_fixture',
+        ),
+        returnsNormally,
+      );
+      for (final url in [
+        'https://another-preview.supabase.co',
+        AppEnvironment.productionSupabaseUrl,
+      ]) {
+        expect(
+          () => validateSupabaseRuntimeConfiguration(
+            environment: 'staging',
+            url: url,
+            publishableKey: 'sb_publishable_fixture',
+          ),
+          throwsA(isA<StateError>()),
+        );
+      }
+    });
+
     test('staging cannot silently start without Supabase', () {
       expect(
         () => validateSupabaseRuntimeConfiguration(

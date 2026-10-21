@@ -58,7 +58,12 @@ void validateWebPreviewConfiguration({
         'Production web requires the approved project and a public key.',
       );
     }
-  } else if (host == Uri.parse(AppEnvironment.productionSupabaseUrl).host) {
-    throw StateError('Non-production web cannot use Production Supabase.');
+  } else if (environment == 'staging') {
+    if (url != AppEnvironment.stagingSupabaseUrl ||
+        !publishableKey.startsWith('sb_publishable_')) {
+      throw StateError(
+        'Staging web requires the approved isolated project and a public key.',
+      );
+    }
   }
 }
