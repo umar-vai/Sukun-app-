@@ -184,7 +184,9 @@ void validateSupabaseRuntimeConfiguration({
   }
   // No preview/mobile build may point staging at an arbitrary external project.
   if (environment == 'staging' && url != AppEnvironment.stagingSupabaseUrl) {
-    throw StateError('Staging builds must target the approved isolated project.');
+    throw StateError(
+      'Staging builds must target the approved isolated project.',
+    );
   }
   if (environment == 'production' &&
       url != AppEnvironment.productionSupabaseUrl) {
