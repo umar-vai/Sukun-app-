@@ -1,6 +1,6 @@
 # Phase 2 — Real JWT Staging Role Acceptance Runbook (2026-10-20)
 
-**Status: gate implemented in source, live credential run NOT completed.** This is a staging-only authenticated REST/RLS smoke test. It does not replace a full Flutter UI/browser journey.
+**Status update (21 October 2026):** The live `PATIENT_ONLY` gate passed on trusted main commit `9197275a` via [Actions run #39541838856](https://github.com/umar-vai/Sukun-app-/actions/runs/39541838856), with real Patient A/B JWTs, mandatory clinical fixtures and cross-patient read isolation. **Admin and Google OAuth Member login and Flutter UI browser acceptance remain pending.** This is a staging-only authenticated REST/RLS smoke test, not a full Flutter UI/browser journey.
 
 ## Why it exists
 
@@ -31,9 +31,18 @@ After this PR is merged, open Actions → **Phase 2 Synthetic Staging Auth/RLS G
 
 The test uses actual Staging Edge Patient Login, token exchange and authenticated REST calls. It requires **distinct patient identities**, exactly one owned active Patient A plan, readable A prescription/task/completion/plan-action fixtures, **no visible plan for Patient B**, and no privileged roles for either patient. It checks that neither patient can see the other's patient identity, that Patient B cannot read A's clinical records or plan actions, and that Guest cannot read private rows. Missing A fixtures fail closed instead of printing an inconclusive message and passing. No clinical rows are modified. A real browser session/UI test is still pending.
 
-## Full four-role gate (later, when Admin/Member login methods are ready)
+## Admin and Google OAuth Member follow-up gates
 
-The original FULL mode remains available. Configure these additional secrets **only for FULL**, noting that the existing synthetic Member users have no email-password credentials; a separate approved member login method or synthetic Member provisioning will be needed.
+Live Staging role/provider inventory (21 October 2026, non-identifying aggregate SQL):
+- 2 Patient accounts: password-based Auth identities.
+- 1 `super_admin`: synthetic email/password Auth identity.
+- 2 `member`: **Google OAuth only**; neither Member has an Auth password.
+
+The `PATIENT_ADMIN` mode reuses Patient A/B's already-configured secrets and requires only `SUKUN_STAGE_ADMIN_EMAIL` and `SUKUN_STAGE_ADMIN_PASSWORD` in GitHub Actions Secrets. It verifies real Admin Auth and Patient A's active clinical plan access, without incorrectly requiring a Member password.
+
+The `FULL` mode now supports a **short-lived** Staging Google OAuth Member access JWT via the protected GitHub Actions repository secret `SUKUN_STAGE_MEMBER_ACCESS_TOKEN`. Obtain the token only through an authorized Staging OAuth session and approved secure credential workflow; do not paste it into chat, code, browser URLs, logs or public Pages. Access tokens expire; update the protected secret when it expires and repeat the manual run. The gate checks the token with Staging GoTrue and DB-issued `member` role and fails closed if expired, invalid, privileged or able to read clinical data.
+
+The legacy Member email/password path remains supported for future separately approved synthetic email Member accounts; **it cannot authenticate the existing OAuth-only Member identities**.
 
 
 | Secret | Staging account |
@@ -44,17 +53,18 @@ The original FULL mode remains available. Configure these additional secrets **o
 | `SUKUN_STAGE_PATIENT_B_PASSWORD` | Patient B password |
 | `SUKUN_STAGE_ADMIN_EMAIL` | Synthetic Super Admin login email |
 | `SUKUN_STAGE_ADMIN_PASSWORD` | Synthetic Super Admin password |
-| `SUKUN_STAGE_MEMBER_EMAIL` | Synthetic General Member login email |
-| `SUKUN_STAGE_MEMBER_PASSWORD` | Synthetic General Member password |
+| `SUKUN_STAGE_MEMBER_ACCESS_TOKEN` | **Preferred for existing OAuth Member:** short-lived synthetic Staging Google OAuth access JWT, protected Actions Secret |
+| `SUKUN_STAGE_MEMBER_EMAIL` | **Alternative only:** separately provisioned synthetic email/password Member email |
+| `SUKUN_STAGE_MEMBER_PASSWORD` | **Alternative only:** matching separate synthetic Member password |
 
 **Do not transmit these values to ChatGPT.** Add them directly in GitHub repository Settings -> Secrets and variables -> Actions -> Repository secrets. The chosen A account must own an active Staging care plan and the selected accounts must have canonical server-issued database roles. All four must be distinct users. Never use Production credentials.
 
-## How to run the FULL four-role gate
+## How to run the Admin / FULL staging gates
 
-1. Merge the reviewed gate PR after its CI tests pass.
-2. In GitHub Actions, open **Phase 2 Synthetic Staging Auth/RLS Gate**, choose **Run workflow**, branch **main**.
-3. Enter exactly `STAGING_ONLY` for `staging_only_confirmation`.
-4. The script authenticates A/B using the actual `patient-sign-in` endpoint + Supabase refresh-token exchange and Admin/Member using GoTrue password login. It validates identities and database roles from live Staging and reads clinical data through REST using **real bearer tokens**.
+1. Merge the reviewed gate PR **only after CI passes**.
+2. To test Admin first, add the protected Staging Admin email/password secrets, then manually run **Phase 2 Synthetic Staging Auth/RLS Gate** on `main` with `qa_mode=PATIENT_ADMIN` and confirmation `STAGING_ONLY`.
+3. For the complete four-role test, provide the **short-lived** synthetic OAuth Member JWT secret from an authorized Staging session. Manually run `qa_mode=FULL` on trusted `main` with confirmation `STAGING_ONLY`.
+4. A/B authenticate through the actual Staging `patient-sign-in` Edge Function and GoTrue token exchange; Admin uses Staging GoTrue password login; OAuth Member uses its authorized short-lived access JWT validated by GoTrue `/auth/v1/user`. All role checks use server-issued Staging `user_roles` through REST.
 5. The release gate **fails** if either patient has an additional privileged role; Patient A lacks prescription/task/completion/action fixtures or exactly one own active plan; B has a visible plan, can read A's patient, plan, action, prescription, task or completion; A can read B's patient; Member/Guest can read clinical records; or Admin cannot access A's plan. The fixture contract is intentionally strict.
 6. No tokens, names, emails, passwords, database IDs or response bodies are printed, stored in artifacts or sent to public Pages.
 
@@ -62,7 +72,9 @@ The original FULL mode remains available. Configure these additional secrets **o
 
 | Test | Outcome |
 | --- | --- |
-| Authentic Staging Patient A/B, Admin and Member login | Verified when manual run passes |
+| Authentic Staging Patient A/B login | Verified on run #39541838856 |
+| Staging Admin + Patient live JWT | Pending manual `PATIENT_ADMIN` run |
+| Google OAuth Member live JWT | Pending manual `FULL` run |
 | Server-issued role lookup and distinct identities | Verified when manual run passes |
 | Authenticated REST read isolation for known A data | Verified when manual run passes |
 | Anonymous/member clinical access empty or denied | Verified when manual run passes |
@@ -71,7 +83,7 @@ The original FULL mode remains available. Configure these additional secrets **o
 | Browser device acceptance (Safari mobile, Chrome desktop) | **NOT** verified by this workflow |
 | Runtime write-idempotency from live browser tokens | **NOT** verified (covered separately by rolled-back SQL/RPC tests) |
 
-The workflow runs network-free unit tests before calling Staging; **13 targeted tests** also run automatically on PR/main CI, even if secrets are not set. Successful offline CI does not establish real login or successful authenticated RLS. A failed manual gate is a **release blocker**. If secrets are absent, the workflow fails with a generic message and does not attempt login.
+The workflow runs network-free unit tests before calling Staging; **19 targeted regression tests** now run automatically on PR/main CI, even if secrets are not set. Successful offline CI does not establish new Admin/Member login or browser E2E results. A failed manual gate is a **release blocker**. If secrets are absent, the workflow fails with a generic message and does not attempt login.
 
 ## Next browser acceptance
 
