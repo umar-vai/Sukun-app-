@@ -15,9 +15,8 @@ case "$APP_ENVIRONMENT" in
     }
     ;;
   staging)
-    [[ "$SUPABASE_URL" == https://*.supabase.co &&
-       "$SUPABASE_URL" != "https://vydfafumxptanpkmtrpr.supabase.co" ]] || {
-      echo "Staging must use an isolated Supabase project." >&2
+    [[ "$SUPABASE_URL" == "https://qacklgqvxvjjzsimjoip.supabase.co" ]] || {
+      echo "Staging must use the approved isolated Sukun project." >&2
       exit 1
     }
     ;;
