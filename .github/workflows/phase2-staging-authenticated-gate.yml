@@ -8,12 +8,13 @@ on:
         required: true
         type: string
       qa_mode:
-        description: 'Select synthetic Patient A/B only or all four roles'
+        description: 'Patient A/B, Patient + Admin, or full four-role gate'
         required: true
         type: choice
         default: PATIENT_ONLY
         options:
           - PATIENT_ONLY
+          - PATIENT_ADMIN
           - FULL
 
 permissions:
@@ -64,6 +65,9 @@ jobs:
           SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
           SUKUN_STAGE_MEMBER_EMAIL: ${{ secrets.SUKUN_STAGE_MEMBER_EMAIL }}
           SUKUN_STAGE_MEMBER_PASSWORD: ${{ secrets.SUKUN_STAGE_MEMBER_PASSWORD }}
+          # Optional short-lived synthetic Google OAuth JWT for Member in FULL mode.
+          # Stays server-only in Actions; never used in Flutter Web builds.
+          SUKUN_STAGE_MEMBER_ACCESS_TOKEN: ${{ secrets.SUKUN_STAGE_MEMBER_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           test "$SUKUN_STAGE_GATE_CONFIRM" = STAGING_ONLY
