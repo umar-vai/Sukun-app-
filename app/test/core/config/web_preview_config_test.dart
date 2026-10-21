@@ -19,11 +19,37 @@ void main() {
       expect(
         () => validateWebPreviewConfiguration(
           environment: 'staging',
-          url: 'https://isolated-preview.supabase.co',
+          url: AppEnvironment.stagingSupabaseUrl,
           publishableKey: 'sb_publishable_fixture',
         ),
         returnsNormally,
       );
+    });
+
+    test('staging rejects any other project or private API key', () {
+      for (final url in [
+        'https://isolated-preview.supabase.co',
+        AppEnvironment.productionSupabaseUrl,
+      ]) {
+        expect(
+          () => validateWebPreviewConfiguration(
+            environment: 'staging',
+            url: url,
+            publishableKey: 'sb_publishable_fixture',
+          ),
+          throwsA(isA<StateError>()),
+        );
+      }
+      for (final key in ['sb_secret_internal', 'eyJ.legacy_anon']) {
+        expect(
+          () => validateWebPreviewConfiguration(
+            environment: 'staging',
+            url: AppEnvironment.stagingSupabaseUrl,
+            publishableKey: key,
+          ),
+          throwsA(isA<StateError>()),
+        );
+      }
     });
 
     test('production project forbidden even when staging is selected', () {
@@ -118,7 +144,7 @@ void main() {
         expect(
           () => validateWebPreviewConfiguration(
             environment: 'staging',
-            url: 'https://isolated-preview.supabase.co',
+            url: AppEnvironment.stagingSupabaseUrl,
             publishableKey: 'sb_publishable_fixture',
             publicMemberSignupEnabled: true,
             emailOtpEnabled: true,
