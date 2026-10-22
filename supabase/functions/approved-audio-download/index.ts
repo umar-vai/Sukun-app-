@@ -109,9 +109,19 @@ Deno.serve(async (request) => {
     }
     // An atomic PostgreSQL reservation enforces both per-member and *global*
     // UTC-day budgets, so a stolen JWT or bot cannot trigger unbounded egress.
-    const { data: reserved, error: quotaError } = await client.rpc(
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceKey) {
+      upstream.body.cancel().catch(() => {});
+      return response(503, "gateway_budget_unconfigured", true);
+    }
+    // Service key stays inside Supabase Edge. Do NOT use user JWT for this
+    // RPC: otherwise any member could exhaust the whole project's quota.
+    const trustedBudgetClient = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: reserved, error: quotaError } = await trustedBudgetClient.rpc(
       "reserve_approved_audio_download",
-      { p_bytes: contentLength },
+      { p_user_id: identity.user.id, p_bytes: contentLength },
     );
     if (quotaError || reserved !== true) {
       upstream.body.cancel().catch(() => {});
