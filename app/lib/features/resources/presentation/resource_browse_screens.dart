@@ -712,7 +712,8 @@ class _ResourceListTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
-                ],              ],
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 8),
