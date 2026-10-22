@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:idb_shim/idb.dart';
 import 'package:idb_shim/idb_browser.dart';
+
 import 'offline_byte_store.dart';
 
 OfflineByteStore createOfflineByteStore() => _BrowserIndexedDbStore();
@@ -12,12 +13,12 @@ class _BrowserIndexedDbStore implements OfflineByteStore {
   Future<Database>? _database;
 
   Future<Database> get _db => _database ??= idbFactoryBrowser.open(
-        'sukun-public-offline-v1',
-        version: 1,
-        onUpgradeNeeded: (event) {
-          event.database.createObjectStore('media');
-        },
-      );
+    'sukun-public-offline-v1',
+    version: 1,
+    onUpgradeNeeded: (event) {
+      event.database.createObjectStore('media');
+    },
+  );
 
   @override
   Future<void> write(String key, Uint8List bytes) async {
