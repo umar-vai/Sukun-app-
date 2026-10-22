@@ -34,7 +34,10 @@ void main() {
   });
 
   test('15-minute segments change track only at the configured boundary', () {
-    expect(playlistSegmentBoundary(const Duration(minutes: 14, seconds: 59), 15), isFalse);
+    expect(
+      playlistSegmentBoundary(const Duration(minutes: 14, seconds: 59), 15),
+      isFalse,
+    );
     expect(playlistSegmentBoundary(const Duration(minutes: 15), 15), isTrue);
     expect(playlistSegmentBoundary(const Duration(minutes: 30), 0), isFalse);
   });
