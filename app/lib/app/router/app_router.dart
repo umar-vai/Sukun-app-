@@ -52,6 +52,7 @@ import 'package:sukun_life/features/resources/presentation/resource_browse_scree
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/media_library/presentation/my_media_library_screen.dart';
+import 'package:sukun_life/features/challenges/presentation/forty_day_challenge_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_announcements_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/admin_announcements_screen.dart';
 import 'package:sukun_life/app/router/role_navigation_shell.dart';
@@ -191,6 +192,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => PersonalActionDetailScreen(
               actionId: state.pathParameters['actionId']!,
             ),
+          ),
+          GoRoute(
+            path: '/challenge/40-day',
+            builder: (context, state) => const FortyDayChallengeScreen(),
           ),
           GoRoute(
             path: '/my-media',
