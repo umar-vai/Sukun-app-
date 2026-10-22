@@ -62,33 +62,37 @@ void main() {
     expect(find.text('রোগীর তালিকা'), findsNothing);
   });
 
-  testWidgets('Guest can open all public 40-day challenge stages without login', (
-    tester,
-  ) async {
-    final changes = StreamController<AppSession>.broadcast(sync: true);
-    addTearDown(changes.close);
-    final container = ProviderContainer(
-      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const SukunLifeApp(),
-      ),
-    );
-    await tester.pump();
+  testWidgets(
+    'Guest can open all public 40-day challenge stages without login',
+    (tester) async {
+      final changes = StreamController<AppSession>.broadcast(sync: true);
+      addTearDown(changes.close);
+      final container = ProviderContainer(
+        overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const SukunLifeApp(),
+        ),
+      );
+      await tester.pump();
 
-    final router = container.read(appRouterProvider);
-    router.go('/challenge/40-day');
-    await tester.pump(const Duration(milliseconds: 150));
+      final router = container.read(appRouterProvider);
+      router.go('/challenge/40-day');
+      await tester.pump(const Duration(milliseconds: 150));
 
-    expect(router.routeInformationProvider.value.uri.path, '/challenge/40-day');
-    expect(find.text('জাদু থেকে সুরক্ষার চ্যালেঞ্জ'), findsOneWidget);
-    expect(find.byKey(const Key('challenge-login')), findsOneWidget);
-    expect(find.byKey(const Key('challenge-stage-5')), findsOneWidget);
-    expect(find.byKey(const Key('challenge-progress')), findsNothing);
-  });
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/challenge/40-day',
+      );
+      expect(find.text('জাদু থেকে সুরক্ষার চ্যালেঞ্জ'), findsOneWidget);
+      expect(find.byKey(const Key('challenge-login')), findsOneWidget);
+      expect(find.byKey(const Key('challenge-stage-5')), findsOneWidget);
+      expect(find.byKey(const Key('challenge-progress')), findsNothing);
+    },
+  );
 
   testWidgets('unresolved identity cannot open private notification settings', (
     tester,
