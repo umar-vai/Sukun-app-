@@ -539,7 +539,9 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                                     detail.contains('সীমা শেষ')) {
                                   _message(detail);
                                 } else {
-                                  _message('এই অডিও/PDF এখন ডাউনলোড করা যাচ্ছে না।');
+                                  _message(
+                                    'এই অডিও/PDF এখন ডাউনলোড করা যাচ্ছে না।',
+                                  );
                                 }
                               } on http.ClientException {
                                 _message(
