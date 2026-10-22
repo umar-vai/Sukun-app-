@@ -10,6 +10,8 @@ const base = 'https://app.sukunlife.com/';
 const stagingHost = 'qacklgqvxvjjzsimjoip.supabase.co';
 const productionHost = 'vydfafumxptanpkmtrpr.supabase.co';
 const expectedCommit = process.env.SUKUN_EXPECTED_MAIN_SHA || '';
+// Fixed labels only, never print DOM, URLs, IDs, JWTs or error stack.
+let acceptanceStage = 'manifest';
 
 function safeError(label) {
   throw new Error(label); // Never include private URLs, response bodies or IDs.
@@ -76,6 +78,7 @@ async function verifyGuestPage(browser, profile) {
   });
 
   try {
+    acceptanceStage = profile.label + ':home';
     const response = await page.goto(base, {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -84,6 +87,7 @@ async function verifyGuestPage(browser, profile) {
     await waitForFlutter(page);
 
     // Test the publicly accessible login route without entering any data.
+    acceptanceStage = profile.label + ':login';
     await page.goto(base + '#/login', {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -96,6 +100,7 @@ async function verifyGuestPage(browser, profile) {
     );
 
     // Public guest media library must render without patient credentials.
+    acceptanceStage = profile.label + ':guest-media';
     await page.goto(base + '#/my-media', {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -109,6 +114,7 @@ async function verifyGuestPage(browser, profile) {
 
     // Guest must not remain on either protected deep link after router settles.
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
+      acceptanceStage = profile.label + (protectedPath.startsWith('/patient') ? ':patient-guard' : ':admin-guard');
       await page.goto(base + '#' + protectedPath, {
         waitUntil: 'domcontentloaded',
         timeout: 65000,
@@ -121,6 +127,7 @@ async function verifyGuestPage(browser, profile) {
       );
     }
 
+    acceptanceStage = profile.label + ':invariants';
     assert.equal(productionClinicalCalls, 0,
       'Staging browser requested Production clinical/auth APIs');
     assert.equal(failures.length, 0, 'Flutter emitted a browser runtime error');
@@ -154,6 +161,6 @@ async function verifyGuestPage(browser, profile) {
   console.log('PASS: credential-free browser smoke completed. Real role login and clinical writes remain separate gates.');
 })().catch(() => {
   // Do not expose URLs, stack traces, tokens or DOM containing private content.
-  console.error('FAIL: Staging Chromium browser acceptance blocked; inspect trusted source and step outcome');
+  console.error('FAIL: Staging Chromium browser acceptance blocked at ' + acceptanceStage);
   process.exitCode = 1;
 });
