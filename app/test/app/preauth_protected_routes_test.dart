@@ -89,7 +89,7 @@ void main() {
       );
       expect(find.text('জাদু থেকে সুরক্ষার চ্যালেঞ্জ'), findsOneWidget);
       expect(find.byKey(const Key('challenge-login')), findsOneWidget);
-      expect(find.byKey(const Key('challenge-stage-5')), findsOneWidget);
+      expect(find.text('৫টি ধাপে আপনার ৪০ দিনের যাত্রা'), findsOneWidget);
       expect(find.byKey(const Key('challenge-progress')), findsNothing);
     },
   );
