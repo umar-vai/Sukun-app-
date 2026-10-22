@@ -59,6 +59,12 @@ async function verifyGuestPage(browser, profile) {
   });
   const failures = [];
   let productionClinicalCalls = 0;
+  // Log only trusted, fixed labels: no page content, query URLs or credentials.
+  let stage = 'initializing browser';
+  const checkpoint = (name) => {
+    stage = name;
+    console.log('CHECK: ' + profile.label + ' ' + name);
+  };
   const page = await context.newPage();
 
   // Never log external response bodies or request headers.
@@ -76,6 +82,7 @@ async function verifyGuestPage(browser, profile) {
   });
 
   try {
+    checkpoint('home boot');
     const response = await page.goto(base, {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -84,6 +91,7 @@ async function verifyGuestPage(browser, profile) {
     await waitForFlutter(page);
 
     // Test the publicly accessible login route without entering any data.
+    checkpoint('guest login route');
     await page.goto(base + '#/login', {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -96,6 +104,7 @@ async function verifyGuestPage(browser, profile) {
     );
 
     // Public guest media library must render without patient credentials.
+    checkpoint('public media library route');
     await page.goto(base + '#/my-media', {
       waitUntil: 'domcontentloaded',
       timeout: 65000,
@@ -109,6 +118,8 @@ async function verifyGuestPage(browser, profile) {
 
     // Guest must not remain on either protected deep link after router settles.
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
+      checkpoint(protectedPath.startsWith('/patient')
+        ? 'patient guest protection' : 'admin guest protection');
       await page.goto(base + '#' + protectedPath, {
         waitUntil: 'domcontentloaded',
         timeout: 65000,
@@ -121,10 +132,15 @@ async function verifyGuestPage(browser, profile) {
       );
     }
 
+    checkpoint('final privacy and runtime checks');
     assert.equal(productionClinicalCalls, 0,
       'Staging browser requested Production clinical/auth APIs');
     assert.equal(failures.length, 0, 'Flutter emitted a browser runtime error');
     console.log('PASS: ' + profile.label + ' actual Chromium startup, media library, login route, protected guest redirects and backend separation');
+  } catch (_) {
+    // Pinpoint the failed trusted milestone without leaking browser state.
+    console.error('FAIL: ' + profile.label + ' ' + stage);
+    throw new Error('Browser acceptance failed at a named public checkpoint');
   } finally {
     await context.close();
   }
