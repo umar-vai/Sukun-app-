@@ -83,8 +83,10 @@ class AudioPlaybackController extends ChangeNotifier {
       notifyListeners();
     });
     _indexSubscription = _player.currentIndexStream.listen((index) {
-      if (_playlistQueue.isNotEmpty && index != null &&
-          index >= 0 && index < _playlistQueue.length) {
+      if (_playlistQueue.isNotEmpty &&
+          index != null &&
+          index >= 0 &&
+          index < _playlistQueue.length) {
         _resource = _playlistQueue[index];
         _lastSavedSecond = -1;
       }
@@ -338,7 +340,6 @@ class AudioPlaybackController extends ChangeNotifier {
     }();
   }
 
-
   void _releaseLocalPlaylist() {
     _playlistQueue = const [];
     _playlistTitle = null;
@@ -368,8 +369,11 @@ class AudioPlaybackController extends ChangeNotifier {
       final resolved = resolveResourceMedia(resource);
       final localUri = localUris[resource.id];
       if (localUri == null &&
-          (resolved?.kind != ResourceMediaKind.audio || resolved?.uri == null)) {
-        for (final handle in handles) { handle.dispose(); }
+          (resolved?.kind != ResourceMediaKind.audio ||
+              resolved?.uri == null)) {
+        for (final handle in handles) {
+          handle.dispose();
+        }
         return Future.error(
           const AudioPlaybackException('প্লেলিস্টে অডিওর লিংক সঠিক নয়।'),
         );
@@ -377,18 +381,26 @@ class AudioPlaybackController extends ChangeNotifier {
       final uri = localUri ?? resolved!.uri!;
       if (localUris.containsKey(resource.id) &&
           !const ['blob', 'file'].contains(uri.scheme)) {
-        for (final handle in handles) { handle.dispose(); }
+        for (final handle in handles) {
+          handle.dispose();
+        }
         return Future.error(
           const AudioPlaybackException('অফলাইন অডিও খোলা যাচ্ছে না।'),
         );
       }
-      sources.add(AudioSource.uri(uri, tag: MediaItem(
-        id: resource.id,
-        title: resource.titleBn?.trim().isNotEmpty == true
-            ? resource.titleBn! : resource.title,
-        album: title,
-        artUri: _validHttpsUri(resource.thumbnailUrl),
-      )));
+      sources.add(
+        AudioSource.uri(
+          uri,
+          tag: MediaItem(
+            id: resource.id,
+            title: resource.titleBn?.trim().isNotEmpty == true
+                ? resource.titleBn!
+                : resource.title,
+            album: title,
+            artUri: _validHttpsUri(resource.thumbnailUrl),
+          ),
+        ),
+      );
     }
     final previous = _loadQueue;
     final completion = Completer<void>();
@@ -398,14 +410,22 @@ class AudioPlaybackController extends ChangeNotifier {
       try {
         await previous;
         if (request != _requestedLoad) {
-          for (final handle in handles) { handle.dispose(); }
+          for (final handle in handles) {
+            handle.dispose();
+          }
           return;
         }
-        try { await _persistCurrentPosition(); } on Exception { /* optional */ }
+        try {
+          await _persistCurrentPosition();
+        } on Exception {
+          /* optional */
+        }
         await _player.stop();
         _releaseLocalPlaylist();
         if (request != _requestedLoad) {
-          for (final handle in handles) { handle.dispose(); }
+          for (final handle in handles) {
+            handle.dispose();
+          }
           return;
         }
         await _player.setLoopMode(LoopMode.off);
@@ -416,7 +436,9 @@ class AudioPlaybackController extends ChangeNotifier {
         );
         if (request != _requestedLoad) {
           await _player.stop();
-          for (final handle in handles) { handle.dispose(); }
+          for (final handle in handles) {
+            handle.dispose();
+          }
           return;
         }
         _quranTitle = null;
@@ -428,8 +450,12 @@ class AudioPlaybackController extends ChangeNotifier {
         _lastSavedSecond = -1;
         notifyListeners();
       } on PlayerException {
-        for (final handle in handles) { handle.dispose(); }
-        throw const AudioPlaybackException('প্লেলিস্টের অডিও চালানো যাচ্ছে না।');
+        for (final handle in handles) {
+          handle.dispose();
+        }
+        throw const AudioPlaybackException(
+          'প্লেলিস্টের অডিও চালানো যাচ্ছে না।',
+        );
       } finally {
         completion.complete();
       }
