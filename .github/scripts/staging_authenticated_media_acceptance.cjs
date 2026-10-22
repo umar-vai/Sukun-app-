@@ -41,6 +41,20 @@ async function main() {
   assert.ok(auth.access_token && auth.user?.id && !auth.user?.is_anonymous,
     'Dedicated authenticated staging member required');
 
+  check('verify fixture is a dedicated General Member');
+  const verifiedRoles = await fetch(
+    project + '/rest/v1/user_roles?select=role&user_id=eq.' +
+    encodeURIComponent(auth.user.id), {
+      headers: { apikey: publishable, Authorization: 'Bearer ' + auth.access_token },
+    },
+  );
+  if (!verifiedRoles.ok) {
+    throw new Error('Staging member-role verification unavailable');
+  }
+  const roles = (await verifiedRoles.json()).map(x => x.role);
+  assert.deepEqual(roles, ['member'],
+    'Media QA requires only a synthetic General Member, never patient/admin');
+
   check('published public approved audio selection');
   const records = await fetch(
     project + '/rest/v1/content_items?select=id,media_url,status,visibility,type' +
