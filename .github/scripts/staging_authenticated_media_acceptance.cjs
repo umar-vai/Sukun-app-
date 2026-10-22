@@ -50,8 +50,27 @@ async function main() {
   assert.equal(records.status, 200, 'Staging member lacks public resource read');
   const candidates = (await records.json()).filter(x => approved.has(x.media_url));
   assert.ok(candidates.length, 'No published approved public MP3 in staging');
-  // Test ONE fixed approved asset. The backend enforces global quotas.
-  const item = candidates[0];
+  // Choose the smallest eligible approved resource without copying media
+  // bytes. A one-byte Range capability probe prevents oversized quota spends.
+  const eligible = [];
+  for (const candidate of candidates) {
+    const probe = await fetch(candidate.media_url, {
+      headers: { Range: 'bytes=0-0' },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(12000),
+    }).catch(() => null);
+    if (!probe) continue;
+    const contentRange = probe.headers.get('content-range') || '';
+    const match = contentRange.match(/\\/(\\d+)$/);
+    const size = match ? Number(match[1]) : 0;
+    await probe.body?.cancel().catch(() => {});
+    if (probe.status === 206 && Number.isSafeInteger(size) &&
+        size >= 4 && size <= maxBytes) eligible.push({ candidate, size });
+  }
+  eligible.sort((a, b) => a.size - b.size);
+  assert.ok(eligible.length, 'No published approved recording fits the QA size budget');
+  // Test ONE smallest vetted asset. The backend also enforces daily quotas.
+  const item = eligible[0].candidate;
 
   check('deployed revision and stage isolation');
   const manifest = await fetch(origin + '/preview-build.json');
