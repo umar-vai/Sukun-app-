@@ -37,10 +37,17 @@ Deno.serve(async (request) => {
   const validOrigin = trustedRequestOrigin(request);
   if (!validOrigin) return response(403, "untrusted_origin", false);
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: { ...cors, ...secured } });
+    return new Response(null, {
+      status: 204,
+      headers: { ...cors, ...secured },
+    });
   }
-  if (request.method !== "GET") return response(405, "method_not_allowed", true);
-  if (request.headers.has("Range")) return response(416, "range_not_supported", true);
+  if (request.method !== "GET") {
+    return response(405, "method_not_allowed", true);
+  }
+  if (request.headers.has("Range")) {
+    return response(416, "range_not_supported", true);
+  }
   const id = new URL(request.url).searchParams.get("id") || "";
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
     return response(400, "invalid_resource", true);
@@ -61,7 +68,9 @@ Deno.serve(async (request) => {
   });
   try {
     // Verify against GoTrue, not caller-supplied metadata or an unchecked JWT.
-    const { data: identity, error: authError } = await client.auth.getUser(token);
+    const { data: identity, error: authError } = await client.auth.getUser(
+      token,
+    );
     if (authError || !identity.user?.id || identity.user.is_anonymous) {
       return response(401, "login_required", true);
     }
