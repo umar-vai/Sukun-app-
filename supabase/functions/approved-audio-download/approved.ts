@@ -21,7 +21,7 @@ export const approvedAudioUrls = new Set<string>([
   "https://files.ruqyahbd.org/audio/Ruqyah-withBangla-ruqyahbd.org.mp3",
   "https://files.ruqyahbd.org/audio/Ruqyah-SuraFatiha-ruqyahbd.org.mp3",
   "https://files.ruqyahbd.org/audio/Ruqyah-Khuruj-ruqyahbd.org.mp3",
-  "https://files.ruqyahbd.org/audio/Ruqyah-tadmir-qital-ruqyahbd.org.mp3"
+  "https://files.ruqyahbd.org/audio/Ruqyah-tadmir-qital-ruqyahbd.org.mp3",
 ]);
 
 export function isApprovedAudioUrl(input: unknown): input is string {
