@@ -98,7 +98,7 @@ void main() {
     () async {
       final store = MemoryOfflineBytes();
       final media = Uint8List.fromList([0x49, 0x44, 0x33, 4, 0, 0, 1]);
-      final factory = () => MockClient(
+      http.Client factory() => MockClient(
         (request) async => http.Response.bytes(
           media,
           200,
