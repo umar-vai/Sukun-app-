@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/media_library/data/local_audio_uri.dart';
 
@@ -16,6 +17,14 @@ final audioPlaybackControllerProvider = Provider<AudioPlaybackController>((
     AudioPlayer(),
     SharedPreferencesPlaybackPositionStore(),
   );
+  // Never keep another user's patient audio playing after auth changes.
+  ref.listen(appSessionProvider, (previous, next) {
+    final before = previous?.value;
+    final after = next.value;
+    if (before?.userId != after?.userId || before?.role != after?.role) {
+      unawaited(controller.stopAndClear());
+    }
+  });
   ref.onDispose(() => unawaited(controller.dispose()));
   return controller;
 });
