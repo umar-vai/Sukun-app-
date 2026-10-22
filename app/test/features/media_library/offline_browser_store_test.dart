@@ -1,8 +1,6 @@
-@TestOn('browser')
-library;
-
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -30,7 +28,7 @@ void main() {
     } finally {
       await store.delete(key);
     }
-  });
+  }, skip: !kIsWeb);
 
   test('real browser blob URL is created and disposed for offline MP3', () async {
     final handle = await createLocalAudioUri(
@@ -38,7 +36,7 @@ void main() {
     );
     expect(handle.uri.scheme, 'blob');
     handle.dispose();
-  });
+  }, skip: !kIsWeb);
 
   test('end-to-end offline save, restart, read without network and delete', () async {
     final bytes = Uint8List.fromList([
@@ -48,7 +46,7 @@ void main() {
     http.Client fakeClient() => MockClient((request) async {
       networkCalls++;
       return http.Response.bytes(bytes, 200);
-    });
+    }, skip: !kIsWeb);
     final resource = ContentResource(
       id: 'chrome-test-only-public-audio',
       type: 'audio',
@@ -88,5 +86,5 @@ void main() {
       await library.remove(resource.id);
       library.dispose();
     }
-  });
+  }, skip: !kIsWeb);
 }
