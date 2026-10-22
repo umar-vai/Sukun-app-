@@ -56,9 +56,8 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
 
   void _message(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -86,7 +85,8 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
               child: const Text('বাতিল'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(input.text.trim()),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(input.text.trim()),
               child: const Text('সংরক্ষণ'),
             ),
           ],
@@ -139,11 +139,9 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             final handle = await createLocalAudioUri(bytes);
             handles.add(handle);
             localUris[id] = handle.uri;
-            resources.add(LinkedResource(
-              id: id,
-              title: saved!.title,
-              type: 'audio',
-            ));
+            resources.add(
+              LinkedResource(id: id, title: saved!.title, type: 'audio'),
+            );
             continue;
           }
         }
@@ -175,9 +173,9 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       ownershipTransferred = true;
       controller.resumeCurrent();
       if (!mounted) return;
-      await Navigator.of(context).push<void>(MaterialPageRoute(
-        builder: (_) => const _PlaylistPlayerPage(),
-      ));
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(builder: (_) => const _PlaylistPlayerPage()),
+      );
       if (resources.length < playlist.resourceIds.length) {
         _message('কিছু অডিও অনুপলব্ধ থাকায় বাদ দেওয়া হয়েছে।');
       }
@@ -199,32 +197,34 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       if (bytes == null) throw StateError('ফাইল নেই');
       if (!mounted) return;
       if (item.kind == 'pdf') {
-        await Navigator.of(context).push<void>(MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: Text(item.title)),
-            body: PdfViewer.data(
-              bytes,
-              sourceName: 'sukun-offline-${item.id}.pdf',
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(item.title)),
+              body: PdfViewer.data(
+                bytes,
+                sourceName: 'sukun-offline-${item.id}.pdf',
+              ),
             ),
           ),
-        ));
+        );
       } else {
         final handle = await createLocalAudioUri(bytes);
-        await ref.read(audioPlaybackControllerProvider).loadPlaylist(
-          title: item.title,
-          resources: [LinkedResource(
-            id: item.id,
-            title: item.title,
-            type: 'audio',
-          )],
-          localUris: {item.id: handle.uri},
-          handles: [handle],
-        );
+        await ref
+            .read(audioPlaybackControllerProvider)
+            .loadPlaylist(
+              title: item.title,
+              resources: [
+                LinkedResource(id: item.id, title: item.title, type: 'audio'),
+              ],
+              localUris: {item.id: handle.uri},
+              handles: [handle],
+            );
         ref.read(audioPlaybackControllerProvider).resumeCurrent();
         if (!mounted) return;
-        await Navigator.of(context).push<void>(MaterialPageRoute(
-          builder: (_) => const _PlaylistPlayerPage(),
-        ));
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => const _PlaylistPlayerPage()),
+        );
       }
     } catch (_) {
       _message('সংরক্ষিত ফাইলটি খোলা যায়নি। আবার ডাউনলোড করুন।');
@@ -241,28 +241,40 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       body: AnimatedBuilder(
         animation: Listenable.merge([library, offline]),
         builder: (context, _) => SafeArea(
-          child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 0, label: Text('প্লেলিস্ট'), icon: Icon(Icons.queue_music)),
-                  ButtonSegment(value: 1, label: Text('ডাউনলোড'), icon: Icon(Icons.download_done)),
-                ],
-                selected: {_tab},
-                onSelectionChanged: (values) =>
-                    setState(() => _tab = values.first),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 0,
+                      label: Text('প্লেলিস্ট'),
+                      icon: Icon(Icons.queue_music),
+                    ),
+                    ButtonSegment(
+                      value: 1,
+                      label: Text('ডাউনলোড'),
+                      icon: Icon(Icons.download_done),
+                    ),
+                  ],
+                  selected: {_tab},
+                  onSelectionChanged: (values) =>
+                      setState(() => _tab = values.first),
+                ),
               ),
-            ),
-            if (!library.ready || !offline.ready)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
-            else
-              Expanded(
-                child: _tab == 0
-                    ? _playlists(library, offline)
-                    : _downloads(offline),
-              ),
-          ]),
+              if (!library.ready || !offline.ready)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                Expanded(
+                  child: _tab == 0
+                      ? _playlists(library, offline)
+                      : _downloads(offline),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -277,9 +289,12 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             future: _candidate,
             builder: (context, snapshot) {
               final resource = snapshot.data;
-              if (resource?.type != 'audio' || resource?.status != 'published') {
+              if (resource?.type != 'audio' ||
+                  resource?.status != 'published') {
                 return const ListTile(
-                  title: Text('অডিওটি পাওয়া গেলে প্লেলিস্টে যুক্ত করতে পারবেন।'),
+                  title: Text(
+                    'অডিওটি পাওয়া গেলে প্লেলিস্টে যুক্ত করতে পারবেন।',
+                  ),
                 );
               }
               return Card(
@@ -298,11 +313,16 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                       for (final playlist in library.playlists)
                         ListTile(
                           title: Text(playlist.name),
-                          trailing: Icon(playlist.resourceIds.contains(resource.id)
-                              ? Icons.check_circle : Icons.add_circle_outline),
+                          trailing: Icon(
+                            playlist.resourceIds.contains(resource.id)
+                                ? Icons.check_circle
+                                : Icons.add_circle_outline,
+                          ),
                           onTap: () async {
                             library.add(playlist.id, resource.id);
-                            try { await library.flush(); } catch (_) {
+                            try {
+                              await library.flush();
+                            } catch (_) {
                               _message('প্লেলিস্ট সংরক্ষণ হয়নি।');
                               return;
                             }
@@ -334,86 +354,109 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
               subtitle: Text('${playlist.resourceIds.length}টি অডিও'),
               trailing: const Icon(Icons.expand_more),
               children: [
-                Wrap(spacing: 6, children: [
-                  TextButton.icon(
-                    onPressed: playlist.resourceIds.isEmpty
-                        ? null : () => _startPlaylist(playlist),
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('সবগুলো চালান'),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => _rename(playlist),
-                    icon: const Icon(Icons.edit_outlined),
-                    label: const Text('নাম বদলান'),
-                  ),
-                  TextButton.icon(
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('প্লেলিস্ট মুছবেন?'),
-                          content: const Text('এতে সংরক্ষিত অডিও ফাইল মুছে যাবে না।'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('না')),
-                            FilledButton(onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('মুছুন')),
-                          ],
-                        ),
-                      );
-                      if (confirmed != true) return;
-                      library.remove(playlist.id);
-                      try { await library.flush(); } catch (_) {
-                        _message('প্লেলিস্ট মুছতে সমস্যা হয়েছে।');
-                      }
-                    },
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('মুছুন'),
-                  ),
-                ]),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    TextButton.icon(
+                      onPressed: playlist.resourceIds.isEmpty
+                          ? null
+                          : () => _startPlaylist(playlist),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('সবগুলো চালান'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _rename(playlist),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('নাম বদলান'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('প্লেলিস্ট মুছবেন?'),
+                            content: const Text(
+                              'এতে সংরক্ষিত অডিও ফাইল মুছে যাবে না।',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('না'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('মুছুন'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed != true) return;
+                        library.remove(playlist.id);
+                        try {
+                          await library.flush();
+                        } catch (_) {
+                          _message('প্লেলিস্ট মুছতে সমস্যা হয়েছে।');
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('মুছুন'),
+                    ),
+                  ],
+                ),
                 for (var i = 0; i < playlist.resourceIds.length; i++)
                   ListTile(
                     title: FutureBuilder<ContentResource?>(
-                      future: ref.read(resourcesRepositoryProvider)
+                      future: ref
+                          .read(resourcesRepositoryProvider)
                           .getResource(playlist.resourceIds[i]),
                       builder: (context, snapshot) {
                         final saved = offline.find(playlist.resourceIds[i]);
                         final resource = snapshot.data;
-                        return Text(saved?.title ??
-                            resource?.titleBn ?? resource?.title ??
-                            'অডিও ${i+1} (অফলাইনে নেই)');
+                        return Text(
+                          saved?.title ??
+                              resource?.titleBn ??
+                              resource?.title ??
+                              'অডিও ${i + 1} (অফলাইনে নেই)',
+                        );
                       },
                     ),
                     leading: const Icon(Icons.music_note_outlined),
-                    trailing: Wrap(mainAxisSize: MainAxisSize.min, children: [
-                      IconButton(
-                        tooltip: 'উপরে নিন',
-                        onPressed: i == 0
-                            ? null : () {
-                                library.move(playlist.id, i, i - 1);
-                                unawaited(library.flush());
-                              },
-                        icon: const Icon(Icons.arrow_upward, size: 20),
-                      ),
-                      IconButton(
-                        tooltip: 'নিচে নিন',
-                        onPressed: i == playlist.resourceIds.length - 1
-                            ? null : () {
-                                library.move(playlist.id, i, i + 1);
-                                unawaited(library.flush());
-                              },
-                        icon: const Icon(Icons.arrow_downward, size: 20),
-                      ),
-                      IconButton(
-                        tooltip: 'বাদ দিন',
-                        onPressed: () {
-                          library.removeTrack(
-                            playlist.id, playlist.resourceIds[i]);
-                          unawaited(library.flush());
-                        },
-                        icon: const Icon(Icons.close, size: 20),
-                      ),
-                    ]),
+                    trailing: Wrap(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'উপরে নিন',
+                          onPressed: i == 0
+                              ? null
+                              : () {
+                                  library.move(playlist.id, i, i - 1);
+                                  unawaited(library.flush());
+                                },
+                          icon: const Icon(Icons.arrow_upward, size: 20),
+                        ),
+                        IconButton(
+                          tooltip: 'নিচে নিন',
+                          onPressed: i == playlist.resourceIds.length - 1
+                              ? null
+                              : () {
+                                  library.move(playlist.id, i, i + 1);
+                                  unawaited(library.flush());
+                                },
+                          icon: const Icon(Icons.arrow_downward, size: 20),
+                        ),
+                        IconButton(
+                          tooltip: 'বাদ দিন',
+                          onPressed: () {
+                            library.removeTrack(
+                              playlist.id,
+                              playlist.resourceIds[i],
+                            );
+                            unawaited(library.flush());
+                          },
+                          icon: const Icon(Icons.close, size: 20),
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -443,19 +486,27 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                 }
                 final resource = snapshot.data;
                 final allowed = allowedSnapshot.data;
-                if (resource == null || allowed == null ||
-                    !canSaveOffline(resource,
-                        ownerAuthorizedAudioUrls: allowed)) {
+                if (resource == null ||
+                    allowed == null ||
+                    !canSaveOffline(
+                      resource,
+                      ownerAuthorizedAudioUrls: allowed,
+                    )) {
                   return const ListTile(
                     title: Text('এই উপকরণ অফলাইন ডাউনলোডের জন্য অনুমোদিত নয়।'),
-                    subtitle: Text('প্রকাশিত ও অনুমোদিত অডিও/PDF-ই সংরক্ষণ করা যায়।'),
+                    subtitle: Text(
+                      'প্রকাশিত ও অনুমোদিত অডিও/PDF-ই সংরক্ষণ করা যায়।',
+                    ),
                   );
                 }
                 return Card(
                   child: ListTile(
                     title: Text(resource.titleBn ?? resource.title),
-                    subtitle: Text(library.contains(resource.id)
-                        ? 'ইতিমধ্যে সংরক্ষিত' : 'অ্যাপের ভেতরে সংরক্ষণ করুন'),
+                    subtitle: Text(
+                      library.contains(resource.id)
+                          ? 'ইতিমধ্যে সংরক্ষিত'
+                          : 'অ্যাপের ভেতরে সংরক্ষণ করুন',
+                    ),
                     trailing: FilledButton(
                       onPressed: library.busy || library.contains(resource.id)
                           ? null
@@ -464,7 +515,9 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                                 await library.download(resource);
                                 _message('অফলাইনে সংরক্ষিত হয়েছে।');
                               } catch (_) {
-                                _message('ডাউনলোড ব্যর্থ। নেটওয়ার্ক, অনুমতি বা জায়গা পরীক্ষা করুন।');
+                                _message(
+                                  'ডাউনলোড ব্যর্থ। নেটওয়ার্ক, অনুমতি বা জায়গা পরীক্ষা করুন।',
+                                );
                               }
                             },
                       child: const Text('ডাউনলোড'),
@@ -475,18 +528,22 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             ),
           ),
         if (library.busy) ...[
-          Card(child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(children: [
-              Text(library.activeTitle ?? 'ডাউনলোড হচ্ছে…'),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: library.progress),
-              TextButton(
-                onPressed: library.cancel,
-                child: const Text('ডাউনলোড বাতিল করুন'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  Text(library.activeTitle ?? 'ডাউনলোড হচ্ছে…'),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(value: library.progress),
+                  TextButton(
+                    onPressed: library.cancel,
+                    child: const Text('ডাউনলোড বাতিল করুন'),
+                  ),
+                ],
               ),
-            ]),
-          )),
+            ),
+          ),
         ],
         if (library.items.isEmpty)
           const ListTile(
@@ -494,24 +551,31 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             subtitle: Text('অনুমোদিত অডিও বা PDF খুলে ডাউনলোড করুন।'),
           ),
         for (final item in library.items)
-          Card(child: ListTile(
-            leading: Icon(item.kind == 'audio'
-                ? Icons.headphones_outlined : Icons.picture_as_pdf_outlined),
-            title: Text(item.title),
-            subtitle: Text('${(item.size / 1048576).toStringAsFixed(1)} MB · অফলাইনে আছে'),
-            onTap: () => _openOffline(item),
-            trailing: IconButton(
-              tooltip: 'সংরক্ষিত ফাইল মুছুন',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                try {
-                  await library.remove(item.id);
-                } catch (_) {
-                  _message('ফাইল মুছতে সমস্যা হয়েছে।');
-                }
-              },
+          Card(
+            child: ListTile(
+              leading: Icon(
+                item.kind == 'audio'
+                    ? Icons.headphones_outlined
+                    : Icons.picture_as_pdf_outlined,
+              ),
+              title: Text(item.title),
+              subtitle: Text(
+                '${(item.size / 1048576).toStringAsFixed(1)} MB · অফলাইনে আছে',
+              ),
+              onTap: () => _openOffline(item),
+              trailing: IconButton(
+                tooltip: 'সংরক্ষিত ফাইল মুছুন',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  try {
+                    await library.remove(item.id);
+                  } catch (_) {
+                    _message('ফাইল মুছতে সমস্যা হয়েছে।');
+                  }
+                },
+              ),
             ),
-          )),
+          ),
         const SizedBox(height: 12),
         const Text(
           'শুধু এই ডিভাইসে ফাইল থাকবে। ব্রাউজার তার স্টোরেজ মুছে ফেলতে পারে। '
@@ -534,81 +598,114 @@ class _PlaylistPlayerPage extends ConsumerWidget {
         animation: controller,
         builder: (context, _) {
           final player = controller.player;
-          return SafeArea(child: Center(child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.graphic_eq, size: 70),
-                const SizedBox(height: 16),
-                Text(controller.currentTitle ?? 'অডিও',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                Text('অডিও ${controller.playlistIndex + 1} / ${controller.playlistLength}'),
-                const SizedBox(height: 16),
-                StreamBuilder<Duration>(
-                  stream: player.positionStream,
-                  builder: (context, snapshot) {
-                    final position = snapshot.data ?? Duration.zero;
-                    final total = player.duration ?? Duration.zero;
-                    final milliseconds = total.inMilliseconds;
-                    return Column(children: [
-                      Slider(
-                        value: milliseconds <= 0 ? 0 :
-                            (position.inMilliseconds / milliseconds).clamp(0.0, 1.0),
-                        onChanged: milliseconds <= 0 ? null : (value) =>
-                            controller.seek(Duration(milliseconds: (value * milliseconds).round())),
-                      ),
-                      Text('${position.inMinutes}:${(position.inSeconds % 60).toString().padLeft(2, '0')}'
-                           ' / ${total.inMinutes}:${(total.inSeconds % 60).toString().padLeft(2, '0')}'),
-                    ]);
-                  },
-                ),
-                const SizedBox(height: 12),
-                StreamBuilder<PlayerState>(
-                  stream: player.playerStateStream,
-                  builder: (context, snapshot) => Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          return SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        tooltip: 'আগের অডিও',
-                        onPressed: player.hasPrevious ? controller.previous : null,
-                        icon: const Icon(Icons.skip_previous, size: 36),
+                      const Icon(Icons.graphic_eq, size: 70),
+                      const SizedBox(height: 16),
+                      Text(
+                        controller.currentTitle ?? 'অডিও',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      IconButton.filled(
-                        tooltip: player.playing ? 'বিরতি' : 'চালান',
-                        onPressed: player.playing
-                            ? () => controller.pause()
-                            : controller.resumeCurrent,
-                        icon: Icon(player.playing ? Icons.pause : Icons.play_arrow, size: 34),
+                      const SizedBox(height: 12),
+                      Text(
+                        'অডিও ${controller.playlistIndex + 1} / ${controller.playlistLength}',
                       ),
-                      IconButton(
-                        tooltip: 'পরের অডিও',
-                        onPressed: player.hasNext ? controller.next : null,
-                        icon: const Icon(Icons.skip_next, size: 36),
+                      const SizedBox(height: 16),
+                      StreamBuilder<Duration>(
+                        stream: player.positionStream,
+                        builder: (context, snapshot) {
+                          final position = snapshot.data ?? Duration.zero;
+                          final total = player.duration ?? Duration.zero;
+                          final milliseconds = total.inMilliseconds;
+                          return Column(
+                            children: [
+                              Slider(
+                                value: milliseconds <= 0
+                                    ? 0
+                                    : (position.inMilliseconds / milliseconds)
+                                          .clamp(0.0, 1.0),
+                                onChanged: milliseconds <= 0
+                                    ? null
+                                    : (value) => controller.seek(
+                                        Duration(
+                                          milliseconds: (value * milliseconds)
+                                              .round(),
+                                        ),
+                                      ),
+                              ),
+                              Text(
+                                '${position.inMinutes}:${(position.inSeconds % 60).toString().padLeft(2, '0')}'
+                                ' / ${total.inMinutes}:${(total.inSeconds % 60).toString().padLeft(2, '0')}',
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      StreamBuilder<PlayerState>(
+                        stream: player.playerStateStream,
+                        builder: (context, snapshot) => Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              tooltip: 'আগের অডিও',
+                              onPressed: player.hasPrevious
+                                  ? controller.previous
+                                  : null,
+                              icon: const Icon(Icons.skip_previous, size: 36),
+                            ),
+                            IconButton.filled(
+                              tooltip: player.playing ? 'বিরতি' : 'চালান',
+                              onPressed: player.playing
+                                  ? () => controller.pause()
+                                  : controller.resumeCurrent,
+                              icon: Icon(
+                                player.playing ? Icons.pause : Icons.play_arrow,
+                                size: 34,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'পরের অডিও',
+                              onPressed: player.hasNext
+                                  ? controller.next
+                                  : null,
+                              icon: const Icon(Icons.skip_next, size: 36),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final speed in const [1.0, 1.25, 1.5, 2.0])
+                            ActionChip(
+                              label: Text('${speed}x'),
+                              onPressed: () => controller.setSpeed(speed),
+                            ),
+                          ActionChip(
+                            label: const Text('১৫ মিনিটের টাইমার'),
+                            onPressed: () => controller.setSleepTimer(15),
+                          ),
+                          ActionChip(
+                            label: const Text('টাইমার বন্ধ'),
+                            onPressed: () => controller.setSleepTimer(0),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Wrap(spacing: 8, children: [
-                  for (final speed in const [1.0, 1.25, 1.5, 2.0])
-                    ActionChip(
-                      label: Text('${speed}x'),
-                      onPressed: () => controller.setSpeed(speed),
-                    ),
-                  ActionChip(
-                    label: const Text('১৫ মিনিটের টাইমার'),
-                    onPressed: () => controller.setSleepTimer(15),
-                  ),
-                  ActionChip(
-                    label: const Text('টাইমার বন্ধ'),
-                    onPressed: () => controller.setSleepTimer(0),
-                  ),
-                ]),
-              ]),
+              ),
             ),
-          )));
+          );
         },
       ),
     );
