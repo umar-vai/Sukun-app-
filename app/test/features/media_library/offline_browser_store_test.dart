@@ -95,7 +95,7 @@ void main() {
             fail('offline read must never call the network');
           }),
           authorizedAudioUrls: allowed,
-        useWebMediaGateway: false,
+          useWebMediaGateway: false,
         );
         await reopened.open('synthetic-browser-owner');
         expect(reopened.items.single.id, resource.id);
