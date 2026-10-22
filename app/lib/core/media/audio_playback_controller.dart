@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/media_library/data/local_audio_uri.dart';
 
 final audioPlaybackControllerProvider = Provider<AudioPlaybackController>((
   ref,
@@ -81,7 +82,12 @@ class AudioPlaybackController extends ChangeNotifier {
       }
       notifyListeners();
     });
-    _indexSubscription = _player.currentIndexStream.listen((_) {
+    _indexSubscription = _player.currentIndexStream.listen((index) {
+      if (_playlistQueue.isNotEmpty && index != null &&
+          index >= 0 && index < _playlistQueue.length) {
+        _resource = _playlistQueue[index];
+        _lastSavedSecond = -1;
+      }
       notifyListeners();
     });
   }
@@ -94,6 +100,9 @@ class AudioPlaybackController extends ChangeNotifier {
   LinkedResource? _resource;
   String? _quranTitle;
   List<QuranVerseAudio> _quranQueue = const [];
+  List<LinkedResource> _playlistQueue = const [];
+  List<LocalAudioUri> _offlineHandles = const [];
+  String? _playlistTitle;
   int _lastSavedSecond = -1;
   Future<void> _loadQueue = Future<void>.value();
   int _requestedLoad = 0;
@@ -130,6 +139,10 @@ class AudioPlaybackController extends ChangeNotifier {
   LinkedResource? get resource => _resource;
   bool get hasSelection => _resource != null || _quranTitle != null;
   bool get isQuranSequence => _quranTitle != null && _quranQueue.length > 1;
+  bool get isPersonalPlaylist => _playlistQueue.isNotEmpty;
+  String? get playlistTitle => _playlistTitle;
+  int get playlistLength => _playlistQueue.length;
+  int get playlistIndex => _player.currentIndex ?? 0;
   String? get currentTitle =>
       _quranTitle ??
       (_resource?.titleBn?.trim().isNotEmpty == true
@@ -190,9 +203,11 @@ class AudioPlaybackController extends ChangeNotifier {
     _quranTitle = null;
     _quranQueue = const [];
     _lastSavedSecond = -1;
+    // Old local blob URLs must remain valid until the player is stopped.
     notifyListeners();
     try {
       await _player.stop();
+      _releaseLocalPlaylist();
       if (request != _requestedLoad) {
         throw const AudioPlaybackException('Audio selection was changed.');
       }
@@ -305,6 +320,7 @@ class AudioPlaybackController extends ChangeNotifier {
         _quranQueue = const [];
         notifyListeners();
         await _player.stop();
+        _releaseLocalPlaylist();
         if (request != _requestedLoad) return;
         await _player.setLoopMode(LoopMode.off);
         await _player.setAudioSources(sources, preload: true);
@@ -316,6 +332,102 @@ class AudioPlaybackController extends ChangeNotifier {
         throw const AudioPlaybackException('কুরআনের তিলাওয়াত লোড করা যায়নি।');
       } on PlayerInterruptedException {
         throw const AudioPlaybackException('অডিও লোড বন্ধ হয়ে গেছে।');
+      } finally {
+        completion.complete();
+      }
+    }();
+  }
+
+
+  void _releaseLocalPlaylist() {
+    _playlistQueue = const [];
+    _playlistTitle = null;
+    for (final handle in _offlineHandles) {
+      handle.dispose();
+    }
+    _offlineHandles = const [];
+  }
+
+  /// One continuous native/web just_audio queue for CMS recordings.
+  /// Callers must re-authorize saved resource IDs before constructing sources.
+  /// `localUris` are created only from verified, app-private offline bytes.
+  Future<void> loadPlaylist({
+    required String title,
+    required List<LinkedResource> resources,
+    Map<String, Uri> localUris = const {},
+    List<LocalAudioUri> handles = const [],
+    int startIndex = 0,
+  }) {
+    if (resources.isEmpty || startIndex < 0 || startIndex >= resources.length) {
+      return Future.error(
+        const AudioPlaybackException('প্লেলিস্টে চালানোর মতো অডিও নেই।'),
+      );
+    }
+    final sources = <AudioSource>[];
+    for (final resource in resources) {
+      final resolved = resolveResourceMedia(resource);
+      if (resolved?.kind != ResourceMediaKind.audio || resolved?.uri == null) {
+        for (final handle in handles) { handle.dispose(); }
+        return Future.error(
+          const AudioPlaybackException('প্লেলিস্টে অডিওর লিংক সঠিক নয়।'),
+        );
+      }
+      final uri = localUris[resource.id] ?? resolved!.uri!;
+      if (localUris.containsKey(resource.id) &&
+          !const ['blob', 'file'].contains(uri.scheme)) {
+        for (final handle in handles) { handle.dispose(); }
+        return Future.error(
+          const AudioPlaybackException('অফলাইন অডিও খোলা যাচ্ছে না।'),
+        );
+      }
+      sources.add(AudioSource.uri(uri, tag: MediaItem(
+        id: resource.id,
+        title: resource.titleBn?.trim().isNotEmpty == true
+            ? resource.titleBn! : resource.title,
+        album: title,
+        artUri: _validHttpsUri(resource.thumbnailUrl),
+      )));
+    }
+    final previous = _loadQueue;
+    final completion = Completer<void>();
+    _loadQueue = completion.future;
+    final request = ++_requestedLoad;
+    return () async {
+      try {
+        await previous;
+        if (request != _requestedLoad) {
+          for (final handle in handles) { handle.dispose(); }
+          return;
+        }
+        try { await _persistCurrentPosition(); } on Exception { /* optional */ }
+        await _player.stop();
+        _releaseLocalPlaylist();
+        if (request != _requestedLoad) {
+          for (final handle in handles) { handle.dispose(); }
+          return;
+        }
+        await _player.setLoopMode(LoopMode.off);
+        await _player.setAudioSources(
+          sources,
+          initialIndex: startIndex,
+          preload: true,
+        );
+        if (request != _requestedLoad) {
+          await _player.stop();
+          for (final handle in handles) { handle.dispose(); }
+          return;
+        }
+        _quranTitle = null;
+        _quranQueue = const [];
+        _playlistTitle = title;
+        _playlistQueue = List.unmodifiable(resources);
+        _offlineHandles = List.unmodifiable(handles);
+        _resource = resources[startIndex];
+        _lastSavedSecond = -1;
+        notifyListeners();
+      } on PlayerException {
+        for (final handle in handles) { handle.dispose(); }
+        throw const AudioPlaybackException('প্লেলিস্টের অডিও চালানো যাচ্ছে না।');
       } finally {
         completion.complete();
       }
@@ -347,6 +459,7 @@ class AudioPlaybackController extends ChangeNotifier {
       // No-op if local persistence is not available.
     }
     await _player.stop();
+    _releaseLocalPlaylist();
     _resource = null;
     _quranTitle = null;
     _quranQueue = const [];
@@ -420,6 +533,7 @@ class AudioPlaybackController extends ChangeNotifier {
     await _stateSubscription.cancel();
     await _indexSubscription.cancel();
     await _player.dispose();
+    _releaseLocalPlaylist();
     super.dispose();
   }
 }
