@@ -123,6 +123,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
   }
 
   Future<void> _startPlaylist(SavedPlaylist playlist) async {
+    final identityAtStart = ref.read(appSessionProvider).value?.userId;
     final controller = ref.read(audioPlaybackControllerProvider);
     final offline = ref.read(offlineLibraryProvider);
     final repository = ref.read(resourcesRepositoryProvider);
@@ -156,6 +157,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
         if (current != null &&
             current.type == 'audio' &&
             current.status == 'published' &&
+            current.visibility == 'public' &&
             resolveResourceMedia(current.linkedResource)?.kind ==
                 ResourceMediaKind.audio) {
           resources.add(current.linkedResource);
@@ -163,6 +165,9 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       }
       if (resources.isEmpty) {
         throw StateError('প্লেলিস্টের অডিও পাওয়া যায়নি।');
+      }
+      if (identityAtStart != ref.read(appSessionProvider).value?.userId) {
+        throw StateError('Account changed during playlist preparation.');
       }
       await controller.loadPlaylist(
         title: playlist.name,
@@ -290,7 +295,8 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             builder: (context, snapshot) {
               final resource = snapshot.data;
               if (resource?.type != 'audio' ||
-                  resource?.status != 'published') {
+                  resource?.status != 'published' ||
+                  resource?.visibility != 'public') {
                 return const ListTile(
                   title: Text(
                     'অডিওটি পাওয়া গেলে প্লেলিস্টে যুক্ত করতে পারবেন।',
