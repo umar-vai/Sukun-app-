@@ -1,7 +1,4 @@
-import {
-  approvedAudioUrls,
-  isApprovedAudioUrl,
-} from "./approved.ts";
+import { approvedAudioUrls, isApprovedAudioUrl } from "./approved.ts";
 
 Deno.test("gateway allowlist exactly pins 19 approved public files", () => {
   if (approvedAudioUrls.size !== 19) throw new Error("unexpected allowlist");
