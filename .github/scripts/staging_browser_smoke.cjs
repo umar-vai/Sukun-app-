@@ -95,6 +95,18 @@ async function verifyGuestPage(browser, profile) {
       { timeout: 12000 },
     );
 
+    // Public guest media library must render without patient credentials.
+    await page.goto(base + '#/my-media', {
+      waitUntil: 'domcontentloaded',
+      timeout: 65000,
+    });
+    await waitForFlutter(page);
+    await page.waitForFunction(
+      () => location.hash.includes('/my-media'),
+      undefined,
+      { timeout: 12000 },
+    );
+
     // Guest must not remain on either protected deep link after router settles.
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
       await page.goto(base + '#' + protectedPath, {
@@ -112,7 +124,7 @@ async function verifyGuestPage(browser, profile) {
     assert.equal(productionClinicalCalls, 0,
       'Staging browser requested Production clinical/auth APIs');
     assert.equal(failures.length, 0, 'Flutter emitted a browser runtime error');
-    console.log('PASS: ' + profile.label + ' actual Chromium startup, login route, protected guest redirects and backend separation');
+    console.log('PASS: ' + profile.label + ' actual Chromium startup, media library, login route, protected guest redirects and backend separation');
   } finally {
     await context.close();
   }
