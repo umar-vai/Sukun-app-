@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'offline_byte_store.dart';
 
 OfflineByteStore createOfflineByteStore() => _UnsupportedOfflineStore();
