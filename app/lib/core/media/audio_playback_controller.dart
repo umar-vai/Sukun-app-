@@ -366,13 +366,15 @@ class AudioPlaybackController extends ChangeNotifier {
     final sources = <AudioSource>[];
     for (final resource in resources) {
       final resolved = resolveResourceMedia(resource);
-      if (resolved?.kind != ResourceMediaKind.audio || resolved?.uri == null) {
+      final localUri = localUris[resource.id];
+      if (localUri == null &&
+          (resolved?.kind != ResourceMediaKind.audio || resolved?.uri == null)) {
         for (final handle in handles) { handle.dispose(); }
         return Future.error(
           const AudioPlaybackException('প্লেলিস্টে অডিওর লিংক সঠিক নয়।'),
         );
       }
-      final uri = localUris[resource.id] ?? resolved!.uri!;
+      final uri = localUri ?? resolved!.uri!;
       if (localUris.containsKey(resource.id) &&
           !const ['blob', 'file'].contains(uri.scheme)) {
         for (final handle in handles) { handle.dispose(); }
