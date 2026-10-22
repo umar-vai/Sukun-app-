@@ -12,7 +12,9 @@ create table if not exists public.challenge_enrollments (
   constraint challenge_enrollments_pk primary key (user_id, challenge_key),
   constraint challenge_approved_key check (challenge_key = 'sukun_40_day'),
   constraint challenge_pause_days_valid check (paused_days between 0 and 3650),
-  constraint challenge_start_date_valid check (started_on <= current_date),
+  constraint challenge_start_date_valid check (
+    started_on between date '2020-01-01' and (current_date + 1)
+  ),
   constraint challenge_pause_date_valid check (paused_on is null or paused_on >= started_on)
 );
 
