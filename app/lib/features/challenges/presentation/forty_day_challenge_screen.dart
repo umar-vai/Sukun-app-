@@ -19,6 +19,7 @@ class _FortyDayChallengeScreenState
     extends ConsumerState<FortyDayChallengeScreen> {
   late Future<ChallengeProgress?> _progress;
   bool _working = false;
+  String? _loadedOwner;
 
   ChallengeRepository get _repo =>
       ChallengeRepository(Supabase.instance.client);
@@ -26,11 +27,18 @@ class _FortyDayChallengeScreenState
   @override
   void initState() {
     super.initState();
-    _progress = _repo.load();
+    _loadedOwner = ref.read(appSessionProvider).value?.userId;
+    _progress = _loadedOwner == null
+        ? Future.value(null)
+        : _repo.load();
   }
 
   void _refresh() {
-    if (mounted) setState(() => _progress = _repo.load());
+    if (mounted) setState(() {
+      _progress = _loadedOwner == null
+          ? Future.value(null)
+          : _repo.load();
+    });
   }
 
   Future<void> _act(Future<void> Function() callback) async {
@@ -51,6 +59,15 @@ class _FortyDayChallengeScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(appSessionProvider, (previous, next) {
+      final owner = next.value?.userId;
+      if (owner != _loadedOwner && mounted) {
+        setState(() {
+          _loadedOwner = owner;
+          _progress = owner == null ? Future.value(null) : _repo.load();
+        });
+      }
+    });
     final session = ref.watch(appSessionProvider).value;
     final eligible = session?.isMember == true || session?.isPatient == true;
     final now = DateTime.now();
