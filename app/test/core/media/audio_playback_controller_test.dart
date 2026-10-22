@@ -10,6 +10,38 @@ void main() {
     expect(AudioPlaybackController.supportedSleepMinutes, [0, 5, 15, 30, 60]);
   });
 
+  test('3 or 4 sequential playlist tracks define safe stop boundaries', () {
+    expect(
+      playlistTrackLimitReached(startIndex: 0, currentIndex: 2, tracks: 3),
+      isFalse,
+    );
+    expect(
+      playlistTrackLimitReached(startIndex: 0, currentIndex: 3, tracks: 3),
+      isTrue,
+    );
+    expect(
+      playlistTrackLimitReached(startIndex: 1, currentIndex: 4, tracks: 4),
+      isFalse,
+    );
+    expect(
+      playlistTrackLimitReached(startIndex: 1, currentIndex: 5, tracks: 4),
+      isTrue,
+    );
+    expect(
+      playlistTrackLimitReached(startIndex: 1, currentIndex: 6, tracks: 0),
+      isFalse,
+    );
+  });
+
+  test('15-minute segments change track only at the configured boundary', () {
+    expect(
+      playlistSegmentBoundary(const Duration(minutes: 14, seconds: 59), 15),
+      isFalse,
+    );
+    expect(playlistSegmentBoundary(const Duration(minutes: 15), 15), isTrue);
+    expect(playlistSegmentBoundary(const Duration(minutes: 30), 0), isFalse);
+  });
+
   test('switching between audio resources requires a new source load', () {
     const first = LinkedResource(
       id: 'ruqyahbd-eight-surah',

@@ -393,27 +393,24 @@ class ResourceCard extends StatelessWidget {
                   resource.titleBn?.isNotEmpty == true
                       ? resource.titleBn!
                       : resource.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: resource.titleBn?.isNotEmpty == true
                       ? SukunTypography.banglaDisplay(
                           textStyle: Theme.of(context).textTheme.titleMedium,
                         )
                       : Theme.of(context).textTheme.titleMedium,
                 ),
-                if (resource.titleBn?.isNotEmpty == true) ...[
+                if (resource.titleBn?.isNotEmpty == true &&
+                    resource.titleBn!.trim() != resource.title.trim()) ...[
                   const SizedBox(height: 2),
                   Text(
                     resource.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
-                if (resource.summary?.isNotEmpty == true) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    resource.summary!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
                 const SizedBox(height: 9),
