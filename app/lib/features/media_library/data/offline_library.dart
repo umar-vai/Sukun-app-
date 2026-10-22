@@ -12,6 +12,7 @@ import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 
+import 'approved_web_audio_request.dart';
 import 'offline_byte_factory.dart';
 import 'offline_byte_store.dart';
 
@@ -237,20 +238,24 @@ class OfflineLibrary extends ChangeNotifier {
       // forwarded to the gateway, only the published CMS resource ID.
       var downloadUri = uri;
       final requestHeaders = <String, String>{};
-      if (kIsWeb &&
-          useWebMediaGateway &&
-          AppEnvironment.isSupabaseConfigured &&
-          allowed.contains(uri.toString()) &&
-          uri.host == 'files.ruqyahbd.org') {
-        final token = Supabase.instance.client.auth.currentSession?.accessToken;
-        if (token == null || token.isEmpty) {
-          throw StateError('অফলাইন ডাউনলোডের জন্য লগইন করুন।');
+      if (kIsWeb && useWebMediaGateway) {
+        // Fail closed if an approved Web MP3 has no configured backend or
+        // authenticated user. Never silently try the publisher without CORS.
+        final request = approvedWebAudioRequest(
+          isWeb: true,
+          source: uri,
+          resourceId: resource.id,
+          pinnedUrls: allowed,
+          backendUrl: AppEnvironment.supabaseUrl,
+          publishableKey: AppEnvironment.supabasePublishableKey,
+          accessToken: AppEnvironment.isSupabaseConfigured
+              ? Supabase.instance.client.auth.currentSession?.accessToken
+              : null,
+        );
+        if (request != null) {
+          downloadUri = request.uri;
+          requestHeaders.addAll(request.headers);
         }
-        downloadUri = Uri.parse(
-          '${AppEnvironment.supabaseUrl}/functions/v1/approved-audio-download',
-        ).replace(queryParameters: {'id': resource.id});
-        requestHeaders['Authorization'] = 'Bearer $token';
-        requestHeaders['apikey'] = AppEnvironment.supabasePublishableKey;
       }
       final request = http.Request('GET', downloadUri);
       request.headers.addAll(requestHeaders);
