@@ -75,9 +75,10 @@ bool canSaveOffline(
   final uri = media.uri!;
   // Never cache expiring signatures or remote query tokens in public metadata.
   if (uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) return false;
-  final explicitRight = (content.rightsNote ?? '').toLowerCase().contains(
-    'offline_allowed',
-  );
+  // A negated note such as `not_offline_allowed` must never grant rights.
+  final explicitRight = RegExp(
+    r'(^|[\\s,;])offline_allowed($|[\\s,;])',
+  ).hasMatch((content.rightsNote ?? '').toLowerCase());
   if (media.kind == ResourceMediaKind.audio) {
     if (!uri.path.toLowerCase().endsWith('.mp3')) return false;
     // 19 owner-attested recordings are matched by exact reviewed source URL.
@@ -204,13 +205,9 @@ class OfflineLibrary extends ChangeNotifier {
     if (owner == null) throw StateError('অফলাইন লাইব্রেরি চালু হয়নি।');
     if (_busy) throw StateError('আগের ডাউনলোডটি শেষ করুন।');
     if (contains(resource.id)) return;
-    final allowed = await _authorizedAudioUrls();
-    if (_owner != owner) throw StateError('অ্যাকাউন্ট পরিবর্তিত হয়েছে।');
-    if (!canSaveOffline(resource, ownerAuthorizedAudioUrls: allowed)) {
-      throw StateError('এই ফাইল অফলাইনে সংরক্ষণের অনুমতি নেই।');
-    }
-    final target = resolveResourceMedia(resource.linkedResource)!;
-    final uri = target.uri!;
+    // Reserve the slot before asynchronously reading rights. Rapid taps
+    // cannot start multiple downloads or overwrite each other's metadata.
+    final revision = _revision;
     _busy = true;
     _cancel = false;
     _activeTitle = resource.titleBn?.trim().isNotEmpty == true
@@ -218,8 +215,18 @@ class OfflineLibrary extends ChangeNotifier {
         : resource.title;
     _progress = 0;
     notifyListeners();
-    final client = _clientFactory();
+    http.Client? client;
     try {
+      final allowed = await _authorizedAudioUrls();
+      if (_owner != owner || _revision != revision || _cancel) {
+        throw StateError('ডাউনলোড বাতিল করা হয়েছে।');
+      }
+      if (!canSaveOffline(resource, ownerAuthorizedAudioUrls: allowed)) {
+        throw StateError('এই ফাইল অফলাইনে সংরক্ষণের অনুমতি নেই।');
+      }
+      final target = resolveResourceMedia(resource.linkedResource)!;
+      final uri = target.uri!;
+      client = _clientFactory();
       final request = http.Request('GET', uri);
       request.followRedirects = false;
       final response = await client
@@ -237,7 +244,7 @@ class OfflineLibrary extends ChangeNotifier {
       await for (final chunk in response.stream.timeout(
         const Duration(seconds: 40),
       )) {
-        if (_cancel || _owner != owner) {
+        if (_cancel || _owner != owner || _revision != revision) {
           throw StateError('ডাউনলোড বাতিল করা হয়েছে।');
         }
         count += chunk.length;
@@ -271,11 +278,16 @@ class OfflineLibrary extends ChangeNotifier {
       if (totalBytes + result.length > maxTotalBytes) {
         throw StateError('অফলাইন লাইব্রেরি পূর্ণ। কিছু ফাইল মুছুন।');
       }
-      if (_cancel || _owner != owner) {
+      if (_cancel || _owner != owner || _revision != revision) {
         throw StateError('ডাউনলোড বাতিল করা হয়েছে।');
       }
       final key = _byteKey(owner, resource.id);
       await _bytes.write(key, result);
+      // Identity switches during the storage write must not commit stale media.
+      if (_cancel || _owner != owner || _revision != revision) {
+        await _bytes.delete(key);
+        throw StateError('ডাউনলোড বাতিল করা হয়েছে।');
+      }
       final record = OfflineItem(
         id: resource.id,
         title: _activeTitle!,
@@ -293,7 +305,7 @@ class OfflineLibrary extends ChangeNotifier {
       }
       if (_owner == owner) _items = List.unmodifiable(next);
     } finally {
-      client.close();
+      client?.close();
       _busy = false;
       _progress = null;
       _activeTitle = null;
@@ -307,7 +319,9 @@ class OfflineLibrary extends ChangeNotifier {
     final owner = _owner;
     final item = find(id);
     if (owner == null || item == null) return null;
+    final revision = _revision;
     final bytes = await _bytes.read(_byteKey(owner, id));
+    if (_owner != owner || revision != _revision) return null;
     if (bytes == null ||
         bytes.length != item.size ||
         sha256.convert(bytes).toString() != item.digest) {
@@ -320,10 +334,11 @@ class OfflineLibrary extends ChangeNotifier {
   Future<void> remove(String id) async {
     final owner = _owner;
     if (owner == null) return;
-    await _bytes.delete(_byteKey(owner, id));
+    final revision = _revision;
     final next = _items.where((item) => item.id != id).toList();
+    await _bytes.delete(_byteKey(owner, id));
     await _persist(owner, next);
-    if (_owner == owner) {
+    if (_owner == owner && _revision == revision) {
       _items = List.unmodifiable(next);
       notifyListeners();
     }
