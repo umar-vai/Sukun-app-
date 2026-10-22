@@ -31,6 +31,34 @@ jobs:
           node-version: '22'
       - run: node --check .github/scripts/staging_browser_smoke.cjs
 
+  pr-observe-live-guest:
+    name: Observe existing live Guest routes (Advisory)
+    # Read-only diagnostic of the PREVIOUS deployed version. PR code cannot
+    # contain privileged credentials; source and browser checkpoints are public.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser automation
+        run: npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
+      - name: Observe deployed Guest with only published SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SUKUN_EXPECTED_MAIN_SHA="$(curl --fail --silent --show-error --max-time 20 \
+            https://app.sukunlife.com/preview-build.json | jq -r '.commit')"
+          [[ "$SUKUN_EXPECTED_MAIN_SHA" =~ ^[a-f0-9]{40}$ ]]
+          node .github/scripts/staging_browser_smoke.cjs
+
   staging-guest-browser:
     name: Real Chromium Staging Guest and route gate
     # Only AFTER the existing trusted-main CI -> Pages deploy (never an untrusted PR).
