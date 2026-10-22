@@ -11,11 +11,11 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 class MemoryOfflineBytes implements OfflineByteStore {
   final entries = <String, Uint8List>{};
   @override
-  Future<void> write(String key, Uint8List bytes) async => entries[key] = bytes;
+  Future<void> write(String key, Uint8List bytes) async { entries[key] = bytes; }
   @override
-  Future<Uint8List?> read(String key) async => entries[key];
+  Future<Uint8List?> read(String key) async { return entries[key]; }
   @override
-  Future<void> delete(String key) async => entries.remove(key);
+  Future<void> delete(String key) async { entries.remove(key); }
 }
 
 ContentResource audio({
