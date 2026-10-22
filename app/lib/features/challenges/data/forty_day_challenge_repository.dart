@@ -46,7 +46,7 @@ class ChallengeProgress {
   int dayAt(DateTime today) {
     // Pausing freezes the challenge clock; a missed day never wipes check-ins.
     final reference = isPaused ? pausedOn! : today;
-    return (1 + dayDifference(reference, startedOn) - pausedDays).clamp(1, 40);
+    return (1 + dayDifference(reference, startedOn) - pausedDays).clamp(1, 40).toInt();
   }
 
   bool get complete => completedDays.length == 40;
