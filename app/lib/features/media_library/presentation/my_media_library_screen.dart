@@ -733,7 +733,7 @@ class _PlaylistPlayerPage extends ConsumerWidget {
                             label: const Text('টাইমার বন্ধ'),
                             onPressed: () => controller.setSleepTimer(0),
                           ),
-                          const Divider(height: 16),
+                          const SizedBox(width: 8),
                           for (final tracks in const [3, 4])
                             ChoiceChip(
                               key: Key('playlist-stop-after-$tracks'),
