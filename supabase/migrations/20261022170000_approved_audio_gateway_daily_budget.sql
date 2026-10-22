@@ -14,21 +14,22 @@ create table if not exists media_gateway_private.daily_download_budget (
 revoke all on media_gateway_private.daily_download_budget
 from public, anon, authenticated;
 
-create or replace function public.reserve_approved_audio_download(p_bytes bigint)
+create or replace function public.reserve_approved_audio_download(p_user_id uuid, p_bytes bigint)
 returns boolean
 language plpgsql
 security definer
 set search_path = ''
 as $function$
 declare
-  member_id uuid := (select auth.uid());
+  member_id uuid := p_user_id;
   current_day date := (now() at time zone 'utc')::date;
   member_subject text;
   member_requests integer;
   member_bytes bigint;
   total_bytes bigint;
 begin
-  -- This function cannot be used with anon, null auth or fake metadata.
+  -- Only the trusted Edge Function service role may reserve quotas.
+  -- A member JWT alone must never be allowed to burn the global budget.
   if member_id is null or p_bytes is null or
      p_bytes < 4 or p_bytes > 104857600 then
     return false;
@@ -72,9 +73,9 @@ begin
 end
 $function$;
 
-revoke all on function public.reserve_approved_audio_download(bigint)
-  from public, anon;
-grant execute on function public.reserve_approved_audio_download(bigint)
-  to authenticated;
+revoke all on function public.reserve_approved_audio_download(uuid, bigint)
+  from public, anon, authenticated;
+grant execute on function public.reserve_approved_audio_download(uuid, bigint)
+  to service_role;
 comment on function public.reserve_approved_audio_download(bigint) is
   'Authenticated owner-scoped approved audio reservation. Enforces per-member and global server-egress ceilings; no clinical data.';
