@@ -22,6 +22,30 @@ void main() {
     },
   );
 
+  testWidgets('Dua All shows public items without a category mapping', (
+    tester,
+  ) async {
+    final filters = <Set<String>>[];
+    final repository = _BrowsingRepository(onBrowse: filters.add);
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+        repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(filters, isNotEmpty);
+    expect(filters.last, isEmpty);
+
+    await tester.tap(find.text('সকালের আযকার').first);
+    await tester.pumpAndSettle();
+    expect(filters.last, contains('dua-azkar-morning'));
+
+    await tester.tap(find.byKey(const Key('dua-show-all')));
+    await tester.pumpAndSettle();
+    expect(filters.last, isEmpty);
+  });
+
   testWidgets('Hadith browser exposes CMS-derived topics and references', (
     tester,
   ) async {
@@ -123,7 +147,9 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
 );
 
 final class _BrowsingRepository implements ResourcesRepository {
-  const _BrowsingRepository();
+  const _BrowsingRepository({this.onBrowse});
+
+  final void Function(Set<String>)? onBrowse;
 
   static const quran = ContentResource(
     id: 'quran-1',
@@ -159,7 +185,10 @@ final class _BrowsingRepository implements ResourcesRepository {
     String query = '',
     Set<String> types = const {},
     Set<String> categoryPrefixes = const {},
-  }) async => types.contains('hadith') ? const [hadith] : const [];
+  }) async {
+    onBrowse?.call(categoryPrefixes);
+    return types.contains('hadith') ? const [hadith] : const [];
+  }
 
   @override
   Future<List<QuranSurahSummary>> browseSurahs() async => const [
