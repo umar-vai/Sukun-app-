@@ -72,7 +72,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (path.startsWith('/patient') ||
             path.startsWith('/admin') ||
             path.startsWith('/my-routines') ||
-            path.startsWith('/my-media') ||
+            // Personal media library is a PUBLIC-only offline collection.
+            // Never discard /my-media deep links while restoring the session:
+            // the library switches identity and stores only approved public bytes.
             path == '/progress' ||
             path == '/account' ||
             path == '/settings/notifications') {
