@@ -11,7 +11,8 @@ void main() {
       id: 'audio-test',
       title: 'রুকইয়াহ শুনুন',
       type: 'audio',
-      summary: 'Owner-provided source; editorial review required before publishing.',
+      summary:
+          'Owner-provided source; editorial review required before publishing.',
       status: 'published',
       visibility: 'public',
     );
