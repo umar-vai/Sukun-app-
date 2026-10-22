@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
+
 import 'offline_byte_store.dart';
 
 OfflineByteStore createOfflineByteStore() => _PrivateFileStore();
