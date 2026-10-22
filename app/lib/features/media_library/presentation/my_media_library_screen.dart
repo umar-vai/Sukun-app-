@@ -737,19 +737,20 @@ class _PlaylistPlayerPage extends ConsumerWidget {
                           for (final tracks in const [3, 4])
                             ChoiceChip(
                               key: Key('playlist-stop-after-$tracks'),
-                              label: Text('$tracksটি অডিও শেষে থামুন'),
-                              selected: controller.stopAfterTracks == tracks,
-                              onSelected: (_) =>
-                                  controller.setStopAfterTracks(
-                                    controller.stopAfterTracks == tracks
-                                        ? 0
-                                        : tracks,
-                                  ),
+                              label: Text('প্রতিটি ১৫ মিনিট · $tracks অডিও'),
+                              selected: controller.stopAfterTracks == tracks &&
+                                  controller.playlistSegmentMinutes == 15,
+                              onSelected: (_) => controller.setTimedPlaylist(
+                                controller.stopAfterTracks == tracks &&
+                                        controller.playlistSegmentMinutes == 15
+                                    ? 0
+                                    : tracks,
+                              ),
                             ),
                           if (controller.stopAfterTracks != 0)
                             ActionChip(
-                              label: const Text('অডিও সংখ্যা সীমা বন্ধ'),
-                              onPressed: () => controller.setStopAfterTracks(0),
+                              label: const Text('১৫ মিনিটের প্লেলিস্ট বন্ধ'),
+                              onPressed: () => controller.setTimedPlaylist(0),
                             ),
                         ],
                       ),
