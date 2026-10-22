@@ -116,6 +116,20 @@ async function verifyGuestPage(browser, profile) {
       { timeout: 12000 },
     );
 
+    // Phase 5: Guest may inspect all five public challenge stages without
+    // gaining access to any account-owned day check-ins.
+    checkpoint('public 40-day challenge route');
+    await page.goto(base + '#/challenge/40-day', {
+      waitUntil: 'domcontentloaded',
+      timeout: 65000,
+    });
+    await waitForFlutter(page);
+    await page.waitForFunction(
+      () => location.hash.includes('/challenge/40-day'),
+      undefined,
+      { timeout: 12000 },
+    );
+
     // Guest must not remain on either protected deep link after router settles.
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
       checkpoint(protectedPath.startsWith('/patient')
