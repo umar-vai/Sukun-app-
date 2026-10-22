@@ -72,7 +72,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (path.startsWith('/patient') ||
             path.startsWith('/admin') ||
             path.startsWith('/my-routines') ||
-            path.startsWith('/my-media') ||
             path == '/progress' ||
             path == '/account' ||
             path == '/settings/notifications') {
