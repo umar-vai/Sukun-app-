@@ -35,6 +35,16 @@ Do **not** flip the Pages site to Staging without user approval: the public GitH
 4. Use **only synthetic Staging accounts** for desktop/mobile Web QA G2–G8 (see `PHASE2_PATIENT_WEB_ACCEPTANCE_2026_10_20.md`). Record role checks, interaction results and sanitized browser findings, without capturing credentials or real patient data.
 5. If any role or browser gate fails, keep release blocked. Restore the previous mode by setting the variable to `false` and performing a **new approved main CI-successful deployment**. A variable change alone is not rollback.
 
+## Owner-authorized activation handoff (22 October 2026)
+
+The owner has now set the **repository** Actions Variable `SUKUN_PREVIEW_USE_STAGING` to `true`, verified by an owner-provided GitHub Variables screenshot. This is an approval to stage the existing Flutter GitHub Pages preview, **not** approval to change Production Supabase, its public website or the internal dashboard. A GitHub repository variable edit alone does not rebuild the deployed bundle.
+
+**Controlled redeploy checklist:** merge this documentation-only handoff through a reviewed, passing PR. That creates a genuine `main` push and runs the standard main CI → Flutter Web Preview → Pages deployment workflow. Check that the deployment job’s **Confirm HTTP serves the exact successful main SHA** passes. Confirm the deployed `preview-build.json` has `backend_mode: staging` (do not infer it from the variable alone). The workflow must pass the anonymous staging clinical-data isolation gate first, and fail closed if `SUKUN_PREVIEW_FORCE_GUEST_ONLY=true` conflicts with staging opt-in.
+
+**Security scope:** Staging uses only the fixed isolated project `qacklgqvxvjjzsimjoip` and public `sb_publishable_` browser key. Do not embed synthetic patient credentials, OAuth tokens, service-role keys or any private patient records in the public Pages bundle. Existing Patient A/B real JWT/RLS acceptance is already proven; **Admin/Member live JWT and G2–G8 browser E2E are still pending**. Test exclusively with synthetic patient identities, use authorized private sessions, and keep release blocked until evidence is collected.
+
+**Rollback:** set `SUKUN_PREVIEW_USE_STAGING=false` (or remove it) and initiate a **new** approved main CI-successful push/deploy. Verify `preview-build.json` and exact SHA after deployment, rather than assuming the variable flips the old bundle instantly.
+
 ## Boundaries
 
 - Existing public `sukunlife.com` and the old internal dashboard: **unchanged**.
