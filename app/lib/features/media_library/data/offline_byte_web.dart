@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:idb_shim/idb.dart';
 import 'package:idb_shim/idb_browser.dart';
 
 import 'offline_byte_store.dart';
