@@ -75,6 +75,20 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          IconButton(
+            onPressed: () => context.push(
+              '/my-media?add=${Uri.encodeQueryComponent(widget.resource.id)}',
+            ),
+            tooltip: 'আমার অডিও প্লেলিস্টে যুক্ত করুন',
+            icon: const Icon(Icons.queue_music_outlined),
+          ),
+          IconButton(
+            onPressed: () => context.push(
+              '/my-media?download=${Uri.encodeQueryComponent(widget.resource.id)}',
+            ),
+            tooltip: 'অফলাইনে সংরক্ষণ করুন',
+            icon: const Icon(Icons.download_outlined),
+          ),
           if (ref.watch(appSessionProvider).value?.isAuthenticated == true)
             IconButton(
               onPressed: () => context.push(

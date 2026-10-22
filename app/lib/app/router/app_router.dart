@@ -51,6 +51,7 @@ import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
+import 'package:sukun_life/features/media_library/presentation/my_media_library_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_announcements_screen.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/admin_announcements_screen.dart';
 import 'package:sukun_life/app/router/role_navigation_shell.dart';
@@ -71,6 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (path.startsWith('/patient') ||
             path.startsWith('/admin') ||
             path.startsWith('/my-routines') ||
+            path.startsWith('/my-media') ||
             path == '/progress' ||
             path == '/account' ||
             path == '/settings/notifications') {
@@ -186,6 +188,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/my-routines/action/:actionId',
             builder: (context, state) => PersonalActionDetailScreen(
               actionId: state.pathParameters['actionId']!,
+            ),
+          ),
+          GoRoute(
+            path: '/my-media',
+            builder: (context, state) => MyMediaLibraryScreen(
+              addResourceId: state.uri.queryParameters['add'],
+              downloadId: state.uri.queryParameters['download'],
             ),
           ),
           GoRoute(
