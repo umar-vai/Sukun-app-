@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -238,7 +237,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(appSessionProvider, (_, __) => _openForIdentity());
+    ref.listen(appSessionProvider, (previous, next) => _openForIdentity());
     final library = ref.watch(playlistLibraryProvider);
     final offline = ref.watch(offlineLibraryProvider);
     return Scaffold(
@@ -428,7 +427,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                     ),
                     leading: const Icon(Icons.music_note_outlined),
                     trailing: Wrap(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           tooltip: 'উপরে নিন',
