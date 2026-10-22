@@ -2,9 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/media_library/data/approved_web_audio_request.dart';
 
 void main() {
-  final source = Uri.parse(
-    'https://files.ruqyahbd.org/audio/approved.mp3',
-  );
+  final source = Uri.parse('https://files.ruqyahbd.org/audio/approved.mp3');
   final pinned = {source.toString()};
   const staging = 'https://qacklgqvxvjjzsimjoip.supabase.co';
   const id = '00000000-0000-4000-8000-000000000123';
