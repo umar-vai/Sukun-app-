@@ -149,10 +149,23 @@ async function main() {
       }
       const blobUrl = URL.createObjectURL(new Blob([data], { type: 'audio/mpeg' }));
       const audio = new Audio(blobUrl);
-      const loaded = await new Promise(resolve => {
-        audio.onloadedmetadata = () => resolve(true);
-        audio.onerror = () => resolve(false);
-        setTimeout(() => resolve(false), 12000);
+      const played = await new Promise(resolve => {
+        let settled = false;
+        const finish = ok => {
+          if (settled) return;
+          settled = true;
+          audio.pause();
+          resolve(ok);
+        };
+        audio.muted = true;
+        audio.ontimeupdate = () => {
+          if (audio.currentTime > 0.05) finish(true);
+        };
+        audio.onloadedmetadata = () => {
+          audio.play().catch(() => finish(false));
+        };
+        audio.onerror = () => finish(false);
+        setTimeout(() => finish(false), 12000);
         audio.load();
       });
       URL.revokeObjectURL(blobUrl);
@@ -163,7 +176,7 @@ async function main() {
         tx.onerror = () => reject(new Error('QA cleanup failed'));
       });
       db.close();
-      return { ok: loaded };
+      return { ok: played };
     }, key);
     assert.ok(offline.ok, 'Chrome cannot load the saved offline MP3');
     console.log('PASS: authenticated staging gateway -> Chrome IndexedDB -> no-network MP3 load');
