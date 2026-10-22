@@ -77,7 +77,7 @@ bool canSaveOffline(
   if (uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) return false;
   // A negated note such as `not_offline_allowed` must never grant rights.
   final explicitRight = RegExp(
-    r'(^|[\\s,;])offline_allowed($|[\\s,;])',
+    r'(^|[\s,;])offline_allowed($|[\s,;])',
   ).hasMatch((content.rightsNote ?? '').toLowerCase());
   if (media.kind == ResourceMediaKind.audio) {
     if (!uri.path.toLowerCase().endsWith('.mp3')) return false;
