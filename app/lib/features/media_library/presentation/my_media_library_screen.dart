@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -531,6 +533,14 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                               try {
                                 await library.download(resource);
                                 _message('অফলাইনে সংরক্ষিত হয়েছে।');
+                              } on http.ClientException {
+                                _message(
+                                  kIsWeb
+                                      ? 'এই অডিও হোস্টে ব্রাউজার CORS/নেটওয়ার্ক বাধা রয়েছে। '
+                                            'সার্ভার থেকে এই সাইটের জন্য Access-Control-Allow-Origin '
+                                            'অনুমতি প্রয়োজন।'
+                                      : 'ডাউনলোডের সময় সার্ভারের সঙ্গে যোগাযোগ ব্যর্থ হয়েছে।',
+                                );
                               } catch (_) {
                                 _message(
                                   'ডাউনলোড ব্যর্থ। নেটওয়ার্ক, অনুমতি বা জায়গা পরীক্ষা করুন।',
