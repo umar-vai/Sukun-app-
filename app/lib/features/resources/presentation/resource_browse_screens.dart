@@ -701,6 +701,8 @@ class _ResourceListTile extends StatelessWidget {
               children: [
                 Text(
                   resource.titleBn ?? resource.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: SukunTypography.banglaBody(
                     textStyle: Theme.of(context).textTheme.titleMedium,
                   ),
@@ -709,6 +711,8 @@ class _ResourceListTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     reference,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
