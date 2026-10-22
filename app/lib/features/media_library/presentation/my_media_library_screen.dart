@@ -29,6 +29,8 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
   int _tab = 0;
   late Future<ContentResource?> _candidate;
   late Future<Set<String>> _allowedAudio;
+  final Map<String, Future<ContentResource?>> _titles = {};
+  String? _currentOwner;
 
   @override
   void initState() {
@@ -49,9 +51,21 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
 
   void _openForIdentity() {
     final identity = ref.read(appSessionProvider).value?.userId ?? 'guest';
+    if (_currentOwner != identity) {
+      _currentOwner = identity;
+      _titles.clear();
+      if (widget.addResourceId != null || widget.downloadId != null) {
+        _candidate = _fetchCandidate();
+      }
+      if (mounted) setState(() {});
+    }
     unawaited(ref.read(playlistLibraryProvider).open(identity));
     unawaited(ref.read(offlineLibraryProvider).open(identity));
   }
+
+  Future<ContentResource?> _titleFor(String id) =>
+      _titles.putIfAbsent(id, () =>
+          ref.read(resourcesRepositoryProvider).getResource(id));
 
   void _message(String message) {
     if (mounted) {
@@ -411,9 +425,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                 for (var i = 0; i < playlist.resourceIds.length; i++)
                   ListTile(
                     title: FutureBuilder<ContentResource?>(
-                      future: ref
-                          .read(resourcesRepositoryProvider)
-                          .getResource(playlist.resourceIds[i]),
+                      future: _titleFor(playlist.resourceIds[i]),
                       builder: (context, snapshot) {
                         final saved = offline.find(playlist.resourceIds[i]);
                         final resource = snapshot.data;
