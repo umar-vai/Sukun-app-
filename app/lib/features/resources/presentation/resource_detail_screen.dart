@@ -157,6 +157,15 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           appBar: AppBar(
             title: const Text('ইসলামিক উপকরণ'),
             actions: [
+              if (resolveResourceMedia(resource.linkedResource)?.kind ==
+                  ResourceMediaKind.pdf)
+                IconButton(
+                  onPressed: () => context.push(
+                    '/my-media?download=${Uri.encodeQueryComponent(resource.id)}',
+                  ),
+                  tooltip: 'PDF অফলাইনে সংরক্ষণ করুন',
+                  icon: const Icon(Icons.download_outlined),
+                ),
               if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
                 IconButton(
                   onPressed: () async {
