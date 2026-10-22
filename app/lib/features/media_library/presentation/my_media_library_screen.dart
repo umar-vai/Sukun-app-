@@ -738,7 +738,8 @@ class _PlaylistPlayerPage extends ConsumerWidget {
                             ChoiceChip(
                               key: Key('playlist-stop-after-$tracks'),
                               label: Text('প্রতিটি ১৫ মিনিট · $tracks অডিও'),
-                              selected: controller.stopAfterTracks == tracks &&
+                              selected:
+                                  controller.stopAfterTracks == tracks &&
                                   controller.playlistSegmentMinutes == 15,
                               onSelected: (_) => controller.setTimedPlaylist(
                                 controller.stopAfterTracks == tracks &&
