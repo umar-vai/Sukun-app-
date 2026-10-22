@@ -204,6 +204,7 @@ jobs:
       - name: Browser offline IndexedDB, blob URL and persistence (Chrome)
         run: |
           flutter test --platform chrome \
+            test/features/media_library/approved_web_audio_request_test.dart \
             test/features/media_library/offline_browser_store_test.dart \
             test/features/media_library/offline_library_test.dart \
             test/features/media_library/playlist_library_test.dart

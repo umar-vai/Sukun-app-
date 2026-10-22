@@ -107,6 +107,7 @@ void main() {
         ),
       );
       final library = OfflineLibrary(
+        useWebMediaGateway: false,
         bytes: store,
         clientFactory: factory,
         authorizedAudioUrls: () async => {
@@ -136,6 +137,7 @@ void main() {
     () async {
       final store = MemoryOfflineBytes();
       final library = OfflineLibrary(
+        useWebMediaGateway: false,
         bytes: store,
         clientFactory: () => MockClient(
           (request) async => http.Response('<html>not audio</html>', 200),
@@ -156,6 +158,7 @@ void main() {
     () async {
       final permissions = Completer<Set<String>>();
       final library = OfflineLibrary(
+        useWebMediaGateway: false,
         bytes: MemoryOfflineBytes(),
         authorizedAudioUrls: () => permissions.future,
       );
