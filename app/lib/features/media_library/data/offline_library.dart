@@ -76,9 +76,8 @@ bool canSaveOffline(
   // Never cache expiring signatures or remote query tokens in public metadata.
   if (uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) return false;
   // A negated note such as `not_offline_allowed` must never grant rights.
-  final explicitRight = RegExp(
-    r'(^|[\s,;])offline_allowed($|[\s,;])',
-  ).hasMatch((content.rightsNote ?? '').toLowerCase());
+  final explicitRight = RegExp(r'(^|[\s,;])offline_allowed($|[\s,;])')
+      .hasMatch((content.rightsNote ?? '').toLowerCase());
   if (media.kind == ResourceMediaKind.audio) {
     if (!uri.path.toLowerCase().endsWith('.mp3')) return false;
     // 19 owner-attested recordings are matched by exact reviewed source URL.
