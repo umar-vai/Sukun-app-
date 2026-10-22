@@ -37,6 +37,18 @@ jobs:
       # this advisory network check cannot make a request.
 
 
+  audio-cors-advisory:
+    name: Media / Authorized Host CORS Probe (Advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Probe public media CORS and Range without downloading files
+        run: python3 .github/scripts/probe_public_audio_cors.py
+
   flutter-quality:
     name: Flutter / Format Analyze Test
     runs-on: ubuntu-latest

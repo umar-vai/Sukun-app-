@@ -201,6 +201,13 @@ jobs:
             test/features/patient_care/completion_queue_store_test.dart \
             test/features/patient_care/task_completion_coordinator_test.dart
 
+      - name: Browser offline IndexedDB, blob URL and persistence (Chrome)
+        run: |
+          flutter test --platform chrome \
+            test/features/media_library/offline_browser_store_test.dart \
+            test/features/media_library/offline_library_test.dart \
+            test/features/media_library/playlist_library_test.dart
+
       - name: Google sign-in entrypoints in staged browser build (Chrome)
         run: |
           flutter test --platform chrome \
