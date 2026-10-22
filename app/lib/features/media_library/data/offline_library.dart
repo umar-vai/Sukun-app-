@@ -38,22 +38,22 @@ class OfflineItem {
   final DateTime savedAt;
 
   factory OfflineItem.fromJson(Map<String, dynamic> json) => OfflineItem(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        kind: json['kind'] as String,
-        size: json['size'] as int,
-        digest: json['sha256'] as String,
-        savedAt: DateTime.parse(json['saved'] as String),
-      );
+    id: json['id'] as String,
+    title: json['title'] as String,
+    kind: json['kind'] as String,
+    size: json['size'] as int,
+    digest: json['sha256'] as String,
+    savedAt: DateTime.parse(json['saved'] as String),
+  );
 
   Map<String, Object> toJson() => {
-        'id': id,
-        'title': title,
-        'kind': kind,
-        'size': size,
-        'sha256': digest,
-        'saved': savedAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'kind': kind,
+    'size': size,
+    'sha256': digest,
+    'saved': savedAt.toIso8601String(),
+  };
 }
 
 /// Offline entitlement is deliberately independent of content visibility.
@@ -75,9 +75,9 @@ bool canSaveOffline(
   final uri = media.uri!;
   // Never cache expiring signatures or remote query tokens in public metadata.
   if (uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) return false;
-  final explicitRight = (content.rightsNote ?? '')
-      .toLowerCase()
-      .contains('offline_allowed');
+  final explicitRight = (content.rightsNote ?? '').toLowerCase().contains(
+    'offline_allowed',
+  );
   if (media.kind == ResourceMediaKind.audio) {
     if (!uri.path.toLowerCase().endsWith('.mp3')) return false;
     // 19 owner-attested recordings are matched by exact reviewed source URL.
@@ -87,13 +87,17 @@ bool canSaveOffline(
 }
 
 Future<Set<String>> ownerAuthorizedAudioUrls() async {
-  final source =
-      await rootBundle.loadString('assets/data/ruqyahbd_book_audio_crosswalk.json');
+  final source = await rootBundle.loadString(
+    'assets/data/ruqyahbd_book_audio_crosswalk.json',
+  );
   final catalog = jsonDecode(source) as Map<String, dynamic>;
   return (catalog['entries'] as List<dynamic>)
       .whereType<Map<String, dynamic>>()
-      .where((entry) =>
-          entry['licensing'] == 'owner_attested_for_sukun_life_app_2026_10_12')
+      .where(
+        (entry) =>
+            entry['licensing'] ==
+            'owner_attested_for_sukun_life_app_2026_10_12',
+      )
       .map((entry) => entry['media_url'] as String)
       .toSet();
 }
@@ -104,10 +108,10 @@ class OfflineLibrary extends ChangeNotifier {
     Future<SharedPreferences>? preferences,
     http.Client Function()? clientFactory,
     Future<Set<String>> Function()? authorizedAudioUrls,
-  })  : _bytes = bytes ?? createOfflineByteStore(),
-        _prefs = preferences ?? SharedPreferences.getInstance(),
-        _clientFactory = clientFactory ?? http.Client.new,
-        _authorizedAudioUrls = authorizedAudioUrls ?? ownerAuthorizedAudioUrls;
+  }) : _bytes = bytes ?? createOfflineByteStore(),
+       _prefs = preferences ?? SharedPreferences.getInstance(),
+       _clientFactory = clientFactory ?? http.Client.new,
+       _authorizedAudioUrls = authorizedAudioUrls ?? ownerAuthorizedAudioUrls;
 
   static const maxTotalBytes = 250 * 1024 * 1024;
   static const maxFileBytes = 100 * 1024 * 1024;
@@ -218,9 +222,9 @@ class OfflineLibrary extends ChangeNotifier {
     try {
       final request = http.Request('GET', uri);
       request.followRedirects = false;
-      final response = await client.send(request).timeout(
-            const Duration(seconds: 25),
-          );
+      final response = await client
+          .send(request)
+          .timeout(const Duration(seconds: 25));
       if (response.statusCode != 200) {
         throw StateError('অডিও/PDF সার্ভার ফাইলটি পাঠায়নি।');
       }
@@ -247,20 +251,21 @@ class OfflineLibrary extends ChangeNotifier {
         notifyListeners();
       }
       final result = collected.takeBytes();
-      if (result.isEmpty ||
-          (length != null && result.length != length)) {
+      if (result.isEmpty || (length != null && result.length != length)) {
         throw StateError('ফাইলটি সম্পূর্ণ আসেনি।');
       }
       if (target.kind == ResourceMediaKind.pdf) {
         if (result.length < 5 ||
-            result[0] != 0x25 || result[1] != 0x50 ||
-            result[2] != 0x44 || result[3] != 0x46 ||
+            result[0] != 0x25 ||
+            result[1] != 0x50 ||
+            result[2] != 0x44 ||
+            result[3] != 0x46 ||
             result[4] != 0x2d) {
           throw StateError('এটি PDF ফাইল নয়।');
         }
       } else if (!(result.length > 3 &&
           ((result[0] == 0x49 && result[1] == 0x44 && result[2] == 0x33) ||
-           (result[0] == 0xff && (result[1] & 0xe0) == 0xe0)))) {
+              (result[0] == 0xff && (result[1] & 0xe0) == 0xe0)))) {
         throw StateError('এটি MP3 অডিও ফাইল নয়।');
       }
       if (totalBytes + result.length > maxTotalBytes) {
