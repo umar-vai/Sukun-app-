@@ -20,6 +20,6 @@ class _NativeAudioUri implements LocalAudioUri {
   Uri get uri => _file.uri;
   @override
   void dispose() {
-    _file.delete().then((_) {}, onError: (Object _, StackTrace __) {});
+    _file.delete().then((_) {}, onError: (Object _, StackTrace _) {});
   }
 }
