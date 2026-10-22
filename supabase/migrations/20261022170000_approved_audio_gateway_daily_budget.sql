@@ -77,5 +77,5 @@ revoke all on function public.reserve_approved_audio_download(uuid, bigint)
   from public, anon, authenticated;
 grant execute on function public.reserve_approved_audio_download(uuid, bigint)
   to service_role;
-comment on function public.reserve_approved_audio_download(bigint) is
+comment on function public.reserve_approved_audio_download(uuid, bigint) is
   'Authenticated owner-scoped approved audio reservation. Enforces per-member and global server-egress ceilings; no clinical data.';
