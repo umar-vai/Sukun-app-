@@ -408,14 +408,6 @@ class ResourceCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (resource.summary?.isNotEmpty == true) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    resource.summary!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
                 const SizedBox(height: 9),
                 SukunStatusPill(
                   label: _typeLabel(resource.type),
