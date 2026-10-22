@@ -61,8 +61,7 @@ async function main() {
     }).catch(() => null);
     if (!probe) continue;
     const contentRange = probe.headers.get('content-range') || '';
-    const match = contentRange.match(/\\/(\\d+)$/);
-    const size = match ? Number(match[1]) : 0;
+    const size = Number(contentRange.split('/').pop());
     await probe.body?.cancel().catch(() => {});
     if (probe.status === 206 && Number.isSafeInteger(size) &&
         size >= 4 && size <= maxBytes) eligible.push({ candidate, size });
