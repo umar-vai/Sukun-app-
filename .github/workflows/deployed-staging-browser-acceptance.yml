@@ -1,0 +1,81 @@
+name: Deployed Staging Browser Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/deployed-staging-browser-acceptance.yml'
+      - '.github/scripts/staging_browser_smoke.cjs'
+  workflow_run:
+    workflows: ['Flutter Web Preview']
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-staging-browser-acceptance-${{ github.event.workflow_run.head_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  script-syntax:
+    name: Offline browser smoke script syntax
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check .github/scripts/staging_browser_smoke.cjs
+
+  staging-guest-browser:
+    name: Real Chromium Staging Guest and route gate
+    # Only AFTER the existing trusted-main CI -> Pages deploy (never an untrusted PR).
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout trusted main source without persisted credentials
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Refuse a stale/non-main deployment
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse origin/main)" = "$EXPECTED_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Chrome and source syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          google-chrome --version
+          node --check .github/scripts/staging_browser_smoke.cjs
+
+      - name: Install pinned browser automation dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
+
+      - name: Run no-credential browser isolation against deployed Staging
+        env:
+          SUKUN_EXPECTED_MAIN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node .github/scripts/staging_browser_smoke.cjs
