@@ -181,9 +181,11 @@ class AudioPlaybackController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    unawaited(_player.seekToNext().catchError((Object _) {
-      _segmentAdvancePending = false;
-    }));
+    unawaited(
+      _player.seekToNext().catchError((Object _) {
+        _segmentAdvancePending = false;
+      }),
+    );
   }
 
   /// Applies to this playlist queue only. The timer and Repeat One controls
