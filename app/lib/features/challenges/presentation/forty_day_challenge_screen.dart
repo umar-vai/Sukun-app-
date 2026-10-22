@@ -28,17 +28,15 @@ class _FortyDayChallengeScreenState
   void initState() {
     super.initState();
     _loadedOwner = ref.read(appSessionProvider).value?.userId;
-    _progress = _loadedOwner == null
-        ? Future.value(null)
-        : _repo.load();
+    _progress = _loadedOwner == null ? Future.value(null) : _repo.load();
   }
 
   void _refresh() {
-    if (mounted) setState(() {
-      _progress = _loadedOwner == null
-          ? Future.value(null)
-          : _repo.load();
-    });
+    if (mounted) {
+      setState(() {
+        _progress = _loadedOwner == null ? Future.value(null) : _repo.load();
+      });
+    }
   }
 
   Future<void> _act(Future<void> Function() callback) async {
@@ -50,7 +48,9 @@ class _FortyDayChallengeScreenState
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('পরিবর্তন সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text('পরিবর্তন সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _working = false);
@@ -79,8 +79,10 @@ class _FortyDayChallengeScreenState
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
             children: [
-              Text('জাদু থেকে সুরক্ষার চ্যালেঞ্জ',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'জাদু থেকে সুরক্ষার চ্যালেঞ্জ',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 8),
               const Text(
                 'ধাপে ধাপে নিজের ভিতর পরিবর্তন আনুন। এটি বিনামূল্যের, '
@@ -150,9 +152,11 @@ class _FortyDayChallengeScreenState
                                   progress.complete
                                       ? '৪০ দিনের সব কাজ সম্পন্ন'
                                       : progress.isPaused
-                                          ? 'বিরতিতে আছেন • দিন $day'
-                                          : 'আজ আপনার চ্যালেঞ্জের দিন $day',
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                      ? 'বিরতিতে আছেন • দিন $day'
+                                      : 'আজ আপনার চ্যালেঞ্জের দিন $day',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
                                 ),
                                 const SizedBox(height: 8),
                                 LinearProgressIndicator(
@@ -175,10 +179,15 @@ class _FortyDayChallengeScreenState
                                         : () => _act(
                                             () => done
                                                 ? _repo.undoToday(progress, now)
-                                                : _repo.markToday(progress, now),
+                                                : _repo.markToday(
+                                                    progress,
+                                                    now,
+                                                  ),
                                           ),
                                     icon: Icon(
-                                      done ? Icons.undo : Icons.check_circle_outline,
+                                      done
+                                          ? Icons.undo
+                                          : Icons.check_circle_outline,
                                     ),
                                     label: Text(
                                       done
@@ -192,8 +201,14 @@ class _FortyDayChallengeScreenState
                                       ? null
                                       : () => _act(
                                           () => progress.isPaused
-                                              ? _repo.resume(progress, DateTime.now())
-                                              : _repo.pause(progress, DateTime.now()),
+                                              ? _repo.resume(
+                                                  progress,
+                                                  DateTime.now(),
+                                                )
+                                              : _repo.pause(
+                                                  progress,
+                                                  DateTime.now(),
+                                                ),
                                         ),
                                   icon: Icon(
                                     progress.isPaused
