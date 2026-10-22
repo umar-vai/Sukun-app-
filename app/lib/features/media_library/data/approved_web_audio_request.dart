@@ -43,9 +43,6 @@ ApprovedWebAudioRequest? approvedWebAudioRequest({
       queryParameters: {'id': resourceId},
       fragment: '',
     ),
-    headers: {
-      'Authorization': 'Bearer $accessToken',
-      'apikey': publishableKey,
-    },
+    headers: {'Authorization': 'Bearer $accessToken', 'apikey': publishableKey},
   );
 }
