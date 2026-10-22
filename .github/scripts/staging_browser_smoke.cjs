@@ -67,8 +67,9 @@ async function verifyGuestPage(browser, profile) {
     try {
       const url = new URL(request.url());
       if (url.hostname === productionHost &&
-          (/^\\/(auth|rest)\\/v1\\//.test(url.pathname) ||
-           /^\\/functions\\/v1\\/patient-/.test(url.pathname))) {
+          (url.pathname.startsWith('/auth/v1/') ||
+           url.pathname.startsWith('/rest/v1/') ||
+           url.pathname.startsWith('/functions/v1/patient-'))) {
         productionClinicalCalls += 1;
       }
     } catch (_) { /* e.g. data URI */ }
