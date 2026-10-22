@@ -282,6 +282,16 @@ class _FortyDayChallengeScreenState
                 icon: const Icon(Icons.menu_book_outlined),
                 label: const Text('রুকইয়াহ রিসোর্স দেখুন'),
               ),
+              const SizedBox(height: 8),
+              const Text(
+                'চ্যালেঞ্জের বিশেষ ওয়েবিনার ও লাইভ প্রশ্নোত্তরের '
+                'সূচি ঘোষণা হলে নোটিশে দেখতে পাবেন।',
+              ),
+              TextButton.icon(
+                onPressed: () => context.push('/announcements'),
+                icon: const Icon(Icons.campaign_outlined),
+                label: const Text('ওয়েবিনার ও নোটিশ দেখুন'),
+              ),
             ],
           ),
         ),
