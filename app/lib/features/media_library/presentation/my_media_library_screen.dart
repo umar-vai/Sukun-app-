@@ -720,7 +720,7 @@ class _PlaylistPlayerPage extends ConsumerWidget {
                       Wrap(
                         spacing: 8,
                         children: [
-                          for (final speed in const [1.0, 1.25, 1.5, 2.0])
+                          for (final speed in const [0.75, 1.0, 1.25, 1.5, 2.0])
                             ActionChip(
                               label: Text('${speed}x'),
                               onPressed: () => controller.setSpeed(speed),
@@ -733,6 +733,24 @@ class _PlaylistPlayerPage extends ConsumerWidget {
                             label: const Text('টাইমার বন্ধ'),
                             onPressed: () => controller.setSleepTimer(0),
                           ),
+                          const Divider(height: 16),
+                          for (final tracks in const [3, 4])
+                            ChoiceChip(
+                              key: Key('playlist-stop-after-$tracks'),
+                              label: Text('$tracksটি অডিও শেষে থামুন'),
+                              selected: controller.stopAfterTracks == tracks,
+                              onSelected: (_) =>
+                                  controller.setStopAfterTracks(
+                                    controller.stopAfterTracks == tracks
+                                        ? 0
+                                        : tracks,
+                                  ),
+                            ),
+                          if (controller.stopAfterTracks != 0)
+                            ActionChip(
+                              label: const Text('অডিও সংখ্যা সীমা বন্ধ'),
+                              onPressed: () => controller.setStopAfterTracks(0),
+                            ),
                         ],
                       ),
                     ],
