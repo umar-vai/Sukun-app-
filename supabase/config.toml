@@ -460,3 +460,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/prescription-document-to-actions/deno.json"
 entrypoint = "./functions/prescription-document-to-actions/index.ts"
+
+[functions.approved-audio-download]
+enabled = true
+# GoTrue membership is checked inside the handler, because publishable
+# keys are not JWTs and Auth now supports multiple signing key formats.
+verify_jwt = false
+import_map = "./functions/approved-audio-download/deno.json"
+entrypoint = "./functions/approved-audio-download/index.ts"
