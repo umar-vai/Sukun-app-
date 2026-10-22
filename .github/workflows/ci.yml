@@ -49,6 +49,17 @@ jobs:
       - name: Probe public media CORS and Range without downloading files
         run: python3 .github/scripts/probe_public_audio_cors.py
 
+  staging-public-audio-gateway-smoke:
+    name: Staging / Authorized Audio CORS and Rejection
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Real staging preflight, guest denial and origin guard
+        run: bash .github/scripts/verify-approved-audio-gateway.sh
+
   flutter-quality:
     name: Flutter / Format Analyze Test
     runs-on: ubuntu-latest
