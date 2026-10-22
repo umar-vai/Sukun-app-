@@ -63,9 +63,10 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
     unawaited(ref.read(offlineLibraryProvider).open(identity));
   }
 
-  Future<ContentResource?> _titleFor(String id) =>
-      _titles.putIfAbsent(id, () =>
-          ref.read(resourcesRepositoryProvider).getResource(id));
+  Future<ContentResource?> _titleFor(String id) => _titles.putIfAbsent(
+    id,
+    () => ref.read(resourcesRepositoryProvider).getResource(id),
+  );
 
   void _message(String message) {
     if (mounted) {
