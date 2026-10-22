@@ -5,7 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 const challengeKey = 'sukun_40_day';
 
 class ChallengeStage {
-  const ChallengeStage(this.firstDay, this.lastDay, this.title, this.description);
+  const ChallengeStage(
+    this.firstDay,
+    this.lastDay,
+    this.title,
+    this.description,
+  );
   final int firstDay;
   final int lastDay;
   final String title;
@@ -13,14 +18,40 @@ class ChallengeStage {
 }
 
 const fortyDayStages = <ChallengeStage>[
-  ChallengeStage(1, 9, 'প্রস্তুতি', 'চ্যালেঞ্জের নিয়ম ও যাচাইকৃত রিসোর্স দেখুন'),
-  ChallengeStage(10, 12, 'নজরের আমল', 'নির্ধারিত রিসোর্স অনুযায়ী নিজের পরিকল্পনা অনুসরণ করুন'),
-  ChallengeStage(13, 19, 'বরই পাতার আমল', 'অনুমোদিত নির্দেশনা ও সতর্কতা আগে পড়ে নিন'),
-  ChallengeStage(20, 26, 'আশফিয়া ডিটক্স', 'যাচাইকৃত নির্দেশনা ছাড়া নতুন কিছু শুরু করবেন না'),
-  ChallengeStage(27, 40, 'জাদুর ডিটক্স', 'নিজের সক্ষমতা অনুযায়ী ধাপে ধাপে এগিয়ে যান'),
+  ChallengeStage(
+    1,
+    9,
+    'প্রস্তুতি',
+    'চ্যালেঞ্জের নিয়ম ও যাচাইকৃত রিসোর্স দেখুন',
+  ),
+  ChallengeStage(
+    10,
+    12,
+    'নজরের আমল',
+    'নির্ধারিত রিসোর্স অনুযায়ী নিজের পরিকল্পনা অনুসরণ করুন',
+  ),
+  ChallengeStage(
+    13,
+    19,
+    'বরই পাতার আমল',
+    'অনুমোদিত নির্দেশনা ও সতর্কতা আগে পড়ে নিন',
+  ),
+  ChallengeStage(
+    20,
+    26,
+    'আশফিয়া ডিটক্স',
+    'যাচাইকৃত নির্দেশনা ছাড়া নতুন কিছু শুরু করবেন না',
+  ),
+  ChallengeStage(
+    27,
+    40,
+    'জাদুর ডিটক্স',
+    'নিজের সক্ষমতা অনুযায়ী ধাপে ধাপে এগিয়ে যান',
+  ),
 ];
 
-DateTime _dayOnly(DateTime date) => DateTime.utc(date.year, date.month, date.day);
+DateTime _dayOnly(DateTime date) =>
+    DateTime.utc(date.year, date.month, date.day);
 
 int dayDifference(DateTime later, DateTime earlier) =>
     _dayOnly(later).difference(_dayOnly(earlier)).inDays;
@@ -46,7 +77,9 @@ class ChallengeProgress {
   int dayAt(DateTime today) {
     // Pausing freezes the challenge clock; a missed day never wipes check-ins.
     final reference = isPaused ? pausedOn! : today;
-    return (1 + dayDifference(reference, startedOn) - pausedDays).clamp(1, 40).toInt();
+    return (1 + dayDifference(reference, startedOn) - pausedDays)
+        .clamp(1, 40)
+        .toInt();
   }
 
   bool get complete => completedDays.length == 40;
@@ -91,9 +124,7 @@ class ChallengeRepository {
       pausedOn: row['paused_on'] == null
           ? null
           : DateTime.parse(row['paused_on'] as String),
-      completedDays: {
-        for (final row in entries) row['day_number'] as int,
-      },
+      completedDays: {for (final row in entries) row['day_number'] as int},
     );
   }
 
@@ -118,22 +149,31 @@ class ChallengeRepository {
   Future<void> pause(ChallengeProgress current, DateTime today) async {
     if (current.isPaused) return;
     final owner = _owner;
-    await client.from('challenge_enrollments').update({
-      'paused_on': challengeDate(today),
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('user_id', owner).eq('challenge_key', challengeKey);
+    await client
+        .from('challenge_enrollments')
+        .update({
+          'paused_on': challengeDate(today),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('user_id', owner)
+        .eq('challenge_key', challengeKey);
   }
 
   Future<void> resume(ChallengeProgress current, DateTime today) async {
     final paused = current.pausedOn;
     if (paused == null) return;
     final owner = _owner;
-    await client.from('challenge_enrollments').update({
-      'paused_on': null,
-      'paused_days': current.pausedDays +
-          dayDifference(today, paused).clamp(0, 3650 - current.pausedDays),
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('user_id', owner).eq('challenge_key', challengeKey);
+    await client
+        .from('challenge_enrollments')
+        .update({
+          'paused_on': null,
+          'paused_days':
+              current.pausedDays +
+              dayDifference(today, paused).clamp(0, 3650 - current.pausedDays),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('user_id', owner)
+        .eq('challenge_key', challengeKey);
   }
 
   Future<void> markToday(ChallengeProgress current, DateTime today) async {
@@ -142,16 +182,19 @@ class ChallengeRepository {
     }
     final day = current.dayAt(today);
     if (current.completedDays.contains(day)) return;
-    await client.from('challenge_day_checkins').upsert({
-      'user_id': _owner,
-      'challenge_key': challengeKey,
-      'day_number': day,
-    }, onConflict: 'user_id,challenge_key,day_number', ignoreDuplicates: true);
+    await client
+        .from('challenge_day_checkins')
+        .upsert(
+          {'user_id': _owner, 'challenge_key': challengeKey, 'day_number': day},
+          onConflict: 'user_id,challenge_key,day_number',
+          ignoreDuplicates: true,
+        );
   }
 
   Future<void> undoToday(ChallengeProgress current, DateTime today) async {
     final day = current.dayAt(today);
-    await client.from('challenge_day_checkins')
+    await client
+        .from('challenge_day_checkins')
         .delete()
         .eq('user_id', _owner)
         .eq('challenge_key', challengeKey)
