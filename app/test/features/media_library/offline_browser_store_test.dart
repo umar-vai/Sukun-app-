@@ -81,6 +81,7 @@ void main() {
       final library = OfflineLibrary(
         clientFactory: fakeClient,
         authorizedAudioUrls: allowed,
+        useWebMediaGateway: false,
       );
       await library.open('synthetic-browser-owner');
       try {
@@ -94,6 +95,7 @@ void main() {
             fail('offline read must never call the network');
           }),
           authorizedAudioUrls: allowed,
+          useWebMediaGateway: false,
         );
         await reopened.open('synthetic-browser-owner');
         expect(reopened.items.single.id, resource.id);

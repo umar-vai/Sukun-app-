@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 
 import 'offline_byte_factory.dart';
@@ -108,6 +110,7 @@ class OfflineLibrary extends ChangeNotifier {
     Future<SharedPreferences>? preferences,
     http.Client Function()? clientFactory,
     Future<Set<String>> Function()? authorizedAudioUrls,
+    this.useWebMediaGateway = true,
   }) : _bytes = bytes ?? createOfflineByteStore(),
        _prefs = preferences ?? SharedPreferences.getInstance(),
        _clientFactory = clientFactory ?? http.Client.new,
@@ -116,6 +119,8 @@ class OfflineLibrary extends ChangeNotifier {
   static const maxTotalBytes = 250 * 1024 * 1024;
   static const maxFileBytes = 100 * 1024 * 1024;
 
+  /// Explicitly false only in synthetic/offline integration tests.
+  final bool useWebMediaGateway;
   final OfflineByteStore _bytes;
   final Future<SharedPreferences> _prefs;
   final http.Client Function() _clientFactory;
@@ -226,12 +231,40 @@ class OfflineLibrary extends ChangeNotifier {
       final target = resolveResourceMedia(resource.linkedResource)!;
       final uri = target.uri!;
       client = _clientFactory();
-      final request = http.Request('GET', uri);
+      // The publisher omits browser CORS headers. For the 19 vetted,
+      // owner-attested recordings, authenticated web requests use a
+      // budget-limited Sukun Edge Function instead. No third-party URL is
+      // forwarded to the gateway, only the published CMS resource ID.
+      var downloadUri = uri;
+      final requestHeaders = <String, String>{};
+      if (kIsWeb &&
+          useWebMediaGateway &&
+          AppEnvironment.isSupabaseConfigured &&
+          allowed.contains(uri.toString()) &&
+          uri.host == 'files.ruqyahbd.org') {
+        final token = Supabase.instance.client.auth.currentSession?.accessToken;
+        if (token == null || token.isEmpty) {
+          throw StateError('অফলাইন ডাউনলোডের জন্য লগইন করুন।');
+        }
+        downloadUri = Uri.parse(
+          '${AppEnvironment.supabaseUrl}/functions/v1/approved-audio-download',
+        ).replace(queryParameters: {'id': resource.id});
+        requestHeaders['Authorization'] = 'Bearer $token';
+        requestHeaders['apikey'] = AppEnvironment.supabasePublishableKey;
+      }
+      final request = http.Request('GET', downloadUri);
+      request.headers.addAll(requestHeaders);
       request.followRedirects = false;
       final response = await client
           .send(request)
           .timeout(const Duration(seconds: 25));
       if (response.statusCode != 200) {
+        if (downloadUri != uri && response.statusCode == 401) {
+          throw StateError('অফলাইন ডাউনলোডের জন্য আবার লগইন করুন।');
+        }
+        if (downloadUri != uri && response.statusCode == 429) {
+          throw StateError('আজকের অডিও ডাউনলোড সীমা শেষ হয়েছে।');
+        }
         throw StateError('অডিও/PDF সার্ভার ফাইলটি পাঠায়নি।');
       }
       final length = response.contentLength;

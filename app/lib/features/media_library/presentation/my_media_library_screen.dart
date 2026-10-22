@@ -533,12 +533,20 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                               try {
                                 await library.download(resource);
                                 _message('অফলাইনে সংরক্ষিত হয়েছে।');
+                              } on StateError catch (error) {
+                                final detail = error.message.toString();
+                                if (detail.contains('লগইন') ||
+                                    detail.contains('সীমা শেষ')) {
+                                  _message(detail);
+                                } else {
+                                  _message(
+                                    'এই অডিও/PDF এখন ডাউনলোড করা যাচ্ছে না।',
+                                  );
+                                }
                               } on http.ClientException {
                                 _message(
                                   kIsWeb
-                                      ? 'এই অডিও হোস্টে ব্রাউজার CORS/নেটওয়ার্ক বাধা রয়েছে। '
-                                            'সার্ভার থেকে এই সাইটের জন্য Access-Control-Allow-Origin '
-                                            'অনুমতি প্রয়োজন।'
+                                      ? 'ডাউনলোডের gateway অথবা মিডিয়া সার্ভারে সমস্যা হয়েছে।'
                                       : 'ডাউনলোডের সময় সার্ভারের সঙ্গে যোগাযোগ ব্যর্থ হয়েছে।',
                                 );
                               } catch (_) {
