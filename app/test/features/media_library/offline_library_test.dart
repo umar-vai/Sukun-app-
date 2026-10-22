@@ -151,23 +151,26 @@ void main() {
       library.dispose();
     },
   );
-  test('rapid second download is rejected while rights lookup is pending', () async {
-    final permissions = Completer<Set<String>>();
-    final library = OfflineLibrary(
-      bytes: MemoryOfflineBytes(),
-      authorizedAudioUrls: () => permissions.future,
-    );
-    await library.open('owner-a');
-    final first = library.download(audio());
-    expect(library.busy, isTrue);
-    await expectLater(library.download(audio()), throwsStateError);
-    library.close();
-    await library.open('owner-b');
-    permissions.complete({'https://files.ruqyahbd.org/audio/approved.mp3'});
-    await expectLater(first, throwsStateError);
-    expect(library.items, isEmpty);
-    library.dispose();
-  });
+  test(
+    'rapid second download is rejected while rights lookup is pending',
+    () async {
+      final permissions = Completer<Set<String>>();
+      final library = OfflineLibrary(
+        bytes: MemoryOfflineBytes(),
+        authorizedAudioUrls: () => permissions.future,
+      );
+      await library.open('owner-a');
+      final first = library.download(audio());
+      expect(library.busy, isTrue);
+      await expectLater(library.download(audio()), throwsStateError);
+      library.close();
+      await library.open('owner-b');
+      permissions.complete({'https://files.ruqyahbd.org/audio/approved.mp3'});
+      await expectLater(first, throwsStateError);
+      expect(library.items, isEmpty);
+      library.dispose();
+    },
+  );
 
   test('negated rights note does not authorize PDF offline copying', () {
     final pdf = ContentResource(
@@ -180,10 +183,6 @@ void main() {
       mediaUrl: 'https://example.org/test.pdf',
       rightsNote: 'not_offline_allowed',
     );
-    expect(
-      canSaveOffline(pdf, ownerAuthorizedAudioUrls: const {}),
-      isFalse,
-    );
+    expect(canSaveOffline(pdf, ownerAuthorizedAudioUrls: const {}), isFalse);
   });
-
 }
