@@ -507,7 +507,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             .read(resourcesRepositoryProvider)
             .browseResources(
               types: types,
-              categoryPrefixes: {_selectedSlug ?? prefix},
+              categoryPrefixes: isDua && _selectedSlug == null
+                  ? const {}
+                  : {_selectedSlug ?? prefix},
             ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -599,8 +601,8 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               const SizedBox(height: 18),
               if (resources.isEmpty)
                 const AppEmptyState(
-                  title: 'No resources published in this category',
-                  message: 'Only content visible to this account appears here.',
+                  title: 'এই বিভাগে এখনো প্রকাশিত উপকরণ নেই',
+                  message: 'যাচাই ও শ্রেণিবিন্যাস চলছে। সব দোয়া ও আযকার দেখতে উপরের “সব দোয়া ও আযকার” চাপুন।',
                 )
               else
                 for (final resource in resources)
@@ -710,17 +712,7 @@ class _ResourceListTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
-                ] else if (resource.summary != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    resource.summary!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: SukunColors.muted),
-                  ),
-                ],
-              ],
+                ],              ],
             ),
           ),
           const SizedBox(width: 8),
