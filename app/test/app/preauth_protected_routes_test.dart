@@ -35,6 +35,31 @@ void main() {
     expect(find.text('আজকের কাজ'), findsNothing);
   });
 
+  testWidgets('unresolved identity can retain public my-media deep link', (
+    tester,
+  ) async {
+    final changes = StreamController<AppSession>.broadcast(sync: true);
+    addTearDown(changes.close);
+    final container = ProviderContainer(
+      overrides: [appSessionProvider.overrideWith((ref) => changes.stream)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pump();
+
+    final router = container.read(appRouterProvider);
+    router.go('/my-media');
+    await tester.pump(const Duration(milliseconds: 150));
+
+    expect(router.routeInformationProvider.value.uri.path, '/my-media');
+    expect(find.text('রোগীর তালিকা'), findsNothing);
+  });
+
   testWidgets('unresolved identity cannot open private notification settings', (
     tester,
   ) async {
