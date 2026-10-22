@@ -46,7 +46,7 @@ void main() {
     http.Client fakeClient() => MockClient((request) async {
       networkCalls++;
       return http.Response.bytes(bytes, 200);
-    }, skip: !kIsWeb);
+    });
     final resource = ContentResource(
       id: 'chrome-test-only-public-audio',
       type: 'audio',
