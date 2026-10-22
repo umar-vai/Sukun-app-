@@ -26,39 +26,33 @@ class SavedPlaylist {
   final List<String> resourceIds;
 
   factory SavedPlaylist.fromJson(Map<String, dynamic> json) => SavedPlaylist(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        resourceIds: List<String>.unmodifiable(
-          (json['resources'] as List<dynamic>? ?? const [])
-              .whereType<String>()
-              .where((id) => id.isNotEmpty),
-        ),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    resourceIds: List<String>.unmodifiable(
+      (json['resources'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .where((id) => id.isNotEmpty),
+    ),
+  );
 
   Map<String, Object> toJson() => {
-        'id': id,
-        'name': name,
-        'resources': resourceIds,
-      };
+    'id': id,
+    'name': name,
+    'resources': resourceIds,
+  };
 
-  SavedPlaylist withResources(List<String> ids) => SavedPlaylist(
-        id: id,
-        name: name,
-        resourceIds: List.unmodifiable(ids),
-      );
+  SavedPlaylist withResources(List<String> ids) =>
+      SavedPlaylist(id: id, name: name, resourceIds: List.unmodifiable(ids));
 
-  SavedPlaylist renamed(String nextName) => SavedPlaylist(
-        id: id,
-        name: nextName,
-        resourceIds: resourceIds,
-      );
+  SavedPlaylist renamed(String nextName) =>
+      SavedPlaylist(id: id, name: nextName, resourceIds: resourceIds);
 }
 
 /// Private to a browser installation/device and scoped by verified user id.
 /// Does NOT sync across devices. Never reuses the previous owner's state.
 class PlaylistLibrary extends ChangeNotifier {
   PlaylistLibrary({Future<SharedPreferences>? preferences})
-      : _preferences = preferences ?? SharedPreferences.getInstance();
+    : _preferences = preferences ?? SharedPreferences.getInstance();
 
   final Future<SharedPreferences> _preferences;
   String? _owner;
@@ -69,7 +63,8 @@ class PlaylistLibrary extends ChangeNotifier {
   bool get ready => _owner != null;
   List<SavedPlaylist> get playlists => List.unmodifiable(_playlists);
 
-  String _key(String owner) => 'sukun.playlists.v1.${Uri.encodeComponent(owner)}';
+  String _key(String owner) =>
+      'sukun.playlists.v1.${Uri.encodeComponent(owner)}';
 
   Future<void> open(String owner) async {
     if (_owner == owner) return;
@@ -143,9 +138,7 @@ class PlaylistLibrary extends ChangeNotifier {
   void rename(String id, String name) {
     final next = name.trim();
     if (next.isEmpty || next.length > 60) throw ArgumentError('সঠিক নাম দিন।');
-    _commit([
-      for (final p in _playlists) p.id == id ? p.renamed(next) : p,
-    ]);
+    _commit([for (final p in _playlists) p.id == id ? p.renamed(next) : p]);
   }
 
   void remove(String id) {
