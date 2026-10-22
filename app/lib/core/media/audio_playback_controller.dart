@@ -81,6 +81,14 @@ class QuranVerseAudio {
   final String url;
 }
 
+/// Stop once the requested number of sequential playlist tracks has played.
+/// The next item's index marks the boundary after the previous track ends.
+bool playlistTrackLimitReached({
+  required int startIndex,
+  required int currentIndex,
+  required int tracks,
+}) => tracks > 0 && currentIndex >= startIndex + tracks;
+
 class AudioPlaybackController extends ChangeNotifier {
   AudioPlaybackController(this._player, this._positions) {
     _positionSubscription = _player.positionStream.listen(_rememberPosition);
@@ -98,6 +106,14 @@ class AudioPlaybackController extends ChangeNotifier {
           index < _playlistQueue.length) {
         _resource = _playlistQueue[index];
         _lastSavedSecond = -1;
+        if (playlistTrackLimitReached(
+          startIndex: _stopAfterStartIndex,
+          currentIndex: index,
+          tracks: _stopAfterTracks,
+        )) {
+          _stopAfterTracks = 0;
+          unawaited(_player.pause());
+        }
       }
       notifyListeners();
     });
@@ -119,6 +135,24 @@ class AudioPlaybackController extends ChangeNotifier {
   int _requestedLoad = 0;
   Timer? _sleepTimer;
   DateTime? _sleepDeadline;
+  int _stopAfterTracks = 0;
+  int _stopAfterStartIndex = 0;
+
+  int get stopAfterTracks => _stopAfterTracks;
+
+  /// Applies to this playlist queue only. The timer and Repeat One controls
+  /// remain independent. A track manually skipped counts as traversed.
+  void setStopAfterTracks(int tracks) {
+    if (![0, 3, 4].contains(tracks)) {
+      throw ArgumentError.value(tracks, 'tracks', 'Choose 0, 3 or 4 tracks');
+    }
+    if (tracks != 0 && _playlistQueue.isEmpty) {
+      throw StateError('প্লেলিস্ট চালু করে এই অপশন বেছে নিন।');
+    }
+    _stopAfterTracks = tracks;
+    _stopAfterStartIndex = _player.currentIndex ?? 0;
+    notifyListeners();
+  }
 
   /// Timer belongs to the shared playback session, not the player screen.
   /// Browsers may throttle timers when backgrounded; native device QA is separate.
@@ -350,6 +384,8 @@ class AudioPlaybackController extends ChangeNotifier {
   }
 
   void _releaseLocalPlaylist() {
+    _stopAfterTracks = 0;
+    _stopAfterStartIndex = 0;
     _playlistQueue = const [];
     _playlistTitle = null;
     for (final handle in _offlineHandles) {
@@ -488,6 +524,7 @@ class AudioPlaybackController extends ChangeNotifier {
 
   Future<void> stopAndClear() async {
     setSleepTimer(0);
+    setStopAfterTracks(0);
     ++_requestedLoad;
     await _loadQueue;
     try {
