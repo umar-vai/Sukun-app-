@@ -65,6 +65,63 @@ def probe(label: str, url: str) -> bool:
         return False
 
 
+
+def probe_gateway_upstream(label: str, url: str) -> bool:
+    """Probe no more than 32 MP3 bytes with gateway-equivalent GET rules.
+
+    No browser Origin/Range header, no file saved and no patient information.
+    The gateway itself rejects redirects and requires finite 200 content size.
+    """
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "audio/mpeg",
+            "User-Agent": "SukunLife-PublicAudio-SyntheticGate/1.0",
+        },
+        method="GET",
+    )
+
+    class RefuseRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+
+    opener = urllib.request.build_opener(RefuseRedirect)
+    try:
+        with opener.open(request, timeout=20) as response:
+            media_type = response.headers.get("Content-Type", "").lower()
+            length_header = response.headers.get("Content-Length", "")
+            length = int(length_header) if length_header.isdecimal() else -1
+            sample = response.read(32)
+            looks_like_mp3 = (
+                sample.startswith(b"ID3") or
+                (len(sample) > 1 and sample[0] == 0xFF and
+                 sample[1] & 0xE0 == 0xE0)
+            )
+            type_allowed = (
+                "audio/" in media_type or
+                "application/octet-stream" in media_type
+            )
+            ok = (
+                response.status == 200 and
+                response.geturl() == url and
+                4 <= length <= 100 * 1024 * 1024 and
+                type_allowed and looks_like_mp3
+            )
+            print(
+                f"{'PASS' if ok else 'FAIL'} {label} gateway-upstream: "
+                f"HTTP {response.status}, finite-size={'yes' if length > 0 else 'no'}, "
+                f"type={'yes' if type_allowed else 'no'}, "
+                f"mp3={'yes' if looks_like_mp3 else 'no'}"
+            )
+            return ok
+    except (ValueError, TimeoutError, OSError, urllib.error.URLError) as exc:
+        print(
+            f"UNVERIFIED {label} gateway-upstream: external host "
+            f"({type(exc).__name__})"
+        )
+        return False
+
+
 def main() -> int:
     entries = json.loads(SOURCE.read_text(encoding="utf-8"))["entries"]
     approved = [
@@ -85,12 +142,21 @@ def main() -> int:
     if not selected:
         print("FAIL: no approved catalog recordings found")
         return 1
-    passed = [
+    browser_cors = [
         probe(f"approved-recording-{index + 1}", item["media_url"])
         for index, item in enumerate(selected)
     ]
-    print(f"Browser HTTPS audio host capability: {sum(passed)}/{len(passed)}")
-    return 0 if all(passed) else 1
+    gateway = [
+        probe_gateway_upstream(
+            f"approved-recording-{index + 1}", item["media_url"]
+        )
+        for index, item in enumerate(selected)
+    ]
+    print(f"Direct browser CORS capability: {sum(browser_cors)}/{len(browser_cors)}")
+    print(f"Authenticated Sukun gateway upstream: {sum(gateway)}/{len(gateway)}")
+    # Direct CORS is known absent; passing upstream eligibility tests the
+    # server-side fallback, but DOES NOT prove authenticated offline playback.
+    return 0 if all(gateway) else 1
 
 
 if __name__ == "__main__":
