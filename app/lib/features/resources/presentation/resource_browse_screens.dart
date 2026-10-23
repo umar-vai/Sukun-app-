@@ -128,10 +128,7 @@ class QuranBrowserScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          if (resource.type == 'audio')
-            AudioLibraryActions(resourceId: resource.id, compact: true)
-          else
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                         ],
                       ),
                     ),
@@ -697,7 +694,10 @@ class _ResourceListTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+          if (resource.type == 'audio')
+            AudioLibraryActions(resourceId: resource.id, compact: true)
+          else
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16),
         ],
       ),
     );
