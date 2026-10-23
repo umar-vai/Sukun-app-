@@ -209,7 +209,8 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                               busy: busy,
                               hasPrevious: player.hasPrevious,
                               hasNext: player.hasNext,
-                              onPrevious: () => unawaited(controller.previous()),
+                              onPrevious: () =>
+                                  unawaited(controller.previous()),
                               onRewind: () => unawaited(
                                 controller.seek(
                                   playlistSeekTarget(

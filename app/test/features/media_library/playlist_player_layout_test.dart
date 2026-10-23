@@ -116,17 +116,19 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byKey(const ValueKey('playlist-play-pause')), findsNothing);
     expect(
-      tester.widget<IconButton>(find.widgetWithIcon(
-        IconButton,
-        Icons.skip_previous_rounded,
-      )).onPressed,
+      tester
+          .widget<IconButton>(
+            find.widgetWithIcon(IconButton, Icons.skip_previous_rounded),
+          )
+          .onPressed,
       isNull,
     );
     expect(
-      tester.widget<IconButton>(find.widgetWithIcon(
-        IconButton,
-        Icons.skip_next_rounded,
-      )).onPressed,
+      tester
+          .widget<IconButton>(
+            find.widgetWithIcon(IconButton, Icons.skip_next_rounded),
+          )
+          .onPressed,
       isNull,
     );
   });
