@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -75,20 +76,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          IconButton(
-            onPressed: () => context.push(
-              '/my-media?add=${Uri.encodeQueryComponent(widget.resource.id)}',
-            ),
-            tooltip: 'আমার অডিও প্লেলিস্টে যুক্ত করুন',
-            icon: const Icon(Icons.queue_music_outlined),
-          ),
-          IconButton(
-            onPressed: () => context.push(
-              '/my-media?download=${Uri.encodeQueryComponent(widget.resource.id)}',
-            ),
-            tooltip: 'অফলাইনে সংরক্ষণ করুন',
-            icon: const Icon(Icons.download_outlined),
-          ),
+          AudioLibraryActions(resourceId: widget.resource.id),
           if (ref.watch(appSessionProvider).value?.isAuthenticated == true)
             IconButton(
               onPressed: () => context.push(
