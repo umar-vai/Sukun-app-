@@ -1,12 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The bundled Li Ador Noirrit option is gated until the complete, approved
-/// binary font family is present in the app's Flutter asset bundle.
-/// This prevents a selectable option that silently renders an unrelated font.
+/// The original Li Ador Noirrit family is now bundled (ten TTF faces in
+/// pubspec.yaml). An explicit false define remains an emergency fallback.
 const bool liAdorNoirritFontBundled = bool.fromEnvironment(
   'SUKUN_LI_ADOR_NOIRRIT_BUNDLED',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 enum BengaliFontChoice {
