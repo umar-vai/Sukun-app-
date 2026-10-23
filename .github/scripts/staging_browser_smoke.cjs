@@ -123,6 +123,25 @@ async function verifyGuestPage(browser, profile) {
       { timeout: 12000 },
     );
 
+    // Library action deep links must remain accessible on cold Guest restores.
+    // Unknown, synthetic CMS IDs prevent downloading actual publisher bytes.
+    for (const action of ['add', 'download']) {
+      checkpoint(action === 'add' ? 'guest playlist deep link' :
+        'guest offline download deep link');
+      const safeId = '00000000-0000-0000-0000-000000000000';
+      const target = base + '#/my-media?' + action + '=' + safeId;
+      await page.goto(target, {
+        waitUntil: 'domcontentloaded',
+        timeout: 65000,
+      });
+      await waitForFlutter(page);
+      await page.waitForFunction(
+        (expected) => location.hash.includes('/my-media?' + expected + '='),
+        action,
+        { timeout: 12000 },
+      );
+    }
+
     // Phase 5: Guest may inspect all five public challenge stages without
     // gaining access to any account-owned day check-ins.
     checkpoint('public 40-day challenge route');
