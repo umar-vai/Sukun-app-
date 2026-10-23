@@ -4,6 +4,19 @@ import 'package:sukun_life/features/resources/presentation/audio_player_screen.d
 import 'package:sukun_life/features/resources/presentation/sukun_static_waveform.dart';
 
 void main() {
+  test('cover stays compact within short mobile viewports', () {
+    final height = audioCoverHeightForViewport(360, 520);
+    expect(height, closeTo(140.4, 0.01));
+    expect(height, lessThan(150));
+    expect(audioCoverHeightForViewport(320, 400), 108);
+  });
+
+  test('cover remains bounded for tablets and tiny browser widths', () {
+    expect(audioCoverHeightForViewport(430, 900), 220);
+    expect(audioCoverHeightForViewport(250, 900), 218);
+    expect(audioCoverHeightForViewport(360, 900), 220);
+  });
+
   test('relative audio seeking stays inside the known track', () {
     expect(
       audioSeekTarget(
