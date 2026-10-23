@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -171,6 +172,48 @@ void main() {
       permissions.complete({'https://files.ruqyahbd.org/audio/approved.mp3'});
       await expectLater(first, throwsStateError);
       expect(library.items, isEmpty);
+      library.dispose();
+    },
+  );
+
+  test(
+    'existing downloads over 250 MB do not block an authorized new file',
+    () async {
+      // Metadata fixture only: do not allocate 300 MiB just for a quota test.
+      final past = DateTime.utc(2026, 10, 21);
+      final oldItems = [
+        for (var i = 0; i < 3; i++)
+          OfflineItem(
+            id: 'already-saved-$i',
+            title: 'Saved audio $i',
+            kind: 'audio',
+            size: 100 * 1024 * 1024,
+            digest: 'metadata-only',
+            savedAt: past,
+          ),
+      ];
+      SharedPreferences.setMockInitialValues({
+        'sukun.offline.public.v1.owner-a': jsonEncode(
+          oldItems.map((item) => item.toJson()).toList(),
+        ),
+      });
+      final bytes = MemoryOfflineBytes();
+      final mp3 = Uint8List.fromList([0x49, 0x44, 0x33, 4, 0, 0, 1]);
+      final library = OfflineLibrary(
+        useWebMediaGateway: false,
+        bytes: bytes,
+        clientFactory: () => MockClient(
+          (request) async => http.Response.bytes(mp3, 200),
+        ),
+        authorizedAudioUrls: () async => {
+          'https://files.ruqyahbd.org/audio/approved.mp3',
+        },
+      );
+      await library.open('owner-a');
+      expect(library.totalBytes, 300 * 1024 * 1024);
+      await library.download(audio());
+      expect(library.items.length, 4);
+      expect(await library.read('media-1'), mp3);
       library.dispose();
     },
   );
