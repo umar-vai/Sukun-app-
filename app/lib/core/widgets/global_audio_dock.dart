@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
@@ -134,6 +135,11 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                 ),
                               ],
                             ),
+                          ),
+                          AudioDockIconAction(
+                            label: 'আমার প্লেলিস্ট ও ডাউনলোড',
+                            icon: Icons.library_music_outlined,
+                            onPressed: () => context.push('/my-media'),
                           ),
                           AudioDockIconAction(
                             label: playing ? 'বিরতি' : 'চালু করুন',
