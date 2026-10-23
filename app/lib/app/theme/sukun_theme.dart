@@ -8,7 +8,7 @@ import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
-    BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
+    BengaliFontChoice bengaliFont = BengaliFontChoice.liAdorNoirrit,
     double bengaliScale = 1.0,
     SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
@@ -185,7 +185,7 @@ abstract final class SukunTheme {
   }
 
   static ThemeData dark({
-    BengaliFontChoice bengaliFont = BengaliFontChoice.hindSiliguri,
+    BengaliFontChoice bengaliFont = BengaliFontChoice.liAdorNoirrit,
     double bengaliScale = 1.0,
     SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
