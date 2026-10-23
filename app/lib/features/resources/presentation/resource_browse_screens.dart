@@ -526,9 +526,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               SukunPageIntro(
                 eyebrow: isDua ? 'দৈনিক দোয়া ও যিকির' : 'Faith-anchored care',
                 title: isDua ? 'দোয়া ও আযকার' : 'Ruqyah',
-                subtitle: isDua
-                    ? 'সময় ও প্রয়োজন অনুযায়ী দোয়া সহজে খুঁজুন'
-                    : 'রুকইয়াহ · General resources remain separate from prescribed care',
+                subtitle: isDua ? 'সময় ও প্রয়োজন অনুযায়ী দোয়া সহজে খুঁজুন' : 'রুকইয়াহ · General resources remain separate from prescribed care',
                 trailing: SukunIconBadge(
                   icon: isDua
                       ? Icons.auto_awesome_rounded
