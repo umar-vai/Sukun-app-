@@ -88,6 +88,14 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.library_music_outlined),
+                  title: const Text('আমার অডিও লাইব্রেরি'),
+                  subtitle: const Text('প্লেলিস্ট ও অফলাইন ডাউনলোড এক জায়গায়'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/my-media'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.insights_outlined),
                   title: const Text('অগ্রগতি ও হিস্ট্রি'),
                   subtitle: const Text('৭ ও ৩০ দিনের কাজের রেকর্ড'),
