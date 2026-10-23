@@ -44,20 +44,28 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const ListTile(
-                title: Text('প্লেলিস্টের নিয়ম',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: Text('প্রতিটি অডিও সর্বোচ্চ ১৫ মিনিট শুনে পরেরটিতে যাবে। '
-                    'নির্বাচিত সংখ্যক অডিও শেষে থামবে।'),
+                title: Text(
+                  'প্লেলিস্টের নিয়ম',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(
+                  'প্রতিটি অডিও সর্বোচ্চ ১৫ মিনিট শুনে পরেরটিতে যাবে। '
+                  'নির্বাচিত সংখ্যক অডিও শেষে থামবে।',
+                ),
               ),
               for (final count in const <int>[0, 3, 4])
                 ListTile(
                   key: ValueKey('playlist-rule-$count'),
-                  title: Text(count == 0
-                      ? 'স্বয়ংক্রিয় প্লেলিস্ট বন্ধ'
-                      : 'প্রতি ১৫ মিনিটে $count অডিও'),
-                  leading: Icon(count == 0
-                      ? Icons.stop_circle_outlined
-                      : Icons.queue_music_rounded),
+                  title: Text(
+                    count == 0
+                        ? 'স্বয়ংক্রিয় প্লেলিস্ট বন্ধ'
+                        : 'প্রতি ১৫ মিনিটে $count অডিও',
+                  ),
+                  leading: Icon(
+                    count == 0
+                        ? Icons.stop_circle_outlined
+                        : Icons.queue_music_rounded,
+                  ),
                   trailing: controller.stopAfterTracks == count
                       ? const Icon(Icons.check_circle_rounded)
                       : null,
@@ -69,8 +77,9 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                       Navigator.of(sheetContext).pop();
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content:
-                              Text('আগে একটি প্লেলিস্ট চালু করুন।')),
+                          const SnackBar(
+                            content: Text('আগে একটি প্লেলিস্ট চালু করুন।'),
+                          ),
                         );
                       }
                     }
@@ -89,8 +98,11 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
     final player = controller.player;
     return Scaffold(
       appBar: AppBar(
-        title: Text(controller.playlistTitle ?? 'অডিও প্লেয়ার',
-            maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          controller.playlistTitle ?? 'অডিও প্লেয়ার',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -112,15 +124,19 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                         _PlaylistArt(
                           url: controller.resource?.thumbnailUrl,
                           height: playlistCoverHeight(
-                              viewport.maxWidth, viewport.maxHeight),
+                            viewport.maxWidth,
+                            viewport.maxHeight,
+                          ),
                         ),
                         SizedBox(height: gap),
-                        Text(controller.currentTitle ?? 'অডিও',
+                        Text(
+                          controller.currentTitle ?? 'অডিও',
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           'অডিও ${controller.playlistIndex + 1} / ${controller.playlistLength}',
@@ -134,30 +150,48 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                             final elapsed = snapshot.data ?? Duration.zero;
                             final total = player.duration ?? Duration.zero;
                             final pos = total > Duration.zero && elapsed > total
-                                ? total : elapsed;
+                                ? total
+                                : elapsed;
                             final maxMs = total.inMilliseconds;
-                            return Column(children: [
-                              Slider(
-                                key: const ValueKey('playlist-progress'),
-                                value: maxMs <= 0 ? 0.0 :
-                                    (pos.inMilliseconds / maxMs)
-                                        .clamp(0.0, 1.0).toDouble(),
-                                onChanged: maxMs <= 0 ? null : (value) =>
-                                    unawaited(controller.seek(Duration(
-                                        milliseconds: (value * maxMs).round()))),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(playlistDurationLabel(pos)),
-                                    Text(total == Duration.zero ? '--:--' :
-                                        playlistDurationLabel(total)),
-                                  ],
+                            return Column(
+                              children: [
+                                Slider(
+                                  key: const ValueKey('playlist-progress'),
+                                  value: maxMs <= 0
+                                      ? 0.0
+                                      : (pos.inMilliseconds / maxMs)
+                                            .clamp(0.0, 1.0)
+                                            .toDouble(),
+                                  onChanged: maxMs <= 0
+                                      ? null
+                                      : (value) => unawaited(
+                                          controller.seek(
+                                            Duration(
+                                              milliseconds: (value * maxMs)
+                                                  .round(),
+                                            ),
+                                          ),
+                                        ),
                                 ),
-                              ),
-                            ]);
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(playlistDurationLabel(pos)),
+                                      Text(
+                                        total == Duration.zero
+                                            ? '--:--'
+                                            : playlistDurationLabel(total),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
                           },
                         ),
                         SizedBox(height: gap),
@@ -165,7 +199,8 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                           stream: player.playerStateStream,
                           initialData: player.playerState,
                           builder: (context, _) {
-                            final busy = player.processingState ==
+                            final busy =
+                                player.processingState ==
                                     ProcessingState.loading ||
                                 player.processingState ==
                                     ProcessingState.buffering;
@@ -175,40 +210,71 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                               children: [
                                 IconButton(
                                   tooltip: 'আগের অডিও',
-                                  onPressed: player.hasPrevious ?
-                                      () => unawaited(controller.previous()) : null,
-                                  icon: const Icon(Icons.skip_previous_rounded)),
+                                  onPressed: player.hasPrevious
+                                      ? () => unawaited(controller.previous())
+                                      : null,
+                                  icon: const Icon(Icons.skip_previous_rounded),
+                                ),
                                 IconButton(
                                   tooltip: '১০ সেকেন্ড পেছনে',
-                                  onPressed: () => unawaited(controller.seek(
-                                      playlistSeekTarget(player.position,
-                                          player.duration, -10))),
-                                  icon: const Icon(Icons.replay_10_rounded)),
+                                  onPressed: () => unawaited(
+                                    controller.seek(
+                                      playlistSeekTarget(
+                                        player.position,
+                                        player.duration,
+                                        -10,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.replay_10_rounded),
+                                ),
                                 SizedBox(
-                                  width: 64, height: 64,
+                                  width: 64,
+                                  height: 64,
                                   child: busy
-                                      ? const Center(child: CircularProgressIndicator())
+                                      ? const Center(
+                                          child: CircularProgressIndicator(),
+                                        )
                                       : IconButton.filled(
-                                          key: const ValueKey('playlist-play-pause'),
-                                          tooltip: player.playing ? 'বিরতি' : 'চালান',
+                                          key: const ValueKey(
+                                            'playlist-play-pause',
+                                          ),
+                                          tooltip: player.playing
+                                              ? 'বিরতি'
+                                              : 'চালান',
                                           onPressed: player.playing
-                                              ? () => unawaited(controller.pause())
+                                              ? () => unawaited(
+                                                  controller.pause(),
+                                                )
                                               : controller.resumeCurrent,
-                                          icon: Icon(player.playing
-                                              ? Icons.pause_rounded
-                                              : Icons.play_arrow_rounded, size: 36)),
+                                          icon: Icon(
+                                            player.playing
+                                                ? Icons.pause_rounded
+                                                : Icons.play_arrow_rounded,
+                                            size: 36,
+                                          ),
+                                        ),
                                 ),
                                 IconButton(
                                   tooltip: '১০ সেকেন্ড সামনে',
-                                  onPressed: () => unawaited(controller.seek(
-                                      playlistSeekTarget(player.position,
-                                          player.duration, 10))),
-                                  icon: const Icon(Icons.forward_10_rounded)),
+                                  onPressed: () => unawaited(
+                                    controller.seek(
+                                      playlistSeekTarget(
+                                        player.position,
+                                        player.duration,
+                                        10,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.forward_10_rounded),
+                                ),
                                 IconButton(
                                   tooltip: 'পরের অডিও',
-                                  onPressed: player.hasNext ?
-                                      () => unawaited(controller.next()) : null,
-                                  icon: const Icon(Icons.skip_next_rounded)),
+                                  onPressed: player.hasNext
+                                      ? () => unawaited(controller.next())
+                                      : null,
+                                  icon: const Icon(Icons.skip_next_rounded),
+                                ),
                               ],
                             );
                           },
@@ -226,17 +292,29 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                                 return PopupMenuButton<double>(
                                   key: const ValueKey('playlist-speed'),
                                   tooltip: 'শোনার গতি',
-                                  onSelected: (v) => unawaited(controller.setSpeed(v)),
+                                  onSelected: (v) =>
+                                      unawaited(controller.setSpeed(v)),
                                   itemBuilder: (_) => [
                                     for (final v in const <double>[
-                                      0.75, 1.0, 1.25, 1.5, 2.0,
+                                      0.75,
+                                      1.0,
+                                      1.25,
+                                      1.5,
+                                      2.0,
                                     ])
-                                      PopupMenuItem(value: v, child: Text('${v}x')),
+                                      PopupMenuItem(
+                                        value: v,
+                                        child: Text('${v}x'),
+                                      ),
                                   ],
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
-                                    child: Text('${speed}x',
-                                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    child: Text(
+                                      '${speed}x',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
@@ -244,15 +322,21 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                             PopupMenuButton<int>(
                               key: const ValueKey('playlist-timer'),
                               tooltip: 'স্লিপ টাইমার',
-                              icon: Icon(controller.sleepDeadline == null
-                                  ? Icons.bedtime_outlined : Icons.bedtime_rounded),
+                              icon: Icon(
+                                controller.sleepDeadline == null
+                                    ? Icons.bedtime_outlined
+                                    : Icons.bedtime_rounded,
+                              ),
                               onSelected: controller.setSleepTimer,
                               itemBuilder: (_) => [
                                 for (final n in const [0, 5, 15, 30, 60])
                                   PopupMenuItem(
                                     value: n,
-                                    child: Text(n == 0
-                                        ? 'টাইমার বন্ধ' : '$n মিনিট পরে থামবে'),
+                                    child: Text(
+                                      n == 0
+                                          ? 'টাইমার বন্ধ'
+                                          : '$n মিনিট পরে থামবে',
+                                    ),
                                   ),
                               ],
                             ),
@@ -263,13 +347,17 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                                 final active = snapshot.data == LoopMode.one;
                                 return IconButton(
                                   key: const ValueKey('playlist-repeat'),
-                                  tooltip: active ? 'পুনরাবৃত্তি বন্ধ'
+                                  tooltip: active
+                                      ? 'পুনরাবৃত্তি বন্ধ'
                                       : 'একই অডিও আবার চালান',
-                                  onPressed: () => unawaited(
-                                      controller.toggleRepeatOne()),
-                                  icon: Icon(Icons.repeat_one_rounded,
-                                      color: active ?
-                                          Theme.of(context).colorScheme.primary : null),
+                                  onPressed: () =>
+                                      unawaited(controller.toggleRepeatOne()),
+                                  icon: Icon(
+                                    Icons.repeat_one_rounded,
+                                    color: active
+                                        ? Theme.of(context).colorScheme.primary
+                                        : null,
+                                  ),
                                 );
                               },
                             ),
@@ -286,7 +374,8 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                           Text(
                             'প্রতি ১৫ মিনিটে ${controller.stopAfterTracks} অডিও শেষে থামবে',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ],
                       ],
                     ),
@@ -341,20 +430,40 @@ class _PlaylistArt extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF0D2B45), Color(0xFF0A70A8), Color(0xFF0F9BD7)],
-              begin: Alignment.topLeft, end: Alignment.bottomRight),
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-          child: Stack(fit: StackFit.expand, children: [
-            if (hasArt)
-              Image.network(uri.toString(), fit: BoxFit.cover,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (hasArt)
+                Image.network(
+                  uri.toString(),
+                  fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const Center(
-                      child: Icon(Icons.headphones_rounded,
-                          color: Colors.white, size: 66)))
-            else
-              const Center(child: Icon(Icons.headphones_rounded,
-                  color: Colors.white, size: 66)),
-            const Positioned(bottom: 12, left: 16,
-                child: Icon(Icons.graphic_eq_rounded, color: Colors.white)),
-          ]),
+                    child: Icon(
+                      Icons.headphones_rounded,
+                      color: Colors.white,
+                      size: 66,
+                    ),
+                  ),
+                )
+              else
+                const Center(
+                  child: Icon(
+                    Icons.headphones_rounded,
+                    color: Colors.white,
+                    size: 66,
+                  ),
+                ),
+              const Positioned(
+                bottom: 12,
+                left: 16,
+                child: Icon(Icons.graphic_eq_rounded, color: Colors.white),
+              ),
+            ],
+          ),
         ),
       ),
     );

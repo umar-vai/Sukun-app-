@@ -97,7 +97,9 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(ProviderScope(child: MaterialApp.router(routerConfig: router)));
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Detail'), findsOneWidget);
@@ -155,7 +157,9 @@ void main() {
       );
       for (final width in <double>[360, 430, 1280]) {
         await tester.binding.setSurfaceSize(Size(width, 760));
-        await tester.pumpWidget(ProviderScope(child: MaterialApp.router(routerConfig: router)));
+        await tester.pumpWidget(
+          ProviderScope(child: MaterialApp.router(routerConfig: router)),
+        );
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('navigation-back')), findsOneWidget);
         expect(find.byKey(const Key('navigation-home')), findsNothing);
