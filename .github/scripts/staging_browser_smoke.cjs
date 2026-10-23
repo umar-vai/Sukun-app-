@@ -160,14 +160,25 @@ async function verifyGuestPage(browser, profile) {
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
       checkpoint(protectedPath.startsWith('/patient')
         ? 'patient guest protection' : 'admin guest protection');
-      await page.goto(base + '#' + protectedPath, {
+      // A same-document page.goto('#/...') only changes the fragment.
+      // On Chromium it may emit hashchange without a Flutter/go_router route
+      // event, giving a false negative for an otherwise protected cold link.
+      // Start from a fresh document to verify real direct-link restoration.
+      await page.goto('about:blank', { waitUntil: 'domcontentloaded' });
+      const protectedResponse = await page.goto(base + '#' + protectedPath, {
         waitUntil: 'domcontentloaded',
         timeout: 65000,
       });
+      if (!protectedResponse?.ok()) {
+        safeError('Protected deep link did not serve the web entrypoint');
+      }
       await waitForFlutter(page);
       await page.waitForFunction(
-        (blocked) => !location.hash.startsWith('#' + blocked),
-        protectedPath,
+        () => {
+          const route = location.hash.split('?')[0].replace(/^#/, '');
+          return route === '/' || route === '/login';
+        },
+        undefined,
         { timeout: 20000 },
       );
     }
