@@ -76,20 +76,36 @@ void main() {
     expect(find.text('Morning fixture'), findsOneWidget);
     expect(find.text('Masnun fixture'), findsNothing);
 
+    // Collapse the first group to avoid testing offscreen virtualized cards.
+    await tester.tap(find.text('সময়ভিত্তিক আমল'));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('মাসনূন দুআ'));
     await tester.tap(find.text('মাসনূন দুআ'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Masnun fixture'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Masnun fixture'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
     await tester.tap(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('সুরক্ষা').first);
     await tester.tap(find.text('সুরক্ষা').first);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Protection fixture'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Protection fixture'), findsOneWidget);
   });
 
