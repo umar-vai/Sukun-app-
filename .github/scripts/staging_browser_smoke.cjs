@@ -32,8 +32,8 @@ async function checkManifest() {
   if (!response?.ok) safeError('Deployed Pages metadata unavailable');
   const metadata = await response.json();
   assert.equal(metadata.commit, expectedCommit, 'Live Pages is not at trusted main SHA');
-  assert.equal(metadata.backend_mode, 'staging', 'Pages is not in approved Staging mode');
-  console.log('PASS: deployed main SHA and isolated Staging backend mode');
+  assert.equal(metadata.backend_mode, 'production', 'Live Web App must use the approved Production backend');
+  console.log('PASS: live Pages serves the exact main SHA in approved Production mode');
 }
 
 async function waitForFlutter(page) {
@@ -59,6 +59,7 @@ async function verifyGuestPage(browser, profile) {
   });
   const failures = [];
   let productionClinicalCalls = 0;
+  let stagingBackendCalls = 0;
   // Log only trusted, fixed labels: no page content, query URLs or credentials.
   let stage = 'initializing browser';
   const checkpoint = (name) => {
@@ -72,11 +73,17 @@ async function verifyGuestPage(browser, profile) {
   page.on('request', (request) => {
     try {
       const url = new URL(request.url());
+      // Production public reads and auth handshakes are expected. Never
+      // attempt private patient/admin APIs from a Guest browser.
+      const protectedRest = /^\/rest\/v1\/(?:patients?(?:\/|$)|patient_[\w-]+|care_plans?(?:\/|$)|plan_actions?(?:\/|$)|prescriptions?(?:\/|$)|task_(?:completions?|instances?)|private_[\w-]+)/.test(url.pathname);
+      const protectedFunction = /^\/functions\/v1\/(?:patient-|admin-|prescription-|dispatch-care-reminders)/.test(url.pathname);
       if (url.hostname === productionHost &&
-          (url.pathname.startsWith('/auth/v1/') ||
-           url.pathname.startsWith('/rest/v1/') ||
-           url.pathname.startsWith('/functions/v1/patient-'))) {
+          (protectedRest || protectedFunction)) {
         productionClinicalCalls += 1;
+      }
+      if (url.hostname === stagingHost &&
+          /^\/(?:auth|rest|functions)\/v1\//.test(url.pathname)) {
+        stagingBackendCalls += 1;
       }
     } catch (_) { /* e.g. data URI */ }
   });
@@ -148,9 +155,11 @@ async function verifyGuestPage(browser, profile) {
 
     checkpoint('final privacy and runtime checks');
     assert.equal(productionClinicalCalls, 0,
-      'Staging browser requested Production clinical/auth APIs');
+      'Guest browser requested Production protected clinical/admin API');
+    assert.equal(stagingBackendCalls, 0,
+      'Production Web App called a Staging backend');
     assert.equal(failures.length, 0, 'Flutter emitted a browser runtime error');
-    console.log('PASS: ' + profile.label + ' actual Chromium startup, media library, login route, protected guest redirects and backend separation');
+    console.log('PASS: ' + profile.label + ' Production Chromium startup, public routes, guest access control and backend isolation');
   } catch (_) {
     // Pinpoint the failed trusted milestone without leaking browser state.
     console.error('FAIL: ' + profile.label + ' ' + stage);
@@ -184,6 +193,6 @@ async function verifyGuestPage(browser, profile) {
   console.log('PASS: credential-free browser smoke completed. Real role login and clinical writes remain separate gates.');
 })().catch(() => {
   // Do not expose URLs, stack traces, tokens or DOM containing private content.
-  console.error('FAIL: Staging Chromium browser acceptance blocked; inspect trusted source and step outcome');
+  console.error('FAIL: Production Chromium browser acceptance blocked; inspect trusted source and step outcome');
   process.exitCode = 1;
 });

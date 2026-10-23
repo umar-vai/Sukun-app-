@@ -13,6 +13,36 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-10-24: approved public MP3 download gateway (Production)
+
+- Verified Production source project `vydfafumxptanpkmtrpr` had the
+  required `content_items` schema and 18 published/public MP3s.
+- Applied the existing additive budget migration from
+  `supabase/migrations/20261022170000_approved_audio_gateway_daily_budget.sql`
+  as remote version `20261023184727`, name
+  `approved_audio_gateway_daily_budget_20261024`. It creates only the
+  unexposed `media_gateway_private` schema/table and a `service_role`-only
+  reservation RPC; no clinical records were changed.
+- Verified `anon` and `authenticated` cannot access the private quota
+  schema/table or execute `reserve_approved_audio_download`; `service_role`
+  can execute the reservation RPC.
+- Deployed **Production** `approved-audio-download` Edge Function **v1**
+  from the committed `supabase/functions/approved-audio-download` source.
+  Its owner-attested publisher URLs are pinned; requests require exact
+  `https://app.sukunlife.com` origin, GoTrue-verified sign-in, a
+  published/public CMS audio row, bounded MP3 size, and atomic quotas of
+  **3 files / 200 MiB per member per UTC day, 2 GiB per project per UTC day**.
+- Current Flutter Pages app serves Production backend, not Staging.
+  Chromium Guest route tests and credential-free CORS/denial probes are
+  the safe live checks. **Successful authorized download, real browser
+  offline playback, and rights/operator review remain pending** and must not
+  be represented as passed without evidence.
+- Existing Supabase security advisors still report warnings unrelated to
+  the new private media quota (authenticated security-definer functions and
+  leaked password protection); review separately, do not disable existing
+  Patient/Admin flows merely to clear a generic linter warning.
+
+
 ### 2026-10-18 universal public notices
 
 - Applied additive `universal_announcements` and

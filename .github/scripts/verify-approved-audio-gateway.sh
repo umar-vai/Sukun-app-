@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Credential-free, read-only acceptance against SYNTHETIC staging gateway.
+# Credential-free, read-only denial/CORS acceptance against the LIVE Production gateway.
 # Never send JWT, service-role keys, patient metadata or publisher URLs.
-endpoint="https://qacklgqvxvjjzsimjoip.supabase.co/functions/v1/approved-audio-download?id=00000000-0000-0000-0000-000000000000"
+endpoint="https://vydfafumxptanpkmtrpr.supabase.co/functions/v1/approved-audio-download?id=00000000-0000-0000-0000-000000000000"
 origin="https://app.sukunlife.com"
 headers="$(mktemp)"
 body="$(mktemp)"
