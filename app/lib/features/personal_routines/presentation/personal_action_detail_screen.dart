@@ -202,6 +202,13 @@ class _ResourceReferenceTile extends StatelessWidget {
             mediaUrl: cms['media_url'] as String?,
           )
         : null;
+    Widget? trailing = route != null
+        ? const Icon(Icons.chevron_right)
+        : null;
+    if (audioResource != null &&
+        AudioLibraryActions.supports(audioResource)) {
+      trailing = AudioLibraryActions(resource: audioResource, compact: true);
+    }
     return Card(
       child: ListTile(
         leading: Icon(
@@ -219,12 +226,7 @@ class _ResourceReferenceTile extends StatelessWidget {
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
         ),
-        trailing: audioResource != null &&
-                AudioLibraryActions.supports(audioResource)
-            ? AudioLibraryActions(resource: audioResource, compact: true)
-            : route != null
-                ? const Icon(Icons.chevron_right)
-                : null,
+        trailing: trailing,
         onTap: route == null ? null : () => context.push(route),
       ),
     );
