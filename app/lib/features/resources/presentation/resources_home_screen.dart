@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:go_router/go_router.dart';
@@ -422,10 +423,13 @@ class ResourceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          if (resource.type == 'audio')
+            AudioLibraryActions(resourceId: resource.id, compact: true)
+          else
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
         ],
       ),
     );
