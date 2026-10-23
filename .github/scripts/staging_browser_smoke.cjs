@@ -186,11 +186,13 @@ async function verifyGuestPage(browser, profile) {
         // Non-identifying browser readiness and routing flags only; NEVER
         // print the DOM, page URL, response bodies, tokens or account data.
         const signals = await page.evaluate(() => ({
-          protectedHashRemains: /^#\\/(patient|admin)(?:\\/|$)/.test(location.hash),
+          protectedHashRemains: location.hash.startsWith('#/patient') ||
+            location.hash.startsWith('#/admin'),
           flutterViewPresent: Boolean(document.querySelector('flutter-view')),
           hasFlutterCanvas: Boolean(document.querySelector('flt-glass-pane, canvas')),
           bootstrapDownloaded: performance.getEntriesByType('resource')
-            .some((resource) => /(?:main\\.dart\\.js|main\\.dart\\.mjs)/.test(resource.name)),
+            .some((resource) => resource.name.includes('main.dart.js') ||
+              resource.name.includes('main.dart.mjs')),
           appStillOnLaunchText: (document.body.innerText || '')
             .includes('Faith. Care. Peace of mind.'),
         }));
