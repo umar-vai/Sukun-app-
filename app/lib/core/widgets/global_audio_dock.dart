@@ -75,9 +75,17 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
         final path = router.routeInformationProvider.value.uri.path;
         // A resource detail screen already has a full player. Never overlay
         // that screen's transport controls with the global mini player.
-        final onResourceDetail = RegExp(
-          r'^/(?:patient/)?resources/[^/]+
-      child: TooltipVisibility(
+        final segments = path.split('/');
+        final onResourceDetail =
+            (segments.length == 3 && segments[1] == 'resources') ||
+            (segments.length == 4 &&
+                segments[1] == 'patient' &&
+                segments[2] == 'resources');
+        if (fullPlayerOpen && onResourceDetail) {
+          return const SizedBox.shrink();
+        }
+        return AudioDockPositioner(
+            child: TooltipVisibility(
         visible: false,
         child: AnimatedBuilder(
           animation: controller,
