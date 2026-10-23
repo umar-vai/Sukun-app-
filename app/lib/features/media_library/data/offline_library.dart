@@ -322,7 +322,7 @@ class OfflineLibrary extends ChangeNotifier {
       final key = _byteKey(owner, resource.id);
       try {
         await _bytes.write(key, result);
-      } catch (error) {
+      } catch (_) {
         // Browser quota / disk-full writes must not create phantom downloads.
         // Do not treat a failure as a successful offline save.
         throw StateError(
