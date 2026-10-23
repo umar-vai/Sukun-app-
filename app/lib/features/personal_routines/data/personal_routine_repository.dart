@@ -118,7 +118,7 @@ final class PersonalRoutineRepository {
     final rows = await client
         .from('personal_routine_action_resources')
         .select(
-          'id,action_id,provider,content_item_id,external_resource_ref,sort_order,content_items(id,title,title_bn,type,status,visibility)',
+          'id,action_id,provider,content_item_id,external_resource_ref,sort_order,content_items(id,title,title_bn,type,status,visibility,media_source_type,media_url)',
         )
         .eq('action_id', actionId)
         .order('sort_order', ascending: true);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -587,6 +588,10 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               const Text(
                 'সকল অনুবাদ ও তিলাওয়াতের স্বত্ব সংশ্লিষ্ট প্রকাশক ও কারির।',
               ),
+              const SizedBox(height: 6),
+              const Text(
+                'এই API তিলাওয়াত এখন অনলাইনে শোনা যায়। উৎসের অফলাইন ও প্লেলিস্ট অনুমতি যাচাই না হওয়া পর্যন্ত এখানে ডাউনলোড চালু নেই।',
+              ),
             ],
           ),
         ),
@@ -613,6 +618,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
       appBar: AppBar(
         title: Text(_surahTitle),
         actions: [
+          const AudioLibraryShortcut(compact: true),
           IconButton(
             tooltip: 'উৎস তথ্য',
             onPressed: _showSourceDetails,
