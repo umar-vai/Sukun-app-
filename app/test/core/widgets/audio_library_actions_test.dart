@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 
 void main() {
@@ -45,4 +46,62 @@ void main() {
     );
     expect(find.byType(PopupMenuButton<AudioLibraryAction>), findsNothing);
   });
+  testWidgets('selecting Add opens the right CMS audio in the shared library', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const Scaffold(
+            body: AudioLibraryActions(resourceId: 'public-123'),
+          ),
+        ),
+        GoRoute(
+          path: '/my-media',
+          builder: (context, state) => Scaffold(
+            body: Text('playlist: ${state.uri.queryParameters['add'] ?? ''}'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.tap(find.byKey(const Key('audio-library-actions-public-123')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('প্লেলিস্টে যুক্ত করুন'));
+    await tester.pumpAndSettle();
+    expect(find.text('playlist: public-123'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('selecting Download routes to the offline tab with the same ID', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const Scaffold(
+            body: AudioLibraryActions(resourceId: 'public-456'),
+          ),
+        ),
+        GoRoute(
+          path: '/my-media',
+          builder: (context, state) => Scaffold(
+            body: Text('download: ${state.uri.queryParameters['download'] ?? ''}'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.tap(find.byKey(const Key('audio-library-actions-public-456')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('অফলাইনে ডাউনলোড'));
+    await tester.pumpAndSettle();
+    expect(find.text('download: public-456'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
 }
