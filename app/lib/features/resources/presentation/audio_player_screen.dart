@@ -188,8 +188,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                       stream: player.positionStream,
                       initialData: player.position,
                       builder: (context, positionSnapshot) {
-                        final position =
-                            positionSnapshot.data ?? Duration.zero;
+                        final position = positionSnapshot.data ?? Duration.zero;
                         return Column(
                           key: const ValueKey('audio-player-first-viewport'),
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -271,18 +270,16 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 5,
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 7,
-                ),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
               ),
               child: Slider(
                 key: const ValueKey('audio-progress-slider'),
                 semanticFormatterCallback: (value) =>
                     _durationLabel(Duration(milliseconds: value.round())),
-                value: current.inMilliseconds.toDouble().clamp(
-                  0.0,
-                  maxMs > 0 ? maxMs : 1.0,
-                ).toDouble(),
+                value: current.inMilliseconds
+                    .toDouble()
+                    .clamp(0.0, maxMs > 0 ? maxMs : 1.0)
+                    .toDouble(),
                 min: 0,
                 max: maxMs > 0 ? maxMs : 1.0,
                 onChanged: maxMs <= 0
@@ -375,9 +372,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                           ),
                   ),
                   icon: Icon(
-                    playing
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
+                    playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   ),
                 ),
         ),
@@ -421,17 +416,8 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
               onSelected: (value) =>
                   _runPlaybackAction(context, () => controller.setSpeed(value)),
               itemBuilder: (context) => [
-                for (final preset in const <double>[
-                  0.75,
-                  1.0,
-                  1.25,
-                  1.5,
-                  2.0,
-                ])
-                  PopupMenuItem(
-                    value: preset,
-                    child: Text('${preset}x'),
-                  ),
+                for (final preset in const <double>[0.75, 1.0, 1.25, 1.5, 2.0])
+                  PopupMenuItem(value: preset, child: Text('${preset}x')),
               ],
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -481,9 +467,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                   _runPlaybackAction(context, controller.toggleRepeatOne),
               icon: Icon(
                 Icons.repeat_one_rounded,
-                color: repeating
-                    ? SukunColors.sukunBlue
-                    : SukunColors.muted,
+                color: repeating ? SukunColors.sukunBlue : SukunColors.muted,
               ),
             );
           },
@@ -496,10 +480,11 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
 /// Cover scales to the available phone height instead of pushing playback
 /// controls below the first visible viewport. Tiny screens may still scroll.
 double audioCoverHeightForViewport(double width, double height) =>
-    (height * 0.27).clamp(108.0, 220.0).toDouble().clamp(
-      108.0,
-      (width - 32).clamp(108.0, 220.0).toDouble(),
-    ).toDouble();
+    (height * 0.27)
+        .clamp(108.0, 220.0)
+        .toDouble()
+        .clamp(108.0, (width - 32).clamp(108.0, 220.0).toDouble())
+        .toDouble();
 
 /// Relative seek target, clamped to known duration and the start of playback.
 Duration audioSeekTarget(Duration position, Duration? duration, int seconds) {
