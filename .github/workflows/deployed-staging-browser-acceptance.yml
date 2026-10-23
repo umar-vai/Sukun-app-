@@ -1,4 +1,4 @@
-name: Deployed Staging Browser Acceptance
+name: Deployed Production Browser Acceptance
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sukun-staging-browser-acceptance-${{ github.event.workflow_run.head_sha || github.ref }}
+  group: sukun-production-browser-acceptance-${{ github.event.workflow_run.head_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -59,8 +59,8 @@ jobs:
           [[ "$SUKUN_EXPECTED_MAIN_SHA" =~ ^[a-f0-9]{40}$ ]]
           node .github/scripts/staging_browser_smoke.cjs
 
-  staging-guest-browser:
-    name: Real Chromium Staging Guest and route gate
+  production-guest-browser:
+    name: Real Chromium Production Guest and route gate
     # Only AFTER the existing trusted-main CI -> Pages deploy (never an untrusted PR).
     if: >-
       github.event_name == 'workflow_run' &&
@@ -103,7 +103,7 @@ jobs:
           set -euo pipefail
           npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
 
-      - name: Run no-credential browser isolation against deployed Staging
+      - name: Run no-credential browser isolation against the live Production Web App
         env:
           SUKUN_EXPECTED_MAIN_SHA: ${{ github.event.workflow_run.head_sha }}
         run: node .github/scripts/staging_browser_smoke.cjs
