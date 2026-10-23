@@ -1,0 +1,58 @@
+name: Production Authorized MP3 Offline Acceptance (Manual)
+
+on:
+  workflow_dispatch:
+
+# Never run against patient accounts or automatically on PR/push. Configure
+# protected 'production-media-qa' environment and a dedicated Member fixture.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-approved-offline-media-manual
+  cancel-in-progress: false
+
+jobs:
+  controlled-authenticated-offline:
+    name: Approved Production Member -> Chrome offline MP3 gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: production-media-qa
+    env:
+      SUKUN_APPROVED_MP3_OFFLINE_RIGHTS: ${{ vars.SUKUN_APPROVED_MP3_OFFLINE_RIGHTS }}
+      SUKUN_PRODUCTION_MEDIA_TEST_EMAIL: ${{ secrets.SUKUN_PRODUCTION_MEDIA_TEST_EMAIL }}
+      SUKUN_PRODUCTION_MEDIA_TEST_PASSWORD: ${{ secrets.SUKUN_PRODUCTION_MEDIA_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Verify exact main and explicit download-rights release gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          test "$SUKUN_APPROVED_MP3_OFFLINE_RIGHTS" = "true" ||
+            { echo "Offline media download rights are not approved; refuse real MP3 test"; exit 1; }
+          test -n "$SUKUN_PRODUCTION_MEDIA_TEST_EMAIL" &&
+            test -n "$SUKUN_PRODUCTION_MEDIA_TEST_PASSWORD" ||
+            { echo "Dedicated authorized Production test Member missing"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify safe script syntax and install pinned Chrome driver
+        run: |
+          node --check .github/scripts/production_authenticated_media_acceptance.cjs
+          npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
+
+      - name: Real Production Member MP3 -> browser binary store -> network-off playback
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SUKUN_EXPECTED_MAIN_SHA="$(git rev-parse HEAD)"
+          node .github/scripts/production_authenticated_media_acceptance.cjs

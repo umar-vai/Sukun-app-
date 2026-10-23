@@ -61,7 +61,9 @@ jobs:
         run: bash .github/scripts/verify-approved-audio-gateway.sh
 
       - name: Validate explicit-permission media browser acceptance script
-        run: node --check .github/scripts/staging_authenticated_media_acceptance.cjs
+        run: |
+          node --check .github/scripts/staging_authenticated_media_acceptance.cjs
+          node --check .github/scripts/production_authenticated_media_acceptance.cjs
 
   flutter-quality:
     name: Flutter / Format Analyze Test
