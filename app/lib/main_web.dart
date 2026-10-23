@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/app.dart';
+import 'package:sukun_life/core/auth/google_oauth_web_failure.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/config/web_preview_config.dart';
@@ -24,10 +25,14 @@ class _WebBootstrap extends StatefulWidget {
 
 class _WebBootstrapState extends State<_WebBootstrap> {
   late Future<void> _initialization;
+  String? _oauthFailure;
 
   @override
   void initState() {
     super.initState();
+    // Supabase can redirect back with a fragment/query error. Capture only a
+    // fixed safe message; never show provider text or access tokens.
+    _oauthFailure = googleOAuthWebFailureMessage(Uri.base);
     _initialization = _initialize();
   }
 
@@ -68,6 +73,41 @@ class _WebBootstrapState extends State<_WebBootstrap> {
                 onRetry: () => setState(() {
                   _initialization = _initialize();
                 }),
+              ),
+            ),
+          );
+        }
+        final failure = _oauthFailure;
+        if (failure != null) {
+          return MaterialApp(
+            title: 'Sukun Life',
+            debugShowCheckedModeBanner: false,
+            theme: SukunTheme.light(),
+            home: Scaffold(
+              appBar: AppBar(title: const Text('Google লগইন')),
+              body: SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 48),
+                          const SizedBox(height: 16),
+                          Text(failure, textAlign: TextAlign.center),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: () =>
+                                setState(() => _oauthFailure = null),
+                            child: const Text('অ্যাপে ফিরে যান'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           );
