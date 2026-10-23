@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -127,7 +128,10 @@ class QuranBrowserScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                          if (resource.type == 'audio')
+            AudioLibraryActions(resourceId: resource.id, compact: true)
+          else
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                         ],
                       ),
                     ),
