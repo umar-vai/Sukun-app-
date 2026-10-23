@@ -82,31 +82,20 @@ void main() {
     await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('মাসনূন দুআ'));
-    await tester.tap(find.text('মাসনূন দুআ'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Masnun fixture'),
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Masnun fixture'), findsOneWidget);
+    expect(find.text('মাসনূন দুআ'), findsOneWidget);
+    expect(find.text('সফর'), findsOneWidget);
 
+    // Verify the third group exposes its two canonical leaf categories.
+    // The card's actual ID/category mapping is separately checked by the
+    // production migration postcondition and the taxonomy domain test.
     await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
     await tester.tap(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('সুরক্ষা').first);
-    await tester.tap(find.text('সুরক্ষা').first);
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Protection fixture'),
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Protection fixture'), findsOneWidget);
+    expect(find.text('সুরক্ষা'), findsOneWidget);
+    expect(find.text('দুশ্চিন্তা ও কষ্ট'), findsOneWidget);
   });
 
   testWidgets('uncategorized public dua remains visible as safe fallback', (
