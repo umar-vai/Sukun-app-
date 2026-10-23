@@ -22,9 +22,10 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
       widget.resources.where((item) => item.categorySlug == slug).length;
 
   List<ContentResource> get _unclassified => widget.resources
-      .where((item) => !duaAzkarTaxonomy.any(
-            (entry) => entry.slug == item.categorySlug,
-          ))
+      .where(
+        (item) =>
+            !duaAzkarTaxonomy.any((entry) => entry.slug == item.categorySlug),
+      )
       .toList(growable: false);
 
   List<ContentResource> get _visible {
@@ -94,7 +95,9 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
           ListTile(
             key: const Key('dua-unclassified'),
             title: const Text('বিভাগ নির্ধারণের অপেক্ষায়'),
-            subtitle: Text('${_unclassified.length}টি প্রকাশিত দোয়া যাচাই প্রয়োজন'),
+            subtitle: Text(
+              '${_unclassified.length}টি প্রকাশিত দোয়া যাচাই প্রয়োজন',
+            ),
             onTap: () => setState(() {
               _openGroup = null;
               _selectedSlug = reviewSlug;
@@ -159,9 +162,9 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
     final colors = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final open = _openGroup == group.slug;
-    final count = widget.resources.where(
-      (item) => group.categorySlugs.contains(item.categorySlug),
-    ).length;
+    final count = widget.resources
+        .where((item) => group.categorySlugs.contains(item.categorySlug))
+        .length;
     return Material(
       color: colors.surfaceContainerLow,
       borderRadius: BorderRadius.circular(20),
@@ -179,7 +182,8 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
           children: [
             InkWell(
               key: Key('dua-group-${group.slug}'),
-              onTap: () => setState(() => _openGroup = open ? null : group.slug),
+              onTap: () =>
+                  setState(() => _openGroup = open ? null : group.slug),
               child: Semantics(
                 button: true,
                 expanded: open,
@@ -327,8 +331,8 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
     final subtitle = resource.referenceText?.trim().isNotEmpty == true
         ? resource.referenceText!
         : match.isNotEmpty
-            ? match.first.titleBn
-            : 'দোয়া পড়ুন';
+        ? match.first.titleBn
+        : 'দোয়া পড়ুন';
     return Material(
       key: Key('dua-card-${resource.id}'),
       color: colors.surfaceContainerLow,
