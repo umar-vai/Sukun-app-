@@ -521,7 +521,12 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
           }
           final resources = snapshot.data ?? const <ContentResource>[];
           return ListView(
-            padding: EdgeInsets.fromLTRB(20, isDua ? 24 : 20, 20, isDua ? 112 : 40),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              isDua ? 24 : 20,
+              20,
+              isDua ? 112 : 40,
+            ),
             children: [
               SukunPageIntro(
                 eyebrow: isDua ? 'দৈনিক দোয়া ও যিকির' : 'Faith-anchored care',
