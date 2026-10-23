@@ -45,6 +45,16 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant MyMediaLibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.addResourceId != widget.addResourceId ||
+        oldWidget.downloadId != widget.downloadId) {
+      _candidate = _fetchCandidate();
+      _tab = widget.downloadId != null ? 1 : 0;
+    }
+  }
+
   Future<ContentResource?> _fetchCandidate() async {
     final id = widget.addResourceId ?? widget.downloadId;
     if (id == null) return null;

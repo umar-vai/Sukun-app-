@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 
 /// Keeps the approved resource order and each practitioner's usage note visible.
 class LinkedResourceButtons extends StatelessWidget {
@@ -33,6 +34,10 @@ class LinkedResourceButtons extends StatelessWidget {
                   icon: const Icon(Icons.menu_book_outlined, size: 18),
                   label: Text(resource.titleBn ?? resource.title),
                 ),
+                if (AudioLibraryActions.supports(resource)) ...[
+                  const SizedBox(height: 4),
+                  AudioLibraryActions(resource: resource),
+                ],
                 if (resource.usageNote?.trim().isNotEmpty == true)
                   Padding(
                     padding: const EdgeInsets.only(left: 8, top: 4),

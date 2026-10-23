@@ -12,6 +12,7 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
@@ -151,7 +152,10 @@ class _ResourceCategoryScreenState
     final repository = ref.watch(resourcesRepositoryProvider);
     final backendUnavailable = repository is UnavailableResourcesRepository;
     return Scaffold(
-      appBar: AppBar(title: Text(section.titleBn)),
+      appBar: AppBar(
+        title: Text(section.titleBn),
+        actions: const [AudioLibraryShortcut(compact: true)],
+      ),
       body: SafeArea(
         child: Column(
           children: [

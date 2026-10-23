@@ -8,6 +8,7 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/dua_azkar_browse_section.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -502,7 +503,10 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
         : const {'quran', 'amal', 'audio', 'guide'};
     final prefix = isDua ? 'dua-azkar' : 'ruqyah';
     return Scaffold(
-      appBar: AppBar(title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah')),
+      appBar: AppBar(
+        title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah'),
+        actions: const [AudioLibraryShortcut(compact: true)],
+      ),
       body: FutureBuilder<List<ContentResource>>(
         future: ref
             .read(resourcesRepositoryProvider)
@@ -688,6 +692,10 @@ class _ResourceListTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
+                ],
+                if (AudioLibraryActions.supports(resource.linkedResource)) ...[
+                  const SizedBox(height: 8),
+                  AudioLibraryActions(resource: resource.linkedResource),
                 ],
               ],
             ),

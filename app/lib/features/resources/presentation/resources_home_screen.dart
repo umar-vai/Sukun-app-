@@ -11,6 +11,7 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
@@ -380,52 +381,63 @@ class ResourceCard extends StatelessWidget {
     return SukunSurface(
       padding: const EdgeInsets.all(16),
       onTap: onTap,
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SukunIconBadge(icon: _resourceIcon(resource.type)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  resource.titleBn?.isNotEmpty == true
-                      ? resource.titleBn!
-                      : resource.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: resource.titleBn?.isNotEmpty == true
-                      ? SukunTypography.banglaDisplay(
-                          textStyle: Theme.of(context).textTheme.titleMedium,
-                        )
-                      : Theme.of(context).textTheme.titleMedium,
-                ),
-                if (resource.titleBn?.isNotEmpty == true &&
-                    resource.titleBn!.trim() != resource.title.trim()) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    resource.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SukunIconBadge(icon: _resourceIcon(resource.type)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      resource.titleBn?.isNotEmpty == true
+                          ? resource.titleBn!
+                          : resource.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: resource.titleBn?.isNotEmpty == true
+                          ? SukunTypography.banglaDisplay(
+                              textStyle: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium,
+                            )
+                          : Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                ],
-                const SizedBox(height: 9),
-                SukunStatusPill(
-                  label: _typeLabel(resource.type),
-                  tone: SukunStatusTone.brand,
+                    if (resource.titleBn?.isNotEmpty == true &&
+                        resource.titleBn!.trim() != resource.title.trim()) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        resource.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 9),
+                    SukunStatusPill(
+                      label: _typeLabel(resource.type),
+                      tone: SukunStatusTone.brand,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          if (AudioLibraryActions.supports(resource.linkedResource)) ...[
+            const SizedBox(height: 10),
+            AudioLibraryActions(resource: resource.linkedResource),
+          ],
         ],
       ),
     );

@@ -10,6 +10,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/sukun_static_waveform.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 
 class AudioPlayerScreen extends ConsumerStatefulWidget {
   const AudioPlayerScreen({
@@ -207,7 +208,13 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 12),
+                              Center(
+                                child: AudioLibraryActions(
+                                  resource: widget.resource,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
                               SukunSurface(
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
