@@ -100,10 +100,11 @@ abstract final class SukunTypography {
     // The Flutter family name is registered with ten real TTF faces
     // (ExtraLight/Light/Regular/SemiBold/Bold, upright + italic).
     // This branch keeps selection disabled until the licensed bytes are bundled.
-    BengaliFontChoice.liAdorNoirrit => (textStyle ?? const TextStyle()).copyWith(
-      fontFamily: 'SukunLiAdorNoirrit',
-      fontWeight: fontWeight,
-    ),
+    BengaliFontChoice.liAdorNoirrit =>
+      (textStyle ?? const TextStyle()).copyWith(
+        fontFamily: 'SukunLiAdorNoirrit',
+        fontWeight: fontWeight,
+      ),
   };
 
   /// Apply a user-selected Bengali fallback while retaining Poppins for Latin.
