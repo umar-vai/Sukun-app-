@@ -139,7 +139,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                           AudioDockIconAction(
                             label: 'আমার প্লেলিস্ট ও ডাউনলোড',
                             icon: Icons.library_music_outlined,
-                            onPressed: () => ref.read(appRouterProvider).push('/my-media'),
+                            onPressed: () =>
+                                ref.read(appRouterProvider).push('/my-media'),
                           ),
                           AudioDockIconAction(
                             label: playing ? 'বিরতি' : 'চালু করুন',
