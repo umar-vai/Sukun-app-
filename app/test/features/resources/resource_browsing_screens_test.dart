@@ -22,11 +22,39 @@ void main() {
     },
   );
 
-  testWidgets('Dua All shows public items without a category mapping', (
+  testWidgets('all three dua groups contain their categorized resources', (
     tester,
   ) async {
     final filters = <Set<String>>[];
-    final repository = _BrowsingRepository(onBrowse: filters.add);
+    final repository = _BrowsingRepository(
+      onBrowse: filters.add,
+      duaItems: const [
+        ContentResource(
+          id: 'morning-1',
+          type: 'dua',
+          title: 'Morning fixture',
+          categorySlug: 'dua-azkar-morning',
+          visibility: 'public',
+          status: 'published',
+        ),
+        ContentResource(
+          id: 'masnun-1',
+          type: 'dua',
+          title: 'Masnun fixture',
+          categorySlug: 'dua-azkar-masnun',
+          visibility: 'public',
+          status: 'published',
+        ),
+        ContentResource(
+          id: 'protection-1',
+          type: 'dua',
+          title: 'Protection fixture',
+          categorySlug: 'dua-azkar-protection',
+          visibility: 'public',
+          status: 'published',
+        ),
+      ],
+    );
     await tester.pumpWidget(
       _testApp(
         const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
@@ -34,16 +62,56 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(filters, isNotEmpty);
     expect(filters.last, isEmpty);
+    expect(find.text('Morning fixture'), findsNothing);
 
     await tester.tap(find.text('সকালের আযকার').first);
     await tester.pumpAndSettle();
-    expect(filters.last, contains('dua-azkar-morning'));
+    expect(find.text('Morning fixture'), findsOneWidget);
+    expect(find.text('Masnun fixture'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('dua-show-all')));
+    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.pumpAndSettle();
-    expect(filters.last, isEmpty);
+    await tester.ensureVisible(find.text('মাসনূন দুআ'));
+    await tester.tap(find.text('মাসনূন দুআ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Masnun fixture'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
+    await tester.tap(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('সুরক্ষা').first);
+    await tester.tap(find.text('সুরক্ষা').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Protection fixture'), findsOneWidget);
+  });
+
+  testWidgets('uncategorized public dua remains visible as safe fallback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+        const _BrowsingRepository(
+          duaItems: [
+            ContentResource(
+              id: 'uncategorized',
+              type: 'dua',
+              title: 'Published uncategorized fixture',
+              visibility: 'public',
+              status: 'published',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('বিভাগ নির্ধারণের অপেক্ষায়'), findsOneWidget);
+    await tester.ensureVisible(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
+    await tester.tap(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
   testWidgets('Hadith browser exposes CMS-derived topics and references', (
@@ -147,9 +215,13 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
 );
 
 final class _BrowsingRepository implements ResourcesRepository {
-  const _BrowsingRepository({this.onBrowse});
+  const _BrowsingRepository({
+    this.onBrowse,
+    this.duaItems = const [],
+  });
 
   final void Function(Set<String>)? onBrowse;
+  final List<ContentResource> duaItems;
 
   static const quran = ContentResource(
     id: 'quran-1',
@@ -187,7 +259,7 @@ final class _BrowsingRepository implements ResourcesRepository {
     Set<String> categoryPrefixes = const {},
   }) async {
     onBrowse?.call(categoryPrefixes);
-    return types.contains('hadith') ? const [hadith] : const [];
+    return types.contains('hadith') ? const [hadith] : duaItems;
   }
 
   @override
