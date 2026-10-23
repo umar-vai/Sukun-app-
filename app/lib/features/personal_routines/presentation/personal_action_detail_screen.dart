@@ -202,11 +202,8 @@ class _ResourceReferenceTile extends StatelessWidget {
             mediaUrl: cms['media_url'] as String?,
           )
         : null;
-    Widget? trailing = route != null
-        ? const Icon(Icons.chevron_right)
-        : null;
-    if (audioResource != null &&
-        AudioLibraryActions.supports(audioResource)) {
+    Widget? trailing = route != null ? const Icon(Icons.chevron_right) : null;
+    if (audioResource != null && AudioLibraryActions.supports(audioResource)) {
       trailing = AudioLibraryActions(resource: audioResource, compact: true);
     }
     return Card(
