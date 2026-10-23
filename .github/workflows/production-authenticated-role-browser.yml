@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 12
     environment: production-role-qa
     env:
+      SUKUN_PRODUCTION_ROLE_QA_APPROVED: ${{ vars.SUKUN_PRODUCTION_ROLE_QA_APPROVED }}
       SUKUN_PRODUCTION_ROLE_MEMBER_EMAIL: ${{ secrets.SUKUN_PRODUCTION_ROLE_MEMBER_EMAIL }}
       SUKUN_PRODUCTION_ROLE_MEMBER_PASSWORD: ${{ secrets.SUKUN_PRODUCTION_ROLE_MEMBER_PASSWORD }}
       SUKUN_PRODUCTION_ROLE_PATIENT_EMAIL: ${{ secrets.SUKUN_PRODUCTION_ROLE_PATIENT_EMAIL }}
@@ -36,6 +37,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$SUKUN_PRODUCTION_ROLE_QA_APPROVED" = "true" || {
+            echo "Explicit Production role QA approval is missing"; exit 1;
+          }
           git fetch origin main
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
           for key in SUKUN_PRODUCTION_ROLE_MEMBER_EMAIL \
