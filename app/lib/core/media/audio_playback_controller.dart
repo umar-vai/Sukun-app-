@@ -10,6 +10,10 @@ import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/media_library/data/local_audio_uri.dart';
 
+/// Hides the global mini dock only while a full resource player is visible.
+/// The shared audio engine remains active across navigation.
+final fullAudioPlayerOpenProvider = StateProvider<bool>((ref) => false);
+
 final audioPlaybackControllerProvider = Provider<AudioPlaybackController>((
   ref,
 ) {
