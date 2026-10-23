@@ -8,6 +8,7 @@ const bool liAdorNoirritFontBundled = bool.fromEnvironment(
   'SUKUN_LI_ADOR_NOIRRIT_BUNDLED',
   defaultValue: false,
 );
+
 enum BengaliFontChoice {
   hindSiliguri('হিন্দ শিলিগুড়ি'),
   anekBangla('অনেক বাংলা'),
@@ -17,17 +18,18 @@ enum BengaliFontChoice {
   const BengaliFontChoice(this.label);
   final String label;
 
-  bool get isAvailable => this != BengaliFontChoice.liAdorNoirrit ||
-      liAdorNoirritFontBundled;
+  bool get isAvailable =>
+      this != BengaliFontChoice.liAdorNoirrit || liAdorNoirritFontBundled;
 }
-
 
 /// Display-only preferences: no patient records, Supabase or sensitive data.
 class BengaliFontSettings extends ValueNotifier<BengaliFontChoice> {
   BengaliFontSettings._()
-      : super(liAdorNoirritFontBundled
+    : super(
+        liAdorNoirritFontBundled
             ? BengaliFontChoice.liAdorNoirrit
-            : BengaliFontChoice.hindSiliguri);
+            : BengaliFontChoice.hindSiliguri,
+      );
 
   static final BengaliFontSettings instance = BengaliFontSettings._();
   static const String _key = 'sukun_display_bengali_font_v1';
