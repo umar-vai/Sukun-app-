@@ -80,6 +80,15 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
             child: Column(
               children: [
                 ListTile(
+                  key: const Key('account-audio-library'),
+                  leading: const Icon(Icons.library_music_outlined),
+                  title: const Text('আমার প্লেলিস্ট ও ডাউনলোড'),
+                  subtitle: const Text('সংরক্ষিত অডিও শুনুন ও প্লেলিস্ট দেখুন'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/my-media'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.checklist_outlined),
                   title: const Text('আমার রুটিন'),
                   subtitle: const Text('নিজের করণীয় ও রিমাইন্ডার'),
