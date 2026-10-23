@@ -427,12 +427,22 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                   vertical: 12,
                   horizontal: 15,
                 ),
-                child: Text(
-                  '${speed}x',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: SukunColors.deepTide,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'শোনার গতি',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${speed}x',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: SukunColors.deepTide,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
