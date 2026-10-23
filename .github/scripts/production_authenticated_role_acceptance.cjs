@@ -41,6 +41,20 @@ async function login(account) {
   return { token: data.access_token, uid: data.user.id };
 }
 
+async function waitForFlutter(page) {
+  await page.waitForFunction(
+    () => {
+      const view = document.querySelector('flutter-view');
+      return Boolean(view && (view.shadowRoot?.childElementCount ||
+        view.childElementCount ||
+        document.querySelector('flt-glass-pane, canvas')));
+    },
+    undefined,
+    { timeout: 65000 },
+  );
+  await page.waitForTimeout(900);
+}
+
 async function testRole(browser, account) {
   checkpoint(account.role + ' approved account sign-in');
   const session = await login(account);
@@ -59,6 +73,7 @@ async function testRole(browser, account) {
       waitUntil: 'domcontentloaded', timeout: 60000,
     });
     assert.ok(home?.ok(), 'Production Flutter Web home cannot load');
+    await waitForFlutter(page);
     checkpoint(account.role + ' authenticated Production browser CORS/RLS');
     const state = await page.evaluate(async ({ project, publishable, token, uid }) => {
       const headers = {
