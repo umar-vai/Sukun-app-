@@ -9,21 +9,29 @@ void main() {
     expect(BengaliFontChoice.values, hasLength(4));
     expect(
       BengaliFontChoice.values.map((choice) => choice.label),
-      containsAll(['হিন্দ শিলিগুড়ি', 'অনেক বাংলা', 'তিরো বাংলা', 'Li Ador Noirrit']),
+      containsAll([
+        'হিন্দ শিলিগুড়ি',
+        'অনেক বাংলা',
+        'তিরো বাংলা',
+        'Li Ador Noirrit',
+      ]),
     );
   });
 
-  test('Li Ador Noirrit cannot be chosen before real assets are bundled', () async {
-    if (liAdorNoirritFontBundled) return;
-    SharedPreferences.setMockInitialValues({});
-    final settings = BengaliFontSettings.instance;
-    final initial = settings.value;
-    expect(BengaliFontChoice.liAdorNoirrit.isAvailable, isFalse);
-    await settings.select(BengaliFontChoice.liAdorNoirrit);
-    expect(settings.value, initial);
-    final stored = await SharedPreferences.getInstance();
-    expect(stored.getString('sukun_display_bengali_font_v1'), isNull);
-  });
+  test(
+    'Li Ador Noirrit cannot be chosen before real assets are bundled',
+    () async {
+      if (liAdorNoirritFontBundled) return;
+      SharedPreferences.setMockInitialValues({});
+      final settings = BengaliFontSettings.instance;
+      final initial = settings.value;
+      expect(BengaliFontChoice.liAdorNoirrit.isAvailable, isFalse);
+      await settings.select(BengaliFontChoice.liAdorNoirrit);
+      expect(settings.value, initial);
+      final stored = await SharedPreferences.getInstance();
+      expect(stored.getString('sukun_display_bengali_font_v1'), isNull);
+    },
+  );
 
   test('selected Bengali font persists on this device', () async {
     SharedPreferences.setMockInitialValues({});
