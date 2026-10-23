@@ -1,0 +1,32 @@
+name: Production Role QA Script Syntax
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/scripts/production_authenticated_role_acceptance.cjs'
+      - '.github/workflows/production-authenticated-role-browser.yml'
+      - '.github/workflows/production-role-script-syntax.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/production_authenticated_role_acceptance.cjs'
+      - '.github/workflows/production-authenticated-role-browser.yml'
+      - '.github/workflows/production-role-script-syntax.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-script-check:
+    name: Node syntax, no Production credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check .github/scripts/production_authenticated_role_acceptance.cjs
