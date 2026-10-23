@@ -441,7 +441,7 @@ class _PlaylistArt extends StatelessWidget {
                 Image.network(
                   uri.toString(),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
+                  errorBuilder: (_, _, _) => const Center(
                     child: Icon(
                       Icons.headphones_rounded,
                       color: Colors.white,
