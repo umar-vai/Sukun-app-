@@ -6,8 +6,7 @@
 String? googleOAuthWebFailureMessage(Uri callback) {
   final values = <String, String>{...callback.queryParameters};
   final fragment = callback.fragment;
-  if (fragment.startsWith('error=') ||
-      fragment.startsWith('error_code=')) {
+  if (fragment.startsWith('error=') || fragment.startsWith('error_code=')) {
     try {
       values.addAll(Uri.splitQueryString(fragment));
     } on FormatException {
