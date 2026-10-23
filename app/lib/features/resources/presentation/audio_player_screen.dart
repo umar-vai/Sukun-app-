@@ -430,10 +430,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'শোনার গতি',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    const Text('শোনার গতি', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 5),
                     Text(
                       '${speed}x',
