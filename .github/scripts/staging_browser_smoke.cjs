@@ -177,7 +177,11 @@ async function verifyGuestPage(browser, profile) {
         await page.waitForFunction(
           () => {
             const route = location.hash.split('?')[0].replace(/^#/, '');
-            return route === '/' || route === '/login';
+            // The browser may canonicalize GoRouter '/' to an empty hash.
+            // Only accept that if the HTTP path is the app root itself.
+            const isCanonicalHome = route === '' &&
+              (location.pathname === '/' || location.pathname === '/index.html');
+            return route === '/' || isCanonicalHome || route === '/login';
           },
           undefined,
           { timeout: 20000 },
@@ -188,6 +192,11 @@ async function verifyGuestPage(browser, profile) {
         const signals = await page.evaluate(() => ({
           protectedHashRemains: location.hash.startsWith('#/patient') ||
             location.hash.startsWith('#/admin'),
+          hashIsEmpty: location.hash.length === 0,
+          pathIsAppRoot: location.pathname === '/' ||
+            location.pathname === '/index.html',
+          hashIsRoot: location.hash === '#/' || location.hash === '#',
+          hashIsLogin: location.hash.startsWith('#/login'),
           flutterViewPresent: Boolean(document.querySelector('flutter-view')),
           hasFlutterCanvas: Boolean(document.querySelector('flt-glass-pane, canvas')),
           bootstrapDownloaded: performance.getEntriesByType('resource')
