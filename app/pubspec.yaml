@@ -89,6 +89,37 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # User-approved original Li Ador Noirrit TTF family; Web/Android/iOS share it.
+  fonts:
+    - family: SukunLiAdorNoirrit
+      fonts:
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit ExtraLight.ttf'
+          weight: 200
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit ExtraLight Italic.ttf'
+          weight: 200
+          style: italic
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Light.ttf'
+          weight: 300
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Light Italic.ttf'
+          weight: 300
+          style: italic
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Regular.ttf'
+          weight: 400
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Italic.ttf'
+          weight: 400
+          style: italic
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit SemiBold.ttf'
+          weight: 600
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit SemiBold Italic.ttf'
+          weight: 600
+          style: italic
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Bold.ttf'
+          weight: 700
+        - asset: 'assets/fonts/li_ador_noirrit/Li Ador Noirrit Bold Italic.ttf'
+          weight: 700
+          style: italic
+
+
   assets:
     - assets/brand/
     - assets/icons/
