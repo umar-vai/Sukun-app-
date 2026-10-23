@@ -45,6 +45,18 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant MyMediaLibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.addResourceId != oldWidget.addResourceId ||
+        widget.downloadId != oldWidget.downloadId) {
+      // GoRouter can reuse this screen when its query changes. Never
+      // act on a previously selected resource or display the wrong tab.
+      _candidate = _fetchCandidate();
+      _tab = widget.downloadId != null ? 1 : 0;
+    }
+  }
+
   Future<ContentResource?> _fetchCandidate() async {
     final id = widget.addResourceId ?? widget.downloadId;
     if (id == null) return null;
