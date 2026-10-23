@@ -50,9 +50,9 @@ class BengaliFontSettingsScreen extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'Li Ador Noirrit-এর সব বাংলা weight ও italic style '
-                'অরিজিনাল ফন্ট ফাইল সংযুক্ত হলে পাওয়া যাবে। '
-                'কুরআনের আরবি আয়াতের নির্ধারিত ফন্ট এই সেটিং বদলায় না।',
+                'Li Ador Noirrit-এর অরিজিনাল Regular, Light, ExtraLight, '
+                'SemiBold, Bold ও Italic স্টাইল অ্যাপে রয়েছে। '
+                'কুরআনের আরবি আয়াতের ফন্ট এই সেটিং বদলায় না।',
               ),
             ),
           ),
