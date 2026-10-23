@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
@@ -190,6 +192,16 @@ class _ResourceReferenceTile extends StatelessWidget {
         : surahNumber != null
         ? '/resources/quran/$surahNumber'
         : null;
+    final audioResource = canOpen && cms['type'] == 'audio'
+        ? LinkedResource(
+            id: id,
+            title: cms['title'] as String? ?? name,
+            titleBn: cms['title_bn'] as String?,
+            type: 'audio',
+            mediaSourceType: cms['media_source_type'] as String?,
+            mediaUrl: cms['media_url'] as String?,
+          )
+        : null;
     return Card(
       child: ListTile(
         leading: Icon(
@@ -207,7 +219,12 @@ class _ResourceReferenceTile extends StatelessWidget {
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
         ),
-        trailing: route != null ? const Icon(Icons.chevron_right) : null,
+        trailing: audioResource != null &&
+                AudioLibraryActions.supports(audioResource)
+            ? AudioLibraryActions(resource: audioResource, compact: true)
+            : route != null
+                ? const Icon(Icons.chevron_right)
+                : null,
         onTap: route == null ? null : () => context.push(route),
       ),
     );
