@@ -29,7 +29,9 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byKey(const Key('audio-library-actions-published-audio')));
+    await tester.tap(
+      find.byKey(const Key('audio-library-actions-published-audio')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('প্লেলিস্টে যুক্ত করুন'), findsOneWidget);
     expect(find.text('অফলাইনে ডাউনলোড'), findsOneWidget);
