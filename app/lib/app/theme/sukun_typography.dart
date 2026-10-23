@@ -99,7 +99,7 @@ abstract final class SukunTypography {
     ),
     // The Flutter family name is registered with ten real TTF faces
     // (ExtraLight/Light/Regular/SemiBold/Bold, upright + italic).
-    // This branch keeps selection disabled until the licensed bytes are bundled.
+    // Original user-approved TTF bytes are bundled and registered in pubspec.
     BengaliFontChoice.liAdorNoirrit =>
       (textStyle ?? const TextStyle()).copyWith(
         fontFamily: 'SukunLiAdorNoirrit',
