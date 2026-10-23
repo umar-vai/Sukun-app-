@@ -72,16 +72,9 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
     return ListenableBuilder(
       listenable: router.routeInformationProvider,
       builder: (context, _) {
-        final path = router.routeInformationProvider.value.uri.path;
-        // A resource detail screen already has a full player. Never overlay
-        // that screen's transport controls with the global mini player.
-        final segments = path.split('/');
-        final onResourceDetail =
-            (segments.length == 3 && segments[1] == 'resources') ||
-            (segments.length == 4 &&
-                segments[1] == 'patient' &&
-                segments[2] == 'resources');
-        if (fullPlayerOpen && onResourceDetail) {
+        // The route may be a nested playlist page above /my-media.
+        // Suppress the floating dock for every focused full player.
+        if (fullPlayerOpen) {
           return const SizedBox.shrink();
         }
         return AudioDockPositioner(
