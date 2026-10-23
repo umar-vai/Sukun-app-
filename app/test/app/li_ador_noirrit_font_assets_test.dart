@@ -20,16 +20,19 @@ void main() {
     'Li Ador Noirrit Bold Italic.ttf',
   ];
 
-  test('all ten licensed Li Ador Noirrit TTF faces load from Flutter assets', () async {
-    for (final filename in fonts) {
-      final data = await rootBundle.load(
-        'assets/fonts/li_ador_noirrit/$filename',
-      );
-      expect(data.lengthInBytes, greaterThan(80000), reason: filename);
-      // All supplied originals use the TrueType sfnt version 0x00010000.
-      expect(data.getUint32(0), 0x00010000, reason: filename);
-    }
-  });
+  test(
+    'all ten licensed Li Ador Noirrit TTF faces load from Flutter assets',
+    () async {
+      for (final filename in fonts) {
+        final data = await rootBundle.load(
+          'assets/fonts/li_ador_noirrit/$filename',
+        );
+        expect(data.lengthInBytes, greaterThan(80000), reason: filename);
+        // All supplied originals use the TrueType sfnt version 0x00010000.
+        expect(data.getUint32(0), 0x00010000, reason: filename);
+      }
+    },
+  );
 
   test('branded family can be selected with original font weight', () {
     expect(liAdorNoirritFontBundled, isTrue);
