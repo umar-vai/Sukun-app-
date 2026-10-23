@@ -600,7 +600,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                         ),
                     ],
                   ),
-                            ] else
+              ] else
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
