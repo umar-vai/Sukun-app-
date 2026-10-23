@@ -22,11 +22,45 @@ void main() {
     },
   );
 
-  testWidgets('Dua All shows public items without a category mapping', (
+  testWidgets('all three dua groups contain their categorized resources', (
     tester,
   ) async {
+    // These are navigation accordions. Give the test a scrolling phone-sized
+    // page with enough vertical space for the full expanded group stack.
+    tester.view.physicalSize = const Size(900, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final filters = <Set<String>>[];
-    final repository = _BrowsingRepository(onBrowse: filters.add);
+    final repository = _BrowsingRepository(
+      onBrowse: filters.add,
+      duaItems: const [
+        ContentResource(
+          id: 'morning-1',
+          type: 'dua',
+          title: 'Morning fixture',
+          categorySlug: 'dua-azkar-morning',
+          visibility: 'public',
+          status: 'published',
+        ),
+        ContentResource(
+          id: 'masnun-1',
+          type: 'dua',
+          title: 'Masnun fixture',
+          categorySlug: 'dua-azkar-masnun',
+          visibility: 'public',
+          status: 'published',
+        ),
+        ContentResource(
+          id: 'protection-1',
+          type: 'dua',
+          title: 'Protection fixture',
+          categorySlug: 'dua-azkar-protection',
+          visibility: 'public',
+          status: 'published',
+        ),
+      ],
+    );
     await tester.pumpWidget(
       _testApp(
         const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
@@ -34,16 +68,65 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(filters, isNotEmpty);
     expect(filters.last, isEmpty);
+    expect(find.text('Morning fixture'), findsNothing);
 
     await tester.tap(find.text('সকালের আযকার').first);
     await tester.pumpAndSettle();
-    expect(filters.last, contains('dua-azkar-morning'));
+    expect(find.text('Morning fixture'), findsOneWidget);
+    expect(find.text('Masnun fixture'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('dua-show-all')));
+    // Collapse the first group to avoid testing offscreen virtualized cards.
+    await tester.tap(find.text('সময়ভিত্তিক আমল'));
     await tester.pumpAndSettle();
-    expect(filters.last, isEmpty);
+    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.pumpAndSettle();
+    expect(find.text('মাসনূন দুআ'), findsOneWidget);
+    expect(find.text('সফর'), findsOneWidget);
+
+    // Verify the third group exposes its two canonical leaf categories.
+    // The card's actual ID/category mapping is separately checked by the
+    // production migration postcondition and the taxonomy domain test.
+    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
+    await tester.tap(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
+    await tester.pumpAndSettle();
+    expect(find.text('সুরক্ষা'), findsOneWidget);
+    expect(find.text('দুশ্চিন্তা ও কষ্ট'), findsOneWidget);
+  });
+
+  testWidgets('uncategorized public dua remains visible as safe fallback', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      _testApp(
+        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+        const _BrowsingRepository(
+          duaItems: [
+            ContentResource(
+              id: 'uncategorized',
+              type: 'dua',
+              title: 'Published uncategorized fixture',
+              visibility: 'public',
+              status: 'published',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('বিভাগ নির্ধারণের অপেক্ষায়'), findsOneWidget);
+    await tester.ensureVisible(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
+    await tester.tap(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
   testWidgets('Hadith browser exposes CMS-derived topics and references', (
@@ -147,9 +230,10 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
 );
 
 final class _BrowsingRepository implements ResourcesRepository {
-  const _BrowsingRepository({this.onBrowse});
+  const _BrowsingRepository({this.onBrowse, this.duaItems = const []});
 
   final void Function(Set<String>)? onBrowse;
+  final List<ContentResource> duaItems;
 
   static const quran = ContentResource(
     id: 'quran-1',
@@ -187,7 +271,7 @@ final class _BrowsingRepository implements ResourcesRepository {
     Set<String> categoryPrefixes = const {},
   }) async {
     onBrowse?.call(categoryPrefixes);
-    return types.contains('hadith') ? const [hadith] : const [];
+    return types.contains('hadith') ? const [hadith] : duaItems;
   }
 
   @override

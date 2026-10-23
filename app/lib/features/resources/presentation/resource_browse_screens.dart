@@ -507,9 +507,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             .read(resourcesRepositoryProvider)
             .browseResources(
               types: types,
-              categoryPrefixes: isDua && _selectedSlug == null
-                  ? const {}
-                  : {_selectedSlug ?? prefix},
+              categoryPrefixes: isDua ? const {} : {_selectedSlug ?? prefix},
             ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -539,36 +537,68 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               ),
               const SizedBox(height: 16),
               if (isDua) ...[
-                TextButton.icon(
-                  key: const Key('dua-show-all'),
-                  onPressed: () => setState(() => _selectedSlug = null),
-                  icon: const Icon(Icons.all_inclusive_rounded),
-                  label: const Text('সব দোয়া ও আযকার'),
-                ),
+                // All published Duas/Amals remain in the authorized
+                // repository result; show them under the three approved
+                // navigation groups instead of repeating a flat card list.
                 for (final group in duaAzkarNavigationGroups)
                   Card(
                     child: ExpansionTile(
                       key: PageStorageKey<String>('dua-group-${group.slug}'),
-                      initiallyExpanded:
-                          _selectedSlug == null && group.slug == 'time-based',
+                      initiallyExpanded: group.slug == 'time-based',
                       title: Text(group.titleBn),
-                      subtitle: Text('${group.categorySlugs.length}টি বিভাগ'),
+                      subtitle: Text(
+                        '${group.categorySlugs.length}টি বিভাগ · '
+                        '${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
+                      ),
                       children: [
                         for (final entry in _entries.where(
                           (entry) => group.categorySlugs.contains(entry.slug),
                         ))
-                          ListTile(
+                          ExpansionTile(
                             key: Key('dua-category-${entry.slug}'),
-                            selected: _selectedSlug == entry.slug,
                             title: Text(entry.titleBn),
-                            trailing: _selectedSlug == entry.slug
-                                ? const Icon(Icons.check_circle_outline)
-                                : const Icon(Icons.chevron_right_rounded),
-                            onTap: () =>
-                                setState(() => _selectedSlug = entry.slug),
+                            subtitle: Text(
+                              '${resources.where((item) => item.categorySlug == entry.slug).length}টি দোয়া/আমল',
+                            ),
+                            children: [
+                              for (final resource in resources.where(
+                                (item) => item.categorySlug == entry.slug,
+                              ))
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    0,
+                                    12,
+                                    10,
+                                  ),
+                                  child: _ResourceListTile(resource: resource),
+                                ),
+                            ],
                           ),
                       ],
                     ),
+                  ),
+                if (resources.any(
+                  (item) => !duaAzkarTaxonomy.any(
+                    (entry) => entry.slug == item.categorySlug,
+                  ),
+                ))
+                  ExpansionTile(
+                    title: const Text('বিভাগ নির্ধারণের অপেক্ষায়'),
+                    subtitle: const Text(
+                      'নতুন প্রকাশিত দোয়া যাচাই ও শ্রেণিবিন্যাস প্রয়োজন',
+                    ),
+                    children: [
+                      for (final resource in resources.where(
+                        (item) => !duaAzkarTaxonomy.any(
+                          (entry) => entry.slug == item.categorySlug,
+                        ),
+                      ))
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                          child: _ResourceListTile(resource: resource),
+                        ),
+                    ],
                   ),
               ] else
                 Wrap(
@@ -602,9 +632,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               if (resources.isEmpty)
                 const AppEmptyState(
                   title: 'এই বিভাগে এখনো প্রকাশিত উপকরণ নেই',
-                  message: 'যাচাই ও শ্রেণিবিন্যাস চলছে। সব দোয়া ও আযকার দেখতে উপরের “সব দোয়া ও আযকার” চাপুন।',
+                  message: 'যাচাই ও শ্রেণিবিন্যাস চলছে।',
                 )
-              else
+              else if (!isDua)
                 for (final resource in resources)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
