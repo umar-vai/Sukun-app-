@@ -5,7 +5,9 @@ void main() {
   test('never treats successful OAuth fragments as errors', () {
     expect(
       googleOAuthWebFailureMessage(
-        Uri.parse('https://app.sukunlife.com/#access_token=example&token_type=bearer'),
+        Uri.parse(
+          'https://app.sukunlife.com/#access_token=example&token_type=bearer',
+        ),
       ),
       isNull,
     );
