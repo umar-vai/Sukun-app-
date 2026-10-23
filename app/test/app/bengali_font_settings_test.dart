@@ -5,13 +5,33 @@ import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Bengali font options include three actual font families', () {
-    expect(BengaliFontChoice.values, hasLength(3));
+  test('Bengali font choices include the licensed Sukun brand option', () {
+    expect(BengaliFontChoice.values, hasLength(4));
     expect(
       BengaliFontChoice.values.map((choice) => choice.label),
-      containsAll(['হিন্দ শিলিগুড়ি', 'অনেক বাংলা', 'তিরো বাংলা']),
+      containsAll([
+        'হিন্দ শিলিগুড়ি',
+        'অনেক বাংলা',
+        'তিরো বাংলা',
+        'Li Ador Noirrit',
+      ]),
     );
   });
+
+  test(
+    'Li Ador Noirrit cannot be chosen before real assets are bundled',
+    () async {
+      if (liAdorNoirritFontBundled) return;
+      SharedPreferences.setMockInitialValues({});
+      final settings = BengaliFontSettings.instance;
+      final initial = settings.value;
+      expect(BengaliFontChoice.liAdorNoirrit.isAvailable, isFalse);
+      await settings.select(BengaliFontChoice.liAdorNoirrit);
+      expect(settings.value, initial);
+      final stored = await SharedPreferences.getInstance();
+      expect(stored.getString('sukun_display_bengali_font_v1'), isNull);
+    },
+  );
 
   test('selected Bengali font persists on this device', () async {
     SharedPreferences.setMockInitialValues({});
@@ -25,6 +45,16 @@ void main() {
     );
 
     await settings.select(BengaliFontChoice.hindSiliguri);
+  });
+
+  test('saved but unavailable brand font safely falls back', () async {
+    if (liAdorNoirritFontBundled) return;
+    SharedPreferences.setMockInitialValues({
+      'sukun_display_bengali_font_v1': 'liAdorNoirrit',
+    });
+    await BengaliFontSettings.instance.select(BengaliFontChoice.hindSiliguri);
+    await BengaliFontSettings.instance.load();
+    expect(BengaliFontSettings.instance.value, BengaliFontChoice.hindSiliguri);
   });
 
   test('invalid stored font never prevents safe initialization', () async {

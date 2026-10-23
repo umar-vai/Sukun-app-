@@ -1,20 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Only fonts currently available from the existing google_fonts dependency.
-/// The licensed Sukun Li Ador Noirrit binary is a separate gated asset step.
+/// The original Li Ador Noirrit family is now bundled (ten TTF faces in
+/// pubspec.yaml). An explicit false define remains an emergency fallback.
+const bool liAdorNoirritFontBundled = bool.fromEnvironment(
+  'SUKUN_LI_ADOR_NOIRRIT_BUNDLED',
+  defaultValue: true,
+);
+
 enum BengaliFontChoice {
   hindSiliguri('হিন্দ শিলিগুড়ি'),
   anekBangla('অনেক বাংলা'),
-  tiroBangla('তিরো বাংলা');
+  tiroBangla('তিরো বাংলা'),
+  liAdorNoirrit('Li Ador Noirrit');
 
   const BengaliFontChoice(this.label);
   final String label;
+
+  bool get isAvailable =>
+      this != BengaliFontChoice.liAdorNoirrit || liAdorNoirritFontBundled;
 }
 
 /// Display-only preferences: no patient records, Supabase or sensitive data.
 class BengaliFontSettings extends ValueNotifier<BengaliFontChoice> {
-  BengaliFontSettings._() : super(BengaliFontChoice.hindSiliguri);
+  BengaliFontSettings._()
+    : super(
+        liAdorNoirritFontBundled
+            ? BengaliFontChoice.liAdorNoirrit
+            : BengaliFontChoice.hindSiliguri,
+      );
 
   static final BengaliFontSettings instance = BengaliFontSettings._();
   static const String _key = 'sukun_display_bengali_font_v1';
@@ -26,13 +40,16 @@ class BengaliFontSettings extends ValueNotifier<BengaliFontChoice> {
       final selection = BengaliFontChoice.values.where(
         (choice) => choice.name == stored,
       );
-      if (selection.isNotEmpty) value = selection.first;
+      if (selection.isNotEmpty && selection.first.isAvailable) {
+        value = selection.first;
+      }
     } catch (_) {
       // No font preference may prevent startup or clinical flows.
     }
   }
 
   Future<void> select(BengaliFontChoice font) async {
+    if (!font.isAvailable) return;
     value = font;
     try {
       final prefs = await SharedPreferences.getInstance();
