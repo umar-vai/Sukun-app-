@@ -11,6 +11,7 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
@@ -380,7 +381,10 @@ class ResourceCard extends StatelessWidget {
     return SukunSurface(
       padding: const EdgeInsets.all(16),
       onTap: onTap,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SukunIconBadge(icon: _resourceIcon(resource.type)),
@@ -426,6 +430,12 @@ class ResourceCard extends StatelessWidget {
             Icons.chevron_right_rounded,
             color: Theme.of(context).colorScheme.primary,
           ),
+        ],
+          ),
+          if (AudioLibraryActions.supports(resource.linkedResource)) ...[
+            const SizedBox(height: 10),
+            AudioLibraryActions(resource: resource.linkedResource),
+          ],
         ],
       ),
     );
