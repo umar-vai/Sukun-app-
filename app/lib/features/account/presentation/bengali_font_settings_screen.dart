@@ -29,15 +29,20 @@ class BengaliFontSettingsScreen extends StatelessWidget {
               child: ListTile(
                 key: Key('font-choice-${font.name}'),
                 title: Text(font.label),
-                subtitle: Text(
-                  'সুকুন লাইফ — প্রতিদিনের আমল ও দোয়া',
-                  style: SukunTypography.previewBengaliFont(font),
-                ),
+                subtitle: font.isAvailable
+                    ? Text(
+                        'সুকুন লাইফ — প্রতিদিনের আমল ও দোয়া',
+                        style: SukunTypography.previewBengaliFont(font),
+                      )
+                    : const Text(
+                        'অরিজিনাল ফন্ট ফাইল অ্যাপে যুক্ত হলে চালু হবে',
+                      ),
                 trailing: selected == font
                     ? const Icon(Icons.check_circle_rounded)
                     : const Icon(Icons.circle_outlined),
-                onTap: () =>
-                    unawaited(BengaliFontSettings.instance.select(font)),
+                onTap: font.isAvailable
+                    ? () => unawaited(BengaliFontSettings.instance.select(font))
+                    : null,
               ),
             ),
           const SizedBox(height: 16),
@@ -45,10 +50,9 @@ class BengaliFontSettingsScreen extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'সুকুন লাইফের নির্ধারিত Li Ador Noirrit ফন্ট '
-                'মূল ব্র্যান্ড ডিফল্ট হিসেবে যুক্ত হবে অনুমোদিত ফন্ট '
-                'ফাইল অ্যাপে সংযুক্ত ও যাচাই হওয়ার পর। '
-                'কুরআনের আরবি আয়াতের ফন্ট এই সেটিং বদলায় না।',
+                'Li Ador Noirrit-এর সব বাংলা weight ও italic style '
+                'অরিজিনাল ফন্ট ফাইল সংযুক্ত হলে পাওয়া যাবে। '
+                'কুরআনের আরবি আয়াতের নির্ধারিত ফন্ট এই সেটিং বদলায় না।',
               ),
             ),
           ),
