@@ -340,6 +340,14 @@ jobs:
             -s "$GITHUB_WORKSPACE/.github/scripts" \
             -p 'test_google_oauth_handoff.py' -v
 
+      - name: Verify Staging Google authorization handoff on PR (public only)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          SUPABASE_URL: https://qacklgqvxvjjzsimjoip.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/check_google_oauth_handoff.py"
+
       - name: Verify real public Google authorization handoff
         if: env.ENABLE_GOOGLE_OAUTH == 'true'
         shell: bash
