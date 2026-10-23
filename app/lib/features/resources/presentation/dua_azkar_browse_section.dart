@@ -86,10 +86,11 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        // Give the three parent groups a visible, consistent rhythm.
+        const SizedBox(height: 16),
         for (final group in duaAzkarNavigationGroups) ...[
           _groupCard(group, context),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
         ],
         if (_unclassified.isNotEmpty) ...[
           ListTile(
@@ -108,9 +109,9 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
             tileColor: colors.surfaceContainerLow,
             trailing: const Icon(Icons.chevron_right_rounded),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
         ],
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -140,7 +141,7 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (visible.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 22),
@@ -152,7 +153,7 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
         else
           for (final resource in visible) ...[
             _resourceCard(context, resource),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
           ],
       ],
     );
@@ -166,12 +167,13 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
         .where((item) => group.categorySlugs.contains(item.categorySlug))
         .length;
     return Material(
+      key: Key('dua-group-card-${group.slug}'),
       color: colors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: open
                 ? colors.primary.withValues(alpha: 0.4)
@@ -189,8 +191,8 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
                 expanded: open,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
+                    horizontal: 16,
+                    vertical: 18,
                   ),
                   child: Row(
                     children: [
@@ -221,7 +223,7 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 5),
                             Text(
                               '${group.categorySlugs.length}টি বিভাগ · $countটি দোয়া/আমল',
                               style: text.bodySmall?.copyWith(
@@ -249,7 +251,7 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
                 child: Divider(height: 1, color: colors.outlineVariant),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(9, 8, 9, 10),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                 child: Column(
                   children: [
                     for (final entry in duaAzkarTaxonomy.where(
@@ -283,7 +285,7 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
           button: true,
           selected: selected,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
             child: Row(
               children: [
                 Expanded(
