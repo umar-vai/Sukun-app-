@@ -128,7 +128,10 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('audio-download-public-123')), findsOneWidget);
+      expect(
+        find.byKey(const Key('audio-download-public-123')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await tester.tap(find.byKey(const Key('audio-download-public-123')));
       await tester.pumpAndSettle();
