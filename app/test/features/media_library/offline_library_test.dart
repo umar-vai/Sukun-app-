@@ -202,9 +202,8 @@ void main() {
       final library = OfflineLibrary(
         useWebMediaGateway: false,
         bytes: bytes,
-        clientFactory: () => MockClient(
-          (request) async => http.Response.bytes(mp3, 200),
-        ),
+        clientFactory: () =>
+            MockClient((request) async => http.Response.bytes(mp3, 200)),
         authorizedAudioUrls: () async => {
           'https://files.ruqyahbd.org/audio/approved.mp3',
         },
