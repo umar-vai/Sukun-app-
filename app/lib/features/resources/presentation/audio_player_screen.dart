@@ -29,6 +29,7 @@ class AudioPlayerScreen extends ConsumerStatefulWidget {
 
 class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   late Future<bool> _loadFuture;
+  late final void Function(bool) _setFullPlayerVisible;
 
   // Convert a source failure into UI state before a retry can rebuild.
   // A synchronously failing Future must never escape into the widget zone.
@@ -46,17 +47,19 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    final visibility = ref.read(fullAudioPlayerOpenProvider.notifier);
+    _setFullPlayerVisible = (value) => visibility.state = value;
     _loadFuture = _loadAudio();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(fullAudioPlayerOpenProvider.notifier).state = true;
+        _setFullPlayerVisible(true);
       }
     });
   }
 
   @override
   void dispose() {
-    ref.read(fullAudioPlayerOpenProvider.notifier).state = false;
+    _setFullPlayerVisible(false);
     super.dispose();
   }
 
