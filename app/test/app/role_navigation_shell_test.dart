@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/router/role_navigation_shell.dart';
@@ -96,7 +97,9 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Detail'), findsOneWidget);
@@ -154,7 +157,9 @@ void main() {
       );
       for (final width in <double>[360, 430, 1280]) {
         await tester.binding.setSurfaceSize(Size(width, 760));
-        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpWidget(
+          ProviderScope(child: MaterialApp.router(routerConfig: router)),
+        );
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('navigation-back')), findsOneWidget);
         expect(find.byKey(const Key('navigation-home')), findsNothing);

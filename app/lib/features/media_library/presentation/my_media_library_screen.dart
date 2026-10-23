@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
@@ -13,6 +12,7 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/media_library/data/local_audio_uri.dart';
 import 'package:sukun_life/features/media_library/data/offline_library.dart';
 import 'package:sukun_life/features/media_library/data/playlist_library.dart';
+import 'package:sukun_life/features/media_library/presentation/playlist_player_page.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 
@@ -205,7 +205,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       controller.resumeCurrent();
       if (!mounted) return;
       await Navigator.of(context).push<void>(
-        MaterialPageRoute(builder: (_) => const _PlaylistPlayerPage()),
+        MaterialPageRoute(builder: (_) => const PlaylistPlayerPage()),
       );
       if (resources.length < playlist.resourceIds.length) {
         _message('কিছু অডিও অনুপলব্ধ থাকায় বাদ দেওয়া হয়েছে।');
@@ -254,7 +254,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
         ref.read(audioPlaybackControllerProvider).resumeCurrent();
         if (!mounted) return;
         await Navigator.of(context).push<void>(
-          MaterialPageRoute(builder: (_) => const _PlaylistPlayerPage()),
+          MaterialPageRoute(builder: (_) => const PlaylistPlayerPage()),
         );
       }
     } catch (_) {
@@ -636,152 +636,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
           'YouTube বা রোগীর ব্যক্তিগত নথি এখানে ডাউনলোড করা যায় না।',
         ),
       ],
-    );
-  }
-}
-
-class _PlaylistPlayerPage extends ConsumerWidget {
-  const _PlaylistPlayerPage();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(audioPlaybackControllerProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(controller.playlistTitle ?? 'অডিও প্লেয়ার')),
-      body: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          final player = controller.player;
-          return SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.graphic_eq, size: 70),
-                      const SizedBox(height: 16),
-                      Text(
-                        controller.currentTitle ?? 'অডিও',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'অডিও ${controller.playlistIndex + 1} / ${controller.playlistLength}',
-                      ),
-                      const SizedBox(height: 16),
-                      StreamBuilder<Duration>(
-                        stream: player.positionStream,
-                        builder: (context, snapshot) {
-                          final position = snapshot.data ?? Duration.zero;
-                          final total = player.duration ?? Duration.zero;
-                          final milliseconds = total.inMilliseconds;
-                          return Column(
-                            children: [
-                              Slider(
-                                value: milliseconds <= 0
-                                    ? 0
-                                    : (position.inMilliseconds / milliseconds)
-                                          .clamp(0.0, 1.0),
-                                onChanged: milliseconds <= 0
-                                    ? null
-                                    : (value) => controller.seek(
-                                        Duration(
-                                          milliseconds: (value * milliseconds)
-                                              .round(),
-                                        ),
-                                      ),
-                              ),
-                              Text(
-                                '${position.inMinutes}:${(position.inSeconds % 60).toString().padLeft(2, '0')}'
-                                ' / ${total.inMinutes}:${(total.inSeconds % 60).toString().padLeft(2, '0')}',
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      StreamBuilder<PlayerState>(
-                        stream: player.playerStateStream,
-                        builder: (context, snapshot) => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              tooltip: 'আগের অডিও',
-                              onPressed: player.hasPrevious
-                                  ? controller.previous
-                                  : null,
-                              icon: const Icon(Icons.skip_previous, size: 36),
-                            ),
-                            IconButton.filled(
-                              tooltip: player.playing ? 'বিরতি' : 'চালান',
-                              onPressed: player.playing
-                                  ? () => controller.pause()
-                                  : controller.resumeCurrent,
-                              icon: Icon(
-                                player.playing ? Icons.pause : Icons.play_arrow,
-                                size: 34,
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'পরের অডিও',
-                              onPressed: player.hasNext
-                                  ? controller.next
-                                  : null,
-                              icon: const Icon(Icons.skip_next, size: 36),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final speed in const [0.75, 1.0, 1.25, 1.5, 2.0])
-                            ActionChip(
-                              label: Text('${speed}x'),
-                              onPressed: () => controller.setSpeed(speed),
-                            ),
-                          ActionChip(
-                            label: const Text('১৫ মিনিটের টাইমার'),
-                            onPressed: () => controller.setSleepTimer(15),
-                          ),
-                          ActionChip(
-                            label: const Text('টাইমার বন্ধ'),
-                            onPressed: () => controller.setSleepTimer(0),
-                          ),
-                          const SizedBox(width: 8),
-                          for (final tracks in const [3, 4])
-                            ChoiceChip(
-                              key: Key('playlist-stop-after-$tracks'),
-                              label: Text('প্রতিটি ১৫ মিনিট · $tracks অডিও'),
-                              selected:
-                                  controller.stopAfterTracks == tracks &&
-                                  controller.playlistSegmentMinutes == 15,
-                              onSelected: (_) => controller.setTimedPlaylist(
-                                controller.stopAfterTracks == tracks &&
-                                        controller.playlistSegmentMinutes == 15
-                                    ? 0
-                                    : tracks,
-                              ),
-                            ),
-                          if (controller.stopAfterTracks != 0)
-                            ActionChip(
-                              label: const Text('১৫ মিনিটের প্লেলিস্ট বন্ধ'),
-                              onPressed: () => controller.setTimedPlaylist(0),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
