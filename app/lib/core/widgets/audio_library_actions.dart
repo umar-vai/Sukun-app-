@@ -40,7 +40,8 @@ class AudioLibraryActions extends StatelessWidget {
       icon: Icon(
         compact ? Icons.more_vert_rounded : Icons.library_music_outlined,
       ),
-      onSelected: (action) => context.push(audioLibraryPath(action, resourceId)),
+      onSelected: (action) =>
+          context.push(audioLibraryPath(action, resourceId)),
       itemBuilder: (context) => const [
         PopupMenuItem(
           value: AudioLibraryAction.playlist,
