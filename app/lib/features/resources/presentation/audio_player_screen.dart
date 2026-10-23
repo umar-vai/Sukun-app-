@@ -47,6 +47,17 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   void initState() {
     super.initState();
     _loadFuture = _loadAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(fullAudioPlayerOpenProvider.notifier).state = true;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(fullAudioPlayerOpenProvider.notifier).state = false;
+    super.dispose();
   }
 
   @override
@@ -271,7 +282,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                 value: current.inMilliseconds.toDouble().clamp(
                   0.0,
                   maxMs > 0 ? maxMs : 1.0,
-                ),
+                ).toDouble(),
                 min: 0,
                 max: maxMs > 0 ? maxMs : 1.0,
                 onChanged: maxMs <= 0
@@ -488,7 +499,7 @@ double audioCoverHeightForViewport(double width, double height) =>
     (height * 0.27).clamp(108.0, 220.0).toDouble().clamp(
       108.0,
       (width - 32).clamp(108.0, 220.0).toDouble(),
-    );
+    ).toDouble();
 
 /// Relative seek target, clamped to known duration and the start of playback.
 Duration audioSeekTarget(Duration position, Duration? duration, int seconds) {
