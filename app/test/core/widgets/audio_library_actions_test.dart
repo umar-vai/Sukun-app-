@@ -13,10 +13,7 @@ void main() {
       audioLibraryPath(AudioLibraryAction.download, id),
       '/my-media?download=audio%2Fitem%3Fwith+spaces',
     );
-    expect(
-      audioLibraryPath(AudioLibraryAction.library, id),
-      '/my-media',
-    );
+    expect(audioLibraryPath(AudioLibraryAction.library, id), '/my-media');
   });
 
   testWidgets('audio menu exposes both actions and the unified library', (
@@ -43,9 +40,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: AudioLibraryActions(resourceId: '  '),
-        ),
+        home: Scaffold(body: AudioLibraryActions(resourceId: '  ')),
       ),
     );
     expect(find.byType(PopupMenuButton<AudioLibraryAction>), findsNothing);
