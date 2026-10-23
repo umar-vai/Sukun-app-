@@ -37,7 +37,9 @@ class AudioLibraryActions extends StatelessWidget {
     return PopupMenuButton<AudioLibraryAction>(
       key: Key('audio-library-actions-$resourceId'),
       tooltip: 'প্লেলিস্ট, ডাউনলোড ও আমার লাইব্রেরি',
-      icon: Icon(compact ? Icons.more_vert_rounded : Icons.library_music_outlined),
+      icon: Icon(
+        compact ? Icons.more_vert_rounded : Icons.library_music_outlined,
+      ),
       onSelected: (action) => context.push(audioLibraryPath(action, resourceId)),
       itemBuilder: (context) => const [
         PopupMenuItem(
