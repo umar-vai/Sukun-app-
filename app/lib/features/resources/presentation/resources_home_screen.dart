@@ -385,52 +385,54 @@ class ResourceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SukunIconBadge(icon: _resourceIcon(resource.type)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  resource.titleBn?.isNotEmpty == true
-                      ? resource.titleBn!
-                      : resource.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: resource.titleBn?.isNotEmpty == true
-                      ? SukunTypography.banglaDisplay(
-                          textStyle: Theme.of(context).textTheme.titleMedium,
-                        )
-                      : Theme.of(context).textTheme.titleMedium,
-                ),
-                if (resource.titleBn?.isNotEmpty == true &&
-                    resource.titleBn!.trim() != resource.title.trim()) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    resource.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SukunIconBadge(icon: _resourceIcon(resource.type)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      resource.titleBn?.isNotEmpty == true
+                          ? resource.titleBn!
+                          : resource.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: resource.titleBn?.isNotEmpty == true
+                          ? SukunTypography.banglaDisplay(
+                              textStyle: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium,
+                            )
+                          : Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                ],
-                const SizedBox(height: 9),
-                SukunStatusPill(
-                  label: _typeLabel(resource.type),
-                  tone: SukunStatusTone.brand,
+                    if (resource.titleBn?.isNotEmpty == true &&
+                        resource.titleBn!.trim() != resource.title.trim()) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        resource.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 9),
+                    SukunStatusPill(
+                      label: _typeLabel(resource.type),
+                      tone: SukunStatusTone.brand,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ],
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
           ),
           if (AudioLibraryActions.supports(resource.linkedResource)) ...[
             const SizedBox(height: 10),
