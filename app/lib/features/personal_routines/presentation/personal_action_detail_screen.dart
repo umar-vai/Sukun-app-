@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
@@ -207,7 +208,11 @@ class _ResourceReferenceTile extends StatelessWidget {
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
         ),
-        trailing: route != null ? const Icon(Icons.chevron_right) : null,
+        trailing: canOpen && cms?['type'] == 'audio'
+            ? AudioLibraryActions(resourceId: id!, compact: true)
+            : route != null
+            ? const Icon(Icons.chevron_right)
+            : null,
         onTap: route == null ? null : () => context.push(route),
       ),
     );
