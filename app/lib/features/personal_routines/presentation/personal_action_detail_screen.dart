@@ -208,8 +208,8 @@ class _ResourceReferenceTile extends StatelessWidget {
         subtitle: Text(
           route != null ? 'খুলুন ও আমল করুন' : 'যাচাই বা প্রকাশের অপেক্ষায়',
         ),
-        trailing: canOpen && cms?['type'] == 'audio'
-            ? AudioLibraryActions(resourceId: id!, compact: true)
+        trailing: canOpen && cms['type'] == 'audio'
+            ? AudioLibraryActions(resourceId: id, compact: true)
             : route != null
             ? const Icon(Icons.chevron_right)
             : null,
