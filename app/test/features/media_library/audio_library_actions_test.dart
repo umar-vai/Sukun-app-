@@ -21,9 +21,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, _) => const Scaffold(
-            body: AudioLibraryActions(resource: source),
-          ),
+          builder: (_, _) =>
+              const Scaffold(body: AudioLibraryActions(resource: source)),
         ),
         GoRoute(
           path: '/my-media',
@@ -61,15 +60,12 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, _) => const Scaffold(
-            body: AudioLibraryShortcut(),
-          ),
+          builder: (_, _) => const Scaffold(body: AudioLibraryShortcut()),
         ),
         GoRoute(
           path: '/my-media',
-          builder: (_, _) => const Scaffold(
-            body: Text('My local media library'),
-          ),
+          builder: (_, _) =>
+              const Scaffold(body: Text('My local media library')),
         ),
       ],
     );
