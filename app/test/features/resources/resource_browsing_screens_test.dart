@@ -157,7 +157,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('সময়ভিত্তিক আমল'), findsOneWidget);
-    expect(find.text('সকালের আযকার'), findsOneWidget);
+    expect(find.byKey(const Key('dua-select-dua-azkar-morning')), findsOneWidget);
     expect(find.text('দৈনন্দিন মাসনূন দোয়া'), findsOneWidget);
     await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
