@@ -173,14 +173,31 @@ async function verifyGuestPage(browser, profile) {
         safeError('Protected deep link did not serve the web entrypoint');
       }
       await waitForFlutter(page);
-      await page.waitForFunction(
-        () => {
-          const route = location.hash.split('?')[0].replace(/^#/, '');
-          return route === '/' || route === '/login';
-        },
-        undefined,
-        { timeout: 20000 },
-      );
+      try {
+        await page.waitForFunction(
+          () => {
+            const route = location.hash.split('?')[0].replace(/^#/, '');
+            return route === '/' || route === '/login';
+          },
+          undefined,
+          { timeout: 20000 },
+        );
+      } catch (_) {
+        // Non-identifying browser readiness and routing flags only; NEVER
+        // print the DOM, page URL, response bodies, tokens or account data.
+        const signals = await page.evaluate(() => ({
+          protectedHashRemains: /^#\\/(patient|admin)(?:\\/|$)/.test(location.hash),
+          flutterViewPresent: Boolean(document.querySelector('flutter-view')),
+          hasFlutterCanvas: Boolean(document.querySelector('flt-glass-pane, canvas')),
+          bootstrapDownloaded: performance.getEntriesByType('resource')
+            .some((resource) => /(?:main\\.dart\\.js|main\\.dart\\.mjs)/.test(resource.name)),
+          appStillOnLaunchText: (document.body.innerText || '')
+            .includes('Faith. Care. Peace of mind.'),
+        }));
+        console.error('CHECK: Guest protection diagnostic ' +
+          JSON.stringify(signals));
+        throw new Error('Protected Guest route did not reach a safe location');
+      }
     }
 
     checkpoint('final privacy and runtime checks');
