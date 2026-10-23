@@ -7,6 +7,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
+import 'package:sukun_life/features/resources/presentation/dua_azkar_browse_section.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -520,14 +521,12 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
           }
           final resources = snapshot.data ?? const <ContentResource>[];
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            padding: EdgeInsets.fromLTRB(20, 20, 20, isDua ? 112 : 40),
             children: [
               SukunPageIntro(
-                eyebrow: isDua ? 'Daily remembrance' : 'Faith-anchored care',
-                title: isDua ? 'Dua & Azkar' : 'Ruqyah',
-                subtitle: isDua
-                    ? 'দুআ ও আযকার · Approved daily-life categories'
-                    : 'রুকইয়াহ · General resources remain separate from prescribed care',
+                eyebrow: isDua ? 'দৈনিক দোয়া ও যিকির' : 'Faith-anchored care',
+                title: isDua ? 'দোয়া ও আযকার' : 'Ruqyah',
+                subtitle: isDua ? 'সময় ও প্রয়োজন অনুযায়ী দোয়া সহজে খুঁজুন' : 'রুকইয়াহ · General resources remain separate from prescribed care',
                 trailing: SukunIconBadge(
                   icon: isDua
                       ? Icons.auto_awesome_rounded
@@ -536,71 +535,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (isDua) ...[
-                // All published Duas/Amals remain in the authorized
-                // repository result; show them under the three approved
-                // navigation groups instead of repeating a flat card list.
-                for (final group in duaAzkarNavigationGroups)
-                  Card(
-                    child: ExpansionTile(
-                      key: PageStorageKey<String>('dua-group-${group.slug}'),
-                      initiallyExpanded: group.slug == 'time-based',
-                      title: Text(group.titleBn),
-                      subtitle: Text(
-                        '${group.categorySlugs.length}টি বিভাগ · '
-                        '${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
-                      ),
-                      children: [
-                        for (final entry in _entries.where(
-                          (entry) => group.categorySlugs.contains(entry.slug),
-                        ))
-                          ExpansionTile(
-                            key: Key('dua-category-${entry.slug}'),
-                            title: Text(entry.titleBn),
-                            subtitle: Text(
-                              '${resources.where((item) => item.categorySlug == entry.slug).length}টি দোয়া/আমল',
-                            ),
-                            children: [
-                              for (final resource in resources.where(
-                                (item) => item.categorySlug == entry.slug,
-                              ))
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    12,
-                                    0,
-                                    12,
-                                    10,
-                                  ),
-                                  child: _ResourceListTile(resource: resource),
-                                ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                if (resources.any(
-                  (item) => !duaAzkarTaxonomy.any(
-                    (entry) => entry.slug == item.categorySlug,
-                  ),
-                ))
-                  ExpansionTile(
-                    title: const Text('বিভাগ নির্ধারণের অপেক্ষায়'),
-                    subtitle: const Text(
-                      'নতুন প্রকাশিত দোয়া যাচাই ও শ্রেণিবিন্যাস প্রয়োজন',
-                    ),
-                    children: [
-                      for (final resource in resources.where(
-                        (item) => !duaAzkarTaxonomy.any(
-                          (entry) => entry.slug == item.categorySlug,
-                        ),
-                      ))
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-                          child: _ResourceListTile(resource: resource),
-                        ),
-                    ],
-                  ),
-              ] else
+              if (isDua)
+                DuaAzkarBrowseSection(resources: resources)
+              else
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -629,7 +566,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                 ),
               ],
               const SizedBox(height: 18),
-              if (resources.isEmpty)
+              if (!isDua && resources.isEmpty)
                 const AppEmptyState(
                   title: 'এই বিভাগে এখনো প্রকাশিত উপকরণ নেই',
                   message: 'যাচাই ও শ্রেণিবিন্যাস চলছে।',

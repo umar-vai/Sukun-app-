@@ -22,11 +22,9 @@ void main() {
     },
   );
 
-  testWidgets('all three dua groups contain their categorized resources', (
+  testWidgets('Dua selector shows exactly one category result list', (
     tester,
   ) async {
-    // These are navigation accordions. Give the test a scrolling phone-sized
-    // page with enough vertical space for the full expanded group stack.
     tester.view.physicalSize = const Size(900, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -68,34 +66,37 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
     expect(filters.last, isEmpty);
-    expect(find.text('Morning fixture'), findsNothing);
+    expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
+    expect(find.byKey(const Key('dua-card-protection-1')), findsNothing);
 
-    await tester.tap(find.text('সকালের আযকার').first);
+    await tester.tap(find.byKey(const Key('dua-group-time-based')));
     await tester.pumpAndSettle();
-    expect(find.text('Morning fixture'), findsOneWidget);
-    expect(find.text('Masnun fixture'), findsNothing);
+    await tester.tap(find.byKey(const Key('dua-group-everyday')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('dua-select-dua-azkar-masnun')));
+    await tester.pumpAndSettle();
 
-    // Collapse the first group to avoid testing offscreen virtualized cards.
-    await tester.tap(find.text('সময়ভিত্তিক আমল'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
-    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
-    await tester.pumpAndSettle();
-    expect(find.text('মাসনূন দুআ'), findsOneWidget);
-    expect(find.text('সফর'), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-morning-1')), findsNothing);
+    expect(find.byKey(const Key('dua-card-masnun-1')), findsOneWidget);
 
-    // Verify the third group exposes its two canonical leaf categories.
-    // The card's actual ID/category mapping is separately checked by the
-    // production migration postcondition and the taxonomy domain test.
-    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
-    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
+    await tester.tap(find.byKey(const Key('dua-group-everyday')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
-    await tester.tap(find.text('সুরক্ষা ও দুশ্চিন্তার দোয়া'));
+    await tester.tap(find.byKey(const Key('dua-group-support')));
     await tester.pumpAndSettle();
-    expect(find.text('সুরক্ষা'), findsOneWidget);
-    expect(find.text('দুশ্চিন্তা ও কষ্ট'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('dua-select-dua-azkar-protection')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
+    expect(find.byKey(const Key('dua-card-protection-1')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('dua-show-all')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-masnun-1')), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-protection-1')), findsOneWidget);
   });
 
   testWidgets('uncategorized public dua remains visible as safe fallback', (
@@ -156,7 +157,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('সময়ভিত্তিক আমল'), findsOneWidget);
-    expect(find.text('সকালের আযকার'), findsOneWidget);
+    expect(
+      find.byKey(const Key('dua-select-dua-azkar-morning')),
+      findsOneWidget,
+    );
     expect(find.text('দৈনন্দিন মাসনূন দোয়া'), findsOneWidget);
     await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
     await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
