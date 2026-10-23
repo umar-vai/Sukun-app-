@@ -215,10 +215,7 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
 );
 
 final class _BrowsingRepository implements ResourcesRepository {
-  const _BrowsingRepository({
-    this.onBrowse,
-    this.duaItems = const [],
-  });
+  const _BrowsingRepository({this.onBrowse, this.duaItems = const []});
 
   final void Function(Set<String>)? onBrowse;
   final List<ContentResource> duaItems;
