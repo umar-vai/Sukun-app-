@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           export SUKUN_EXPECTED_MAIN_SHA="$(curl --fail --silent --show-error --max-time 20 \
-            https://app.sukunlife.com/preview-build.json | jq -r '.commit')"
+            https://umar-vai.github.io/Sukun-app-/preview-build.json | jq -r '.commit')"
           [[ "$SUKUN_EXPECTED_MAIN_SHA" =~ ^[a-f0-9]{40}$ ]]
           node .github/scripts/staging_browser_smoke.cjs
 
