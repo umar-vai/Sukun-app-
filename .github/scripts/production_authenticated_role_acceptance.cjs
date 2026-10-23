@@ -45,7 +45,9 @@ async function testRole(browser, account) {
   checkpoint(account.role + ' approved account sign-in');
   const session = await login(account);
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: account.role === 'super_admin'
+      ? { width: 1440, height: 900 }
+      : { width: 390, height: 844 },
     deviceScaleFactor: 1,
   });
   const page = await context.newPage();
@@ -66,22 +68,29 @@ async function testRole(browser, account) {
       };
       async function read(table, columns, filter = '') {
         const url = project + '/rest/v1/' + table +
-          '?select=' + encodeURIComponent(columns) + '&limit=50' + filter;
+          '?select=' + encodeURIComponent(columns) + '&limit=1000' + filter;
         const response = await fetch(url, {
           method: 'GET', headers, cache: 'no-store', redirect: 'error',
         });
         if (response.status !== 200) throw new Error('Auth Data API read denied');
         const rows = await response.json();
         if (!Array.isArray(rows)) throw new Error('Unexpected Data API result');
+        if (rows.length >= 1000) {
+          throw new Error('RLS assertion requires paginated complete fixture');
+        }
         return rows;
       }
-      const [roles, patients, prescriptions, carePlans, actions, publicItems] =
+      const [roles, patients, prescriptions, carePlans, actions,
+        tasks, completions, profiles, publicItems] =
         await Promise.all([
           read('user_roles', 'role,user_id'),
           read('patients', 'id,user_id'),
           read('prescriptions', 'id,patient_id'),
           read('care_plans', 'id,patient_id'),
           read('plan_actions', 'id,care_plan_id'),
+          read('task_instances', 'id,patient_id'),
+          read('task_completions', 'id,patient_id'),
+          read('profiles', 'id'),
           read('content_items', 'id', '&status=eq.published&visibility=eq.public'),
         ]);
       const ownedPatientIds = new Set(patients.filter(p => p.user_id === uid)
@@ -102,6 +111,13 @@ async function testRole(browser, account) {
         foreignCarePlans: carePlans.filter(p =>
           !ownedPatientIds.has(p.patient_id)).length,
         actionCount: actions.length,
+        taskCount: tasks.length,
+        foreignTasks: tasks.filter(t =>
+          !ownedPatientIds.has(t.patient_id)).length,
+        completionCount: completions.length,
+        foreignCompletions: completions.filter(t =>
+          !ownedPatientIds.has(t.patient_id)).length,
+        foreignProfiles: profiles.filter(p => p.id !== uid).length,
         actionsWithoutVisiblePlan: actions.filter(a =>
           !visiblePlanIds.has(a.care_plan_id)).length,
         publicItemsAvailable: publicItems.length > 0,
@@ -113,11 +129,15 @@ async function testRole(browser, account) {
     if (account.role === 'member') {
       assert.ok(state.ownMemberRole, 'Test Member role mismatch');
       assert.equal(state.foreignRoles, 0);
+      assert.equal(state.foreignProfiles, 0);
       for (const key of ['patientCount','prescriptionCount','carePlanCount',
-        'actionCount']) assert.equal(state[key], 0, 'Member saw private clinical rows');
+        'actionCount','taskCount','completionCount']) assert.equal(state[key], 0, 'Member saw private clinical rows');
     } else if (account.role === 'patient') {
       assert.ok(state.ownPatientRole, 'Test Patient role mismatch');
       assert.equal(state.foreignRoles, 0);
+      assert.equal(state.foreignProfiles, 0);
+      assert.equal(state.foreignTasks, 0);
+      assert.equal(state.foreignCompletions, 0);
       assert.equal(state.patientCount, 1, 'Patient must see one own record');
       assert.equal(state.foreignPatients, 0);
       assert.equal(state.foreignPrescriptions, 0);
