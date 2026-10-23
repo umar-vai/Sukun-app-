@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright-core');
 const fs = require('node:fs');
 
-const origin = 'https://app.sukunlife.com';
+const origin = 'https://umar-vai.github.io/Sukun-app-';
 const project = 'https://qacklgqvxvjjzsimjoip.supabase.co';
 const publishable = 'sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0';
 const maxBytes = 25 * 1024 * 1024;
