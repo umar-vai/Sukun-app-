@@ -6,7 +6,7 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright-core');
 
-const base = 'https://umar-vai.github.io/Sukun-app-/';
+const base = 'https://app.sukunlife.com/';
 const stagingHost = 'qacklgqvxvjjzsimjoip.supabase.co';
 const productionHost = 'vydfafumxptanpkmtrpr.supabase.co';
 const expectedCommit = process.env.SUKUN_EXPECTED_MAIN_SHA || '';
