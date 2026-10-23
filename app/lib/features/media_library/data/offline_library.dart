@@ -117,7 +117,11 @@ class OfflineLibrary extends ChangeNotifier {
        _clientFactory = clientFactory ?? http.Client.new,
        _authorizedAudioUrls = authorizedAudioUrls ?? ownerAuthorizedAudioUrls;
 
-  static const maxTotalBytes = 250 * 1024 * 1024;
+  // Saved media belongs to the user's local device/browser, not Supabase.
+  // Do not impose an artificial cumulative cap: the OS/browser enforces its
+  // real storage quota, and users can delete downloads from their library.
+  // Retain the per-transfer limit until streaming writes and memory usage are
+  // validated for bigger files. Server-side egress budgets remain independent.
   static const maxFileBytes = 100 * 1024 * 1024;
 
   /// Explicitly false only in synthetic/offline integration tests.
@@ -312,14 +316,20 @@ class OfflineLibrary extends ChangeNotifier {
               (result[0] == 0xff && (result[1] & 0xe0) == 0xe0)))) {
         throw StateError('এটি MP3 অডিও ফাইল নয়।');
       }
-      if (totalBytes + result.length > maxTotalBytes) {
-        throw StateError('অফলাইন লাইব্রেরি পূর্ণ। কিছু ফাইল মুছুন।');
-      }
       if (_cancel || _owner != owner || _revision != revision) {
         throw StateError('ডাউনলোড বাতিল করা হয়েছে।');
       }
       final key = _byteKey(owner, resource.id);
-      await _bytes.write(key, result);
+      try {
+        await _bytes.write(key, result);
+      } catch (_) {
+        // Browser quota / disk-full writes must not create phantom downloads.
+        // Do not treat a failure as a successful offline save.
+        throw StateError(
+          'ডিভাইস বা ব্রাউজারের স্টোরেজে ফাইলটি রাখা যায়নি। '
+          'জায়গা খালি করে আবার চেষ্টা করুন।',
+        );
+      }
       // Identity switches during the storage write must not commit stale media.
       if (_cancel || _owner != owner || _revision != revision) {
         await _bytes.delete(key);

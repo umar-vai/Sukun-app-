@@ -489,7 +489,13 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
       children: [
         Text(
-          'ব্যবহৃত: ${(library.totalBytes / 1048576).toStringAsFixed(1)} MB / ২৫০ MB',
+          'এই ডিভাইসে সংরক্ষিত: ${(library.totalBytes / 1048576).toStringAsFixed(1)} MB',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'নির্দিষ্ট মোট MB সীমা নেই। তবে একটি ফাইল সর্বোচ্চ ১০০ MB; '
+          'ডিভাইস/ব্রাউজারের নিজস্ব স্টোরেজ সীমা প্রযোজ্য।',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 10),
@@ -613,7 +619,10 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
           ),
         const SizedBox(height: 12),
         const Text(
-          'শুধু এই ডিভাইসে ফাইল থাকবে। ব্রাউজার তার স্টোরেজ মুছে ফেলতে পারে। '
+          'ডাউনলোড শুধু এই ডিভাইস/ব্রাউজারে থাকবে; অন্য ডিভাইসে সিঙ্ক হবে না। '
+          'ব্রাউজার স্টোরেজ মুছতে পারে, অ্যাপ আনইনস্টল করলেও ফাইল হারাবে। '
+          'প্রথমবার Web MP3 ডাউনলোডে অনুমোদিত gateway লাগতে পারে—'
+          'তাতে Supabase bandwidth খরচ হয়। '
           'YouTube বা রোগীর ব্যক্তিগত নথি এখানে ডাউনলোড করা যায় না।',
         ),
       ],
