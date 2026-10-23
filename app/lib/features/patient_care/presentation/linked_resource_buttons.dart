@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/audio_library_actions.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
@@ -26,12 +27,28 @@ class LinkedResourceButtons extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                OutlinedButton.icon(
-                  onPressed: onOpenResource == null
-                      ? null
-                      : () => onOpenResource!(resource),
-                  icon: const Icon(Icons.menu_book_outlined, size: 18),
-                  label: Text(resource.titleBn ?? resource.title),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: OutlinedButton.icon(
+                        onPressed: onOpenResource == null
+                            ? null
+                            : () => onOpenResource!(resource),
+                        icon: const Icon(Icons.menu_book_outlined, size: 18),
+                        label: Text(
+                          resource.titleBn ?? resource.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    if (resource.type == 'audio')
+                      AudioLibraryActions(
+                        resourceId: resource.id,
+                        compact: true,
+                      ),
+                  ],
                 ),
                 if (resource.usageNote?.trim().isNotEmpty == true)
                   Padding(
