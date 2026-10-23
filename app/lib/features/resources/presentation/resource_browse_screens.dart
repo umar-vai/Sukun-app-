@@ -503,7 +503,10 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
         : const {'quran', 'amal', 'audio', 'guide'};
     final prefix = isDua ? 'dua-azkar' : 'ruqyah';
     return Scaffold(
-      appBar: AppBar(title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah')),
+      appBar: AppBar(
+        title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah'),
+        actions: const [AudioLibraryShortcut(compact: true)],
+      ),
       body: FutureBuilder<List<ContentResource>>(
         future: ref
             .read(resourcesRepositoryProvider)
