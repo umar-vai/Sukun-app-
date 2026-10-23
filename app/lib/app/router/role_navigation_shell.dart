@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/media/audio_playback_controller.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
@@ -6,7 +8,7 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// Keeps an exit and the role's primary destinations available on deep links.
 /// Primary screens own their existing bottom bar; this shell fills the gaps.
-class RoleNavigationShell extends StatelessWidget {
+class RoleNavigationShell extends ConsumerWidget {
   const RoleNavigationShell({
     super.key,
     required this.path,
@@ -19,8 +21,9 @@ class RoleNavigationShell extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!showsNavigationShell(path)) return child;
+    final fullPlayerOpen = ref.watch(fullAudioPlayerOpenProvider);
 
     final admin = session?.isSuperAdmin == true;
     final signedInUser =
@@ -39,7 +42,7 @@ class RoleNavigationShell extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: keyboardOpen
+      bottomNavigationBar: keyboardOpen || fullPlayerOpen
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,
