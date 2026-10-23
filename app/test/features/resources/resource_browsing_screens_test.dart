@@ -25,6 +25,12 @@ void main() {
   testWidgets('all three dua groups contain their categorized resources', (
     tester,
   ) async {
+    // These are navigation accordions. Give the test a scrolling phone-sized
+    // page with enough vertical space for the full expanded group stack.
+    tester.view.physicalSize = const Size(900, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final filters = <Set<String>>[];
     final repository = _BrowsingRepository(
       onBrowse: filters.add,
@@ -90,6 +96,10 @@ void main() {
   testWidgets('uncategorized public dua remains visible as safe fallback', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(900, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       _testApp(
         const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
