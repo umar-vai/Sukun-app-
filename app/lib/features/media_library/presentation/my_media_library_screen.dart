@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
