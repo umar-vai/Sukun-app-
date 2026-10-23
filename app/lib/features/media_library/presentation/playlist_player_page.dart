@@ -204,78 +204,34 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
                                     ProcessingState.loading ||
                                 player.processingState ==
                                     ProcessingState.buffering;
-                            return Row(
-                              key: const ValueKey('playlist-transport'),
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                IconButton(
-                                  tooltip: 'আগের অডিও',
-                                  onPressed: player.hasPrevious
-                                      ? () => unawaited(controller.previous())
-                                      : null,
-                                  icon: const Icon(Icons.skip_previous_rounded),
-                                ),
-                                IconButton(
-                                  tooltip: '১০ সেকেন্ড পেছনে',
-                                  onPressed: () => unawaited(
-                                    controller.seek(
-                                      playlistSeekTarget(
-                                        player.position,
-                                        player.duration,
-                                        -10,
-                                      ),
-                                    ),
+                            return PlaylistTransportControls(
+                              playing: player.playing,
+                              busy: busy,
+                              hasPrevious: player.hasPrevious,
+                              hasNext: player.hasNext,
+                              onPrevious: () => unawaited(controller.previous()),
+                              onRewind: () => unawaited(
+                                controller.seek(
+                                  playlistSeekTarget(
+                                    player.position,
+                                    player.duration,
+                                    -10,
                                   ),
-                                  icon: const Icon(Icons.replay_10_rounded),
                                 ),
-                                SizedBox(
-                                  width: 64,
-                                  height: 64,
-                                  child: busy
-                                      ? const Center(
-                                          child: CircularProgressIndicator(),
-                                        )
-                                      : IconButton.filled(
-                                          key: const ValueKey(
-                                            'playlist-play-pause',
-                                          ),
-                                          tooltip: player.playing
-                                              ? 'বিরতি'
-                                              : 'চালান',
-                                          onPressed: player.playing
-                                              ? () => unawaited(
-                                                  controller.pause(),
-                                                )
-                                              : controller.resumeCurrent,
-                                          icon: Icon(
-                                            player.playing
-                                                ? Icons.pause_rounded
-                                                : Icons.play_arrow_rounded,
-                                            size: 36,
-                                          ),
-                                        ),
-                                ),
-                                IconButton(
-                                  tooltip: '১০ সেকেন্ড সামনে',
-                                  onPressed: () => unawaited(
-                                    controller.seek(
-                                      playlistSeekTarget(
-                                        player.position,
-                                        player.duration,
-                                        10,
-                                      ),
-                                    ),
+                              ),
+                              onPlayPause: player.playing
+                                  ? () => unawaited(controller.pause())
+                                  : controller.resumeCurrent,
+                              onForward: () => unawaited(
+                                controller.seek(
+                                  playlistSeekTarget(
+                                    player.position,
+                                    player.duration,
+                                    10,
                                   ),
-                                  icon: const Icon(Icons.forward_10_rounded),
                                 ),
-                                IconButton(
-                                  tooltip: 'পরের অডিও',
-                                  onPressed: player.hasNext
-                                      ? () => unawaited(controller.next())
-                                      : null,
-                                  icon: const Icon(Icons.skip_next_rounded),
-                                ),
-                              ],
+                              ),
+                              onNext: () => unawaited(controller.next()),
                             );
                           },
                         ),
@@ -388,6 +344,76 @@ class _PlaylistPlayerPageState extends ConsumerState<PlaylistPlayerPage> {
       ),
     );
   }
+}
+
+/// Testable, platform-independent transport controls. The controller owns all
+/// audio actions; this widget only renders and forwards the selected actions.
+class PlaylistTransportControls extends StatelessWidget {
+  const PlaylistTransportControls({
+    super.key,
+    required this.playing,
+    required this.busy,
+    required this.hasPrevious,
+    required this.hasNext,
+    required this.onPrevious,
+    required this.onRewind,
+    required this.onPlayPause,
+    required this.onForward,
+    required this.onNext,
+  });
+
+  final bool playing;
+  final bool busy;
+  final bool hasPrevious;
+  final bool hasNext;
+  final VoidCallback onPrevious;
+  final VoidCallback onRewind;
+  final VoidCallback onPlayPause;
+  final VoidCallback onForward;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    key: const ValueKey('playlist-transport'),
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      IconButton(
+        tooltip: 'আগের অডিও',
+        onPressed: hasPrevious ? onPrevious : null,
+        icon: const Icon(Icons.skip_previous_rounded),
+      ),
+      IconButton(
+        tooltip: '১০ সেকেন্ড পেছনে',
+        onPressed: onRewind,
+        icon: const Icon(Icons.replay_10_rounded),
+      ),
+      SizedBox(
+        width: 64,
+        height: 64,
+        child: busy
+            ? const Center(child: CircularProgressIndicator())
+            : IconButton.filled(
+                key: const ValueKey('playlist-play-pause'),
+                tooltip: playing ? 'বিরতি' : 'চালান',
+                onPressed: onPlayPause,
+                icon: Icon(
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  size: 36,
+                ),
+              ),
+      ),
+      IconButton(
+        tooltip: '১০ সেকেন্ড সামনে',
+        onPressed: onForward,
+        icon: const Icon(Icons.forward_10_rounded),
+      ),
+      IconButton(
+        tooltip: 'পরের অডিও',
+        onPressed: hasNext ? onNext : null,
+        icon: const Icon(Icons.skip_next_rounded),
+      ),
+    ],
+  );
 }
 
 double playlistCoverHeight(double width, double height) {
