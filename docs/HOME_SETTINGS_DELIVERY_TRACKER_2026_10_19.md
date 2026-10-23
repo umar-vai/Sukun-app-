@@ -1,46 +1,63 @@
-# Home & Settings Delivery Tracker — 19 October 2026
+# Home, Settings & Resources — verified delivery status (19 October 2026)
 
-Scope: approved Ruqyah-reference gap plan v1.1 and later explicit request for extensive Settings and multiple selectable Bangla fonts. Source: one existing Flutter app. No parallel preview, APK/AAB/IPA, or public-website changes.
+This replaces the unchecked planning snapshot with a **source / CI / hosted / manual QA** ledger. One canonical Flutter repository, no separate mock app, no automatic APK/AAB/IPA, and no modifications to `sukunlife.com` or the legacy dashboard.
 
-## Status conventions
-- [x] Implemented in proposed code (not automatically deployed)
-- [ ] Pending implementation or release gate
-- CI / Pages / browser verification must be reported independently.
+## Verified release baseline
 
-## Work Package H1 — Compact five-prayer chart & eight resources
-- [x] Replace large Home prayer and Qibla cards with compact Fajr/Dhuhr/Asr/Maghrib/Isha strip, using existing prayer calculation and location/method preferences.
-- [x] Keep Qibla and complete prayer schedule as compact actions.
-- [x] Safe location-missing setup CTA; no made-up prayer times.
-- [x] Render all eight categories directly from canonical `resourceSections`, including previously missing Quran and Hadith.
-- [x] Add widget regression expectations for compact chart and eight sections.
-- [ ] CI green; Web build green; exact-SHA Pages deployment; browser QA 360/430/desktop and role flows.
+| Gate | Observed result | Evidence |
+|---|---|---|
+| Main source | `1ac1b8ee27f7d2f1e18bc04ce3471cbd45f47885` | Main head, merge of #157 |
+| GitHub PRs #149–#157 | All merged | GitHub PR metadata |
+| Main Flutter / Edge / RLS / Web CI | **PASS** on exact main SHA | [CI 39197574083](https://github.com/umar-vai/Sukun-app-/actions/runs/39197574083) |
+| Real Flutter Web build and Chrome automated regressions | **PASS** | [Web run 39197939478](https://github.com/umar-vai/Sukun-app-/actions/runs/39197939478) |
+| GitHub Pages deploy | **PASS**, HTTP checks on index/bootstrap/build marker for exact main SHA | Same Web run, deploy job 117886278167 |
+| Observed Pages custom-domain URL | `https://app.sukunlife.com/` | Exact URL printed by verified deploy job; this is a *previously configured* destination, not a DNS change made by this task |
+| Real authenticated browser role E2E | **NOT VERIFIED** | Requires synthetic Member/Patient A/Patient B/Admin, manual browser interactions and negative access testing |
+| Native notification delivery / install QA | **NOT VERIFIED** | Web/Chrome build is not Android device proof |
+| Production backend | Project `vydfafumxptanpkmtrpr` ACTIVE_HEALTHY; existing migrations/functions present | Read-only Supabase inspection, 19 Oct. No production backend deployment made by these UI tasks |
 
-## Work Package H2 — Unified next tasks
-- [ ] Patient-approved clinical next task(s) and owner-only personal routine next task(s), separately attributed and sorted by real next scheduled occurrence.
-- [ ] Make task state refresh correctly on Done/Skip/Snooze and on plan changes, including empty/complete status.
-- [ ] Guest sees no private tasks. Member sees only own routines. Patient sees only own plans and routines.
-- [ ] RLS and cross-user negative tests.
+**Important:** A successful HTTP SHA smoke check proves deployment, not authenticated role behavior. The old `github.io/Sukun-app-/` path must not be assumed to be the current canonical URL because the Pages deployment uses a root custom domain.
 
-## Work Package H3 — Remove redundant public Resources tab
-- [ ] Remove public/Member/Patient `উপকরণ` from primary bottom navigation **only after** Home routes/search are tested.
-- [ ] Keep all `/resources/*` and `/patient/resources/*` routes, search, PDF/audio reader, resource links and deep links.
-- [ ] Do not change Super Admin resource CMS navigation/workspace.
+## Home/navigation: implemented in merged source
 
-## Work Package S1 — Complete Settings
-- [ ] Group Appearance (Auto/Light/Dark, color-safe contrast), Reader (Arabic and Bengali independent text size), Language/Fonts, Prayer times, Notifications/diagnostics, Audio and offline-storage preferences.
-- [ ] Add user-selectable Bengali fonts (at minimum approved Li Ador Noirrit as branded default, plus appropriately licensed accessible Bengali alternatives); persist per-user/per-device preferences with safe guest behavior.
-- [ ] Bundle/check the provided Li Ador Noirrit font assets through the authorized project source. The current GitHub tree has no checked-in TTF/OTF; **do not falsely declare the font shipped until its approved bytes are present**.
-- [ ] Preserve verified Arabic Naskh typography for Quran text and never regenerate canonical text.
-- [ ] Five-prayer independent notification opt-ins, notification-permission diagnostics and safe web/native platform fallbacks.
+- [x] **H1 / #149:** Compact location-aware Fajr/Dhuhr/Asr/Maghrib/Isha Home chart; Qibla / full prayer actions; all eight canonical resource categories; missing-location fallback.
+- [x] **H2 / #151:** Show owner-scoped personal next actions together with patient-visible approved clinical tasks, attributing their distinct source. Existing test coverage includes timing, active/paused and completed states.
+- [x] **H2 bugfix / #155:** Completed prayer-relative action reschedules next **local calendar day**; regression coverage for tomorrow's Fajr.
+- [x] **H3 / #152:** No redundant public Resources primary tab; existing resource/deep-link paths retained, Admin CMS unchanged.
+- [x] **Resources / #157:** Three collapsible Masnun Dua & Azkar navigation groups preserve the existing seven approved slugs and CMS filters without duplicates.
+- [x] Main CI and Web/Chrome build green for final SHA.
+- [ ] Browser **visual/manual** checks on 360px, ~430px, tablet and desktop, across Guest, Member, Patient and Admin.
+- [ ] Live two-patient owner isolation and authenticated click-through / Done-Skip-Snooze refresh tested with isolated synthetic accounts.
 
-## Work Package A1 — Audio & offline
-- [ ] Sleep timer, saved Favorites and personalized playlists; reuse global audio controller, resume/speed/repeat.
-- [ ] Verify rights for streaming/offline before implementing private in-app download.
-- [ ] Validate browser/native differences and avoid promises of browser-closed reminders.
+## Settings: delivered vs not delivered
 
-## Gates
-- **GitHub**: a pull request is not a merged change.
-- **Backend**: SQL committed != applied migration; Edge Function code committed != live deployment.
-- **Preview**: CI passed != Web built != Pages deployed != role-based browser QA.
-- **Production**: do not change `https://sukunlife.com`, legacy dashboard, production patient records, or DNS as part of this work.
-- No native packages without explicit authorization.
+- [x] **S1 / #150:** Device-local Bengali font picker with existing Google Fonts options (Hind Siliguri, Anek Bangla, Tiro Bangla), persistence and safe unknown-value fallback.
+- [x] **S1 / #153:** System/Light/Dark setting, separate Arabic and Bengali reader scales, persisted preferences, unified Settings navigation and dark-theme support.
+- [x] **S1 / #156:** Real, session-guarded notification health page; browser/native permissions diagnostics; opt-in toggles for *existing* personal routine and approved patient-plan reminders; user-facing browser limitations.
+- [ ] **Li Ador Noirrit** as branded default: approved font binaries are **not bundled in public source**. Confirm license/distribution and approved asset delivery first. Do not claim the font is shipped. Keep approved Arabic Quran font independent.
+- [ ] **Five independent prayer-alarm opt-ins:** not implemented in #156, which intentionally avoids fake UI toggles; design real prayer-event scheduling, permission/reboot/timezone tests before claiming delivery.
+- [ ] Real visual contrast/typography QA for dark mode and small mobile screens.
+- [ ] Device-native exact alarm permissions, battery optimization, killed-app/reboot delivery and notification tap-to-action tested physically.
+- [ ] Browser-background / closed-tab remote Push delivery independently verified; an open-tab timer is not equivalent.
+
+## Audio/offline
+
+- [x] **A1 / #154:** Shared player has cancellable bounded 5/15/30/60-minute sleep timer, pause on expiry, cancellation on stop/dispose; unit tests included.
+- [ ] Saved Favorites and user playlists: not proven complete by this work package.
+- [ ] Rights-cleared, app-private offline downloads, integrity/queue/sync/device QA.
+- [ ] Real browser playback/seek/pause interaction and long-running timer behavior (especially background throttling).
+
+## Backend/security and release blocks
+
+- Latest Security Advisor still reports **9 callable SECURITY DEFINER functions** for review and **Leaked Password Protection disabled**; these are **warnings, not proof of a data breach**. [Advisor guide](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+- **Verified production/staging limiter mismatch:** production `patient-sign-in` Edge Function is ACTIVE **v7** and its deployed handler does **not** call `check_patient_login_rate_limit`, even though the matching limiter table and RPC already exist in production. Staging `patient-sign-in` ACTIVE **v2** contains that limiter call, table and RPC. This is an **open login-abuse hardening gate**, not evidence of a patient-data breach. Do not deploy GitHub handler blindly: independently test trusted IP provenance, synthetic 401/413/429 flow, compatibility and rollback first. Platform `verify_jwt=false` must be evaluated with explicit handler authorization.
+- No patient records were read or mutated during this status reconciliation.
+- No Supabase migration, Edge deployment, DNS setting, GitHub Pages destination or existing public website was changed by this documentation update.
+- Five-prayer alerts, Li Ador license/assets, role-authenticated browser E2E, native device delivery and UI visual sign-off are **OPEN**. Do not label the full S1 work package or a public mobile release “finished”.
+
+## Next acceptance sequence
+
+1. Open the currently observed `https://app.sukunlife.com/` Flutter app in a real browser and test Guest/Home, settings, grouped Dua navigation, eight resource routes, theme, font choice, audio timer at representative screen widths.
+2. Using **synthetic, authorized accounts only**, test Member/Patient/Admin and two-patient access-denial, sign-in/callback/session persistence, clinical task completion and notification consent with real backend.
+3. Separately obtain the Li Ador redistribution/build permission and branded assets; implement five-prayer opt-ins only with truthful platform-specific scheduling and tests.
+4. Perform native QA / APK or release packaging **only on explicit approved gate**, and preserve current public `sukunlife.com` throughout.
