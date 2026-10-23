@@ -7,7 +7,7 @@ from check_google_oauth_handoff import validate_google_redirect
 
 
 class GoogleOauthHandoffTests(unittest.TestCase):
-    BASE = "https://qacklgqvxvjjzsimjoip.supabase.co"
+    BASE = "https://vydfafumxptanpkmtrpr.supabase.co"
     CALLBACK = BASE + "/auth/v1/callback"
 
     def test_exact_google_redirect(self):
@@ -23,7 +23,7 @@ class GoogleOauthHandoffTests(unittest.TestCase):
         from urllib.parse import urlencode
         url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode({
             "client_id": "synthetic",
-            "redirect_uri": "https://vydfafumxptanpkmtrpr.supabase.co/auth/v1/callback",
+            "redirect_uri": "https://qacklgqvxvjjzsimjoip.supabase.co/auth/v1/callback",
             "response_type": "code",
         })
         with self.assertRaises(ValueError):
