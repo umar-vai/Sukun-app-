@@ -100,9 +100,8 @@ class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 7),
         SingleChildScrollView(
@@ -165,17 +164,15 @@ class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       const SizedBox(width: 7),
       Text(
         '$count',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: Theme.of(context).colorScheme.primary),
       ),
     ],
   );
