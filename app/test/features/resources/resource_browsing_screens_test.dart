@@ -141,6 +141,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('dua-unclassified')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('dua-unclassified')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dua-unclassified')));
     await tester.pumpAndSettle();
     expect(
@@ -192,6 +194,7 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')));
     await tester.pumpAndSettle();
     expect(
