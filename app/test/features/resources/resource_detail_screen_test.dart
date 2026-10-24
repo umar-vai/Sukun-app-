@@ -9,7 +9,7 @@ import 'package:sukun_life/features/resources/presentation/resource_detail_scree
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 void main() {
-  testWidgets('resource detail renders content without public provenance cards', (
+  testWidgets('resource detail hides reference metadata', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
