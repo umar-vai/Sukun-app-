@@ -160,10 +160,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
             actions: [
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.pdf)
-                OfflineDownloadAction(
-                  resourceId: resource.id,
-                  iconOnly: true,
-                ),
+                OfflineDownloadAction(resourceId: resource.id, iconOnly: true),
               if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
                 IconButton(
                   onPressed: () async {
