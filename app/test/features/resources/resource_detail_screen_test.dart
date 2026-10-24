@@ -37,9 +37,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Dua, article and guide hide editorial summaries and source notes', (
-    tester,
-  ) async {
+  testWidgets('resource detail hides editor notes', (tester) async {
     for (final resourceType in ['dua', 'article', 'guide']) {
       await tester.pumpWidget(
         ProviderScope(
@@ -259,8 +257,8 @@ final class _FakeResourcesRepository implements ResourcesRepository {
         ? 'Owner-provided source; editorial review required before publishing.'
         : null,
     body: withEditorialNotes
-        ? 'Owner-provided source; editorial review required before publishing.\\n'
-              '৫. সকাল-সন্ধ্যায় তিনবার পড়ুন।\\n'
+        ? 'Owner-provided source; editorial review required before publishing.\n'
+              '৫. সকাল-সন্ধ্যায় তিনবার পড়ুন।\n'
               'সেলফ রুকইয়াহ গাইড · paragraph 1177'
         : null,
     arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
