@@ -477,9 +477,18 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
 enum TaxonomyKind { duaAzkar, ruqyah }
 
 class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
-  const TaxonomyBrowserScreen({required this.kind, super.key});
+  const TaxonomyBrowserScreen({
+    required this.kind,
+    this.groupSlug,
+    this.categorySlug,
+    this.topicSlug,
+    super.key,
+  });
 
   final TaxonomyKind kind;
+  final String? groupSlug;
+  final String? categorySlug;
+  final String? topicSlug;
 
   @override
   ConsumerState<TaxonomyBrowserScreen> createState() =>
@@ -487,6 +496,20 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
 }
 
 class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
+  late final Future<List<ContentResource>> _resourcesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final isDua = widget.kind == TaxonomyKind.duaAzkar;
+    _resourcesFuture = ref.read(resourcesRepositoryProvider).browseResources(
+      types: isDua
+          ? const {'dua', 'amal'}
+          : const {'quran', 'amal', 'audio', 'guide'},
+      categoryPrefixes: isDua ? const {} : const {'ruqyah'},
+    );
+  }
+
   void _openRuqyahItem(ContentResource resource) {
     if (resource.type == 'audio' &&
         AudioLibraryActions.supports(resource.linkedResource)) {
@@ -503,25 +526,23 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
   @override
   Widget build(BuildContext context) {
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    final types = isDua
-        ? const {'dua', 'amal'}
-        : const {'quran', 'amal', 'audio', 'guide'};
-    const prefix = 'ruqyah';
+    final isIndex = isDua ? widget.groupSlug == null : widget.topicSlug == null;
+    final pageTitle = isDua
+        ? DuaAzkarBrowseSection.titleFor(
+            widget.groupSlug,
+            widget.categorySlug,
+          )
+        : RuqyahTopicBrowser.titleFor(widget.topicSlug);
     return Scaffold(
       appBar: AppBar(
-        title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah'),
+        title: Text(pageTitle),
         actions: const [AudioLibraryShortcut(compact: true)],
       ),
       body: FutureBuilder<List<ContentResource>>(
-        future: ref
-            .read(resourcesRepositoryProvider)
-            .browseResources(
-              types: types,
-              categoryPrefixes: isDua ? const {} : {prefix},
-            ),
+        future: _resourcesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading resources');
+            return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -530,29 +551,36 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
           }
           final resources = snapshot.data ?? const <ContentResource>[];
           return ListView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              isDua ? 24 : 20,
-              20,
-              isDua ? 112 : 40,
+            key: PageStorageKey<String>(
+              'taxonomy-${isDua ? 'dua' : 'ruqyah'}-${widget.groupSlug}-${widget.categorySlug}-${widget.topicSlug}',
             ),
+            padding: EdgeInsets.fromLTRB(20, isIndex ? 24 : 16, 20, 96),
             children: [
-              SukunPageIntro(
-                title: isDua ? 'দোয়া ও আযকার' : 'রুকইয়াহ',
-                subtitle: isDua ? 'দৈনন্দিন দোয়া ও যিকির' : 'অডিও, আয়াত ও আমল',
-                trailing: SukunIconBadge(
-                  icon: isDua
-                      ? Icons.auto_awesome_rounded
-                      : Icons.health_and_safety_outlined,
-                  size: 54,
+              if (isIndex) ...[
+                SukunPageIntro(
+                  title: isDua ? 'দোয়া ও আযকার' : 'রুকইয়াহ',
+                  subtitle: isDua
+                      ? 'দৈনন্দিন দোয়া ও যিকির'
+                      : 'অডিও, আয়াত ও আমল',
+                  trailing: SukunIconBadge(
+                    icon: isDua
+                        ? Icons.auto_awesome_rounded
+                        : Icons.health_and_safety_outlined,
+                    size: 54,
+                  ),
                 ),
-              ),
-              SizedBox(height: isDua ? 24 : 16),
+                const SizedBox(height: 20),
+              ],
               if (isDua)
-                DuaAzkarBrowseSection(resources: resources)
+                DuaAzkarBrowseSection(
+                  resources: resources,
+                  groupSlug: widget.groupSlug,
+                  categorySlug: widget.categorySlug,
+                )
               else
                 RuqyahTopicBrowser(
                   resources: resources,
+                  topicSlug: widget.topicSlug,
                   onOpenResource: _openRuqyahItem,
                   onOpenAyat: () =>
                       context.push('/resources/quran/collections'),
