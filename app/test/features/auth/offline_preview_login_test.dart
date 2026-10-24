@@ -20,7 +20,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('লগইন পরীক্ষা করতে'), findsOneWidget);
+    expect(find.textContaining('লগইন এখন উপলব্ধ নয়'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'প্রবেশ করুন'),
     );
