@@ -334,10 +334,14 @@ void main() {
 
   test('time labels include hours and skip targets stay within bounds', () {
     expect(formatAudioDockTime(Duration.zero), '0:00');
-    expect(formatAudioDockTime(const Duration(minutes: 30, seconds: 7)),
-        '30:07');
-    expect(formatAudioDockTime(const Duration(hours: 1, minutes: 5, seconds: 9)),
-        '1:05:09');
+    expect(
+      formatAudioDockTime(const Duration(minutes: 30, seconds: 7)),
+      '30:07',
+    );
+    expect(
+      formatAudioDockTime(const Duration(hours: 1, minutes: 5, seconds: 9)),
+      '1:05:09',
+    );
     expect(
       audioDockClampedSeekTarget(
         const Duration(seconds: 5),
