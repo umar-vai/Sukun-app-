@@ -502,8 +502,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 10),
-        if (widget.downloadId != null &&
-            !library.contains(widget.downloadId!))
+        if (widget.downloadId != null && !library.contains(widget.downloadId!))
           FutureBuilder<ContentResource?>(
             future: _candidate,
             builder: (context, snapshot) => FutureBuilder<Set<String>>(
@@ -523,7 +522,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                     )) {
                   return const ListTile(
                     title: Text('এই উপকরণ অফলাইন ডাউনলোডের জন্য অনুমোদিত নয়।'),
-
                   );
                 }
                 return Card(
