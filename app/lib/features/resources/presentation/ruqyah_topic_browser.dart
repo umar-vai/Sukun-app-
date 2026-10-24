@@ -63,7 +63,10 @@ class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
             if (audio.any((r) => ruqyahPrimaryBrowseTopic(r) == topic.slug))
               _group(topic, audio),
           if (audio.isEmpty && extra.isEmpty)
-            const AppEmptyState(title: 'এখনো কোনো অডিও নেই'),
+            const AppEmptyState(
+              title: 'এখনো কোনো অডিও নেই',
+              message: 'অন্য বিভাগ দেখুন।',
+            ),
         ] else ...[
           if (selectedItems.isEmpty)
             AppEmptyState(
@@ -72,6 +75,7 @@ class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
                   : _selected == 'ruqyah-ayat'
                   ? 'নির্বাচিত আয়াত উপরের লিংকে দেখুন'
                   : 'এই বিভাগে এখনো অডিও নেই',
+              message: 'অন্য বিভাগ দেখুন।',
             )
           else ...[
             _sectionTitle(_selectedTitle, selectedItems.length),
