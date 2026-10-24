@@ -154,7 +154,7 @@ void main() {
     expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
-  testWidgets('Hadith browser shows topics and titles without provenance metadata', (
+  testWidgets('Hadith browser hides reference subtitle', (
     tester,
   ) async {
     await tester.pumpWidget(
