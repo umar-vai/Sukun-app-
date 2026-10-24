@@ -352,9 +352,6 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
               SukunPageIntro(
                 eyebrow: 'Ayat collection',
                 title: details.collection.titleBn ?? details.collection.title,
-                subtitle: details.collection.titleBn == null
-                    ? details.collection.summary
-                    : '${details.collection.title}${details.collection.summary == null ? '' : ' · ${details.collection.summary}'}',
                 trailing: const SukunIconBadge(
                   icon: Icons.collections_bookmark_outlined,
                   size: 54,
