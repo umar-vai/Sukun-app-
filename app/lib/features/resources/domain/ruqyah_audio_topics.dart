@@ -27,19 +27,19 @@ const ruqyahMainTopics = <RuqyahBrowseTopic>[
   RuqyahBrowseTopic('ruqyah-self-guide', 'সেলফ-রুকইয়াহ গাইড'),
 ];
 
-bool _mentions(String title, List<String> terms) =>
-    terms.any(title.contains);
+bool _mentions(String title, List<String> terms) => terms.any(title.contains);
 
 /// Navigation-only membership based on explicit title words or the CMS
 /// category. This cannot authorize new content: the caller only supplies
 /// resources already returned by the RLS-protected published repository.
 /// Unclear titles stay in Other; we never infer a patient's condition.
 Set<String> ruqyahBrowseTopicMembership(ContentResource resource) {
-  final title = (resource.titleBn?.trim().isNotEmpty == true
-          ? resource.titleBn!
-          : resource.title)
-      .trim()
-      .toLowerCase();
+  final title =
+      (resource.titleBn?.trim().isNotEmpty == true
+              ? resource.titleBn!
+              : resource.title)
+          .trim()
+          .toLowerCase();
   final original = resource.categorySlug ?? '';
 
   if (resource.type != 'audio') {
@@ -62,7 +62,12 @@ Set<String> ruqyahBrowseTopicMembership(ContentResource resource) {
     slugs.add('ruqyah-general');
   }
   if (_mentions(title, [
-    'সুরা', 'সূরা', 'আয়াত', 'তিনকুল', 'তিন কুল', 'আট সুরার',
+    'সুরা',
+    'সূরা',
+    'আয়াত',
+    'তিনকুল',
+    'তিন কুল',
+    'আট সুরার',
     'যিলযাল',
   ])) {
     slugs.add('ruqyah-recitation');
@@ -81,8 +86,7 @@ Set<String> ruqyahBrowseTopicMembership(ContentResource resource) {
       (original == 'ruqyah-sihr' && !isUnclearTitle)) {
     slugs.add('ruqyah-sihr');
   }
-  if (_mentions(title, ['শিফা', 'সাকিনা']) ||
-      original == 'ruqyah-wellness') {
+  if (_mentions(title, ['শিফা', 'সাকিনা']) || original == 'ruqyah-wellness') {
     slugs.add('ruqyah-wellness');
   }
   if (_mentions(title, ['খুরুজ', 'জিনা', 'কিতাল', 'তাদমির'])) {
