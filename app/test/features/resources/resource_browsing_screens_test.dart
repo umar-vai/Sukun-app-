@@ -154,9 +154,7 @@ void main() {
     expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
-  testWidgets('Hadith browser hides reference subtitle', (
-    tester,
-  ) async {
+  testWidgets('Hadith browser hides reference subtitle', (tester) async {
     await tester.pumpWidget(
       _testApp(const HadithBrowserScreen(), const _BrowsingRepository()),
     );
