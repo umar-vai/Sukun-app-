@@ -120,7 +120,7 @@ class _QuranContentApi {
 
   Future<Map<String, dynamic>> fetch(Map<String, Object> payload) async {
     if (!AppEnvironment.isSupabaseConfigured) {
-      throw const FormatException('ওয়েব প্রিভিউতে Supabase সংযুক্ত নেই।');
+      throw const FormatException('কুরআন এখন পাওয়া যাচ্ছে না।');
     }
     final result = await Supabase.instance.client.functions.invoke(
       'quran-content',
@@ -128,7 +128,7 @@ class _QuranContentApi {
     );
     final data = result.data;
     if (data is! Map) {
-      throw const FormatException('কুরআন API থেকে সঠিক তথ্য আসেনি।');
+      throw const FormatException('কুরআনের তথ্য পাওয়া যায়নি।');
     }
     return Map<String, dynamic>.from(data);
   }
@@ -167,7 +167,7 @@ class _CanonicalSurahCatalogState extends State<_CanonicalSurahCatalog> {
         }
         if (snapshot.hasError) {
           return _ConnectionNotice(
-            message: 'কুরআন পাঠের API সংযোগ পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।',
+            message: 'কুরআন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।',
             onRetry: _retry,
           );
         }
@@ -236,7 +236,7 @@ class QuranSurahList extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(14),
             child: Text(
-              'API পরীক্ষামূলক অবস্থায় আছে। বর্তমানে শুধুমাত্র সূরা ফাতিহা ও বাকারা পাওয়া যেতে পারে; পূর্ণ ১১৪ সূরার জন্য Quran Foundation-এর Production API অনুমোদন প্রয়োজন।',
+              'কিছু সূরা এখনো পাওয়া যাচ্ছে না।',
             ),
           ),
         ),
@@ -590,7 +590,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'এই API তিলাওয়াত এখন অনলাইনে শোনা যায়। উৎসের অফলাইন ও প্লেলিস্ট অনুমতি যাচাই না হওয়া পর্যন্ত এখানে ডাউনলোড চালু নেই।',
+                'তিলাওয়াত অনলাইনে শুনুন। অফলাইন সংরক্ষণ এখন উপলব্ধ নয়।',
               ),
             ],
           ),
