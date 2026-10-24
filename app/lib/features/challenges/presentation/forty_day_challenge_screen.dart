@@ -84,11 +84,7 @@ class _FortyDayChallengeScreenState
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'ধাপে ধাপে নিজের ভিতর পরিবর্তন আনুন। এটি বিনামূল্যের, '
-                'স্বেচ্ছায় অনুসরণযোগ্য একটি ব্যক্তিগত ট্র্যাকার। '
-                'এটি রোগ নির্ণয় বা চিকিৎসার বিকল্প নয়।',
-              ),
+              const Text('বিনামূল্যে অংশ নিন। এটি চিকিৎসার বিকল্প নয়।'),
               const SizedBox(height: 14),
               Card(
                 child: Padding(
@@ -222,9 +218,7 @@ class _FortyDayChallengeScreenState
                                   ),
                                 ),
                                 const Text(
-                                  'কোনো দিন বাদ পড়লে আগের অর্জন মুছে যায় না। '
-                                  'চিকিৎসাসংক্রান্ত বিশেষ নির্দেশের ক্ষেত্রে '
-                                  'নিজের অনুমোদিত পরিকল্পনা অনুসরণ করুন।',
+                                  'বিরতির পর অগ্রগতি থাকবে। নিজের চিকিৎসার নির্দেশ অনুসরণ করুন।',
                                 ),
                               ],
                             );
@@ -233,10 +227,7 @@ class _FortyDayChallengeScreenState
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'চ্যালেঞ্জের ধাপগুলো সবাই দেখতে পারবেন। '
-                              'নিজের অগ্রগতি সংরক্ষণ করতে লগইন করুন।',
-                            ),
+                            const Text('অগ্রগতি সংরক্ষণ করতে লগইন করুন।'),
                             const SizedBox(height: 10),
                             OutlinedButton.icon(
                               key: const Key('challenge-login'),
@@ -250,7 +241,7 @@ class _FortyDayChallengeScreenState
               ),
               const SizedBox(height: 18),
               Text(
-                '৫টি ধাপে আপনার ৪০ দিনের যাত্রা',
+                '৪০ দিনের ৫টি ধাপ',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 10),
@@ -272,10 +263,7 @@ class _FortyDayChallengeScreenState
                   ),
                 ),
               const SizedBox(height: 8),
-              const Text(
-                'নির্দিষ্ট আমল বা উপকরণের বিস্তারিত নির্দেশনা কেবল '
-                'যাচাইকৃত ও অনুমোদিত রিসোর্স থেকে অনুসরণ করুন।',
-              ),
+              const Text('বিস্তারিত আমল ও নির্দেশনা রিসোর্সে দেখুন।'),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => context.push('/resources/ruqyah'),

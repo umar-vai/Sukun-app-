@@ -266,7 +266,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                           ),
                           subtitle: Text(
                             selectedItem.provider == 'quran'
-                                ? 'কুরআনের মূল API রিডারে খুলবে'
+                                ? 'কুরআন রিডারে খুলবে'
                                 : resource?.type ?? 'অনুপলব্ধ',
                           ),
                           leading: Icon(
@@ -445,8 +445,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   ],
                   const SizedBox(height: 12),
                   const Text(
-                    'সময়সূচি সংরক্ষিত হবে। Background push delivery '
-                    'এখনো পরীক্ষাধীন; notification নিশ্চিত নয়।',
+                    'সময় সংরক্ষিত হবে। ব্রাউজার বন্ধ থাকলে রিমাইন্ডার নাও আসতে পারে।',
                     style: TextStyle(fontSize: 12),
                   ),
                 ],

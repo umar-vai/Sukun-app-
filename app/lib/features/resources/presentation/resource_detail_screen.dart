@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
@@ -159,13 +160,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
             actions: [
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.pdf)
-                IconButton(
-                  onPressed: () => context.push(
-                    '/my-media?download=${Uri.encodeQueryComponent(resource.id)}',
-                  ),
-                  tooltip: 'PDF অফলাইনে সংরক্ষণ করুন',
-                  icon: const Icon(Icons.download_outlined),
-                ),
+                OfflineDownloadAction(resourceId: resource.id, iconOnly: true),
               if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
                 IconButton(
                   onPressed: () async {

@@ -236,7 +236,7 @@ class _WelcomeHero extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          'বিশ্বস্ত ইসলামিক রিসোর্স পড়ুন। সুকুন লাইফের রোগী হলে নিজের অনুমোদিত কেয়ার প্ল্যান, প্রতিদিনের কাজ ও অগ্রগতি একই অ্যাপে দেখুন।',
+          'কুরআন, দোয়া, রুকইয়াহ অডিও ও নিজের দৈনন্দিন আমল এক জায়গায়।',
           style: Theme.of(context).textTheme.bodyLarge
               ?.copyWith(color: SukunColors.muted, height: 1.7),
         ),
@@ -253,7 +253,7 @@ class _WelcomeHero extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => context.go('/login'),
               icon: const Icon(Icons.login_rounded),
-              label: const Text('ওয়েব অ্যাপে লগইন'),
+              label: const Text('লগইন'),
             ),
           ],
         ),
@@ -322,7 +322,7 @@ class _CareJourneyCard extends StatelessWidget {
           ),
         const SizedBox(height: 8),
         const Text(
-          'ব্যক্তিগত পরিকল্পনা শুধু অনুমোদিত রোগীই দেখতে পারবেন।',
+          'আপনার ব্যক্তিগত পরিকল্পনা নিরাপদে সংরক্ষিত।',
           style: TextStyle(color: Colors.white70),
         ),
       ],

@@ -150,9 +150,8 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
             sliver: SliverList.list(
               children: [
                 SukunPageIntro(
-                  eyebrow: 'বিশ্বস্ত উপকরণের সংগ্রহ',
                   title: 'ইসলামিক পাঠ ও অডিও',
-                  subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
+                  subtitle: 'কুরআন, হাদিস, দোয়া ও রুকইয়াহ',
                   trailing: const SukunIconBadge(
                     icon: Icons.auto_stories_outlined,
                     size: 54,
@@ -190,13 +189,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                           color: SukunColors.deepTide,
                         ),
                         SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'এই প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
-                            'নিরাপদ স্টেজিং চালু হলে অডিওসহ '
-                            'প্রকাশিত উপকরণ খুঁজতে পারবেন।',
-                          ),
-                        ),
+                        Expanded(child: Text('এখন উপকরণ দেখানো যাচ্ছে না।')),
                       ],
                     ),
                   )
@@ -221,7 +214,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 OutlinedButton.icon(
                   onPressed: _openBookAudioLinks,
                   icon: const Icon(Icons.headphones_outlined),
-                  label: const Text('বইয়ে উল্লেখিত রুকইয়াহ অডিও — ১৯টি শুনুন'),
+                  label: const Text('রুকইয়াহ অডিও'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
@@ -230,14 +223,11 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     mode: LaunchMode.externalApplication,
                   ),
                   icon: const Icon(Icons.menu_book_outlined),
-                  label: const Text('রুকইয়াহর আয়াত পড়ুন — মূল উৎস খুলুন'),
+                  label: const Text('রুকইয়াহর আয়াত পড়ুন'),
                 ),
                 const SizedBox(height: 8),
                 const SizedBox(height: 22),
-                SukunSectionHeader(
-                  title: 'বিষয় অনুযায়ী দেখুন',
-                  subtitle: 'আপনার পছন্দের বিভাগ বেছে নিন',
-                ),
+                SukunSectionHeader(title: 'বিষয় অনুযায়ী দেখুন'),
                 const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -264,10 +254,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 if (hasSearch) ...[
                   const SizedBox(height: 24),
-                  const SukunSectionHeader(
-                    title: 'অনুসন্ধানের ফলাফল',
-                    subtitle: 'আপনার অনুসন্ধানে পাওয়া উপকরণ',
-                  ),
+                  const SukunSectionHeader(title: 'অনুসন্ধানের ফলাফল'),
                   const SizedBox(height: 10),
                 ],
               ],

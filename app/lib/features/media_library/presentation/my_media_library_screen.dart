@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -499,17 +498,11 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
       children: [
         Text(
-          'এই ডিভাইসে সংরক্ষিত: ${(library.totalBytes / 1048576).toStringAsFixed(1)} MB',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'নির্দিষ্ট মোট MB সীমা নেই। তবে একটি ফাইল সর্বোচ্চ ১০০ MB; '
-          'ডিভাইস/ব্রাউজারের নিজস্ব স্টোরেজ সীমা প্রযোজ্য।',
+          'সংরক্ষিত: ${(library.totalBytes / 1048576).toStringAsFixed(1)} MB',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 10),
-        if (widget.downloadId != null)
+        if (widget.downloadId != null && !library.contains(widget.downloadId!))
           FutureBuilder<ContentResource?>(
             future: _candidate,
             builder: (context, snapshot) => FutureBuilder<Set<String>>(
@@ -529,19 +522,12 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                     )) {
                   return const ListTile(
                     title: Text('এই উপকরণ অফলাইন ডাউনলোডের জন্য অনুমোদিত নয়।'),
-                    subtitle: Text(
-                      'প্রকাশিত ও অনুমোদিত অডিও/PDF-ই সংরক্ষণ করা যায়।',
-                    ),
                   );
                 }
                 return Card(
                   child: ListTile(
                     title: Text(resource.titleBn ?? resource.title),
-                    subtitle: Text(
-                      library.contains(resource.id)
-                          ? 'ইতিমধ্যে সংরক্ষিত'
-                          : 'অ্যাপের ভেতরে সংরক্ষণ করুন',
-                    ),
+                    subtitle: const Text('অফলাইনে রাখুন'),
                     trailing: FilledButton(
                       onPressed: library.busy || library.contains(resource.id)
                           ? null
@@ -561,9 +547,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                                 }
                               } on http.ClientException {
                                 _message(
-                                  kIsWeb
-                                      ? 'ডাউনলোডের gateway অথবা মিডিয়া সার্ভারে সমস্যা হয়েছে।'
-                                      : 'ডাউনলোডের সময় সার্ভারের সঙ্গে যোগাযোগ ব্যর্থ হয়েছে।',
+                                  'ডাউনলোড করা যাচ্ছে না। আবার চেষ্টা করুন।',
                                 );
                               } catch (_) {
                                 _message(
@@ -627,14 +611,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
               ),
             ),
           ),
-        const SizedBox(height: 12),
-        const Text(
-          'ডাউনলোড শুধু এই ডিভাইস/ব্রাউজারে থাকবে; অন্য ডিভাইসে সিঙ্ক হবে না। '
-          'ব্রাউজার স্টোরেজ মুছতে পারে, অ্যাপ আনইনস্টল করলেও ফাইল হারাবে। '
-          'প্রথমবার Web MP3 ডাউনলোডে অনুমোদিত gateway লাগতে পারে—'
-          'তাতে Supabase bandwidth খরচ হয়। '
-          'YouTube বা রোগীর ব্যক্তিগত নথি এখানে ডাউনলোড করা যায় না।',
-        ),
       ],
     );
   }
