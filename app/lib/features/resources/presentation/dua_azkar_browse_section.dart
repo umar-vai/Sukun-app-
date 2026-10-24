@@ -91,9 +91,8 @@ class DuaAzkarBrowseSection extends StatelessWidget {
       Text(
         'বিভাগ নির্বাচন করুন',
         style: SukunTypography.banglaBody(
-          textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       const SizedBox(height: 16),
@@ -194,9 +193,8 @@ class DuaAzkarBrowseSection extends StatelessWidget {
                     )
                   : null,
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.push(
-                '/resources/${Uri.encodeComponent(item.id)}',
-              ),
+              onTap: () =>
+                  context.push('/resources/${Uri.encodeComponent(item.id)}'),
             ),
           ),
           const SizedBox(height: 12),
@@ -208,9 +206,8 @@ class DuaAzkarBrowseSection extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 24),
     child: Text(
       'এই বিভাগে এখনো প্রকাশিত দোয়া নেই।',
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
     ),
   );
 
@@ -264,18 +261,14 @@ class DuaAzkarBrowseSection extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
