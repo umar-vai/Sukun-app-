@@ -88,45 +88,55 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                 final playing = player.playing;
                 final isSequence = controller.isQuranSequence;
                 final verse = controller.currentVerseKey;
+                final compact = MediaQuery.sizeOf(context).width < 380;
+                final duration = player.duration ?? Duration.zero;
+                final verseNumber = controller.currentVerseIndex + 1;
+                final subtitle = verse == null
+                    ? 'শুনছেন'
+                    : (isSequence
+                          ? '$verse · $verseNumber/${controller.quranVerseCount}'
+                          : verse);
                 return Material(
-                  elevation: 12,
-                  color: scheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(18),
+                  elevation: 6,
+                  color: scheme.surface,
+                  shadowColor: scheme.shadow.withValues(alpha: 0.16),
+                  surfaceTintColor: Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
                   clipBehavior: Clip.antiAlias,
-                  child: Container(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.18),
+                        color: scheme.outlineVariant.withValues(alpha: 0.65),
                       ),
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        LinearProgressIndicator(
-                          value:
-                              player.duration == null ||
-                                  player.duration!.inMilliseconds == 0
-                              ? null
-                              : (player.position.inMilliseconds /
-                                        player.duration!.inMilliseconds)
-                                    .clamp(0, 1),
-                          minHeight: 3,
-                          color: scheme.primary,
-                          backgroundColor: scheme.primaryContainer,
-                        ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+                          padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.graphic_eq_rounded,
-                                color: scheme.primary,
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: scheme.primaryContainer.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.graphic_eq_rounded,
+                                  color: scheme.primary,
+                                  size: 21,
+                                ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       controller.currentTitle ?? 'অডিও',
@@ -134,50 +144,47 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 13,
+                                        fontSize: 13.5,
                                         color: scheme.onSurface,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
-                                      verse == null
-                                          ? 'শুনছেন'
-                                          : (isSequence
-                                                ? '$verse · ${controller.currentVerseIndex + 1}/${controller.quranVerseCount}'
-                                                : verse),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
+                                      subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: scheme.onSurfaceVariant,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                              AudioDockIconAction(
-                                label: 'আমার প্লেলিস্ট ও ডাউনলোড',
-                                icon: Icons.library_music_outlined,
-                                onPressed: () => ref
-                                    .read(appRouterProvider)
-                                    .push('/my-media'),
-                              ),
-                              AudioDockIconAction(
+                              if (!compact)
+                                AudioDockIconAction(
+                                  label: 'আমার প্লেলিস্ট ও ডাউনলোড',
+                                  icon: Icons.queue_music_rounded,
+                                  onPressed: () => ref
+                                      .read(appRouterProvider)
+                                      .push('/my-media'),
+                                ),
+                              AudioDockPrimaryAction(
                                 label: playing ? 'বিরতি' : 'চালু করুন',
+                                playing: playing,
                                 onPressed: playing
                                     ? () => unawaited(controller.pause())
                                     : controller.resumeCurrent,
-                                icon: playing
-                                    ? Icons.pause_circle_filled_rounded
-                                    : Icons.play_circle_fill_rounded,
-                                color: scheme.primary,
-                                iconSize: 34,
                               ),
                               AudioDockIconAction(
                                 label: _expanded
                                     ? 'কন্ট্রোল বন্ধ'
                                     : 'আরও কন্ট্রোল',
-                                onPressed: () =>
-                                    setState(() => _expanded = !_expanded),
                                 icon: _expanded
                                     ? Icons.keyboard_arrow_down_rounded
                                     : Icons.keyboard_arrow_up_rounded,
+                                onPressed: () =>
+                                    setState(() => _expanded = !_expanded),
                               ),
                               AudioDockIconAction(
                                 label: 'অডিও বন্ধ করুন',
@@ -189,80 +196,158 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                             ],
                           ),
                         ),
-                        if (_expanded)
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          alignment: Alignment.topCenter,
+                          child: _expanded
+                              ? StreamBuilder<Duration>(
+                                  stream: player.positionStream,
+                                  initialData: player.position,
+                                  builder: (context, snapshot) {
+                                    final position =
+                                        snapshot.data ?? Duration.zero;
+                                    return Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        16,
+                                        10,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          AudioDockSeekSlider(
+                                            duration: duration,
+                                            position: position,
+                                            onSeek: (target) => unawaited(
+                                              controller.seek(target),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  formatAudioDockTime(position),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color:
+                                                        scheme.onSurfaceVariant,
+                                                    fontFeatures: const [
+                                                      FontFeature.tabularFigures(),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Text(
+                                                  formatAudioDockTime(duration),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color:
+                                                        scheme.onSurfaceVariant,
+                                                    fontFeatures: const [
+                                                      FontFeature.tabularFigures(),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              AudioDockIconAction(
+                                                label: isSequence
+                                                    ? 'আগের আয়াত'
+                                                    : '১০ সেকেন্ড পেছনে',
+                                                icon: isSequence
+                                                    ? Icons
+                                                          .skip_previous_rounded
+                                                    : Icons.replay_10_rounded,
+                                                onPressed: () => unawaited(
+                                                  isSequence
+                                                      ? controller.previous()
+                                                      : controller.seek(
+                                                          audioDockClampedSeekTarget(
+                                                            position,
+                                                            duration,
+                                                            -10,
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                              Semantics(
+                                                label: 'প্লেব্যাক গতি পরিবর্তন',
+                                                button: true,
+                                                child: ExcludeSemantics(
+                                                  child: TextButton(
+                                                    onPressed: () => unawaited(
+                                                      controller.setSpeed(
+                                                        nextAudioPlaybackSpeed(
+                                                          player.speed,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      '${player.speed}×',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: scheme.primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              AudioDockIconAction(
+                                                label: isSequence
+                                                    ? 'পরের আয়াত'
+                                                    : '১০ সেকেন্ড সামনে',
+                                                icon: isSequence
+                                                    ? Icons.skip_next_rounded
+                                                    : Icons.forward_10_rounded,
+                                                onPressed: () => unawaited(
+                                                  isSequence
+                                                      ? controller.next()
+                                                      : controller.seek(
+                                                          audioDockClampedSeekTarget(
+                                                            position,
+                                                            duration,
+                                                            10,
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        if (!_expanded)
                           StreamBuilder<Duration>(
                             stream: player.positionStream,
                             initialData: player.position,
                             builder: (context, snapshot) {
-                              final duration = player.duration ?? Duration.zero;
                               final position = snapshot.data ?? Duration.zero;
-                              return Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  14,
-                                  0,
-                                  14,
-                                  10,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    AudioDockSeekSlider(
-                                      duration: duration,
-                                      position: position,
-                                      onSeek: (target) =>
-                                          unawaited(controller.seek(target)),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text(_format(position)),
-                                        const Spacer(),
-                                        AudioDockIconAction(
-                                          label: isSequence
-                                              ? 'আগের আয়াত'
-                                              : '১০ সেকেন্ড পেছনে',
-                                          onPressed: () => unawaited(
-                                            isSequence
-                                                ? controller.previous()
-                                                : controller.seek(
-                                                    position -
-                                                        const Duration(
-                                                          seconds: 10,
-                                                        ),
-                                                  ),
-                                          ),
-                                          icon: Icons.skip_previous_rounded,
-                                        ),
-                                        TextButton(
-                                          onPressed: () => unawaited(
-                                            controller.setSpeed(
-                                              nextAudioPlaybackSpeed(
-                                                player.speed,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Text('${player.speed}×'),
-                                        ),
-                                        AudioDockIconAction(
-                                          label: isSequence
-                                              ? 'পরের আয়াত'
-                                              : '১০ সেকেন্ড সামনে',
-                                          onPressed: () => unawaited(
-                                            isSequence
-                                                ? controller.next()
-                                                : controller.seek(
-                                                    position +
-                                                        const Duration(
-                                                          seconds: 10,
-                                                        ),
-                                                  ),
-                                          ),
-                                          icon: Icons.skip_next_rounded,
-                                        ),
-                                        const Spacer(),
-                                        Text(_format(duration)),
-                                      ],
-                                    ),
-                                  ],
+                              return LinearProgressIndicator(
+                                value: duration.inMilliseconds <= 0
+                                    ? 0
+                                    : (position.inMilliseconds /
+                                              duration.inMilliseconds)
+                                          .clamp(0.0, 1.0),
+                                minHeight: 2,
+                                color: scheme.primary,
+                                backgroundColor: scheme.primary.withValues(
+                                  alpha: 0.10,
                                 ),
                               );
                             },
@@ -278,9 +363,66 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
       },
     );
   }
+}
 
-  String _format(Duration d) =>
-      '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+String formatAudioDockTime(Duration duration) {
+  final seconds = duration.inSeconds < 0 ? 0 : duration.inSeconds;
+  final minutes = seconds ~/ 60;
+  final secondsPart = (seconds % 60).toString().padLeft(2, '0');
+  if (minutes >= 60) {
+    final hours = minutes ~/ 60;
+    return '$hours:${(minutes % 60).toString().padLeft(2, '0')}:$secondsPart';
+  }
+  return '$minutes:$secondsPart';
+}
+
+Duration audioDockClampedSeekTarget(
+  Duration position,
+  Duration duration,
+  int offsetSeconds,
+) {
+  final target = position.inMilliseconds + offsetSeconds * 1000;
+  final end = duration.inMilliseconds;
+  return Duration(milliseconds: target.clamp(0, end < 0 ? 0 : end).toInt());
+}
+
+/// The primary action stays visible and easy to hit without a tooltip layer.
+class AudioDockPrimaryAction extends StatelessWidget {
+  const AudioDockPrimaryAction({
+    required this.label,
+    required this.playing,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final bool playing;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: onPressed != null,
+      child: ExcludeSemantics(
+        child: IconButton.filled(
+          onPressed: onPressed,
+          icon: Icon(
+            playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: 24,
+          ),
+          style: IconButton.styleFrom(
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
+            minimumSize: const Size(44, 44),
+            padding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// A compact, keyboard-accessible speed action with no floating popup menu.
@@ -348,14 +490,27 @@ class AudioDockSeekSlider extends StatelessWidget {
     final value = position.inMilliseconds
         .clamp(0, duration.inMilliseconds)
         .toDouble();
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: 40,
-      child: Slider(
-        value: max <= 0 ? 0 : value,
-        max: max <= 0 ? 1 : max,
-        onChanged: max <= 0
-            ? null
-            : (v) => onSeek(Duration(milliseconds: v.round())),
+      child: SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 3,
+          trackShape: const RoundedRectSliderTrackShape(),
+          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+          overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+          activeTrackColor: scheme.primary,
+          inactiveTrackColor: scheme.outlineVariant,
+          thumbColor: scheme.primary,
+          overlayColor: scheme.primary.withValues(alpha: 0.12),
+        ),
+        child: Slider(
+          value: max <= 0 ? 0 : value,
+          max: max <= 0 ? 1 : max,
+          onChanged: max <= 0
+              ? null
+              : (v) => onSeek(Duration(milliseconds: v.round())),
+        ),
       ),
     );
   }
