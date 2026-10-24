@@ -112,8 +112,7 @@ class OfflineDownloadAction extends ConsumerStatefulWidget {
       _OfflineDownloadActionState();
 }
 
-class _OfflineDownloadActionState
-    extends ConsumerState<OfflineDownloadAction> {
+class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
   String? _openedOwner;
 
   @override
