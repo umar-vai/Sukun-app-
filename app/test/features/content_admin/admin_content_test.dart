@@ -153,6 +153,34 @@ void main() {
     expect(AdminResourceKind.articleGuide.contentType, 'article');
   });
 
+  test(
+    'blog uses existing secured article type, separate from editorial shelf',
+    () {
+      expect(AdminResourceKind.blog.contentType, 'article');
+      expect(AdminResourceKind.blog.mediaSourceType, isNull);
+      const blog = AdminContentItem(
+        id: 'blog-test',
+        type: 'article',
+        title: 'An editor-written blog',
+        slug: 'blog-first-post-12345678',
+        visibility: 'public',
+        status: 'draft',
+        verificationStatus: 'not_required',
+      );
+      const article = AdminContentItem(
+        id: 'article-test',
+        type: 'article',
+        title: 'A resource article',
+        slug: 'article-first-post-12345678',
+        visibility: 'public',
+        status: 'draft',
+        verificationStatus: 'not_required',
+      );
+      expect(resourceKindForItem(blog), AdminResourceKind.blog);
+      expect(resourceKindForItem(article), AdminResourceKind.articleGuide);
+    },
+  );
+
   test('internal media and slug fields are inferred safely', () {
     expect(
       inferYoutubeVideoId('https://www.youtube.com/watch?v=abc123'),
@@ -333,7 +361,7 @@ void main() {
     expect(find.text('হাদিসের লেখা'), findsOneWidget);
   });
 
-  testWidgets('resource editor starts with eight plain-language choices', (
+  testWidgets('resource editor offers nine clear choices including Blog', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -356,7 +384,8 @@ void main() {
       'বই ও পিডিএফ',
       'ভিডিও',
       'দোয়া ও যিকর',
-      'লেখা ও নির্দেশিকা',
+      'আর্টিকেল',
+      'ব্লগ লিখুন',
     ]) {
       expect(find.text(label), findsOneWidget);
     }
@@ -373,7 +402,8 @@ void main() {
     ('বই ও পিডিএফ', 'পিডিএফ লিংক *'),
     ('ভিডিও', 'ভিডিও লিংক *'),
     ('দোয়া ও যিকর', 'আরবি *'),
-    ('লেখা ও নির্দেশিকা', 'সম্পূর্ণ লেখা *'),
+    ('আর্টিকেল', 'সম্পূর্ণ লেখা *'),
+    ('ব্লগ লিখুন', 'ব্লগের সম্পূর্ণ লেখা *'),
   ]) {
     testWidgets('${scenario.$1} opens its tailored form', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);

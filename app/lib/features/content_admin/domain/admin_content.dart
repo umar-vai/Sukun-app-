@@ -7,6 +7,7 @@ enum AdminResourceKind {
   video,
   duaAzkar,
   articleGuide,
+  blog,
 }
 
 extension AdminResourceKindDetails on AdminResourceKind {
@@ -17,7 +18,7 @@ extension AdminResourceKindDetails on AdminResourceKind {
     AdminResourceKind.bookPdf => 'pdf',
     AdminResourceKind.video => 'video',
     AdminResourceKind.duaAzkar => 'dua',
-    AdminResourceKind.articleGuide => 'article',
+    AdminResourceKind.articleGuide || AdminResourceKind.blog => 'article',
   };
 
   String? get mediaSourceType => switch (this) {
@@ -42,6 +43,9 @@ AdminResourceKind resourceKindForItem(
   AdminContentItem item, {
   ContentCategory? category,
 }) {
+  if (item.type == 'article' && item.slug.startsWith('blog-')) {
+    return AdminResourceKind.blog;
+  }
   if (item.type == 'quran') return AdminResourceKind.quranAyah;
   if (item.type == 'hadith') return AdminResourceKind.hadith;
   if (item.type == 'audio') {

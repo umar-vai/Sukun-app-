@@ -316,9 +316,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ],
               ),
+              // Old deep links remain valid after the shelf merge.
+              GoRoute(
+                path: 'books-pdfs',
+                redirect: (_, _) => '/resources/books-articles',
+              ),
+              GoRoute(
+                path: 'articles-guides',
+                redirect: (_, _) => '/resources/books-articles',
+              ),
               for (final slug in const [
-                'books-pdfs',
-                'articles-guides',
+                'books-articles',
+                'blog',
                 'audio',
                 'video',
               ])

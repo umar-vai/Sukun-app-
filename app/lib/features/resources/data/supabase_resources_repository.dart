@@ -10,12 +10,12 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
   final SupabaseClient _client;
 
   static const _selection =
-      'id,type,category_id,title,title_bn,summary,body,arabic_text,bangla_text,transliteration,translation,reference_text,source_reference,source_url,rights_note,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,content_categories(slug,name,name_bn)';
+      'id,slug,type,category_id,title,title_bn,summary,body,arabic_text,bangla_text,transliteration,translation,reference_text,source_reference,source_url,rights_note,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,content_categories(slug,name,name_bn)';
 
   // Browse cards need metadata only. Read the full body, Arabic text and media
   // content only on the detail screen, not for every search result.
   static const _browseSelection =
-      'id,type,category_id,title,title_bn,summary,reference_text,source_reference,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,rights_note,content_categories(slug,name,name_bn)';
+      'id,slug,type,category_id,title,title_bn,summary,reference_text,source_reference,media_source_type,media_url,youtube_video_id,thumbnail_url,verification_status,visibility,status,created_at,surah_number,surah_name,surah_name_bn,ayah_number,ayah_end_number,collection_name,book_name,hadith_number,narrator,grade,rights_note,content_categories(slug,name,name_bn)';
 
   @override
   Future<List<ContentResource>> browseResources({

@@ -673,9 +673,35 @@ class _AdminContentListScreenState
   }
 
   Future<void> _create() async {
+    var kind = _selectedKind;
+    if (kind == AdminResourceKind.bookPdf) {
+      kind = await showModalBottomSheet<AdminResourceKind>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheet) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: const Text('বই / পিডিএফ যোগ করুন'),
+                onTap: () => Navigator.pop(sheet, AdminResourceKind.bookPdf),
+              ),
+              ListTile(
+                leading: const Icon(Icons.article_outlined),
+                title: const Text('আর্টিকেল লিখুন'),
+                onTap: () =>
+                    Navigator.pop(sheet, AdminResourceKind.articleGuide),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (!mounted || kind == null) return;
+    }
     final created = await context.push<AdminContentItem>(
       '/admin/content/new',
-      extra: _selectedKind,
+      extra: kind,
     );
     if (mounted && created != null) await _refresh();
   }
@@ -808,20 +834,23 @@ class _AdminContentListScreenState
             runSpacing: 12,
             children: [
               for (final kind in AdminResourceKind.values)
-                SizedBox(
-                  width: width,
-                  child: _KindCard(
-                    kind: kind,
-                    count: data == null
-                        ? null
-                        : items
-                              .where(
-                                (item) => _kindFor(item, categories) == kind,
-                              )
-                              .length,
-                    onTap: () => _openCategory(kind),
+                if (kind != AdminResourceKind.articleGuide)
+                  SizedBox(
+                    width: width,
+                    child: _KindCard(
+                      kind: kind,
+                      count: data == null
+                          ? null
+                          : items.where((item) {
+                              final itemKind = _kindFor(item, categories);
+                              return itemKind == kind ||
+                                  (kind == AdminResourceKind.bookPdf &&
+                                      itemKind ==
+                                          AdminResourceKind.articleGuide);
+                            }).length,
+                      onTap: () => _openCategory(kind),
+                    ),
                   ),
-                ),
             ],
           );
         },
@@ -896,8 +925,13 @@ class _AdminContentListScreenState
     final categories = data?.categories ?? const <ContentCategory>[];
     final items = (data?.items ?? const <AdminContentItem>[])
         .where((item) {
-          if (!_allDrafts && _kindFor(item, categories) != _selectedKind) {
-            return false;
+          if (!_allDrafts) {
+            final kind = _kindFor(item, categories);
+            if (kind != _selectedKind &&
+                !(_selectedKind == AdminResourceKind.bookPdf &&
+                    kind == AdminResourceKind.articleGuide)) {
+              return false;
+            }
           }
           if (_status == 'review') {
             if (item.status != 'review' && item.status != 'verified') {
@@ -1218,10 +1252,11 @@ String _kindLabel(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.hadith => 'হাদিস',
   AdminResourceKind.quranAudio => 'কুরআন অডিও',
   AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও',
-  AdminResourceKind.bookPdf => 'বই ও পিডিএফ',
+  AdminResourceKind.bookPdf => 'বই ও আর্টিকেল',
   AdminResourceKind.video => 'ভিডিও',
   AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
-  AdminResourceKind.articleGuide => 'লেখা ও নির্দেশিকা',
+  AdminResourceKind.articleGuide => 'আর্টিকেল',
+  AdminResourceKind.blog => 'ব্লগ',
 };
 
 IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
@@ -1233,6 +1268,7 @@ IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.video => Icons.play_circle_outline_rounded,
   AdminResourceKind.duaAzkar => Icons.volunteer_activism_outlined,
   AdminResourceKind.articleGuide => Icons.article_outlined,
+  AdminResourceKind.blog => Icons.edit_note_outlined,
 };
 
 IconData _typeIcon(String type) => switch (type) {

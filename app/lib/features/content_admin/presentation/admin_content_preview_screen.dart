@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
+import 'package:sukun_life/features/resources/presentation/blog_article_body.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/content_admin/data/content_admin_providers.dart';
@@ -197,7 +198,10 @@ class _AdminContentPreviewScreenState
               if (item.translation != null)
                 _PreviewSection(title: 'অনুবাদ', body: item.translation!),
               if (item.body != null)
-                _PreviewSection(title: 'বিস্তারিত লেখা', body: item.body!),
+                if (item.type == 'article' && item.slug.startsWith('blog-'))
+                  BlogArticleBody(content: item.body!)
+                else
+                  _PreviewSection(title: 'বিস্তারিত লেখা', body: item.body!),
               const SizedBox(height: 26),
               const SukunSectionHeader(
                 title: 'উৎস ও তথ্যসূত্র',

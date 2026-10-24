@@ -16,6 +16,7 @@ import 'package:sukun_life/features/resources/presentation/audio_player_screen.d
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/public_resource_copy.dart';
+import 'package:sukun_life/features/resources/presentation/blog_article_body.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
@@ -213,14 +214,29 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               if (resource.arabicText?.trim().isNotEmpty != true)
                 _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
-              _Section(
-                label: resource.type == 'article' || resource.type == 'guide'
-                    ? 'বিস্তারিত'
-                    : 'নির্দেশনা',
-                value: resource.isRuqyahBdAudio
-                    ? null
-                    : publicResourceInstructions(resource.body),
-              ),
+              if (isBlogResourceSlug(resource.slug)) ...[
+                if (resource.thumbnailUrl?.startsWith('https://') == true)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 18),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.network(
+                        resource.thumbnailUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                BlogArticleBody(content: resource.body ?? ''),
+              ] else
+                _Section(
+                  label: resource.type == 'article' || resource.type == 'guide'
+                      ? 'বিস্তারিত'
+                      : 'নির্দেশনা',
+                  value: resource.isRuqyahBdAudio
+                      ? null
+                      : publicResourceInstructions(resource.body),
+                ),
               // Source, publication and rights metadata stay in the Admin CMS.
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.youtube) ...[
