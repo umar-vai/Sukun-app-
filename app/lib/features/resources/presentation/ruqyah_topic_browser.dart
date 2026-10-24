@@ -30,9 +30,7 @@ class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
   Widget build(BuildContext context) {
     final audio = widget.resources.where((r) => r.type == 'audio').toList();
     final extra = widget.resources.where((r) => r.type != 'audio').toList();
-    final topicOptions = ruqyahAudioTopics
-        .where((t) => resourcesForRuqyahTopic(audio, t.slug).isNotEmpty)
-        .toList();
+    const topicOptions = ruqyahAudioTopics;
     final selectedItems = resourcesForRuqyahTopic(widget.resources, _selected);
     final isGrouped = _selected == 'all' || _selected == 'ruqyah-audio';
 
