@@ -54,7 +54,7 @@ void main() {
       );
       expect(find.text('Android অ্যাপ শীঘ্রই'), findsWidgets);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('লগইন'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'লগইন'));
       await tester.pumpAndSettle();
       expect(find.text('Login route'), findsOneWidget);
     });
