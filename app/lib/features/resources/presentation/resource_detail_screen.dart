@@ -15,6 +15,7 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
+import 'package:sukun_life/features/resources/presentation/public_resource_copy.dart';
 import 'package:sukun_life/features/resources/presentation/pdf_reader_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 
@@ -184,9 +185,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 title: resource.titleBn?.isNotEmpty == true
                     ? resource.titleBn!
                     : resource.title,
-                subtitle: resource.titleBn?.isNotEmpty == true
-                    ? resource.title
-                    : resource.summary,
               ),
               if (ref.watch(appSessionProvider).value?.isAuthenticated ==
                   true) ...[
@@ -199,16 +197,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   label: const Text('আমার রুটিনে যুক্ত করুন'),
                 ),
               ],
-              if (resource.titleBn?.isNotEmpty == true)
-                const SizedBox(height: 4),
-              _Section(
-                label: 'সংক্ষেপে',
-                value: resource.isRuqyahBdAudio
-                    ? null
-                    : resource.titleBn?.isNotEmpty == true
-                    ? resource.summary
-                    : null,
-              ),
               if (resource.arabicText?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 18),
@@ -226,8 +214,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 _Section(label: 'উচ্চারণ', value: resource.transliteration),
               _Section(label: 'অনুবাদ', value: resource.translation),
               _Section(
-                label: 'নির্দেশনা',
-                value: resource.isRuqyahBdAudio ? null : resource.body,
+                label: resource.type == 'article' || resource.type == 'guide'
+                    ? 'বিস্তারিত'
+                    : 'নির্দেশনা',
+                value: resource.isRuqyahBdAudio
+                    ? null
+                    : publicResourceInstructions(resource.body),
               ),
               // Source, publication and rights metadata stay in the Admin CMS.
               if (resolveResourceMedia(resource.linkedResource)?.kind ==

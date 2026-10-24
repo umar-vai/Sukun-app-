@@ -37,6 +37,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Dua, article and guide hide editorial summaries and source notes', (
+    tester,
+  ) async {
+    for (final resourceType in ['dua', 'article', 'guide']) {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            resourcesRepositoryProvider.overrideWithValue(
+              _FakeResourcesRepository(
+                withEditorialNotes: true,
+                resourceType: resourceType,
+              ),
+            ),
+          ],
+          child: const MaterialApp(
+            home: ResourceDetailScreen(resourceId: 'resource-1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('সকাল-সন্ধ্যায় তিনবার পড়ুন'), findsOneWidget);
+      expect(find.text('সংক্ষেপে'), findsNothing);
+      expect(find.textContaining('Owner-provided source'), findsNothing);
+      expect(find.text('তথ্যসূত্র'), findsNothing);
+      expect(find.text('উৎস উল্লেখ আছে'), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('Bangla pronunciation expands directly beneath Arabic', (
     tester,
   ) async {
@@ -188,11 +218,15 @@ final class _FakeResourcesRepository implements ResourcesRepository {
     this.invalidMedia = false,
     this.unverifiedAudio = false,
     this.missingPronunciation = false,
+    this.withEditorialNotes = false,
+    this.resourceType = 'quran',
   });
 
   final bool invalidMedia;
   final bool unverifiedAudio;
   final bool missingPronunciation;
+  final bool withEditorialNotes;
+  final String resourceType;
 
   @override
   Future<List<ContentResource>> browseResources({
@@ -206,7 +240,7 @@ final class _FakeResourcesRepository implements ResourcesRepository {
     String resourceId,
   ) async => ContentResource(
     id: 'resource-1',
-    type: unverifiedAudio ? 'audio' : 'quran',
+    type: unverifiedAudio ? 'audio' : resourceType,
     mediaSourceType: invalidMedia || unverifiedAudio
         ? 'direct_audio_url'
         : null,
@@ -219,7 +253,16 @@ final class _FakeResourcesRepository implements ResourcesRepository {
     rightsNote: unverifiedAudio
         ? 'Third-party rights not independently verified. No in-app embedding.'
         : null,
-    title: 'Ayatul Kursi',
+    title: withEditorialNotes ? 'সকাল-সন্ধ্যায় তিনবার পড়ুন' : 'Ayatul Kursi',
+    titleBn: withEditorialNotes ? 'সকাল-সন্ধ্যায় তিনবার পড়ুন' : null,
+    summary: withEditorialNotes
+        ? 'Owner-provided source; editorial review required before publishing.'
+        : null,
+    body: withEditorialNotes
+        ? 'Owner-provided source; editorial review required before publishing.\\n'
+              '৫. সকাল-সন্ধ্যায় তিনবার পড়ুন।\\n'
+              'সেলফ রুকইয়াহ গাইড · paragraph 1177'
+        : null,
     arabicText: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ',
     transliteration: missingPronunciation ? null : 'পরীক্ষামূলক বাংলা উচ্চারণ',
     referenceText: 'Surah Al-Baqarah 2:255',
