@@ -59,31 +59,45 @@ void main() {
     expect(find.byKey(const Key('dua-card-morning-1')), findsNothing);
     await tester.tap(find.byKey(const Key('dua-group-card-time-based')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/dua-azkar/time-based');
-    expect(find.byKey(const Key('dua-select-dua-azkar-morning')), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar/time-based',
+    );
+    expect(
+      find.byKey(const Key('dua-select-dua-azkar-morning')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('dua-card-morning-1')), findsNothing);
 
     await tester.tap(find.byKey(const Key('dua-select-dua-azkar-morning')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/dua-azkar/time-based/dua-azkar-morning');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar/time-based/dua-azkar-morning',
+    );
     expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
     expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
     router.pop();
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/dua-azkar/time-based');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar/time-based',
+    );
     router.pop();
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/dua-azkar');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar',
+    );
     await tester.ensureVisible(
       find.byKey(const Key('dua-group-card-everyday')),
     );
     await tester.tap(find.byKey(const Key('dua-group-card-everyday')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('dua-select-dua-azkar-masnun')), findsOneWidget);
+    expect(
+      find.byKey(const Key('dua-select-dua-azkar-masnun')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('uncategorized public dua is on its own safe route', (
@@ -111,8 +125,10 @@ void main() {
     expect(find.byKey(const Key('dua-unclassified')), findsOneWidget);
     await tester.tap(find.byKey(const Key('dua-unclassified')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/dua-azkar/other/_unclassified');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar/other/_unclassified',
+    );
     expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
@@ -132,9 +148,7 @@ void main() {
     );
   });
 
-  testWidgets('Ruqyah topic cards open dedicated content page', (
-    tester,
-  ) async {
+  testWidgets('Ruqyah topic cards open dedicated content page', (tester) async {
     final router = _taxonomyRouter(initialLocation: '/resources/ruqyah');
     addTearDown(router.dispose);
     await tester.pumpWidget(
@@ -162,13 +176,17 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/ruqyah/ruqyah-evil-eye');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/ruqyah/ruqyah-evil-eye',
+    );
     expect(find.byKey(const Key('ruqyah-item-eye')), findsOneWidget);
     router.pop();
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
