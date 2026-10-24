@@ -45,7 +45,7 @@ class CompactAudioResourceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: SukunTypography.banglaBody(
                         textStyle: Theme.of(context).textTheme.titleSmall,
-                      )?.copyWith(fontWeight: FontWeight.w600),
+                      ).copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
                     Text(
