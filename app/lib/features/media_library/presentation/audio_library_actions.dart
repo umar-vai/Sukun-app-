@@ -34,10 +34,7 @@ class AudioLibraryActions extends StatelessWidget {
     if (!supports(resource)) return const SizedBox.shrink();
     final encoded = Uri.encodeQueryComponent(resource.id);
     if (compact && overflow) {
-      return OfflineDownloadAction(
-        resourceId: resource.id,
-        menuOnly: true,
-      );
+      return OfflineDownloadAction(resourceId: resource.id, menuOnly: true);
     }
     if (compact) {
       return Row(
@@ -156,13 +153,17 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
             key: Key('audio-menu-${widget.resourceId}'),
             tooltip: downloaded ? 'অডিওর অপশন · ডাউনলোড হয়েছে' : 'অডিওর অপশন',
             icon: Icon(
-              downloaded ? Icons.download_done_rounded : Icons.more_horiz_rounded,
+              downloaded
+                  ? Icons.download_done_rounded
+                  : Icons.more_horiz_rounded,
               color: downloaded ? Theme.of(context).colorScheme.primary : null,
               size: 22,
             ),
             onSelected: (action) {
               final query = Uri.encodeQueryComponent(widget.resourceId);
-              context.push('/my-media?${action == 'add' ? 'add' : 'download'}=$query');
+              context.push(
+                '/my-media?${action == 'add' ? 'add' : 'download'}=$query',
+              );
             },
             itemBuilder: (_) => [
               const PopupMenuItem<String>(
@@ -202,9 +203,7 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
                   ? Icons.download_done_rounded
                   : Icons.download_outlined,
               size: widget.compact ? 21 : null,
-              color: downloaded
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: downloaded ? Theme.of(context).colorScheme.primary : null,
             ),
             constraints: widget.compact
                 ? const BoxConstraints(minWidth: 44, minHeight: 44)
