@@ -160,16 +160,55 @@ async function verifyGuestPage(browser, profile) {
     for (const protectedPath of ['/patient/home', '/admin/dashboard']) {
       checkpoint(protectedPath.startsWith('/patient')
         ? 'patient guest protection' : 'admin guest protection');
-      await page.goto(base + '#' + protectedPath, {
+      // A same-document page.goto('#/...') only changes the fragment.
+      // On Chromium it may emit hashchange without a Flutter/go_router route
+      // event, giving a false negative for an otherwise protected cold link.
+      // Start from a fresh document to verify real direct-link restoration.
+      await page.goto('about:blank', { waitUntil: 'domcontentloaded' });
+      const protectedResponse = await page.goto(base + '#' + protectedPath, {
         waitUntil: 'domcontentloaded',
         timeout: 65000,
       });
+      if (!protectedResponse?.ok()) {
+        safeError('Protected deep link did not serve the web entrypoint');
+      }
       await waitForFlutter(page);
-      await page.waitForFunction(
-        (blocked) => !location.hash.startsWith('#' + blocked),
-        protectedPath,
-        { timeout: 20000 },
-      );
+      try {
+        await page.waitForFunction(
+          () => {
+            const route = location.hash.split('?')[0].replace(/^#/, '');
+            // The browser may canonicalize GoRouter '/' to an empty hash.
+            // Only accept that if the HTTP path is the app root itself.
+            const isCanonicalHome = route === '' &&
+              (location.pathname === '/' || location.pathname === '/index.html');
+            return route === '/' || isCanonicalHome || route === '/login';
+          },
+          undefined,
+          { timeout: 20000 },
+        );
+      } catch (_) {
+        // Non-identifying browser readiness and routing flags only; NEVER
+        // print the DOM, page URL, response bodies, tokens or account data.
+        const signals = await page.evaluate(() => ({
+          protectedHashRemains: location.hash.startsWith('#/patient') ||
+            location.hash.startsWith('#/admin'),
+          hashIsEmpty: location.hash.length === 0,
+          pathIsAppRoot: location.pathname === '/' ||
+            location.pathname === '/index.html',
+          hashIsRoot: location.hash === '#/' || location.hash === '#',
+          hashIsLogin: location.hash.startsWith('#/login'),
+          flutterViewPresent: Boolean(document.querySelector('flutter-view')),
+          hasFlutterCanvas: Boolean(document.querySelector('flt-glass-pane, canvas')),
+          bootstrapDownloaded: performance.getEntriesByType('resource')
+            .some((resource) => resource.name.includes('main.dart.js') ||
+              resource.name.includes('main.dart.mjs')),
+          appStillOnLaunchText: (document.body.innerText || '')
+            .includes('Faith. Care. Peace of mind.'),
+        }));
+        console.error('CHECK: Guest protection diagnostic ' +
+          JSON.stringify(signals));
+        throw new Error('Protected Guest route did not reach a safe location');
+      }
     }
 
     checkpoint('final privacy and runtime checks');
