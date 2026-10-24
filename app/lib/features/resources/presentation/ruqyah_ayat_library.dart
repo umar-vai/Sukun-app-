@@ -844,7 +844,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               ),
               const SizedBox(height: 4),
               Text(
-                'অডিও: শুধু সূত্রে উল্লিখিত শুরুর আয়াত; পুরো নির্বাচিত পাঠ নয়',
+                'শুধু শুরুর আয়াতের তিলাওয়াত',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -884,7 +884,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                 const LinearProgressIndicator()
                               else if (result == null) ...[
                                 const Text(
-                                  'এই সূত্রের বাংলা অনুবাদ এখন পাওয়া যাচ্ছে না।',
+                                  'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
                                 ),
                                 TextButton.icon(
                                   onPressed: () => setState(() {
@@ -895,7 +895,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                 ),
                               ] else if (result.translation.isEmpty) ...[
                                 const Text(
-                                  'এই সূত্রের বাংলা অনুবাদ এখন পাওয়া যাচ্ছে না।',
+                                  'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
                                 ),
                               ] else ...[
                                 SelectableText(result.translation),

@@ -9,7 +9,7 @@ import 'package:sukun_life/features/resources/presentation/resource_detail_scree
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 void main() {
-  testWidgets('assigned resource detail renders canonical text and reference', (
+  testWidgets('resource detail renders content without public provenance cards', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -33,13 +33,9 @@ void main() {
 
     expect(find.text('Ayatul Kursi'), findsOneWidget);
     expect(find.text('আরবি'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('তথ্যসূত্র'),
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('তথ্যসূত্র'), findsOneWidget);
-    expect(find.text('Surah Al-Baqarah 2:255'), findsOneWidget);
+    expect(find.text('তথ্যসূত্র'), findsNothing);
+    expect(find.text('উৎস উল্লেখ আছে'), findsNothing);
+    expect(find.text('Surah Al-Baqarah 2:255'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

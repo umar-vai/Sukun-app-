@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sukun_life/features/content_admin/domain/book_audio_source_catalog.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Owner-licensed, publisher-hosted audio links streamed using the existing
 /// Flutter audio player. No redundant MP3 upload or second audio player.
@@ -45,7 +44,7 @@ class _BookAudioExternalLinksDialogState
             return Column(
               children: [
                 const Text(
-                  'বইয়ে উল্লেখিত রুকইয়াহ অডিওগুলো শুনতে পছন্দের অডিওতে চাপ দিন।',
+                  'অডিও শুনতে একটি ট্র্যাক বেছে নিন।',
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -57,17 +56,7 @@ class _BookAudioExternalLinksDialogState
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(entry.titleBn),
-                        subtitle: const Text(
-                          'অডিও শুনুন · রুকইয়াহ সাপোর্ট বিডি',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.open_in_new_rounded),
-                          tooltip: 'মূল উৎস খুলুন',
-                          onPressed: () => launchUrl(
-                            Uri.parse(entry.sourcePage),
-                            mode: LaunchMode.externalApplication,
-                          ),
-                        ),
+                        trailing: const Icon(Icons.play_arrow_rounded),
                         onTap: () => Navigator.of(context).push<void>(
                           MaterialPageRoute(
                             builder: (context) => AudioPlayerScreen(
