@@ -194,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
                             Text(
-                              copy?.signInNotConfigured ?? 'এটি শুধু অ্যাপের ডিজাইন দেখার সংস্করণ। লগইন পরীক্ষা করতে সংযুক্ত পরীক্ষামূলক অ্যাপ প্রয়োজন।',
+                              copy?.signInNotConfigured ?? 'লগইন এখন উপলব্ধ নয়।',
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -227,21 +227,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       label: _googleStarting
                           ? 'Google লগইন শুরু হচ্ছে…'
                           : 'Google দিয়ে লগইন',
-                    ),
-                  ],
-                  if (AppEnvironment.isProduction &&
-                      !AppEnvironment.googleOAuthEnabled) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: null,
-                      icon: const Icon(Icons.login_rounded),
-                      label: const Text('Google লগইন — সেটআপ প্রয়োজন'),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Production Google OAuth provider চালু হলে এটি ব্যবহার করা যাবে।',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                   const SizedBox(height: 12),
