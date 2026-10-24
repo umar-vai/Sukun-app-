@@ -311,22 +311,15 @@ class _NotificationHealthSettingsScreenState
                 const SizedBox(height: 8),
                 if (kIsWeb)
                   const Text(
-                    'HTTPS সাইটের নোটিফিকেশন অনুমতি এবং ব্রাউজারের ব্লক লিস্ট '
-                    'পরীক্ষা করুন। খোলা ট্যাবের Local Reminder এবং বন্ধ ট্যাবে '
-                    'Push Delivery এক নয়; Push delivery আলাদা যাচাই প্রয়োজন।',
+                    'ব্রাউজারে Sukun Life-এর নোটিফিকেশন অনুমতি চালু আছে কি না দেখুন।',
                   )
                 else if (android)
                   const Text(
-                    'ফোনের Settings → Apps → Sukun Life → Notifications পরীক্ষা '
-                    'করুন। ব্যাটারি অপটিমাইজেশন, Focus/Do Not Disturb এবং '
-                    'নির্ভুল অ্যালার্মের সেটিং ডেলিভারিতে প্রভাব ফেলতে পারে। '
-                    'এই অ্যাপ অন্য অ্যাপের সিস্টেম-অনুমতি নিজে বদলায় না।',
+                    'ফোনের Settings → Apps → Sukun Life → Notifications চালু করুন।',
                   )
                 else
                   const Text(
-                    'ফোনের Notification Permission এবং Focus/Do Not Disturb '
-                    'পরীক্ষা করুন। iOS-এর নির্ধারিত সময় ও Background Delivery '
-                    'ডিভাইস দিয়ে যাচাই করা প্রয়োজন।',
+                    'ফোনের নোটিফিকেশন অনুমতি ও Do Not Disturb সেটিংস দেখুন।',
                   ),
               ],
             ),
