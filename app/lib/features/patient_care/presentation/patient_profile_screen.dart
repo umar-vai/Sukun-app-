@@ -197,7 +197,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     Text(
                       enabled
                           ? kIsWeb
-                                ? 'Browser tab চালু থাকলে নির্ধারিত কাজের reminder দেখানো হবে।'
+                                ? 'ট্যাব খোলা থাকলে রিমাইন্ডার পাবেন।'
                                 : status!.preciseTimingAvailable
                                 ? 'নির্ধারিত সময় দেওয়া ও অনুমোদিত কাজের জন্য মনে করিয়ে দেওয়ার অনুমতি আছে।'
                                 : 'মনে করিয়ে দেওয়া চালু আছে। নির্দিষ্ট সময়ের অনুমতি না থাকলে ফোন কিছুটা দেরিতে জানাতে পারে।'
@@ -206,7 +206,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     const SizedBox(height: 6),
                     Text(
                       kIsWeb
-                          ? 'Web Preview-এ ট্যাব খোলা থাকা অবস্থায় রিমাইন্ডার কাজ করে। ব্রাউজার বন্ধ থাকলে বা ডিভাইস ঘুমিয়ে থাকলে নির্ধারিত ডেলিভারি নিশ্চিত নয়। পূর্ণ background push আলাদা service worker ও server setup-এর পর চালু হবে।'
+                          ? 'ব্রাউজার বন্ধ থাকলে রিমাইন্ডার নাও আসতে পারে।'
                           : 'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
                     ),
                     const SizedBox(height: 14),
