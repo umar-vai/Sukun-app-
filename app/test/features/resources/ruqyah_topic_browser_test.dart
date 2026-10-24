@@ -64,8 +64,7 @@ void main() {
     await tester.tap(find.text('তিনকুলের রুকইয়াহ'));
     expect(opened, 'qul');
 
-    await tester.ensureVisible(find.byKey(const Key('ruqyah-open-ayat')));
-    // Ayat shortcut belongs to the main All/Ayat views, not an audio topic.
+    // Ayat shortcut belongs to All/Ayat views, not the audio topic.
     expect(find.byKey(const Key('ruqyah-open-ayat')), findsNothing);
     expect(openAyat, 0);
   });
