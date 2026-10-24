@@ -17,11 +17,13 @@ class AudioLibraryActions extends StatelessWidget {
   const AudioLibraryActions({
     required this.resource,
     this.compact = false,
+    this.overflow = false,
     super.key,
   });
 
   final LinkedResource resource;
   final bool compact;
+  final bool overflow;
 
   static bool supports(LinkedResource resource) =>
       resource.type == 'audio' &&
@@ -31,16 +33,19 @@ class AudioLibraryActions extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!supports(resource)) return const SizedBox.shrink();
     final encoded = Uri.encodeQueryComponent(resource.id);
+    if (compact && overflow) {
+      return OfflineDownloadAction(resourceId: resource.id, menuOnly: true);
+    }
     if (compact) {
-      return Wrap(
-        spacing: 2,
-        runSpacing: 2,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             key: Key('audio-add-${resource.id}'),
             tooltip: 'প্লেলিস্টে যোগ করুন',
-            icon: const Icon(Icons.playlist_add_rounded),
+            icon: const Icon(Icons.playlist_add_rounded, size: 21),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            padding: EdgeInsets.zero,
             onPressed: () => context.push('/my-media?add=$encoded'),
           ),
           OfflineDownloadAction(
@@ -100,12 +105,14 @@ class OfflineDownloadAction extends ConsumerStatefulWidget {
     required this.resourceId,
     this.compact = false,
     this.iconOnly = false,
+    this.menuOnly = false,
     super.key,
   });
 
   final String resourceId;
   final bool compact;
   final bool iconOnly;
+  final bool menuOnly;
 
   @override
   ConsumerState<OfflineDownloadAction> createState() =>
@@ -141,6 +148,54 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
         final label = downloaded ? 'ডাউনলোড হয়েছে' : 'ডাউনলোড';
         final target =
             '/my-media?download=${Uri.encodeQueryComponent(widget.resourceId)}';
+        if (widget.menuOnly) {
+          return PopupMenuButton<String>(
+            key: Key('audio-menu-${widget.resourceId}'),
+            tooltip: downloaded ? 'অডিওর অপশন · ডাউনলোড হয়েছে' : 'অডিওর অপশন',
+            icon: Icon(
+              downloaded
+                  ? Icons.download_done_rounded
+                  : Icons.more_horiz_rounded,
+              color: downloaded ? Theme.of(context).colorScheme.primary : null,
+              size: 22,
+            ),
+            onSelected: (action) {
+              final query = Uri.encodeQueryComponent(widget.resourceId);
+              context.push(
+                '/my-media?${action == 'add' ? 'add' : 'download'}=$query',
+              );
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem<String>(
+                value: 'add',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.playlist_add_rounded, size: 20),
+                    SizedBox(width: 8),
+                    Text('প্লেলিস্টে যোগ'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'download',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      downloaded
+                          ? Icons.download_done_rounded
+                          : Icons.download_outlined,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(label),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
         if (widget.compact || widget.iconOnly) {
           return IconButton(
             tooltip: label,
@@ -149,7 +204,13 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
               downloaded
                   ? Icons.download_done_rounded
                   : Icons.download_outlined,
+              size: widget.compact ? 21 : null,
+              color: downloaded ? Theme.of(context).colorScheme.primary : null,
             ),
+            constraints: widget.compact
+                ? const BoxConstraints(minWidth: 44, minHeight: 44)
+                : null,
+            padding: widget.compact ? EdgeInsets.zero : null,
           );
         }
         return OutlinedButton.icon(

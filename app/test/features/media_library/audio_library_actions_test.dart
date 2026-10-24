@@ -252,15 +252,134 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ডাউনলোড হয়েছে'), findsOneWidget);
+    expect(find.byTooltip('ডাউনলোড হয়েছে'), findsOneWidget);
     expect(find.byIcon(Icons.download_done_rounded), findsOneWidget);
 
     await offline.remove('public-123');
     await tester.pumpAndSettle();
-    expect(find.text('ডাউনলোড'), findsOneWidget);
+    expect(find.byTooltip('ডাউনলোড'), findsOneWidget);
     expect(find.byIcon(Icons.download_outlined), findsOneWidget);
-    expect(find.text('ডাউনলোড হয়েছে'), findsNothing);
+    expect(find.byTooltip('ডাউনলোড হয়েছে'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact audio cards keep both actions on a 360px phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(20),
+              child: ResourceCard(
+                resource: const ContentResource(
+                  id: 'public-123',
+                  type: 'audio',
+                  title: 'বাংলা অনুবাদসহ কমন রুকইয়াহ দীর্ঘ অডিও শিরোনাম',
+                  status: 'published',
+                  visibility: 'public',
+                  mediaSourceType: 'direct_audio_url',
+                  mediaUrl: 'https://example.org/approved.mp3',
+                ),
+                onTap: () => context.push('/opened-audio'),
+              ),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/opened-audio',
+          builder: (_, _) => const Scaffold(body: Text('Playing')),
+        ),
+        GoRoute(
+          path: '/my-media',
+          builder: (_, state) => Scaffold(
+            body: Text('download=${state.uri.queryParameters['download']}'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('audio-add-public-123')), findsOneWidget);
+    expect(find.byKey(const Key('audio-download-public-123')), findsOneWidget);
+    expect(find.byKey(const Key('audio-menu-public-123')), findsNothing);
+    expect(tester.getSize(find.byType(ResourceCard)).height, lessThan(110));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(const Key('audio-download-public-123')));
+    await tester.pumpAndSettle();
+    expect(find.text('download=public-123'), findsOneWidget);
+    expect(find.text('Playing'), findsNothing);
+  });
+
+  testWidgets('narrow audio card uses one menu without opening its parent', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(20),
+              child: ResourceCard(
+                resource: const ContentResource(
+                  id: 'public-123',
+                  type: 'audio',
+                  title: 'দীর্ঘ রুকইয়াহ অডিও শিরোনাম',
+                  status: 'published',
+                  visibility: 'public',
+                  mediaSourceType: 'direct_audio_url',
+                  mediaUrl: 'https://example.org/approved.mp3',
+                ),
+                onTap: () => context.push('/opened-audio'),
+              ),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/opened-audio',
+          builder: (_, _) => const Scaffold(body: Text('Playing')),
+        ),
+        GoRoute(
+          path: '/my-media',
+          builder: (_, state) =>
+              Scaffold(body: Text('add=${state.uri.queryParameters['add']}')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('audio-menu-public-123')), findsOneWidget);
+    expect(find.byKey(const Key('audio-download-public-123')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const Key('audio-menu-public-123')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('প্লেলিস্টে যোগ'));
+    await tester.pumpAndSettle();
+    expect(find.text('add=public-123'), findsOneWidget);
+    expect(find.text('Playing'), findsNothing);
   });
 
   test('no download/playlist options for non-audio linked content', () {

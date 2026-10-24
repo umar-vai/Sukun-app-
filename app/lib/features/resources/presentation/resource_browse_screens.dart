@@ -9,6 +9,7 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/presentation/ayah_reading_card.dart';
 import 'package:sukun_life/features/resources/presentation/dua_azkar_browse_section.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
+import 'package:sukun_life/features/resources/presentation/compact_audio_resource_card.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
@@ -627,6 +628,12 @@ class _ResourceListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AudioLibraryActions.supports(resource.linkedResource)) {
+      return CompactAudioResourceCard(
+        resource: resource,
+        onTap: () => context.push('/resources/${resource.id}'),
+      );
+    }
     final reference = switch (resource.type) {
       'quran' => resource.referenceText,
       'hadith' => [
@@ -682,10 +689,6 @@ class _ResourceListTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
-                ],
-                if (AudioLibraryActions.supports(resource.linkedResource)) ...[
-                  const SizedBox(height: 8),
-                  AudioLibraryActions(resource: resource.linkedResource),
                 ],
               ],
             ),
