@@ -361,7 +361,7 @@ void main() {
     expect(find.text('হাদিসের লেখা'), findsOneWidget);
   });
 
-  testWidgets('resource editor starts with eight plain-language choices', (
+  testWidgets('resource editor offers nine clear choices including Blog', (
     tester,
   ) async {
     await tester.pumpWidget(
