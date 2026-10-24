@@ -235,9 +235,7 @@ class QuranSurahList extends StatelessWidget {
         const Card(
           child: Padding(
             padding: EdgeInsets.all(14),
-            child: Text(
-              'কিছু সূরা এখনো পাওয়া যাচ্ছে না।',
-            ),
+            child: Text('কিছু সূরা এখনো পাওয়া যাচ্ছে না।'),
           ),
         ),
       if (chapters.isEmpty)
