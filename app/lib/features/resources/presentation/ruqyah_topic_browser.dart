@@ -30,8 +30,10 @@ class RuqyahTopicBrowser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (topicSlug == null) return _index(context);
-    final known = [...ruqyahMainTopics, ...ruqyahAudioTopics]
-        .any((topic) => topic.slug == topicSlug);
+    final known = [
+      ...ruqyahMainTopics,
+      ...ruqyahAudioTopics,
+    ].any((topic) => topic.slug == topicSlug);
     if (!known) {
       return const AppEmptyState(
         title: 'বিভাগ পাওয়া যায়নি',
@@ -71,19 +73,17 @@ class RuqyahTopicBrowser extends StatelessWidget {
   }
 
   Widget _index(BuildContext context) {
-    final audio = resources.where((resource) => resource.type == 'audio')
+    final audio = resources
+        .where((resource) => resource.type == 'audio')
         .toList(growable: false);
-    final mainOptions = <RuqyahBrowseTopic>[
-      ...ruqyahMainTopics,
-    ];
+    final mainOptions = <RuqyahBrowseTopic>[...ruqyahMainTopics];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'উপকরণ',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         for (final topic in mainOptions) ...[
@@ -97,9 +97,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
         const SizedBox(height: 14),
         Text(
           'বিষয় অনুযায়ী অডিও',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         for (final topic in ruqyahAudioTopics) ...[
@@ -128,10 +127,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
         key: Key('ruqyah-filter-${topic.slug}'),
         onTap: () => context.push('/resources/ruqyah/${topic.slug}'),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 15,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           decoration: BoxDecoration(
             border: Border.all(
               color: scheme.outlineVariant.withValues(alpha: 0.5),
@@ -145,16 +141,14 @@ class RuqyahTopicBrowser extends StatelessWidget {
               Expanded(
                 child: Text(
                   topic.titleBn,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               Text(
                 '$count',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(width: 8),
               Icon(
