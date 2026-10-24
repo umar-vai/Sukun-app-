@@ -78,10 +78,7 @@ class QuranBrowserScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const SukunSectionHeader(
-                title: 'সূরাসমূহ',
-                
-              ),
+              const SukunSectionHeader(title: 'সূরাসমূহ'),
               const SizedBox(height: 8),
               if (surahs.isEmpty)
                 const AppEmptyState(
@@ -611,10 +608,7 @@ class _ResourceFutureList extends StatelessWidget {
     }
     final resources = snapshot.data ?? const <ContentResource>[];
     if (resources.isEmpty) {
-      return AppEmptyState(
-        title: emptyTitle,
-        message: 'পরে আবার দেখুন।',
-      );
+      return AppEmptyState(title: emptyTitle, message: 'পরে আবার দেখুন।');
     }
     return ListView.separated(
       padding: const EdgeInsets.all(20),
