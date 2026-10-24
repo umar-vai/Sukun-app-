@@ -194,7 +194,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (!AppEnvironment.isSupabaseConfigured) ...[
                             const SizedBox(height: 12),
                             Text(
-                              copy?.signInNotConfigured ?? 'লগইন এখন উপলব্ধ নয়।',
+                              copy?.signInNotConfigured ??
+                                  'লগইন এখন উপলব্ধ নয়।',
                               textAlign: TextAlign.center,
                             ),
                           ],
