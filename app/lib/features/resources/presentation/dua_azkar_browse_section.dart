@@ -66,15 +66,15 @@ class DuaAzkarBrowseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupSlug == null) return _index(context);
-    if (groupSlug == 'all') return _items(context, resources);
+    if (groupSlug == 'all' && categorySlug == null) {
+      return _items(context, resources);
+    }
+    if (groupSlug == 'other' && categorySlug == reviewSlug) {
+      return _items(context, _unclassified);
+    }
     final group = _group;
     if (group == null) return _empty(context);
     if (categorySlug == null) return _subcategories(context, group);
-    if (categorySlug == reviewSlug) {
-      return groupSlug == 'other'
-          ? _items(context, _unclassified)
-          : _empty(context);
-    }
     final category = _category;
     if (category == null || !group.categorySlugs.contains(category.slug)) {
       return _empty(context);
