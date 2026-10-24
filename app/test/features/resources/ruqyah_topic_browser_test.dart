@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/ruqyah_topic_browser.dart';
@@ -33,14 +34,16 @@ void main() {
       String? opened;
       var openAyat = 0;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
-              child: RuqyahTopicBrowser(
-                resources: items,
-                onOpenResource: (item) => opened = item.id,
-                onOpenAyat: () => openAyat++,
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(12),
+                child: RuqyahTopicBrowser(
+                  resources: items,
+                  onOpenResource: (item) => opened = item.id,
+                  onOpenAyat: () => openAyat++,
+                ),
               ),
             ),
           ),
@@ -85,14 +88,16 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       var openAyat = 0;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
-              child: RuqyahTopicBrowser(
-                resources: [audio('bakara', 'সুরা বাকারা — শায়খ সুদাইস')],
-                onOpenResource: (_) {},
-                onOpenAyat: () => openAyat++,
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(12),
+                child: RuqyahTopicBrowser(
+                  resources: [audio('bakara', 'সুরা বাকারা — শায়খ সুদাইস')],
+                  onOpenResource: (_) {},
+                  onOpenAyat: () => openAyat++,
+                ),
               ),
             ),
           ),
