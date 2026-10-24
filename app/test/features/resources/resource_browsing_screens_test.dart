@@ -36,6 +36,7 @@ void main() {
         id: 'morning-1',
         type: 'dua',
         title: 'Morning fixture',
+        referenceText: 'Private source book · paragraph 1167',
         categorySlug: 'dua-azkar-morning',
         visibility: 'public',
         status: 'published',
@@ -76,6 +77,7 @@ void main() {
       '/resources/dua-azkar/time-based/dua-azkar-morning',
     );
     expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
+    expect(find.text('Private source book · paragraph 1167'), findsNothing);
     expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
     router.pop();
     await tester.pumpAndSettle();
@@ -152,9 +154,7 @@ void main() {
     expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
-  testWidgets('Hadith browser exposes CMS-derived topics and references', (
-    tester,
-  ) async {
+  testWidgets('Hadith browser hides reference subtitle', (tester) async {
     await tester.pumpWidget(
       _testApp(const HadithBrowserScreen(), const _BrowsingRepository()),
     );
@@ -164,7 +164,7 @@ void main() {
     expect(find.text('Approved Hadith fixture'), findsOneWidget);
     expect(
       find.text('Fixture collection • Fixture book • 42 • Sahih'),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
@@ -223,7 +223,7 @@ void main() {
 
       expect(find.text('নির্বাচিত আয়াত'), findsOneWidget);
       expect(find.text('Verified Ayah fixture'), findsOneWidget);
-      expect(find.text('Qur’an 1:1'), findsOneWidget);
+      expect(find.text('Qur’an 1:1'), findsNothing);
     },
   );
 

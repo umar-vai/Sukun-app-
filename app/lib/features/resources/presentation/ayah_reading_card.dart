@@ -14,14 +14,12 @@ class AyahReadingCard extends StatelessWidget {
     required this.arabicText,
     this.transliteration,
     this.title,
-    this.reference,
     this.onOpenDetail,
   });
 
   final String arabicText;
   final String? transliteration;
   final String? title;
-  final String? reference;
   final VoidCallback? onOpenDetail;
 
   @override
@@ -41,25 +39,12 @@ class AyahReadingCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          Row(
-            children: [
-              Text(
-                'আরবি',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: SukunColors.deepTide,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              if (reference != null && reference!.trim().isNotEmpty)
-                Flexible(
-                  child: Text(
-                    reference!,
-                    textAlign: TextAlign.end,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-            ],
+          Text(
+            'আরবি',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: SukunColors.deepTide,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 14),
           Directionality(

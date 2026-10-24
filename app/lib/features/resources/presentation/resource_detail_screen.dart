@@ -175,22 +175,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
-              Wrap(
-                spacing: 8,
-                children: [
-                  SukunStatusPill(
-                    label: _typeLabel(resource.type),
-                    tone: SukunStatusTone.brand,
-                  ),
-                  if (!resource.isRuqyahBdAudio &&
-                      (resource.referenceText?.isNotEmpty == true ||
-                          resource.sourceReference?.isNotEmpty == true))
-                    const SukunStatusPill(
-                      label: 'উৎস উল্লেখ আছে',
-                      tone: SukunStatusTone.brand,
-                      icon: Icons.menu_book_outlined,
-                    ),
-                ],
+              SukunStatusPill(
+                label: _typeLabel(resource.type),
+                tone: SukunStatusTone.brand,
               ),
               const SizedBox(height: 14),
               SukunPageIntro(
@@ -242,15 +229,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 label: 'নির্দেশনা',
                 value: resource.isRuqyahBdAudio ? null : resource.body,
               ),
-              if (resource.isRuqyahBdAudio)
-                const _Section(label: 'অডিও উৎস', value: 'রুকইয়াহ সাপোর্ট বিডি')
-              else
-                _Section(
-                  label: 'তথ্যসূত্র',
-                  value: resource.referenceText ?? resource.sourceReference,
-                ),
-              // Publication rights, internal book paragraph IDs and review
-              // metadata remain accessible to Admin; not to listeners.
+              // Source, publication and rights metadata stay in the Admin CMS.
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.youtube) ...[
                 const SizedBox(height: 20),

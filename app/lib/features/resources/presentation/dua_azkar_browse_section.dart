@@ -185,13 +185,6 @@ class DuaAzkarBrowseSection extends StatelessWidget {
                   textStyle: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              subtitle: item.referenceText?.trim().isNotEmpty == true
-                  ? Text(
-                      item.referenceText!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  : null,
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () =>
                   context.push('/resources/${Uri.encodeComponent(item.id)}'),

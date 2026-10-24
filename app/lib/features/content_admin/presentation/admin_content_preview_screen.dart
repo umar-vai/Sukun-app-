@@ -180,7 +180,6 @@ class _AdminContentPreviewScreenState
                   child: AyahReadingCard(
                     arabicText: item.arabicText!,
                     transliteration: item.transliteration,
-                    reference: item.referenceText,
                   ),
                 ),
               if (item.banglaText != null)

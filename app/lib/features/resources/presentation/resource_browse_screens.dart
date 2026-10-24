@@ -160,7 +160,6 @@ class QuranSurahScreen extends ConsumerWidget {
                   arabicText: resource.arabicText!,
                   transliteration: resource.transliteration,
                   title: resource.titleBn ?? resource.title,
-                  reference: resource.referenceText,
                   onOpenDetail: () => context.push('/resources/${resource.id}'),
                 )
               : _ResourceListTile(
@@ -258,7 +257,7 @@ class QuranCollectionsScreen extends ConsumerWidget {
                                         ? 'দুআ ও আযকার বিভাগ'
                                         : collection == null
                                         ? 'যাচাইকৃত আয়াত প্রকাশের অপেক্ষায়'
-                                        : 'আয়াত ও উৎস দেখুন',
+                                        : 'আয়াত দেখুন',
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(color: SukunColors.muted),
                                   ),
@@ -372,7 +371,6 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
                           arabicText: resource.arabicText!,
                           transliteration: resource.transliteration,
                           title: resource.titleBn ?? resource.title,
-                          reference: resource.referenceText,
                           onOpenDetail: () =>
                               context.push('/resources/${resource.id}'),
                         )
@@ -673,16 +671,6 @@ class _ResourceListTile extends StatelessWidget {
         onTap: () => context.push('/resources/${resource.id}'),
       );
     }
-    final reference = switch (resource.type) {
-      'quran' => resource.referenceText,
-      'hadith' => [
-        resource.collectionName,
-        resource.bookName,
-        resource.hadithNumber,
-        resource.grade,
-      ].whereType<String>().join(' • '),
-      _ => resource.categoryName,
-    };
     return SukunSurface(
       radius: 20,
       padding: const EdgeInsets.all(16),
@@ -719,16 +707,6 @@ class _ResourceListTile extends StatelessWidget {
                     textStyle: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (reference != null && reference.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    reference,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: SukunColors.muted),
-                  ),
-                ],
               ],
             ),
           ),
