@@ -43,9 +43,7 @@ class _BookAudioExternalLinksDialogState
             final tracks = snapshot.data!;
             return Column(
               children: [
-                const Text(
-                  'অডিও শুনতে একটি ট্র্যাক বেছে নিন।',
-                ),
+                const Text('অডিও শুনতে একটি ট্র্যাক বেছে নিন।'),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView.separated(
