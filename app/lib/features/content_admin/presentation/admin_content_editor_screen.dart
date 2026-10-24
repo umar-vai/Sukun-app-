@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -170,7 +168,7 @@ class _AdminContentEditorScreenState
       final name = 'blogs/${const Uuid().v4()}.${ext == 'jpeg' ? 'jpg' : ext}';
       await storage.uploadBinary(
         name,
-        bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
+        bytes,
         fileOptions: FileOptions(contentType: mime, upsert: false),
       );
       if (!mounted) return;
