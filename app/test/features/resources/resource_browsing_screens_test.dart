@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
@@ -22,93 +23,77 @@ void main() {
     },
   );
 
-  testWidgets('Dua selector shows exactly one category result list', (
+  testWidgets('Dua groups open subcategory and detail route with Back', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(900, 2200);
+    tester.view.physicalSize = const Size(420, 1050);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final filters = <Set<String>>[];
-    final repository = _BrowsingRepository(
-      onBrowse: filters.add,
-      duaItems: const [
-        ContentResource(
-          id: 'morning-1',
-          type: 'dua',
-          title: 'Morning fixture',
-          categorySlug: 'dua-azkar-morning',
-          visibility: 'public',
-          status: 'published',
-        ),
-        ContentResource(
-          id: 'masnun-1',
-          type: 'dua',
-          title: 'Masnun fixture',
-          categorySlug: 'dua-azkar-masnun',
-          visibility: 'public',
-          status: 'published',
-        ),
-        ContentResource(
-          id: 'protection-1',
-          type: 'dua',
-          title: 'Protection fixture',
-          categorySlug: 'dua-azkar-protection',
-          visibility: 'public',
-          status: 'published',
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      _testApp(
-        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
-        repository,
+
+    const fixtures = [
+      ContentResource(
+        id: 'morning-1',
+        type: 'dua',
+        title: 'Morning fixture',
+        categorySlug: 'dua-azkar-morning',
+        visibility: 'public',
+        status: 'published',
       ),
-    );
+      ContentResource(
+        id: 'masnun-1',
+        type: 'dua',
+        title: 'Masnun fixture',
+        categorySlug: 'dua-azkar-masnun',
+        visibility: 'public',
+        status: 'published',
+      ),
+    ];
+    final repository = _BrowsingRepository(duaItems: fixtures);
+    final router = _taxonomyRouter();
+    addTearDown(router.dispose);
+    await tester.pumpWidget(_taxonomyApp(router, repository));
     await tester.pumpAndSettle();
 
-    expect(filters.last, isEmpty);
-    expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
-    expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
-    expect(find.byKey(const Key('dua-card-protection-1')), findsNothing);
-
-    await tester.tap(find.byKey(const Key('dua-group-time-based')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('dua-group-everyday')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('dua-select-dua-azkar-masnun')));
-    await tester.pumpAndSettle();
-
+    expect(find.byKey(const Key('dua-group-card-time-based')), findsOneWidget);
     expect(find.byKey(const Key('dua-card-morning-1')), findsNothing);
-    expect(find.byKey(const Key('dua-card-masnun-1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('dua-group-card-time-based')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/dua-azkar/time-based');
+    expect(find.byKey(const Key('dua-select-dua-azkar-morning')), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-morning-1')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('dua-group-everyday')));
+    await tester.tap(find.byKey(const Key('dua-select-dua-azkar-morning')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('dua-group-support')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('dua-select-dua-azkar-protection')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
-    expect(find.byKey(const Key('dua-card-protection-1')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('dua-show-all')));
-    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/dua-azkar/time-based/dua-azkar-morning');
     expect(find.byKey(const Key('dua-card-morning-1')), findsOneWidget);
-    expect(find.byKey(const Key('dua-card-masnun-1')), findsOneWidget);
-    expect(find.byKey(const Key('dua-card-protection-1')), findsOneWidget);
+    expect(find.byKey(const Key('dua-card-masnun-1')), findsNothing);
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/dua-azkar/time-based');
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/dua-azkar');
+    await tester.ensureVisible(
+      find.byKey(const Key('dua-group-card-everyday')),
+    );
+    await tester.tap(find.byKey(const Key('dua-group-card-everyday')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dua-select-dua-azkar-masnun')), findsOneWidget);
   });
 
-  testWidgets('uncategorized public dua remains visible as safe fallback', (
+  testWidgets('uncategorized public dua is on its own safe route', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(900, 2200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    final router = _taxonomyRouter();
+    addTearDown(router.dispose);
     await tester.pumpWidget(
-      _testApp(
-        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+      _taxonomyApp(
+        router,
         const _BrowsingRepository(
           duaItems: [
             ContentResource(
@@ -123,10 +108,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('বিভাগ নির্ধারণের অপেক্ষায়'), findsOneWidget);
-    await tester.ensureVisible(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
-    await tester.tap(find.text('বিভাগ নির্ধারণের অপেক্ষায়'));
+    expect(find.byKey(const Key('dua-unclassified')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('dua-unclassified')));
     await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/dua-azkar/other/_unclassified');
     expect(find.text('Published uncategorized fixture'), findsOneWidget);
   });
 
@@ -146,39 +132,43 @@ void main() {
     );
   });
 
-  testWidgets('Dua and Ruqyah browsers expose the approved taxonomy', (
+  testWidgets('Ruqyah topic cards open dedicated content page', (
     tester,
   ) async {
+    final router = _taxonomyRouter(initialLocation: '/resources/ruqyah');
+    addTearDown(router.dispose);
     await tester.pumpWidget(
-      _testApp(
-        const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
-        const _BrowsingRepository(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('সময়ভিত্তিক আমল'), findsOneWidget);
-    expect(
-      find.byKey(const Key('dua-select-dua-azkar-morning')),
-      findsOneWidget,
-    );
-    expect(find.text('দৈনন্দিন মাসনূন দোয়া'), findsOneWidget);
-    await tester.ensureVisible(find.text('দৈনন্দিন মাসনূন দোয়া'));
-    await tester.tap(find.text('দৈনন্দিন মাসনূন দোয়া'));
-    await tester.pumpAndSettle();
-    expect(find.text('মাসনূন দুআ'), findsOneWidget);
-    expect(find.text('সফর'), findsOneWidget);
-
-    await tester.pumpWidget(
-      _testApp(
-        const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
-        const _BrowsingRepository(),
+      _taxonomyApp(
+        router,
+        const _BrowsingRepository(
+          duaItems: [
+            ContentResource(
+              id: 'eye',
+              type: 'audio',
+              title: 'বদনজরের রুকইয়াহ',
+              categorySlug: 'ruqyah-audio',
+              visibility: 'public',
+              status: 'published',
+            ),
+          ],
+        ),
       ),
     );
     await tester.pumpAndSettle();
     expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
     expect(find.text('সেলফ-রুকইয়াহ গাইড'), findsOneWidget);
-    expect(find.text('বদনজর'), findsOneWidget);
-    expect(find.text('সিহর'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
+    );
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/resources/ruqyah/ruqyah-evil-eye');
+    expect(find.byKey(const Key('ruqyah-item-eye')), findsOneWidget);
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
+        findsOneWidget);
   });
 
   testWidgets(
@@ -227,6 +217,61 @@ void main() {
     expect(ruqyahAyatIndex.singleWhere((e) => e.isDua).titleBn, 'রুকইয়াহ দোয়া');
   });
 }
+
+GoRouter _taxonomyRouter({String initialLocation = '/resources/dua-azkar'}) =>
+    GoRouter(
+      initialLocation: initialLocation,
+      routes: [
+        GoRoute(
+          path: '/resources/dua-azkar',
+          builder: (_, _) =>
+              const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+          routes: [
+            GoRoute(
+              path: ':groupSlug',
+              builder: (_, state) => TaxonomyBrowserScreen(
+                kind: TaxonomyKind.duaAzkar,
+                groupSlug: state.pathParameters['groupSlug'],
+              ),
+              routes: [
+                GoRoute(
+                  path: ':categorySlug',
+                  builder: (_, state) => TaxonomyBrowserScreen(
+                    kind: TaxonomyKind.duaAzkar,
+                    groupSlug: state.pathParameters['groupSlug'],
+                    categorySlug: state.pathParameters['categorySlug'],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/resources/ruqyah',
+          builder: (_, _) =>
+              const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
+          routes: [
+            GoRoute(
+              path: ':topicSlug',
+              builder: (_, state) => TaxonomyBrowserScreen(
+                kind: TaxonomyKind.ruqyah,
+                topicSlug: state.pathParameters['topicSlug'],
+              ),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/resources/:id',
+          builder: (_, _) => const Scaffold(body: Text('Detail')),
+        ),
+      ],
+    );
+
+Widget _taxonomyApp(GoRouter router, ResourcesRepository repository) =>
+    ProviderScope(
+      overrides: [resourcesRepositoryProvider.overrideWithValue(repository)],
+      child: MaterialApp.router(routerConfig: router),
+    );
 
 Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
   overrides: [resourcesRepositoryProvider.overrideWithValue(repository)],
