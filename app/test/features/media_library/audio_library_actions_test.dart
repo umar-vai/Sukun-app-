@@ -148,8 +148,8 @@ void main() {
       );
       addTearDown(router.dispose);
       await tester.pumpWidget(
-      ProviderScope(child: MaterialApp.router(routerConfig: router)),
-    );
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
       await tester.pumpAndSettle();
 
       expect(
