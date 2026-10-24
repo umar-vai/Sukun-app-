@@ -12,10 +12,19 @@ import 'package:sukun_life/features/resources/presentation/resource_browse_scree
 
 void main() {
   test('resource hub shows merged Books & Articles and independent Blog', () {
-    expect(resourceSections.map((section) => section.slug), contains('books-articles'));
+    expect(
+      resourceSections.map((section) => section.slug),
+      contains('books-articles'),
+    );
     expect(resourceSections.map((section) => section.slug), contains('blog'));
-    expect(resourceSections.map((section) => section.slug), isNot(contains('books-pdfs')));
-    expect(resourceSections.map((section) => section.slug), isNot(contains('articles-guides')));
+    expect(
+      resourceSections.map((section) => section.slug),
+      isNot(contains('books-pdfs')),
+    );
+    expect(
+      resourceSections.map((section) => section.slug),
+      isNot(contains('articles-guides')),
+    );
     expect(resourceSectionBySlug('books-pdfs')?.slug, 'books-articles');
     expect(resourceSectionBySlug('articles-guides')?.slug, 'books-articles');
     expect(
@@ -26,12 +35,18 @@ void main() {
     expect(isBlogResourceSlug('article-a-first-post'), isFalse);
   });
 
-  testWidgets('blog displays actual headings and written paragraphs', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: BlogArticleBody(content: '# শিরোনাম\n\n## উপশিরোনাম\nসম্পূর্ণ ব্লগের লেখা'),
+  testWidgets('blog displays actual headings and written paragraphs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: BlogArticleBody(
+            content: '# শিরোনাম\n\n## উপশিরোনাম\nসম্পূর্ণ ব্লগের লেখা',
+          ),
+        ),
       ),
-    ));
+    );
     expect(find.text('শিরোনাম'), findsOneWidget);
     expect(find.text('উপশিরোনাম'), findsOneWidget);
     expect(find.text('সম্পূর্ণ ব্লগের লেখা'), findsOneWidget);

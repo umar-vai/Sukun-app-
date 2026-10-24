@@ -267,12 +267,14 @@ class _AdminContentEditorScreenState
       titleBn: kind == AdminResourceKind.duaAzkar
           ? _nullable('banglaText')
           : _nullable('titleBn'),
-      slug: _existingSlug ??
+      slug:
+          _existingSlug ??
           (kind == AdminResourceKind.blog
               ? 'blog-${generatedResourceSlug(title, _resourceKey)}'
               : generatedResourceSlug(title, _resourceKey)),
       summary: _nullable('summary'),
-      body: kind == AdminResourceKind.articleGuide ||
+      body:
+          kind == AdminResourceKind.articleGuide ||
               kind == AdminResourceKind.blog
           ? _nullable('body')
           : null,
@@ -678,211 +680,212 @@ class _AdminContentEditorScreenState
     );
   }
 
-  List<Widget> _fieldsFor(AdminResourceKind kind, _EditorData data) =>
-      switch (kind) {
-        AdminResourceKind.quranAyah => [
-          _section('আয়াতের লেখা'),
-          _field(
-            'arabicText',
-            'আরবি লেখা *',
-            helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
-            lines: 7,
-            required: true,
-            rtl: true,
+  List<Widget> _fieldsFor(
+    AdminResourceKind kind,
+    _EditorData data,
+  ) => switch (kind) {
+    AdminResourceKind.quranAyah => [
+      _section('আয়াতের লেখা'),
+      _field(
+        'arabicText',
+        'আরবি লেখা *',
+        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+        lines: 7,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'বাংলা অনুবাদ *',
+        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+        lines: 6,
+        required: true,
+      ),
+      _surahField(required: true),
+      _ayahFields(required: true),
+      _approvedSourceField(),
+    ],
+    AdminResourceKind.hadith => [
+      _section('হাদিসের লেখা'),
+      _field(
+        'arabicText',
+        'আরবি লেখা *',
+        helper: 'অনুমোদিত উৎসের আরবি হুবহু লিখুন।',
+        lines: 7,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'বাংলা অনুবাদ *',
+        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+        lines: 6,
+        required: true,
+      ),
+      _field(
+        'collectionName',
+        'হাদিসের কিতাব *',
+        helper: 'হাদিসগ্রন্থ ও কিতাবের নাম লিখুন।',
+        required: true,
+      ),
+      _field(
+        'hadithNumber',
+        'হাদিস নম্বর *',
+        helper: 'উৎসে থাকা হাদিস নম্বরটি দিন।',
+        required: true,
+      ),
+      _approvedSourceField(),
+      _field(
+        'grade',
+        'হাদিসের মান (ঐচ্ছিক)',
+        helper: 'উৎসে মান উল্লেখ থাকলে তবেই লিখুন।',
+      ),
+    ],
+    AdminResourceKind.quranAudio => [
+      _section('অডিওর তথ্য'),
+      _titleField(),
+      _surahField(required: true),
+      _ayahFields(required: false),
+      _field(
+        'mediaUrl',
+        'অডিও লিংক *',
+        helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+        required: true,
+        url: true,
+      ),
+      _field(
+        'author',
+        'কারীর নাম বা উৎস (ঐচ্ছিক)',
+        helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.ruqyahAudio => [
+      _section('রুকইয়াহ অডিও'),
+      _titleField(),
+      _categoryField(data, prefix: 'ruqyah-', required: true),
+      _field(
+        'mediaUrl',
+        'অডিও লিংক *',
+        helper: 'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.bookPdf => [
+      _section('বই বা পিডিএফ'),
+      _titleField(),
+      _field(
+        'author',
+        'লেখক (ঐচ্ছিক)',
+        helper: 'প্রকাশনায় যে লেখকের নাম আছে, সেটি লিখুন।',
+      ),
+      _field(
+        'mediaUrl',
+        'পিডিএফ লিংক *',
+        helper: 'পিডিএফের HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.video => [
+      _section('ভিডিওর তথ্য'),
+      _titleField(),
+      _field(
+        'mediaUrl',
+        'ভিডিও লিংক *',
+        helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের উৎসেই থাকবে।',
+        required: true,
+        url: true,
+      ),
+      _rightsField(),
+    ],
+    AdminResourceKind.duaAzkar => [
+      _section('দোয়া বা যিকর'),
+      _field(
+        'arabicText',
+        'আরবি *',
+        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+        lines: 6,
+        required: true,
+        rtl: true,
+      ),
+      _field(
+        'banglaText',
+        'বাংলা *',
+        helper: 'অনুমোদিত বাংলা অর্থ বা অনুবাদ লিখুন।',
+        lines: 5,
+        required: true,
+      ),
+      _categoryField(data, prefix: 'dua-azkar', required: true),
+      _approvedSourceField(),
+      _field(
+        'repeatCount',
+        'পাঠের সংখ্যা (ঐচ্ছিক)',
+        helper: 'অনুমোদিত উৎসে সংখ্যা থাকলেই সেটি লিখুন।',
+        numeric: true,
+      ),
+    ],
+    AdminResourceKind.blog => [
+      _section('ব্লগ পোস্ট'),
+      _titleField(),
+      _field(
+        'body',
+        'ব্লগের সম্পূর্ণ লেখা *',
+        helper: '# শিরোনাম এবং ## উপশিরোনাম ব্যবহার করতে পারেন।',
+        lines: 16,
+        required: true,
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _saving ? null : () => _uploadBlogImage(cover: true),
+            icon: const Icon(Icons.add_photo_alternate_outlined),
+            label: const Text('প্রচ্ছদের ছবি'),
           ),
-          _field(
-            'banglaText',
-            'বাংলা অনুবাদ *',
-            helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
-            lines: 6,
-            required: true,
+          OutlinedButton.icon(
+            onPressed: _saving ? null : () => _uploadBlogImage(cover: false),
+            icon: const Icon(Icons.add_to_photos_outlined),
+            label: const Text('লেখায় ছবি যোগ করুন'),
           ),
-          _surahField(required: true),
-          _ayahFields(required: true),
-          _approvedSourceField(),
         ],
-        AdminResourceKind.hadith => [
-          _section('হাদিসের লেখা'),
-          _field(
-            'arabicText',
-            'আরবি লেখা *',
-            helper: 'অনুমোদিত উৎসের আরবি হুবহু লিখুন।',
-            lines: 7,
-            required: true,
-            rtl: true,
-          ),
-          _field(
-            'banglaText',
-            'বাংলা অনুবাদ *',
-            helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
-            lines: 6,
-            required: true,
-          ),
-          _field(
-            'collectionName',
-            'হাদিসের কিতাব *',
-            helper: 'হাদিসগ্রন্থ ও কিতাবের নাম লিখুন।',
-            required: true,
-          ),
-          _field(
-            'hadithNumber',
-            'হাদিস নম্বর *',
-            helper: 'উৎসে থাকা হাদিস নম্বরটি দিন।',
-            required: true,
-          ),
-          _approvedSourceField(),
-          _field(
-            'grade',
-            'হাদিসের মান (ঐচ্ছিক)',
-            helper: 'উৎসে মান উল্লেখ থাকলে তবেই লিখুন।',
-          ),
-        ],
-        AdminResourceKind.quranAudio => [
-          _section('অডিওর তথ্য'),
-          _titleField(),
-          _surahField(required: true),
-          _ayahFields(required: false),
-          _field(
-            'mediaUrl',
-            'অডিও লিংক *',
-            helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
-            required: true,
-            url: true,
-          ),
-          _field(
-            'author',
-            'কারীর নাম বা উৎস (ঐচ্ছিক)',
-            helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
-          ),
-          _rightsField(),
-        ],
-        AdminResourceKind.ruqyahAudio => [
-          _section('রুকইয়াহ অডিও'),
-          _titleField(),
-          _categoryField(data, prefix: 'ruqyah-', required: true),
-          _field(
-            'mediaUrl',
-            'অডিও লিংক *',
-            helper:
-                'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
-            required: true,
-            url: true,
-          ),
-          _rightsField(),
-        ],
-        AdminResourceKind.bookPdf => [
-          _section('বই বা পিডিএফ'),
-          _titleField(),
-          _field(
-            'author',
-            'লেখক (ঐচ্ছিক)',
-            helper: 'প্রকাশনায় যে লেখকের নাম আছে, সেটি লিখুন।',
-          ),
-          _field(
-            'mediaUrl',
-            'পিডিএফ লিংক *',
-            helper: 'পিডিএফের HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
-            required: true,
-            url: true,
-          ),
-          _rightsField(),
-        ],
-        AdminResourceKind.video => [
-          _section('ভিডিওর তথ্য'),
-          _titleField(),
-          _field(
-            'mediaUrl',
-            'ভিডিও লিংক *',
-            helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের উৎসেই থাকবে।',
-            required: true,
-            url: true,
-          ),
-          _rightsField(),
-        ],
-        AdminResourceKind.duaAzkar => [
-          _section('দোয়া বা যিকর'),
-          _field(
-            'arabicText',
-            'আরবি *',
-            helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
-            lines: 6,
-            required: true,
-            rtl: true,
-          ),
-          _field(
-            'banglaText',
-            'বাংলা *',
-            helper: 'অনুমোদিত বাংলা অর্থ বা অনুবাদ লিখুন।',
-            lines: 5,
-            required: true,
-          ),
-          _categoryField(data, prefix: 'dua-azkar', required: true),
-          _approvedSourceField(),
-          _field(
-            'repeatCount',
-            'পাঠের সংখ্যা (ঐচ্ছিক)',
-            helper: 'অনুমোদিত উৎসে সংখ্যা থাকলেই সেটি লিখুন।',
-            numeric: true,
-          ),
-        ],
-        AdminResourceKind.blog => [
-          _section('ব্লগ পোস্ট'),
-          _titleField(),
-          _field(
-            'body',
-            'ব্লগের সম্পূর্ণ লেখা *',
-            helper: '# শিরোনাম এবং ## উপশিরোনাম ব্যবহার করতে পারেন।',
-            lines: 16,
-            required: true,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _saving ? null : () => _uploadBlogImage(cover: true),
-                icon: const Icon(Icons.add_photo_alternate_outlined),
-                label: const Text('প্রচ্ছদের ছবি'),
-              ),
-              OutlinedButton.icon(
-                onPressed: _saving ? null : () => _uploadBlogImage(cover: false),
-                icon: const Icon(Icons.add_to_photos_outlined),
-                label: const Text('লেখায় ছবি যোগ করুন'),
-              ),
-            ],
-          ),
-          if (_controller('thumbnailUrl').text.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  _controller('thumbnailUrl').text,
-                  height: 160,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
-              ),
+      ),
+      if (_controller('thumbnailUrl').text.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              _controller('thumbnailUrl').text,
+              height: 160,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
             ),
-        ],
-        AdminResourceKind.articleGuide => [
-          _section('লেখা বা নির্দেশিকা'),
-          _titleField(),
-          _field(
-            'body',
-            'সম্পূর্ণ লেখা *',
-            helper: 'পাঠকের জন্য পুরো লেখাটি লিখুন।',
-            lines: 12,
-            required: true,
           ),
-          _field(
-            'author',
-            'লেখক বা উৎস (ঐচ্ছিক)',
-            helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা উৎস উল্লেখ করুন।',
-          ),
-        ],
-      };
+        ),
+    ],
+    AdminResourceKind.articleGuide => [
+      _section('লেখা বা নির্দেশিকা'),
+      _titleField(),
+      _field(
+        'body',
+        'সম্পূর্ণ লেখা *',
+        helper: 'পাঠকের জন্য পুরো লেখাটি লিখুন।',
+        lines: 12,
+        required: true,
+      ),
+      _field(
+        'author',
+        'লেখক বা উৎস (ঐচ্ছিক)',
+        helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা উৎস উল্লেখ করুন।',
+      ),
+    ],
+  };
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.only(top: 22, bottom: 2),

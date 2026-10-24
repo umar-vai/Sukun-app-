@@ -23,24 +23,29 @@ class BlogArticleBody extends StatelessWidget {
       if (photo != null) {
         final uri = Uri.tryParse(photo.group(2)!);
         if (uri?.scheme == 'https' && uri?.host.isNotEmpty == true) {
-          blocks.add(Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  uri.toString(),
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+          blocks.add(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    uri.toString(),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
                 ),
-              ),
-              if (photo.group(1)!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(photo.group(1)!, style: theme.textTheme.bodySmall),
-                ),
-            ],
-          ));
+                if (photo.group(1)!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      photo.group(1)!,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+              ],
+            ),
+          );
         }
         continue;
       }
@@ -49,10 +54,12 @@ class BlogArticleBody extends StatelessWidget {
       } else if (line.startsWith('# ')) {
         blocks.add(Text(line.substring(2), style: theme.textTheme.titleLarge));
       } else {
-        blocks.add(SelectableText(
-          line,
-          style: theme.textTheme.bodyLarge?.copyWith(height: 1.75),
-        ));
+        blocks.add(
+          SelectableText(
+            line,
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.75),
+          ),
+        );
       }
     }
     return Padding(

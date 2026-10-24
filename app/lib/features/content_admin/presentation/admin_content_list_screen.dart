@@ -690,7 +690,8 @@ class _AdminContentListScreenState
               ListTile(
                 leading: const Icon(Icons.article_outlined),
                 title: const Text('আর্টিকেল লিখুন'),
-                onTap: () => Navigator.pop(sheet, AdminResourceKind.articleGuide),
+                onTap: () =>
+                    Navigator.pop(sheet, AdminResourceKind.articleGuide),
               ),
             ],
           ),
@@ -835,24 +836,21 @@ class _AdminContentListScreenState
               for (final kind in AdminResourceKind.values)
                 if (kind != AdminResourceKind.articleGuide)
                   SizedBox(
-                  width: width,
-                  child: _KindCard(
-                    kind: kind,
-                    count: data == null
-                        ? null
-                        : items
-                              .where(
-                                (item) {
-                                  final itemKind = _kindFor(item, categories);
-                                  return itemKind == kind ||
-                                      (kind == AdminResourceKind.bookPdf &&
-                                          itemKind == AdminResourceKind.articleGuide);
-                                },
-                              )
-                              .length,
-                    onTap: () => _openCategory(kind),
+                    width: width,
+                    child: _KindCard(
+                      kind: kind,
+                      count: data == null
+                          ? null
+                          : items.where((item) {
+                              final itemKind = _kindFor(item, categories);
+                              return itemKind == kind ||
+                                  (kind == AdminResourceKind.bookPdf &&
+                                      itemKind ==
+                                          AdminResourceKind.articleGuide);
+                            }).length,
+                      onTap: () => _openCategory(kind),
+                    ),
                   ),
-                ),
             ],
           );
         },

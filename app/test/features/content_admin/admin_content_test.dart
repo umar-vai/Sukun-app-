@@ -153,30 +153,33 @@ void main() {
     expect(AdminResourceKind.articleGuide.contentType, 'article');
   });
 
-  test('blog uses existing secured article type, separate from editorial shelf', () {
-    expect(AdminResourceKind.blog.contentType, 'article');
-    expect(AdminResourceKind.blog.mediaSourceType, isNull);
-    const blog = AdminContentItem(
-      id: 'blog-test',
-      type: 'article',
-      title: 'An editor-written blog',
-      slug: 'blog-first-post-12345678',
-      visibility: 'public',
-      status: 'draft',
-      verificationStatus: 'not_required',
-    );
-    const article = AdminContentItem(
-      id: 'article-test',
-      type: 'article',
-      title: 'A resource article',
-      slug: 'article-first-post-12345678',
-      visibility: 'public',
-      status: 'draft',
-      verificationStatus: 'not_required',
-    );
-    expect(resourceKindForItem(blog), AdminResourceKind.blog);
-    expect(resourceKindForItem(article), AdminResourceKind.articleGuide);
-  });
+  test(
+    'blog uses existing secured article type, separate from editorial shelf',
+    () {
+      expect(AdminResourceKind.blog.contentType, 'article');
+      expect(AdminResourceKind.blog.mediaSourceType, isNull);
+      const blog = AdminContentItem(
+        id: 'blog-test',
+        type: 'article',
+        title: 'An editor-written blog',
+        slug: 'blog-first-post-12345678',
+        visibility: 'public',
+        status: 'draft',
+        verificationStatus: 'not_required',
+      );
+      const article = AdminContentItem(
+        id: 'article-test',
+        type: 'article',
+        title: 'A resource article',
+        slug: 'article-first-post-12345678',
+        visibility: 'public',
+        status: 'draft',
+        verificationStatus: 'not_required',
+      );
+      expect(resourceKindForItem(blog), AdminResourceKind.blog);
+      expect(resourceKindForItem(article), AdminResourceKind.articleGuide);
+    },
+  );
 
   test('internal media and slug fields are inferred safely', () {
     expect(
