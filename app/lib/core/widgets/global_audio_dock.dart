@@ -392,7 +392,7 @@ Duration audioDockClampedSeekTarget(
 ) {
   final target = position.inMilliseconds + offsetSeconds * 1000;
   final end = duration.inMilliseconds;
-  return Duration(milliseconds: target.clamp(0, end < 0 ? 0 : end));
+  return Duration(milliseconds: target.clamp(0, end < 0 ? 0 : end).toInt());
 }
 
 /// The primary action stays visible and easy to hit without a tooltip layer.
