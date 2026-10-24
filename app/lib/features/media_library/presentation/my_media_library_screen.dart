@@ -502,12 +502,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
           'এই ডিভাইসে সংরক্ষিত: ${(library.totalBytes / 1048576).toStringAsFixed(1)} MB',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        const SizedBox(height: 6),
-        Text(
-          'নির্দিষ্ট মোট MB সীমা নেই। তবে একটি ফাইল সর্বোচ্চ ১০০ MB; '
-          'ডিভাইস/ব্রাউজারের নিজস্ব স্টোরেজ সীমা প্রযোজ্য।',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
         const SizedBox(height: 10),
         if (widget.downloadId != null)
           FutureBuilder<ContentResource?>(
@@ -537,15 +531,15 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                 return Card(
                   child: ListTile(
                     title: Text(resource.titleBn ?? resource.title),
-                    subtitle: Text(
-                      library.contains(resource.id)
-                          ? 'ইতিমধ্যে সংরক্ষিত'
-                          : 'অ্যাপের ভেতরে সংরক্ষণ করুন',
-                    ),
-                    trailing: FilledButton(
-                      onPressed: library.busy || library.contains(resource.id)
-                          ? null
-                          : () async {
+                    trailing: library.contains(resource.id)
+                        ? const Chip(
+                            avatar: Icon(Icons.download_done_rounded, size: 18),
+                            label: Text('ডাউনলোড করা'),
+                          )
+                        : FilledButton(
+                            onPressed: library.busy
+                                ? null
+                                : () async {
                               try {
                                 await library.download(resource);
                                 _message('অফলাইনে সংরক্ষিত হয়েছে।');
@@ -556,14 +550,14 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                                   _message(detail);
                                 } else {
                                   _message(
-                                    'এই অডিও/PDF এখন ডাউনলোড করা যাচ্ছে না।',
+                                    'এখন ডাউনলোড করা যাচ্ছে না।',
                                   );
                                 }
                               } on http.ClientException {
                                 _message(
                                   kIsWeb
-                                      ? 'ডাউনলোডের gateway অথবা মিডিয়া সার্ভারে সমস্যা হয়েছে।'
-                                      : 'ডাউনলোডের সময় সার্ভারের সঙ্গে যোগাযোগ ব্যর্থ হয়েছে।',
+                                      ? 'ডাউনলোড করা যাচ্ছে না। আবার চেষ্টা করুন।'
+                                      : 'ইন্টারনেট সংযোগ পরীক্ষা করুন।',
                                 );
                               } catch (_) {
                                 _message(
@@ -571,8 +565,8 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                                 );
                               }
                             },
-                      child: const Text('ডাউনলোড'),
-                    ),
+                            child: const Text('ডাউনলোড'),
+                          ),
                   ),
                 );
               },
@@ -628,13 +622,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             ),
           ),
         const SizedBox(height: 12),
-        const Text(
-          'ডাউনলোড শুধু এই ডিভাইস/ব্রাউজারে থাকবে; অন্য ডিভাইসে সিঙ্ক হবে না। '
-          'ব্রাউজার স্টোরেজ মুছতে পারে, অ্যাপ আনইনস্টল করলেও ফাইল হারাবে। '
-          'প্রথমবার Web MP3 ডাউনলোডে অনুমোদিত gateway লাগতে পারে—'
-          'তাতে Supabase bandwidth খরচ হয়। '
-          'YouTube বা রোগীর ব্যক্তিগত নথি এখানে ডাউনলোড করা যায় না।',
-        ),
       ],
     );
   }
