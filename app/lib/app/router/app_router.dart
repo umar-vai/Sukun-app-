@@ -282,11 +282,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'dua-azkar',
                 builder: (context, state) =>
                     const TaxonomyBrowserScreen(kind: TaxonomyKind.duaAzkar),
+                routes: [
+                  GoRoute(
+                    path: ':groupSlug',
+                    builder: (context, state) => TaxonomyBrowserScreen(
+                      kind: TaxonomyKind.duaAzkar,
+                      groupSlug: state.pathParameters['groupSlug'],
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':categorySlug',
+                        builder: (context, state) => TaxonomyBrowserScreen(
+                          kind: TaxonomyKind.duaAzkar,
+                          groupSlug: state.pathParameters['groupSlug'],
+                          categorySlug: state.pathParameters['categorySlug'],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               GoRoute(
                 path: 'ruqyah',
                 builder: (context, state) =>
                     const TaxonomyBrowserScreen(kind: TaxonomyKind.ruqyah),
+                routes: [
+                  GoRoute(
+                    path: ':topicSlug',
+                    builder: (context, state) => TaxonomyBrowserScreen(
+                      kind: TaxonomyKind.ruqyah,
+                      topicSlug: state.pathParameters['topicSlug'],
+                    ),
+                  ),
+                ],
               ),
               for (final slug in const [
                 'books-pdfs',

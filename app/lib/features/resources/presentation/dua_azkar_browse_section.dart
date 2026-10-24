@@ -4,43 +4,54 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 
-/// Purely presentational: all entries remain sourced from the authorized repository.
-class DuaAzkarBrowseSection extends StatefulWidget {
-  const DuaAzkarBrowseSection({required this.resources, super.key});
+/// Distinct route pages: group index → group categories → published content.
+/// Every page displays only records provided by the authorized repository.
+class DuaAzkarBrowseSection extends StatelessWidget {
+  const DuaAzkarBrowseSection({
+    required this.resources,
+    this.groupSlug,
+    this.categorySlug,
+    super.key,
+  });
+
   final List<ContentResource> resources;
+  final String? groupSlug;
+  final String? categorySlug;
 
-  @override
-  State<DuaAzkarBrowseSection> createState() => _DuaAzkarBrowseSectionState();
-}
-
-class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
   static const reviewSlug = '_unclassified';
-  String? _openGroup = 'time-based';
-  String? _selectedSlug = 'dua-azkar-morning';
 
-  int _count(String slug) =>
-      widget.resources.where((item) => item.categorySlug == slug).length;
-
-  List<ContentResource> get _unclassified => widget.resources
+  List<ContentResource> get _unclassified => resources
       .where(
         (item) =>
             !duaAzkarTaxonomy.any((entry) => entry.slug == item.categorySlug),
       )
       .toList(growable: false);
 
-  List<ContentResource> get _visible {
-    if (_selectedSlug == null) return widget.resources;
-    if (_selectedSlug == reviewSlug) return _unclassified;
-    return widget.resources
-        .where((item) => item.categorySlug == _selectedSlug)
-        .toList(growable: false);
+  int _count(String slug) =>
+      resources.where((item) => item.categorySlug == slug).length;
+
+  DuaAzkarNavigationGroup? get _group {
+    for (final group in duaAzkarNavigationGroups) {
+      if (group.slug == groupSlug) return group;
+    }
+    return null;
   }
 
-  String get _heading {
-    if (_selectedSlug == null) return 'সব দোয়া ও আযকার';
-    if (_selectedSlug == reviewSlug) return 'বিভাগ নির্ধারণের অপেক্ষায়';
+  ResourceTaxonomyEntry? get _category {
     for (final entry in duaAzkarTaxonomy) {
-      if (entry.slug == _selectedSlug) return entry.titleBn;
+      if (entry.slug == categorySlug) return entry;
+    }
+    return null;
+  }
+
+  static String titleFor(String? groupSlug, String? categorySlug) {
+    if (categorySlug == reviewSlug) return 'অন্যান্য দোয়া';
+    for (final category in duaAzkarTaxonomy) {
+      if (category.slug == categorySlug) return category.titleBn;
+    }
+    if (groupSlug == 'all') return 'সব দোয়া ও আযকার';
+    for (final group in duaAzkarNavigationGroups) {
+      if (group.slug == groupSlug) return group.titleBn;
     }
     return 'দোয়া ও আযকার';
   }
@@ -48,319 +59,192 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
   IconData _icon(String slug) => switch (slug) {
     'time-based' => Icons.schedule_rounded,
     'everyday' => Icons.auto_stories_outlined,
-    _ => Icons.health_and_safety_outlined,
+    'support' => Icons.health_and_safety_outlined,
+    _ => Icons.menu_book_outlined,
   };
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final visible = _visible;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'বিভাগ বাছাই করুন',
-                style: SukunTypography.banglaBody(
-                  textStyle: text.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              key: const Key('dua-show-all'),
-              onPressed: () => setState(() => _selectedSlug = null),
-              style: OutlinedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                side: BorderSide(
-                  color: _selectedSlug == null
-                      ? colors.primary
-                      : colors.outlineVariant,
-                ),
-              ),
-              child: Text('সব (${widget.resources.length})'),
-            ),
-          ],
+    if (groupSlug == null) return _index(context);
+    if (groupSlug == 'all' && categorySlug == null) {
+      return _items(context, resources);
+    }
+    if (groupSlug == 'other' && categorySlug == reviewSlug) {
+      return _items(context, _unclassified);
+    }
+    final group = _group;
+    if (group == null) return _empty(context);
+    if (categorySlug == null) return _subcategories(context, group);
+    final category = _category;
+    if (category == null || !group.categorySlugs.contains(category.slug)) {
+      return _empty(context);
+    }
+    return _items(
+      context,
+      resources.where((item) => item.categorySlug == category.slug).toList(),
+    );
+  }
+
+  Widget _index(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(
+        'বিভাগ নির্বাচন করুন',
+        style: SukunTypography.banglaBody(
+          textStyle: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
-        // Give the three parent groups a visible, consistent rhythm.
+      ),
+      const SizedBox(height: 16),
+      for (final group in duaAzkarNavigationGroups) ...[
+        _categoryCard(
+          context,
+          key: Key('dua-group-card-${group.slug}'),
+          title: group.titleBn,
+          subtitle:
+              '${group.categorySlugs.length}টি বিভাগ · ${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
+          icon: _icon(group.slug),
+          onTap: () => context.go('/resources/dua-azkar/${group.slug}'),
+        ),
         const SizedBox(height: 16),
-        for (final group in duaAzkarNavigationGroups) ...[
-          _groupCard(group, context),
-          const SizedBox(height: 16),
-        ],
-        if (_unclassified.isNotEmpty) ...[
-          ListTile(
-            key: const Key('dua-unclassified'),
-            title: const Text('বিভাগ নির্ধারণের অপেক্ষায়'),
-            subtitle: Text(
-              '${_unclassified.length}টি প্রকাশিত দোয়া যাচাই প্রয়োজন',
-            ),
-            onTap: () => setState(() {
-              _openGroup = null;
-              _selectedSlug = reviewSlug;
-            }),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            tileColor: colors.surfaceContainerLow,
-            trailing: const Icon(Icons.chevron_right_rounded),
+      ],
+      _categoryCard(
+        context,
+        key: const Key('dua-show-all'),
+        title: 'সব দোয়া ও আযকার',
+        subtitle: '${resources.length}টি দোয়া/আমল',
+        icon: Icons.library_books_outlined,
+        onTap: () => context.go('/resources/dua-azkar/all'),
+      ),
+      if (_unclassified.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        _categoryCard(
+          context,
+          key: const Key('dua-unclassified'),
+          title: 'অন্যান্য দোয়া',
+          subtitle: '${_unclassified.length}টি দোয়া/আমল',
+          icon: Icons.book_outlined,
+          onTap: () => context.go('/resources/dua-azkar/other/$reviewSlug'),
+        ),
+      ],
+    ],
+  );
+
+  Widget _subcategories(BuildContext context, DuaAzkarNavigationGroup group) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'বিভাগ নির্বাচন করুন',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
-        ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _heading,
-                key: const Key('dua-results-title'),
-                style: SukunTypography.banglaBody(
-                  textStyle: text.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+          for (final category in duaAzkarTaxonomy.where(
+            (entry) => group.categorySlugs.contains(entry.slug),
+          )) ...[
+            _categoryCard(
+              context,
+              key: Key('dua-select-${category.slug}'),
+              title: category.titleBn,
+              subtitle: '${_count(category.slug)}টি দোয়া/আমল',
+              icon: Icons.auto_stories_outlined,
+              onTap: () => context.go(
+                '/resources/dua-azkar/${group.slug}/${category.slug}',
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-              decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${visible.length}টি',
-                style: text.labelMedium?.copyWith(
-                  color: colors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (visible.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 22),
-            child: Text(
-              'এই বিভাগে এখনো প্রকাশিত দোয়া নেই।',
-              style: text.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-            ),
-          )
-        else
-          for (final resource in visible) ...[
-            _resourceCard(context, resource),
             const SizedBox(height: 12),
           ],
-      ],
-    );
-  }
+        ],
+      );
 
-  Widget _groupCard(DuaAzkarNavigationGroup group, BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final open = _openGroup == group.slug;
-    final count = widget.resources
-        .where((item) => group.categorySlugs.contains(item.categorySlug))
-        .length;
-    return Material(
-      key: Key('dua-group-card-${group.slug}'),
-      color: colors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(22),
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: open
-                ? colors.primary.withValues(alpha: 0.4)
-                : colors.outlineVariant.withValues(alpha: 0.45),
-          ),
-        ),
-        child: Column(
-          children: [
-            InkWell(
-              key: Key('dua-group-${group.slug}'),
+  Widget _items(BuildContext context, List<ContentResource> items) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (items.isEmpty)
+        _empty(context)
+      else
+        for (final item in items) ...[
+          Material(
+            key: Key('dua-card-${item.id}'),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(18),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 6,
+              ),
+              leading: const Icon(Icons.menu_book_outlined),
+              title: Text(
+                item.titleBn?.trim().isNotEmpty == true
+                    ? item.titleBn!
+                    : item.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: SukunTypography.banglaBody(
+                  textStyle: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              subtitle: item.referenceText?.trim().isNotEmpty == true
+                  ? Text(
+                      item.referenceText!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () =>
-                  setState(() => _openGroup = open ? null : group.slug),
-              child: Semantics(
-                button: true,
-                expanded: open,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 18,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: colors.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                        child: Icon(
-                          _icon(group.slug),
-                          size: 22,
-                          color: colors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              group.titleBn,
-                              style: SukunTypography.banglaBody(
-                                textStyle: text.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '${group.categorySlugs.length}টি বিভাগ · $countটি দোয়া/আমল',
-                              style: text.bodySmall?.copyWith(
-                                color: colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        open
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: open ? colors.primary : colors.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (open) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Divider(height: 1, color: colors.outlineVariant),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                child: Column(
-                  children: [
-                    for (final entry in duaAzkarTaxonomy.where(
-                      (entry) => group.categorySlugs.contains(entry.slug),
-                    ))
-                      _subcategoryRow(context, entry),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _subcategoryRow(BuildContext context, ResourceTaxonomyEntry entry) {
-    final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final selected = _selectedSlug == entry.slug;
-    return Material(
-      color: selected
-          ? colors.primary.withValues(alpha: 0.13)
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        key: Key('dua-select-${entry.slug}'),
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => setState(() => _selectedSlug = entry.slug),
-        child: Semantics(
-          button: true,
-          selected: selected,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    entry.titleBn,
-                    style: SukunTypography.banglaBody(
-                      textStyle: text.bodyMedium?.copyWith(
-                        color: selected ? colors.primary : colors.onSurface,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${_count(entry.slug)}',
-                  style: text.labelMedium?.copyWith(
-                    color: selected ? colors.primary : colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Icon(
-                  selected
-                      ? Icons.check_circle_rounded
-                      : Icons.chevron_right_rounded,
-                  size: 19,
-                  color: selected ? colors.primary : colors.onSurfaceVariant,
-                ),
-              ],
+                  context.push('/resources/${Uri.encodeComponent(item.id)}'),
             ),
           ),
-        ),
-      ),
-    );
-  }
+          const SizedBox(height: 12),
+        ],
+    ],
+  );
 
-  Widget _resourceCard(BuildContext context, ContentResource resource) {
-    final colors = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final match = duaAzkarTaxonomy.where(
-      (entry) => entry.slug == resource.categorySlug,
-    );
-    final subtitle = resource.referenceText?.trim().isNotEmpty == true
-        ? resource.referenceText!
-        : match.isNotEmpty
-        ? match.first.titleBn
-        : 'দোয়া পড়ুন';
+  Widget _empty(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 24),
+    child: Text(
+      'এই বিভাগে এখনো প্রকাশিত দোয়া নেই।',
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    ),
+  );
+
+  Widget _categoryCard(
+    BuildContext context, {
+    required Key key,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      key: Key('dua-card-${resource.id}'),
-      color: colors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(18),
+      color: scheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/resources/${resource.id}'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        key: key,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.11),
-                  borderRadius: BorderRadius.circular(12),
+                  color: scheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(
-                  resource.type == 'amal'
-                      ? Icons.checklist_rounded
-                      : Icons.menu_book_outlined,
-                  color: colors.primary,
-                  size: 20,
-                ),
+                child: Icon(icon, color: scheme.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -368,34 +252,23 @@ class _DuaAzkarBrowseSectionState extends State<DuaAzkarBrowseSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      resource.titleBn ?? resource.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      title,
                       style: SukunTypography.banglaBody(
-                        textStyle: text.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          height: 1.35,
-                        ),
+                        textStyle: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 15,
-                color: colors.onSurfaceVariant,
-              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
