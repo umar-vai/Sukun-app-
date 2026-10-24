@@ -13,6 +13,8 @@ import 'package:sukun_life/features/resources/presentation/compact_audio_resourc
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
+import 'package:sukun_life/features/resources/presentation/ruqyah_topic_browser.dart';
+import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 class QuranBrowserScreen extends ConsumerWidget {
   const QuranBrowserScreen({super.key});
@@ -485,10 +487,18 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
 }
 
 class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
-  String? _selectedSlug;
-
-  List<ResourceTaxonomyEntry> get _entries =>
-      widget.kind == TaxonomyKind.duaAzkar ? duaAzkarTaxonomy : ruqyahTaxonomy;
+  void _openRuqyahItem(ContentResource resource) {
+    if (resource.type == 'audio' &&
+        AudioLibraryActions.supports(resource.linkedResource)) {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => AudioPlayerScreen(resource: resource.linkedResource),
+        ),
+      );
+      return;
+    }
+    context.push('/resources/${Uri.encodeComponent(resource.id)}');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -496,7 +506,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
     final types = isDua
         ? const {'dua', 'amal'}
         : const {'quran', 'amal', 'audio', 'guide'};
-    final prefix = isDua ? 'dua-azkar' : 'ruqyah';
+    const prefix = 'ruqyah';
     return Scaffold(
       appBar: AppBar(
         title: Text(isDua ? 'Dua & Azkar' : 'Ruqyah'),
@@ -507,7 +517,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             .read(resourcesRepositoryProvider)
             .browseResources(
               types: types,
-              categoryPrefixes: isDua ? const {} : {_selectedSlug ?? prefix},
+              categoryPrefixes: isDua ? const {} : {prefix},
             ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -541,45 +551,12 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               if (isDua)
                 DuaAzkarBrowseSection(resources: resources)
               else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    SukunFilterPill(
-                      label: 'সব',
-                      selected: _selectedSlug == null,
-                      onTap: () => setState(() => _selectedSlug = null),
-                    ),
-                    for (final entry in _entries)
-                      SukunFilterPill(
-                        label: entry.titleBn,
-                        selected: _selectedSlug == entry.slug,
-                        onTap: () => setState(() => _selectedSlug = entry.slug),
-                      ),
-                  ],
+                RuqyahTopicBrowser(
+                  resources: resources,
+                  onOpenResource: _openRuqyahItem,
+                  onOpenAyat: () =>
+                      context.push('/resources/quran/collections'),
                 ),
-              if (!isDua &&
-                  (_selectedSlug == null ||
-                      _selectedSlug == 'ruqyah-ayat')) ...[
-                const SizedBox(height: 14),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/resources/quran/collections'),
-                  icon: const Icon(Icons.collections_bookmark_outlined),
-                  label: const Text('রুকইয়াহর আয়াত'),
-                ),
-              ],
-              const SizedBox(height: 18),
-              if (!isDua && resources.isEmpty)
-                const AppEmptyState(
-                  title: 'এই বিভাগে এখনো প্রকাশিত উপকরণ নেই',
-                  message: 'যাচাই ও শ্রেণিবিন্যাস চলছে।',
-                )
-              else if (!isDua)
-                for (final resource in resources)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _ResourceListTile(resource: resource),
-                  ),
             ],
           );
         },
