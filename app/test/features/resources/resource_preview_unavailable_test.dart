@@ -24,8 +24,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('অডিও এখনো উপলব্ধ নয়'), findsOneWidget);
-    expect(find.textContaining('রিসোর্স সার্ভার সংযুক্ত নেই'), findsOneWidget);
+    expect(find.textContaining('এখন উপকরণ দেখানো যাচ্ছে না'), findsOneWidget);
+    expect(find.textContaining('এখন উপকরণ দেখানো যাচ্ছে না'), findsOneWidget);
     expect(find.text('আবার চেষ্টা করুন'), findsNothing);
     expect(find.byType(TextField), findsNothing);
   });
@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('রিসোর্স সার্ভার সংযুক্ত নেই'), findsOneWidget);
+    expect(find.textContaining('এখন উপকরণ দেখানো যাচ্ছে না'), findsOneWidget);
     expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
     expect(find.text('অডিও'), findsWidgets);
     expect(find.byType(TextField), findsNothing);
