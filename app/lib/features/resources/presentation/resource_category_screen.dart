@@ -196,11 +196,9 @@ class _ResourceCategoryScreenState
               child: backendUnavailable
                   ? AppEmptyState(
                       icon: Icons.cloud_off_outlined,
-                      title: 'এই প্রিভিউতে ${section.titleBn} এখনো উপলব্ধ নয়',
+                      title: 'এখন উপকরণ দেখানো যাচ্ছে না',
                       message:
-                          'এই ওয়েব প্রিভিউতে রিসোর্স সার্ভার সংযুক্ত নেই। '
-                          'নিরাপদ স্টেজিং সার্ভার সংযুক্ত হলে '
-                          'প্রকাশিত উপকরণ দেখা যাবে।',
+                          'পরে আবার চেষ্টা করুন।',
                     )
                   : _searchPending
                   ? const AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…')
