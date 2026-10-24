@@ -145,7 +145,7 @@ class AdminHomeScreen extends StatelessWidget {
                 const Row(
                   children: [
                     SukunStatusPill(
-                      label: 'PRIMARY WORKFLOW',
+                      label: 'রোগী সেবা',
                       tone: SukunStatusTone.brand,
                     ),
                     Spacer(),
@@ -160,7 +160,7 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 const Text(
-                  'Create patients, preserve prescriptions, review actions, publish plans, and follow progress.',
+                  'রোগী, প্রেসক্রিপশন, পরিকল্পনা ও অগ্রগতি',
                   style: TextStyle(color: Colors.white70),
                 ),
                 const SizedBox(height: 18),
@@ -180,9 +180,9 @@ class AdminHomeScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _DashboardAction(
             icon: Icons.library_books_outlined,
-            title: 'Content & Islamic Resources',
-            description: 'Create, verify, preview, publish, and archive reusable canonical resources.',
-            actionLabel: 'Open content workspace',
+            title: 'ইসলামিক রিসোর্স',
+            description: 'রিসোর্স ও প্রকাশনা পরিচালনা',
+            actionLabel: 'রিসোর্স দেখুন',
             onTap: () => context.go('/admin/content'),
           ),
           _DashboardAction(
@@ -194,11 +194,11 @@ class AdminHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           SukunSectionHeader(
-            title: 'Review & utilities',
-            subtitle: 'Preview public content or open daily tools',
+            title: 'প্রয়োজনীয় টুলস',
+            
             action: TextButton(
               onPressed: () => context.go('/resources'),
-              child: const Text('Public preview'),
+              child: const Text('রিসোর্স'),
             ),
           ),
           const SizedBox(height: 12),
