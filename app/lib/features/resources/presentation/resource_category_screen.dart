@@ -54,13 +54,19 @@ class _ResourceCategoryScreenState
         : _load();
   }
 
-  Future<List<ContentResource>> _load() => ref
-      .read(resourcesRepositoryProvider)
-      .browseResources(
-        query: _searchController.text.trim(),
-        types: widget.section.types,
-        categoryPrefixes: widget.section.categoryPrefixes,
-      );
+  Future<List<ContentResource>> _load() async {
+    final items = await ref.read(resourcesRepositoryProvider).browseResources(
+      query: _searchController.text.trim(),
+      types: widget.section.types,
+      categoryPrefixes: widget.section.categoryPrefixes,
+    );
+    // Blog posts are articles in the same RLS-protected CMS, but have their
+    // own public shelf. Exclude them from Books & Articles.
+    return items.where((item) {
+      final blog = isBlogResourceSlug(item.slug);
+      return widget.section.slug == 'blog' ? blog : !blog;
+    }).toList(growable: false);
+  }
 
   Future<void> _refresh() async {
     final backendUnavailable =

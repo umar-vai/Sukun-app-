@@ -50,18 +50,18 @@ const resourceSections = <ResourceSection>[
     categoryPrefixes: {'ruqyah'},
   ),
   ResourceSection(
-    slug: 'books-pdfs',
-    title: 'Books & PDFs',
-    titleBn: 'বই ও পিডিএফ',
-    icon: Icons.picture_as_pdf_outlined,
-    types: {'book', 'book_chapter', 'pdf'},
+    slug: 'books-articles',
+    title: 'Books & Articles',
+    titleBn: 'বই ও আর্টিকেল',
+    icon: Icons.library_books_outlined,
+    types: {'book', 'book_chapter', 'pdf', 'article', 'guide'},
   ),
   ResourceSection(
-    slug: 'articles-guides',
-    title: 'Articles & Guides',
-    titleBn: 'আর্টিকেল ও গাইড',
-    icon: Icons.article_outlined,
-    types: {'article', 'guide'},
+    slug: 'blog',
+    title: 'Blog',
+    titleBn: 'ব্লগ',
+    icon: Icons.edit_note_outlined,
+    types: {'article'},
   ),
   ResourceSection(
     slug: 'audio',
@@ -81,5 +81,8 @@ const resourceSections = <ResourceSection>[
 
 ResourceSection? resourceSectionBySlug(String? slug) {
   if (slug == null || slug.isEmpty) return null;
+  if (slug == 'books-pdfs' || slug == 'articles-guides') {
+    return resourceSectionBySlug('books-articles');
+  }
   return resourceSections.where((section) => section.slug == slug).firstOrNull;
 }

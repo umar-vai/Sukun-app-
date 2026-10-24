@@ -7,6 +7,7 @@ class ContentResource {
     required this.title,
     required this.visibility,
     required this.status,
+    this.slug,
     this.titleBn,
     this.summary,
     this.body,
@@ -44,6 +45,7 @@ class ContentResource {
     final category = json['content_categories'] as Map<String, dynamic>?;
     return ContentResource(
       id: json['id'] as String,
+      slug: json['slug'] as String?,
       type: json['type'] as String,
       title: json['title'] as String,
       titleBn: json['title_bn'] as String?,
@@ -83,6 +85,7 @@ class ContentResource {
   }
 
   final String id;
+  final String? slug;
   final String type;
   final String title;
   final String? titleBn;
@@ -140,3 +143,6 @@ class ContentResource {
     rightsNote: rightsNote,
   );
 }
+
+/// Blog posts reuse the existing secured article CMS type.
+bool isBlogResourceSlug(String? slug) => slug?.startsWith('blog-') ?? false;
