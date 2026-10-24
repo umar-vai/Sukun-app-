@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
@@ -496,20 +497,29 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
 }
 
 class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
-  late final Future<List<ContentResource>> _resourcesFuture;
+  late Future<List<ContentResource>> _resourcesFuture;
+  late String _sessionSignature;
+
+  String _accessSignature() {
+    final session = ref.read(appSessionProvider).value;
+    return '${session?.userId ?? 'guest'}:${session?.role.name ?? 'guest'}';
+  }
+
+  Future<List<ContentResource>> _loadResources() {
+    final isDua = widget.kind == TaxonomyKind.duaAzkar;
+    return ref.read(resourcesRepositoryProvider).browseResources(
+      types: isDua
+          ? const {'dua', 'amal'}
+          : const {'quran', 'amal', 'audio', 'guide'},
+      categoryPrefixes: isDua ? const {} : const {'ruqyah'},
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    _resourcesFuture = ref
-        .read(resourcesRepositoryProvider)
-        .browseResources(
-          types: isDua
-              ? const {'dua', 'amal'}
-              : const {'quran', 'amal', 'audio', 'guide'},
-          categoryPrefixes: isDua ? const {} : const {'ruqyah'},
-        );
+    _sessionSignature = _accessSignature();
+    _resourcesFuture = _loadResources();
   }
 
   void _openRuqyahItem(ContentResource resource) {
@@ -527,6 +537,13 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(appSessionProvider).value;
+    final signature =
+        '${session?.userId ?? 'guest'}:${session?.role.name ?? 'guest'}';
+    if (signature != _sessionSignature) {
+      _sessionSignature = signature;
+      _resourcesFuture = _loadResources();
+    }
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
     final isIndex = isDua ? widget.groupSlug == null : widget.topicSlug == null;
     final pageTitle = isDua
