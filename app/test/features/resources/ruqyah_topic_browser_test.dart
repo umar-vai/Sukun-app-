@@ -52,27 +52,28 @@ void main() {
       ProviderScope(child: MaterialApp.router(routerConfig: router)),
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.ensureVisible(
       find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
     );
-    await tester.tap(
-      find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
-    );
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-recitation')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/ruqyah/ruqyah-recitation');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/ruqyah/ruqyah-recitation',
+    );
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsOneWidget);
     expect(find.byKey(const Key('ruqyah-item-qul')), findsOneWidget);
     expect(find.byKey(const Key('ruqyah-item-eye')), findsNothing);
     router.pop();
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/resources/ruqyah');
+    expect(router.routeInformationProvider.value.uri.path, '/resources/ruqyah');
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
     expect(openAyat, 0);
   });
