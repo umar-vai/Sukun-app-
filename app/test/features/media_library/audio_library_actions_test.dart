@@ -210,6 +210,59 @@ void main() {
     expect(find.text('ডাউনলোড হয়েছে'), findsNothing);
   });
 
+  testWidgets('catalog card shows saved audio and updates after removal', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'sukun.offline.public.v1.guest': jsonEncode([
+        {
+          'id': 'public-123',
+          'title': 'Sample published audio',
+          'kind': 'audio',
+          'size': 20,
+          'sha256': 'synthetic-test-only',
+          'saved': '2026-10-24T00:00:00.000Z',
+        },
+      ]),
+    });
+    final offline = OfflineLibrary(bytes: _MemoryBytes());
+    await offline.open('guest');
+    addTearDown(offline.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [offlineLibraryProvider.overrideWithValue(offline)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ResourceCard(
+              resource: const ContentResource(
+                id: 'public-123',
+                type: 'audio',
+                title: 'Sample published audio',
+                status: 'published',
+                visibility: 'public',
+                mediaSourceType: 'direct_audio_url',
+                mediaUrl: 'https://example.org/approved.mp3',
+              ),
+              onTap: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ডাউনলোড হয়েছে'), findsOneWidget);
+    expect(find.byIcon(Icons.download_done_rounded), findsOneWidget);
+
+    await offline.remove('public-123');
+    await tester.pumpAndSettle();
+    expect(find.text('ডাউনলোড'), findsOneWidget);
+    expect(find.byIcon(Icons.download_outlined), findsOneWidget);
+    expect(find.text('ডাউনলোড হয়েছে'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('no download/playlist options for non-audio linked content', () {
     expect(
       AudioLibraryActions.supports(
