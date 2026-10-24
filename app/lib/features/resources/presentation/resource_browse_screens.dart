@@ -37,10 +37,10 @@ class QuranBrowserScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               const SukunPageIntro(
-                eyebrow: 'Sourced scripture',
+                eyebrow: 'সূরা ও আয়াত',
                 title: "Qur'an",
                 subtitle:
-                    'সূরা ও আয়াত · Approved Arabic and Bangla sources only',
+                    'আরবি ও বাংলা অর্থসহ পড়ুন',
                 trailing: SukunIconBadge(
                   icon: Icons.menu_book_rounded,
                   size: 54,
@@ -64,7 +64,7 @@ class QuranBrowserScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Selected & Ruqyah Ayat',
+                            'নির্বাচিত আয়াত',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           SizedBox(height: 3),
@@ -82,14 +82,14 @@ class QuranBrowserScreen extends ConsumerWidget {
               const SizedBox(height: 18),
               const SukunSectionHeader(
                 title: 'Surahs',
-                subtitle: 'Canonical items grouped by Surah number.',
+                subtitle: 'পছন্দের সূরা বেছে নিন',
               ),
               const SizedBox(height: 8),
               if (surahs.isEmpty)
                 const AppEmptyState(
                   icon: Icons.auto_stories_outlined,
-                  title: 'No Surahs published yet',
-                  message: 'A Super Admin must add complete source metadata and publish canonical Ayat before they appear here.',
+                  title: 'এখনো কোনো সূরা পাওয়া যায়নি',
+                  message: 'পরে আবার দেখুন।',
                 )
               else
                 for (final surah in surahs)
@@ -121,7 +121,7 @@ class QuranBrowserScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  '${surah.surahNumber} · ${surah.name} · ${surah.ayahCount} published Ayat',
+                                  '${surah.surahNumber} · ${surah.name} · ${surah.ayahCount} আয়াত',
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(color: SukunColors.muted),
                                 ),
@@ -419,9 +419,9 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               const SukunPageIntro(
-                eyebrow: 'Sourced references',
+                eyebrow: 'হাদিস',
                 title: 'Hadith by topic',
-                subtitle: 'হাদিসের বিষয় · Collection, book, number, and approved grading',
+                subtitle: 'বিষয় অনুযায়ী হাদিস পড়ুন',
                 trailing: SukunIconBadge(
                   icon: Icons.format_quote_rounded,
                   size: 54,
@@ -533,9 +533,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             ),
             children: [
               SukunPageIntro(
-                eyebrow: isDua ? 'দৈনিক দোয়া ও যিকির' : 'Faith-anchored care',
-                title: isDua ? 'দোয়া ও আযকার' : 'Ruqyah',
-                subtitle: isDua ? 'সময় ও প্রয়োজন অনুযায়ী দোয়া সহজে খুঁজুন' : 'রুকইয়াহ · General resources remain separate from prescribed care',
+                eyebrow: isDua ? 'দৈনিক দোয়া ও যিকির' : 'ইসলামিক রিসোর্স',
+                title: isDua ? 'দোয়া ও আযকার' : 'রুকইয়াহ',
+                subtitle: isDua ? 'সময় ও প্রয়োজন অনুযায়ী দোয়া খুঁজুন' : 'রুকইয়াহ আয়াত, অডিও ও গাইড',
                 trailing: SukunIconBadge(
                   icon: isDua
                       ? Icons.auto_awesome_rounded
@@ -552,7 +552,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                   runSpacing: 8,
                   children: [
                     SukunFilterPill(
-                      label: 'All',
+                      label: 'সব',
                       selected: _selectedSlug == null,
                       onTap: () => setState(() => _selectedSlug = null),
                     ),
@@ -571,14 +571,14 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                 OutlinedButton.icon(
                   onPressed: () => context.push('/resources/quran/collections'),
                   icon: const Icon(Icons.collections_bookmark_outlined),
-                  label: const Text('Open Ruqyah Ayat collections'),
+                  label: const Text('রুকইয়াহ আয়াত'),
                 ),
               ],
               const SizedBox(height: 18),
               if (!isDua && resources.isEmpty)
                 const AppEmptyState(
                   title: 'এই বিভাগে এখনো প্রকাশিত উপকরণ নেই',
-                  message: 'যাচাই ও শ্রেণিবিন্যাস চলছে।',
+                  message: 'পরে আবার দেখুন।',
                 )
               else if (!isDua)
                 for (final resource in resources)
@@ -617,7 +617,7 @@ class _ResourceFutureList extends StatelessWidget {
     if (resources.isEmpty) {
       return AppEmptyState(
         title: emptyTitle,
-        message: 'Only published resources available to you appear here.',
+        message: 'পরে আবার দেখুন।',
       );
     }
     return ListView.separated(
