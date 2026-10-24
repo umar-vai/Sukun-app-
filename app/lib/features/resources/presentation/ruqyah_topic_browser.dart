@@ -1,188 +1,171 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
-import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 
-/// Browse the existing published/RLS-authorized material by listening topic.
-/// This changes navigation only; no media source, publication status or rights.
-class RuqyahTopicBrowser extends StatefulWidget {
+/// Each topic opens a dedicated route instead of expanding the same page.
+class RuqyahTopicBrowser extends StatelessWidget {
   const RuqyahTopicBrowser({
     required this.resources,
     required this.onOpenResource,
     required this.onOpenAyat,
+    this.topicSlug,
     super.key,
   });
 
   final List<ContentResource> resources;
   final ValueChanged<ContentResource> onOpenResource;
   final VoidCallback onOpenAyat;
+  final String? topicSlug;
 
-  @override
-  State<RuqyahTopicBrowser> createState() => _RuqyahTopicBrowserState();
-}
-
-class _RuqyahTopicBrowserState extends State<RuqyahTopicBrowser> {
-  String _selected = 'all';
-
-  @override
-  Widget build(BuildContext context) {
-    final audio = widget.resources.where((r) => r.type == 'audio').toList();
-    final extra = widget.resources.where((r) => r.type != 'audio').toList();
-    const topicOptions = ruqyahAudioTopics;
-    final selectedItems = resourcesForRuqyahTopic(widget.resources, _selected);
-    final isGrouped = _selected == 'all' || _selected == 'ruqyah-audio';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _topicStrip(ruqyahMainTopics, 'ধরন'),
-        if (topicOptions.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _topicStrip(topicOptions, 'বিষয়'),
-        ],
-        const SizedBox(height: 18),
-        if (_selected == 'all' || _selected == 'ruqyah-ayat') ...[
-          OutlinedButton.icon(
-            key: const Key('ruqyah-open-ayat'),
-            onPressed: widget.onOpenAyat,
-            icon: const Icon(Icons.menu_book_outlined),
-            label: const Text('রুকইয়াহ আয়াত পড়ুন'),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (isGrouped) ...[
-          if (extra.isNotEmpty) ...[
-            _sectionTitle('আয়াত ও গাইড', extra.length),
-            const SizedBox(height: 8),
-            for (final item in extra.take(2)) _item(item),
-            const SizedBox(height: 6),
-          ],
-          for (final topic in ruqyahAudioTopics)
-            if (audio.any((r) => ruqyahPrimaryBrowseTopic(r) == topic.slug))
-              _group(topic, audio),
-          if (audio.isEmpty && extra.isEmpty)
-            const AppEmptyState(
-              title: 'এখনো কোনো অডিও নেই',
-              message: 'অন্য বিভাগ দেখুন।',
-            ),
-        ] else ...[
-          if (selectedItems.isEmpty)
-            AppEmptyState(
-              title: _selected == 'ruqyah-self-guide'
-                  ? 'এখনো প্রকাশিত গাইড নেই'
-                  : _selected == 'ruqyah-ayat'
-                  ? 'নির্বাচিত আয়াত উপরের লিংকে দেখুন'
-                  : 'এই বিভাগে এখনো অডিও নেই',
-              message: 'অন্য বিভাগ দেখুন।',
-            )
-          else ...[
-            _sectionTitle(_selectedTitle, selectedItems.length),
-            const SizedBox(height: 8),
-            for (final item in selectedItems) _item(item),
-          ],
-        ],
-      ],
-    );
-  }
-
-  String get _selectedTitle {
+  static String titleFor(String? slug) {
     for (final topic in [...ruqyahMainTopics, ...ruqyahAudioTopics]) {
-      if (topic.slug == _selected) return topic.titleBn;
+      if (topic.slug == slug) return topic.titleBn;
     }
     return 'রুকইয়াহ';
   }
 
-  Widget _topicStrip(List<RuqyahBrowseTopic> topics, String title) {
+  @override
+  Widget build(BuildContext context) {
+    if (topicSlug == null) return _index(context);
+    final known = [...ruqyahMainTopics, ...ruqyahAudioTopics]
+        .any((topic) => topic.slug == topicSlug);
+    if (!known) {
+      return const AppEmptyState(
+        title: 'বিভাগ পাওয়া যায়নি',
+        message: 'অন্য বিভাগ দেখুন।',
+      );
+    }
+    final items = resourcesForRuqyahTopic(resources, topicSlug!);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.labelMedium
-              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 7),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final topic in topics) ...[
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: KeyedSubtree(
-                    key: Key('ruqyah-filter-${topic.slug}'),
-                    child: SukunFilterPill(
-                      label: topic.titleBn,
-                      selected: _selected == topic.slug,
-                      onTap: () => setState(() => _selected = topic.slug),
-                    ),
-                  ),
-                ),
-              ],
-            ],
+        if (topicSlug == 'all' || topicSlug == 'ruqyah-ayat') ...[
+          OutlinedButton.icon(
+            key: const Key('ruqyah-open-ayat'),
+            onPressed: onOpenAyat,
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('রুকইয়াহ আয়াত পড়ুন'),
           ),
-        ),
+          const SizedBox(height: 14),
+        ],
+        if (items.isEmpty)
+          const AppEmptyState(
+            title: 'এই বিভাগে এখনো উপকরণ নেই',
+            message: 'অন্য বিভাগ দেখুন।',
+          )
+        else
+          for (final resource in items)
+            Padding(
+              key: Key('ruqyah-item-${resource.id}'),
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ResourceCard(
+                resource: resource,
+                onTap: () => onOpenResource(resource),
+              ),
+            ),
       ],
     );
   }
 
-  Widget _group(RuqyahBrowseTopic topic, List<ContentResource> audio) {
-    final matches = audio
-        .where((r) => ruqyahPrimaryBrowseTopic(r) == topic.slug)
-        .toList();
-    return Padding(
-      key: Key('ruqyah-group-${topic.slug}'),
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(child: _sectionTitle(topic.titleBn, matches.length)),
-              if (matches.length > 2)
-                TextButton(
-                  key: Key('ruqyah-show-${topic.slug}'),
-                  onPressed: () => setState(() => _selected = topic.slug),
-                  child: const Text('সব দেখুন'),
-                ),
-            ],
+  Widget _index(BuildContext context) {
+    final audio = resources.where((resource) => resource.type == 'audio')
+        .toList(growable: false);
+    final mainOptions = <RuqyahBrowseTopic>[
+      ...ruqyahMainTopics,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'উপকরণ',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(height: 8),
-          for (final item in matches.take(2)) _item(item),
+        ),
+        const SizedBox(height: 12),
+        for (final topic in mainOptions) ...[
+          _topicCard(
+            context,
+            topic: topic,
+            count: resourcesForRuqyahTopic(resources, topic.slug).length,
+          ),
+          const SizedBox(height: 10),
         ],
-      ),
+        const SizedBox(height: 14),
+        Text(
+          'বিষয় অনুযায়ী অডিও',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final topic in ruqyahAudioTopics) ...[
+          _topicCard(
+            context,
+            topic: topic,
+            count: resourcesForRuqyahTopic(audio, topic.slug).length,
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
     );
   }
 
-  Widget _sectionTitle(String title, int count) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Flexible(
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+  Widget _topicCard(
+    BuildContext context, {
+    required RuqyahBrowseTopic topic,
+    required int count,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: Key('ruqyah-filter-${topic.slug}'),
+        onTap: () => context.push('/resources/ruqyah/${topic.slug}'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 15,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.headphones_rounded, color: scheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  topic.titleBn,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Text(
+                '$count',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 19,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
-      const SizedBox(width: 7),
-      Text(
-        '$count',
-        style: Theme.of(context).textTheme.bodySmall
-            ?.copyWith(color: Theme.of(context).colorScheme.primary),
-      ),
-    ],
-  );
-
-  Widget _item(ContentResource item) => Padding(
-    key: Key('ruqyah-item-${item.id}'),
-    padding: const EdgeInsets.only(bottom: 8),
-    child: ResourceCard(
-      resource: item,
-      onTap: () => widget.onOpenResource(item),
-    ),
-  );
+    );
+  }
 }
