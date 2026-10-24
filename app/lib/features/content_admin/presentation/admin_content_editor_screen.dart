@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -135,6 +139,57 @@ class _AdminContentEditorScreenState
     }
   }
 
+  /// Uses existing Super Admin RLS policies on public announcement images.
+  Future<void> _uploadBlogImage({required bool cover}) async {
+    if (_saving || _kind != AdminResourceKind.blog) return;
+    final selected = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
+    );
+    if (!mounted || selected == null) return;
+    final bytes = await selected.readAsBytes();
+    if (!mounted) return;
+    if (bytes.isEmpty || bytes.length > 3 * 1024 * 1024) {
+      _show('PNG, JPG বা WebP ছবি সর্বোচ্চ ৩ MB হতে পারে।');
+      return;
+    }
+    final ext = selected.extension?.toLowerCase();
+    const mimeTypes = {
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'webp': 'image/webp',
+    };
+    final mime = mimeTypes[ext];
+    if (mime == null) return;
+    setState(() => _saving = true);
+    try {
+      final storage = Supabase.instance.client.storage.from(
+        'sukun-announcement-images',
+      );
+      final name = 'blogs/${const Uuid().v4()}.${ext == 'jpeg' ? 'jpg' : ext}';
+      await storage.uploadBinary(
+        name,
+        bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
+        fileOptions: FileOptions(contentType: mime, upsert: false),
+      );
+      if (!mounted) return;
+      final url = storage.getPublicUrl(name);
+      if (cover) {
+        _controller('thumbnailUrl').text = url;
+      } else {
+        final editor = _controller('body');
+        editor.text = '${editor.text.trimRight()}\n\n![ছবি]($url)\n';
+      }
+      setState(() {});
+      _show(cover ? 'প্রচ্ছদ যুক্ত হয়েছে।' : 'লেখায় ছবি যুক্ত হয়েছে।');
+    } catch (_) {
+      if (mounted) _show('ছবি আপলোড হয়নি। Admin অনুমতি যাচাই করুন।');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _save(_SaveAction action) async {
     if (!_formKey.currentState!.validate()) return;
     final input = _input();
@@ -212,9 +267,15 @@ class _AdminContentEditorScreenState
       titleBn: kind == AdminResourceKind.duaAzkar
           ? _nullable('banglaText')
           : _nullable('titleBn'),
-      slug: _existingSlug ?? generatedResourceSlug(title, _resourceKey),
+      slug: _existingSlug ??
+          (kind == AdminResourceKind.blog
+              ? 'blog-${generatedResourceSlug(title, _resourceKey)}'
+              : generatedResourceSlug(title, _resourceKey)),
       summary: _nullable('summary'),
-      body: kind == AdminResourceKind.articleGuide ? _nullable('body') : null,
+      body: kind == AdminResourceKind.articleGuide ||
+              kind == AdminResourceKind.blog
+          ? _nullable('body')
+          : null,
       arabicText: _nullable('arabicText'),
       banglaText: _nullable('banglaText'),
       referenceText: referenceText,
@@ -764,6 +825,47 @@ class _AdminContentEditorScreenState
             numeric: true,
           ),
         ],
+        AdminResourceKind.blog => [
+          _section('ব্লগ পোস্ট'),
+          _titleField(),
+          _field(
+            'body',
+            'ব্লগের সম্পূর্ণ লেখা *',
+            helper: '# শিরোনাম এবং ## উপশিরোনাম ব্যবহার করতে পারেন।',
+            lines: 16,
+            required: true,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _saving ? null : () => _uploadBlogImage(cover: true),
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: const Text('প্রচ্ছদের ছবি'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _saving ? null : () => _uploadBlogImage(cover: false),
+                icon: const Icon(Icons.add_to_photos_outlined),
+                label: const Text('লেখায় ছবি যোগ করুন'),
+              ),
+            ],
+          ),
+          if (_controller('thumbnailUrl').text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  _controller('thumbnailUrl').text,
+                  height: 160,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+        ],
         AdminResourceKind.articleGuide => [
           _section('লেখা বা নির্দেশিকা'),
           _titleField(),
@@ -1101,7 +1203,8 @@ String _kindTitle(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.bookPdf => 'বই ও পিডিএফ',
   AdminResourceKind.video => 'ভিডিও',
   AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
-  AdminResourceKind.articleGuide => 'লেখা ও নির্দেশিকা',
+  AdminResourceKind.articleGuide => 'আর্টিকেল',
+  AdminResourceKind.blog => 'ব্লগ লিখুন',
 };
 
 String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
@@ -1113,6 +1216,7 @@ String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.video => 'ইউটিউব বা ভিডিওর লিংক',
   AdminResourceKind.duaAzkar => 'অনুমোদিত দোয়া ও যিকর',
   AdminResourceKind.articleGuide => 'পাঠযোগ্য লেখা ও নির্দেশিকা',
+  AdminResourceKind.blog => 'ছবি ও শিরোনামসহ পূর্ণ ব্লগ',
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
@@ -1125,6 +1229,7 @@ String _kindInstruction(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.video => 'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
   AdminResourceKind.duaAzkar => 'শুধু উৎসে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
   AdminResourceKind.articleGuide => 'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় উৎস দিন।',
+  AdminResourceKind.blog => 'শিরোনাম, লেখা ও ছবি দিয়ে ব্লগ তৈরি করুন।',
 };
 
 IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
@@ -1136,6 +1241,7 @@ IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.video => Icons.play_circle_outline_rounded,
   AdminResourceKind.duaAzkar => Icons.auto_awesome_rounded,
   AdminResourceKind.articleGuide => Icons.article_outlined,
+  AdminResourceKind.blog => Icons.edit_note_outlined,
 };
 
 String? _repeatCount(String? reference) {
