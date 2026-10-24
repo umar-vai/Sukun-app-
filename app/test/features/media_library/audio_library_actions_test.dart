@@ -375,7 +375,8 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.byKey(const Key('audio-menu-public-123')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('প্লেলিস্টে যোগ করুন'));
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('প্লেলিস্টে যোগ'));
     await tester.pumpAndSettle();
     expect(find.text('add=public-123'), findsOneWidget);
     expect(find.text('Playing'), findsNothing);
