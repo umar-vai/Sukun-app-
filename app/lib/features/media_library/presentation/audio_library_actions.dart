@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/features/media_library/data/offline_library.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
@@ -38,11 +43,10 @@ class AudioLibraryActions extends StatelessWidget {
             icon: const Icon(Icons.playlist_add_rounded),
             onPressed: () => context.push('/my-media?add=$encoded'),
           ),
-          IconButton(
+          OfflineDownloadAction(
             key: Key('audio-download-${resource.id}'),
-            tooltip: 'অফলাইনে ডাউনলোড করুন',
-            icon: const Icon(Icons.download_outlined),
-            onPressed: () => context.push('/my-media?download=$encoded'),
+            resourceId: resource.id,
+            compact: true,
           ),
         ],
       );
@@ -57,11 +61,9 @@ class AudioLibraryActions extends StatelessWidget {
           icon: const Icon(Icons.playlist_add_rounded, size: 18),
           label: const Text('প্লেলিস্টে যোগ করুন'),
         ),
-        OutlinedButton.icon(
+        OfflineDownloadAction(
           key: Key('audio-download-${resource.id}'),
-          onPressed: () => context.push('/my-media?download=$encoded'),
-          icon: const Icon(Icons.download_outlined, size: 18),
-          label: const Text('ডাউনলোড'),
+          resourceId: resource.id,
         ),
       ],
     );
@@ -87,6 +89,79 @@ class AudioLibraryShortcut extends StatelessWidget {
       onPressed: () => context.push('/my-media'),
       icon: const Icon(Icons.library_music_outlined),
       label: const Text('আমার প্লেলিস্ট ও ডাউনলোড'),
+    );
+  }
+}
+
+/// Shows the current device's saved state wherever a public media item
+/// appears. The same offline library owns the bytes and metadata.
+class OfflineDownloadAction extends ConsumerStatefulWidget {
+  const OfflineDownloadAction({
+    required this.resourceId,
+    this.compact = false,
+    this.iconOnly = false,
+    super.key,
+  });
+
+  final String resourceId;
+  final bool compact;
+  final bool iconOnly;
+
+  @override
+  ConsumerState<OfflineDownloadAction> createState() =>
+      _OfflineDownloadActionState();
+}
+
+class _OfflineDownloadActionState
+    extends ConsumerState<OfflineDownloadAction> {
+  String? _openedOwner;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openForCurrentOwner();
+    });
+  }
+
+  void _openForCurrentOwner() {
+    final owner = ref.read(appSessionProvider).value?.userId ?? 'guest';
+    if (_openedOwner == owner) return;
+    _openedOwner = owner;
+    unawaited(ref.read(offlineLibraryProvider).open(owner));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(appSessionProvider, (_, _) => _openForCurrentOwner());
+    final library = ref.watch(offlineLibraryProvider);
+    return AnimatedBuilder(
+      animation: library,
+      builder: (context, _) {
+        final downloaded = library.ready && library.contains(widget.resourceId);
+        final label = downloaded ? 'ডাউনলোড হয়েছে' : 'ডাউনলোড';
+        final target =
+            '/my-media?download=${Uri.encodeQueryComponent(widget.resourceId)}';
+        if (widget.compact || widget.iconOnly) {
+          return IconButton(
+            tooltip: label,
+            onPressed: () => context.push(target),
+            icon: Icon(
+              downloaded
+                  ? Icons.download_done_rounded
+                  : Icons.download_outlined,
+            ),
+          );
+        }
+        return OutlinedButton.icon(
+          onPressed: () => context.push(target),
+          icon: Icon(
+            downloaded ? Icons.download_done_rounded : Icons.download_outlined,
+            size: 18,
+          ),
+          label: Text(label),
+        );
+      },
     );
   }
 }
