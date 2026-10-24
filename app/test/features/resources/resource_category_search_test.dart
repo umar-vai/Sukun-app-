@@ -280,9 +280,11 @@ final class _LibraryTabsRepository implements ResourcesRepository {
     requestTypes.add(Set<String>.of(types));
     queries.add(query);
     return resources
-        .where((item) =>
-            types.contains(item.type) &&
-            (query.isEmpty || item.title.contains(query)))
+        .where(
+          (item) =>
+              types.contains(item.type) &&
+              (query.isEmpty || item.title.contains(query)),
+        )
         .toList(growable: false);
   }
 
