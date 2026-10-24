@@ -189,11 +189,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                           color: SukunColors.deepTide,
                         ),
                         SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'এখন উপকরণ দেখানো যাচ্ছে না।',
-                          ),
-                        ),
+                        Expanded(child: Text('এখন উপকরণ দেখানো যাচ্ছে না।')),
                       ],
                     ),
                   )
@@ -231,10 +227,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 const SizedBox(height: 22),
-                SukunSectionHeader(
-                  title: 'বিষয় অনুযায়ী দেখুন',
-                  
-                ),
+                SukunSectionHeader(title: 'বিষয় অনুযায়ী দেখুন'),
                 const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -261,10 +254,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 ),
                 if (hasSearch) ...[
                   const SizedBox(height: 24),
-                  const SukunSectionHeader(
-                    title: 'অনুসন্ধানের ফলাফল',
-                    
-                  ),
+                  const SukunSectionHeader(title: 'অনুসন্ধানের ফলাফল'),
                   const SizedBox(height: 10),
                 ],
               ],
