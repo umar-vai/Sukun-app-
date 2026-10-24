@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -389,11 +390,10 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
           ),
           icon: const Icon(Icons.forward_10_rounded, size: 27),
         ),
-        IconButton(
+        OfflineDownloadAction(
           key: const ValueKey('audio-download'),
-          tooltip: 'অফলাইনে সংরক্ষণ করুন',
-          onPressed: () => context.push('/my-media?download=$encoded'),
-          icon: const Icon(Icons.download_outlined),
+          resourceId: widget.resource.id,
+          iconOnly: true,
         ),
       ],
     );
