@@ -125,7 +125,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         key: Key('ruqyah-filter-${topic.slug}'),
-        onTap: () => context.push('/resources/ruqyah/${topic.slug}'),
+        onTap: () => context.go('/resources/ruqyah/${topic.slug}'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           decoration: BoxDecoration(
