@@ -359,9 +359,8 @@ void main() {
         ),
         GoRoute(
           path: '/my-media',
-          builder: (_, state) => Scaffold(
-            body: Text('add=${state.uri.queryParameters['add']}'),
-          ),
+          builder: (_, state) =>
+              Scaffold(body: Text('add=${state.uri.queryParameters['add']}')),
         ),
       ],
     );
