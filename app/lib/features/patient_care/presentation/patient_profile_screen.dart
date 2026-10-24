@@ -205,9 +205,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      kIsWeb
-                          ? 'ব্রাউজার বন্ধ থাকলে রিমাইন্ডার নাও আসতে পারে।'
-                          : 'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
+                      kIsWeb ? 'ব্রাউজার বন্ধ থাকলে রিমাইন্ডার নাও আসতে পারে।' : 'পরে মনে করিয়ে দেওয়ার সময়ও আপনি ঠিক করতে পারবেন। ফোনের বিরক্ত করবেন না সেটিংস চালু থাকলে শব্দ নাও হতে পারে।',
                     ),
                     const SizedBox(height: 14),
                     if (enabled && status?.lastSyncSucceeded == false) ...[
