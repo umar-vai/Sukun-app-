@@ -104,7 +104,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
           subtitle:
               '${group.categorySlugs.length}টি বিভাগ · ${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
           icon: _icon(group.slug),
-          onTap: () => context.push('/resources/dua-azkar/${group.slug}'),
+          onTap: () => context.go('/resources/dua-azkar/${group.slug}'),
         ),
         const SizedBox(height: 16),
       ],
@@ -114,7 +114,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
         title: 'সব দোয়া ও আযকার',
         subtitle: '${resources.length}টি দোয়া/আমল',
         icon: Icons.library_books_outlined,
-        onTap: () => context.push('/resources/dua-azkar/all'),
+        onTap: () => context.go('/resources/dua-azkar/all'),
       ),
       if (_unclassified.isNotEmpty) ...[
         const SizedBox(height: 16),
@@ -124,7 +124,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
           title: 'অন্যান্য দোয়া',
           subtitle: '${_unclassified.length}টি দোয়া/আমল',
           icon: Icons.book_outlined,
-          onTap: () => context.push('/resources/dua-azkar/other/$reviewSlug'),
+          onTap: () => context.go('/resources/dua-azkar/other/$reviewSlug'),
         ),
       ],
     ],
@@ -148,7 +148,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
               title: category.titleBn,
               subtitle: '${_count(category.slug)}টি দোয়া/আমল',
               icon: Icons.auto_stories_outlined,
-              onTap: () => context.push(
+              onTap: () => context.go(
                 '/resources/dua-azkar/${group.slug}/${category.slug}',
               ),
             ),
