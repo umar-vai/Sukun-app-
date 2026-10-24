@@ -611,7 +611,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
               ),
             ),
           ),
-
       ],
     );
   }
