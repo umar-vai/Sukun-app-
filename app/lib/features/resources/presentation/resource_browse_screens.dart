@@ -502,12 +502,14 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
   void initState() {
     super.initState();
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    _resourcesFuture = ref.read(resourcesRepositoryProvider).browseResources(
-      types: isDua
-          ? const {'dua', 'amal'}
-          : const {'quran', 'amal', 'audio', 'guide'},
-      categoryPrefixes: isDua ? const {} : const {'ruqyah'},
-    );
+    _resourcesFuture = ref
+        .read(resourcesRepositoryProvider)
+        .browseResources(
+          types: isDua
+              ? const {'dua', 'amal'}
+              : const {'quran', 'amal', 'audio', 'guide'},
+          categoryPrefixes: isDua ? const {} : const {'ruqyah'},
+        );
   }
 
   void _openRuqyahItem(ContentResource resource) {
@@ -528,10 +530,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
     final isIndex = isDua ? widget.groupSlug == null : widget.topicSlug == null;
     final pageTitle = isDua
-        ? DuaAzkarBrowseSection.titleFor(
-            widget.groupSlug,
-            widget.categorySlug,
-          )
+        ? DuaAzkarBrowseSection.titleFor(widget.groupSlug, widget.categorySlug)
         : RuqyahTopicBrowser.titleFor(widget.topicSlug);
     return Scaffold(
       appBar: AppBar(
