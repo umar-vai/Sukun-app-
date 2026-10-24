@@ -551,9 +551,25 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
     final pageTitle = isDua
         ? DuaAzkarBrowseSection.titleFor(widget.groupSlug, widget.categorySlug)
         : RuqyahTopicBrowser.titleFor(widget.topicSlug);
+    final parentPath = isDua
+        ? widget.categorySlug != null
+              ? '/resources/dua-azkar/${widget.groupSlug}'
+              : '/resources/dua-azkar'
+        : '/resources/ruqyah';
     return Scaffold(
       appBar: AppBar(
         title: Text(pageTitle),
+        leading: isIndex
+            ? null
+            : BackButton(
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(parentPath);
+                  }
+                },
+              ),
         actions: const [AudioLibraryShortcut(compact: true)],
       ),
       body: FutureBuilder<List<ContentResource>>(
