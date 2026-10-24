@@ -150,9 +150,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
             sliver: SliverList.list(
               children: [
                 SukunPageIntro(
-                  eyebrow: 'বিশ্বস্ত উপকরণের সংগ্রহ',
+                  eyebrow: 'রিসোর্স',
                   title: 'ইসলামিক পাঠ ও অডিও',
-                  subtitle: 'বিশ্বস্ত কুরআন, হাদিস, দোয়া, রুকইয়াহ ও শিক্ষামূলক রিসোর্স',
+                  subtitle: 'কুরআন, হাদিস, দোয়া ও রুকইয়াহ',
                   trailing: const SukunIconBadge(
                     icon: Icons.auto_stories_outlined,
                     size: 54,
