@@ -507,12 +507,14 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
 
   Future<List<ContentResource>> _loadResources() {
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    return ref.read(resourcesRepositoryProvider).browseResources(
-      types: isDua
-          ? const {'dua', 'amal'}
-          : const {'quran', 'amal', 'audio', 'guide'},
-      categoryPrefixes: isDua ? const {} : const {'ruqyah'},
-    );
+    return ref
+        .read(resourcesRepositoryProvider)
+        .browseResources(
+          types: isDua
+              ? const {'dua', 'amal'}
+              : const {'quran', 'amal', 'audio', 'guide'},
+          categoryPrefixes: isDua ? const {} : const {'ruqyah'},
+        );
   }
 
   @override
