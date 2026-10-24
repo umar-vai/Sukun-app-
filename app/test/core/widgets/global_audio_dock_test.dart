@@ -287,6 +287,75 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('primary playback control has a reachable 44px target', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    var presses = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AudioDockPrimaryAction(
+            label: 'বিরতি',
+            playing: true,
+            onPressed: () => presses++,
+          ),
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel('বিরতি'), findsOneWidget);
+    final button = find.byType(IconButton);
+    expect(tester.getSize(button).width, greaterThanOrEqualTo(44));
+    expect(tester.getSize(button).height, greaterThanOrEqualTo(44));
+    await tester.tap(button);
+    expect(presses, 1);
+    expect(find.byType(Tooltip, skipOffstage: false), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('seek slider uses a slim rounded track', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AudioDockSeekSlider(
+            duration: const Duration(minutes: 10),
+            position: const Duration(minutes: 2),
+            onSeek: (_) {},
+          ),
+        ),
+      ),
+    );
+    final theme = tester.widget<SliderTheme>(find.byType(SliderTheme).last);
+    expect(theme.data.trackHeight, 3);
+    expect(theme.data.trackShape, isA<RoundedRectSliderTrackShape>());
+    expect(tester.getSize(find.byType(Slider)).height, 40);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('time labels include hours and skip targets stay within bounds', () {
+    expect(formatAudioDockTime(Duration.zero), '0:00');
+    expect(formatAudioDockTime(const Duration(minutes: 30, seconds: 7)),
+        '30:07');
+    expect(formatAudioDockTime(const Duration(hours: 1, minutes: 5, seconds: 9)),
+        '1:05:09');
+    expect(
+      audioDockClampedSeekTarget(
+        const Duration(seconds: 5),
+        const Duration(minutes: 1),
+        -10,
+      ),
+      Duration.zero,
+    );
+    expect(
+      audioDockClampedSeekTarget(
+        const Duration(seconds: 58),
+        const Duration(minutes: 1),
+        10,
+      ),
+      const Duration(minutes: 1),
+    );
+  });
+
   test('inline speed presets cycle without a PopupMenu route', () {
     expect(nextAudioPlaybackSpeed(1.0), 1.25);
     expect(nextAudioPlaybackSpeed(1.25), 1.5);
