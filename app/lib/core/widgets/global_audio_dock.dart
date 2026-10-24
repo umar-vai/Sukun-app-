@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/router/app_router.dart';
@@ -91,14 +90,11 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                 final verse = controller.currentVerseKey;
                 final compact = MediaQuery.sizeOf(context).width < 380;
                 final duration = player.duration ?? Duration.zero;
+                final verseNumber = controller.currentVerseIndex + 1;
                 final subtitle = verse == null
                     ? 'শুনছেন'
                     : (isSequence
-                          ? verse +
-                                ' · ' +
-                                (controller.currentVerseIndex + 1).toString() +
-                                '/' +
-                                controller.quranVerseCount.toString()
+                          ? '$verse · $verseNumber/${controller.quranVerseCount}'
                           : verse);
                 return Material(
                   elevation: 6,
@@ -298,8 +294,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                       ),
                                                     ),
                                                     child: Text(
-                                                      player.speed.toString() +
-                                                          '×',
+                                                      '${player.speed}×',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.w700,
@@ -376,13 +371,9 @@ String formatAudioDockTime(Duration duration) {
   final secondsPart = (seconds % 60).toString().padLeft(2, '0');
   if (minutes >= 60) {
     final hours = minutes ~/ 60;
-    return hours.toString() +
-        ':' +
-        (minutes % 60).toString().padLeft(2, '0') +
-        ':' +
-        secondsPart;
+    return '$hours:${(minutes % 60).toString().padLeft(2, '0')}:$secondsPart';
   }
-  return minutes.toString() + ':' + secondsPart;
+  return '$minutes:$secondsPart';
 }
 
 Duration audioDockClampedSeekTarget(
