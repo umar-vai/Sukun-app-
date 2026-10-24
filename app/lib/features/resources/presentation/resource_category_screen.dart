@@ -42,7 +42,25 @@ class _ResourceCategoryScreenState
   final _searchController = TextEditingController();
   Timer? _debounce;
   bool _searchPending = false;
+  // Only the merged shelf has inner tabs; all other resource categories keep
+  // their existing single-list layout and search behavior.
+  int _selectedLibraryTab = 0;
   late Future<List<ContentResource>> _resources;
+
+  bool get _hasLibraryTabs => widget.section.slug == 'books-articles';
+
+  Set<String> get _activeTypes => _hasLibraryTabs
+      ? (_selectedLibraryTab == 0
+            ? const {'book', 'book_chapter', 'pdf'}
+            : const {'article', 'guide'})
+      : widget.section.types;
+
+  void _selectLibraryTab(int tab) {
+    if (!_hasLibraryTabs || tab == _selectedLibraryTab) return;
+    _debounce?.cancel();
+    setState(() => _selectedLibraryTab = tab);
+    _refresh();
+  }
 
   @override
   void initState() {
@@ -59,7 +77,7 @@ class _ResourceCategoryScreenState
         .read(resourcesRepositoryProvider)
         .browseResources(
           query: _searchController.text.trim(),
-          types: widget.section.types,
+          types: _activeTypes,
           categoryPrefixes: widget.section.categoryPrefixes,
         );
     // Blog posts are articles in the same RLS-protected CMS, but have their
@@ -67,7 +85,11 @@ class _ResourceCategoryScreenState
     return items
         .where((item) {
           final blog = isBlogResourceSlug(item.slug);
-          return widget.section.slug == 'blog' ? blog : !blog;
+          if (widget.section.slug == 'blog') return blog;
+          if (_hasLibraryTabs) {
+            return !blog && _activeTypes.contains(item.type);
+          }
+          return !blog;
         })
         .toList(growable: false);
   }
@@ -186,6 +208,31 @@ class _ResourceCategoryScreenState
                       ),
                     ],
                   ),
+                  if (_hasLibraryTabs) ...[
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<int>(
+                        key: const Key('books-articles-inner-tabs'),
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment<int>(
+                            value: 0,
+                            label: Text('বই'),
+                            icon: Icon(Icons.menu_book_outlined),
+                          ),
+                          ButtonSegment<int>(
+                            value: 1,
+                            label: Text('আর্টিকেল'),
+                            icon: Icon(Icons.article_outlined),
+                          ),
+                        ],
+                        selected: {_selectedLibraryTab},
+                        onSelectionChanged: (selected) =>
+                            _selectLibraryTab(selected.first),
+                      ),
+                    ),
+                  ],
                   if (!backendUnavailable) ...[
                     const SizedBox(height: 14),
                     SukunSearchField(
