@@ -100,6 +100,26 @@ void main() {
     );
   });
 
+  testWidgets('direct-linked Dua subcategory has a working Back button', (
+    tester,
+  ) async {
+    final router = _taxonomyRouter(
+      initialLocation: '/resources/dua-azkar/time-based/dua-azkar-morning',
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _taxonomyApp(router, const _BrowsingRepository()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('এই বিভাগে এখনো প্রকাশিত দোয়া নেই।'), findsOneWidget);
+    await tester.tap(find.byType(BackButton).last);
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/dua-azkar/time-based',
+    );
+  });
+
   testWidgets('uncategorized public dua is on its own safe route', (
     tester,
   ) async {
