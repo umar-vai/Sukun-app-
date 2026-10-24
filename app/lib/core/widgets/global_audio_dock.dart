@@ -250,7 +250,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                   formatAudioDockTime(duration),
                                                   style: TextStyle(
                                                     fontSize: 11,
-                                                    color: scheme.onSurfaceVariant,
+                                                    color:
+                                                        scheme.onSurfaceVariant,
                                                     fontFeatures: const [
                                                       FontFeature.tabularFigures(),
                                                     ],
