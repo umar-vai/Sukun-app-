@@ -213,7 +213,10 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                         snapshot.data ?? Duration.zero;
                                     return Padding(
                                       padding: const EdgeInsets.fromLTRB(
-                                        16, 0, 16, 10,
+                                        16,
+                                        0,
+                                        16,
+                                        10,
                                       ),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -235,7 +238,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                   formatAudioDockTime(position),
                                                   style: TextStyle(
                                                     fontSize: 11,
-                                                    color: scheme.onSurfaceVariant,
+                                                    color:
+                                                        scheme.onSurfaceVariant,
                                                     fontFeatures: const [
                                                       FontFeature.tabularFigures(),
                                                     ],
@@ -265,7 +269,8 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                                                     ? 'আগের আয়াত'
                                                     : '১০ সেকেন্ড পেছনে',
                                                 icon: isSequence
-                                                    ? Icons.skip_previous_rounded
+                                                    ? Icons
+                                                          .skip_previous_rounded
                                                     : Icons.replay_10_rounded,
                                                 onPressed: () => unawaited(
                                                   isSequence
@@ -336,8 +341,7 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
                             stream: player.positionStream,
                             initialData: player.position,
                             builder: (context, snapshot) {
-                              final position =
-                                  snapshot.data ?? Duration.zero;
+                              final position = snapshot.data ?? Duration.zero;
                               return LinearProgressIndicator(
                                 value: duration.inMilliseconds <= 0
                                     ? 0
@@ -363,7 +367,6 @@ class _GlobalAudioDockState extends ConsumerState<GlobalAudioDock> {
       },
     );
   }
-
 }
 
 String formatAudioDockTime(Duration duration) {
