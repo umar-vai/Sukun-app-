@@ -169,16 +169,18 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
               const PopupMenuItem<String>(
                 value: 'add',
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.playlist_add_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('প্লেলিস্টে যোগ করুন'),
+                    SizedBox(width: 8),
+                    Text('প্লেলিস্টে যোগ'),
                   ],
                 ),
               ),
               PopupMenuItem<String>(
                 value: 'download',
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       downloaded
@@ -186,7 +188,7 @@ class _OfflineDownloadActionState extends ConsumerState<OfflineDownloadAction> {
                           : Icons.download_outlined,
                       size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Text(label),
                   ],
                 ),
