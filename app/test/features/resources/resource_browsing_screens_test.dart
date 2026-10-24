@@ -297,9 +297,8 @@ Widget _testApp(Widget home, ResourcesRepository repository) => ProviderScope(
 );
 
 final class _BrowsingRepository implements ResourcesRepository {
-  const _BrowsingRepository({this.onBrowse, this.duaItems = const []});
+  const _BrowsingRepository({this.duaItems = const []});
 
-  final void Function(Set<String>)? onBrowse;
   final List<ContentResource> duaItems;
 
   static const quran = ContentResource(
@@ -337,7 +336,6 @@ final class _BrowsingRepository implements ResourcesRepository {
     Set<String> types = const {},
     Set<String> categoryPrefixes = const {},
   }) async {
-    onBrowse?.call(categoryPrefixes);
     return types.contains('hadith') ? const [hadith] : duaItems;
   }
 
