@@ -197,8 +197,7 @@ class _ResourceCategoryScreenState
                   ? AppEmptyState(
                       icon: Icons.cloud_off_outlined,
                       title: 'এখন উপকরণ দেখানো যাচ্ছে না',
-                      message:
-                          'পরে আবার চেষ্টা করুন।',
+                      message: 'পরে আবার চেষ্টা করুন।',
                     )
                   : _searchPending
                   ? const AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…')
