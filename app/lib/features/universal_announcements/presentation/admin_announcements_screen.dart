@@ -338,7 +338,7 @@ class _AdminAnnouncementEditorScreenState
       // Publication already committed under Super Admin RLS. The server
       // independently verifies the caller and atomically claims this UUID's
       // outbox job. Any delivery failure keeps the queued notice in the backend
-      // without rolling back the visible publication.
+      // without rolling back the visible publication; queue status is auditable.
       var providerAccepted = false;
       if (firstPublication && AppEnvironment.isSupabaseConfigured) {
         try {
@@ -355,7 +355,7 @@ class _AdminAnnouncementEditorScreenState
               result['accepted'] == 1;
         } catch (_) {
           // The protected sender can be undeployed or intentionally gated off.
-          // The server outbox remains the source of truth for later retries.
+          // The server outbox records the delivery state independently.
         }
       }
       ref.invalidate(publishedAnnouncementsProvider);
@@ -363,7 +363,7 @@ class _AdminAnnouncementEditorScreenState
       if (firstPublication && !providerAccepted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('নোটিশ প্রকাশিত। পুশ পাঠানো অপেক্ষায় আছে।'),
+            content: Text('নোটিশ প্রকাশিত। পুশ পাঠানো নিশ্চিত হয়নি।'),
           ),
         );
       }
