@@ -230,57 +230,54 @@ void main() {
     expect(local.lastRemotePayload, isNull);
   });
 
-  test(
-    'Guest foreground and tap public notice work without care token registration',
-    () async {
-      const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
-      final opened = <String>[];
-      final guest = NotificationCoordinator(
-        repository,
-        local,
-        push,
-        store,
-        platform: 'android',
-        onTaskOpened: opened.add,
+  test('Guest foreground and tap public notice work without care token registration', () async {
+    const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+    final opened = <String>[];
+    final guest = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'android',
+      onTaskOpened: opened.add,
+    );
+    try {
+      await guest.initialize();
+      expect(store.enabled, isFalse);
+      expect(repository.registeredToken, isNull);
+      push.emitForeground(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Public campaign',
+          body: 'Test only',
+          announcementId: noticeId,
+        ),
       );
-      try {
-        await guest.initialize();
-        expect(store.enabled, isFalse);
-        expect(repository.registeredToken, isNull);
-        push.emitForeground(
-          const RemotePushMessage(
-            type: 'universal_announcement',
-            title: 'Public campaign',
-            body: 'Test only',
-            announcementId: noticeId,
-          ),
-        );
-        await Future<void>.delayed(Duration.zero);
-        expect(local.lastRemotePayload, 'universal_notice:$noticeId');
+      await Future<void>.delayed(Duration.zero);
+      expect(local.lastRemotePayload, 'universal_notice:$noticeId');
 
-        push.emit(
-          const RemotePushMessage(
-            type: 'universal_announcement',
-            title: 'Public campaign',
-            body: 'Test only',
-            announcementId: noticeId,
-          ),
-        );
-        push.emit(
-          const RemotePushMessage(
-            type: 'universal_announcement',
-            title: 'Do not redirect',
-            body: 'Untrusted',
-            announcementId: 'https://evil.example',
-          ),
-        );
-        await Future<void>.delayed(Duration.zero);
-        expect(opened, ['universal_notice:$noticeId']);
-      } finally {
-        await guest.dispose();
-      }
-    },
-  );
+      push.emit(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Public campaign',
+          body: 'Test only',
+          announcementId: noticeId,
+        ),
+      );
+      push.emit(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Do not redirect',
+          body: 'Untrusted',
+          announcementId: 'https://evil.example',
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(opened, ['universal_notice:$noticeId']);
+    } finally {
+      await guest.dispose();
+    }
+  });
 
   test('cold-start public FCM message is validated and routed once', () async {
     const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
