@@ -64,6 +64,9 @@ jobs:
           echo "Real Flutter authenticated Admin screen interaction and physical phone reception require separate gates." >> "$GITHUB_STEP_SUMMARY"
 
   android-pilot:
+    # The owner already built and installed the authorized pilot APK.
+    # The follow-up run tests staging Storage cleanup only. Do NOT repackage.
+    if: ${{ false }}
     name: One owner-approved FCM-capable Android debug APK (staging only)
     runs-on: ubuntu-latest
     timeout-minutes: 55
