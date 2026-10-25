@@ -85,12 +85,33 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
           test "$GITHUB_REF" = 'refs/heads/qa/rich-notice-pilot-20261025'
+          # GitHub Secret values pasted from Firebase may contain CR/LF.
+          # Strip ASCII whitespace without ever printing client config values.
           for name in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
-            if [[ -z "${!name:-}" ]]; then
-              echo "::error::A required QA Android Firebase Actions secret is not configured ($name). No APK built."
+            raw="${!name:-}"
+            clean="$(printf '%s' "$raw" | tr -d '[:space:]')"
+            if [[ -z "$clean" ]]; then
+              echo "::error::Required Android Firebase QA secret is missing ($name). No APK built."
               exit 1
             fi
+            if [[ "$clean" != "$raw" ]]; then
+              echo "::notice::Removed pasted whitespace from $name (value kept private)."
+            fi
+            [[ "$clean" =~ ^[A-Za-z0-9:_-]+$ ]] || {
+              echo "::error::Malformed Firebase Android QA setting ($name); refusing build."
+              exit 1
+            }
+            printf '%s=%s\n' "$name" "$clean" >> "$GITHUB_ENV"
+            case "$name" in
+              QA_FIREBASE_PROJECT_ID) project_id="$clean" ;;
+              QA_FIREBASE_SENDER_ID) sender_id="$clean" ;;
+              QA_FIREBASE_ANDROID_APP_ID) android_id="$clean" ;;
+            esac
           done
+          [[ "$sender_id" =~ ^[0-9]+$ && "$android_id" == "1:${sender_id}:android:"* ]] || {
+            echo "::error::Firebase Android App ID and Messaging Sender ID do not match."
+            exit 1
+          }
           echo '### Staging-only Android FCM QA client preflight passed' >> "$GITHUB_STEP_SUMMARY"
           echo 'FCM keys are client configuration, not Firebase sender service account. No broadcast is enabled.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-java@v4
