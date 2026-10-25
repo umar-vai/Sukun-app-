@@ -8,6 +8,8 @@ type ClaimedNotice = {
   job_id: string;
   notice_id: string;
   notice_title: string;
+  notice_image_path: string | null;
+  countdown_ends_at: string | null;
 };
 
 function response(body: unknown, status = 200): Response {
@@ -33,14 +35,54 @@ async function sendPublicNotice(
   firebaseProjectId: string,
   firebaseAccessToken: string,
   notice: ClaimedNotice,
+  supabaseUrl: string,
 ): Promise<{ ok: boolean; messageId: string | null }> {
   if (
     !/^[0-9a-f-]{36}$/i.test(notice.notice_id) ||
     !notice.notice_title.trim()
   ) throw new Error("Invalid queued public notice.");
 
-  // FCM topic is a public-only channel. Do not include sensitive clinical
-  // content, uploaded image URLs, internal routes, arbitrary URLs or tokens.
+  // Only the public announcement bucket may provide an image. No arbitrary
+  // URL, private bucket, signed token, clinical message, or patient data.
+  const allowed = notice.notice_image_path != null &&
+    /^notices\/[a-zA-Z0-9_-]+\.(?:png|jpe?g|webp)$/.test(
+      notice.notice_image_path,
+    );
+  const base = new URL(supabaseUrl);
+  if (base.protocol !== "https:") {
+    throw new Error("Invalid public storage origin");
+  }
+  const imageUrl = allowed
+    ? new URL(
+      "/storage/v1/object/public/sukun-announcement-images/" +
+        notice.notice_image_path!.split("/").map(encodeURIComponent).join("/"),
+      base,
+    ).toString()
+    : null;
+  const deadline = notice.countdown_ends_at == null
+    ? null
+    : new Date(notice.countdown_ends_at);
+  const activeDeadline = deadline != null &&
+    Number.isFinite(deadline.getTime()) &&
+    deadline.getTime() > Date.now() &&
+    deadline.getTime() <= Date.now() + 30 * 86400000;
+  const commonData: Record<string, string> = {
+    type: "universal_announcement",
+    announcement_id: notice.notice_id,
+  };
+  if (imageUrl) commonData.image_url = imageUrl;
+  if (activeDeadline) {
+    commonData.countdown_ends_at = deadline!.toISOString();
+    commonData.notice_title = notice.notice_title.slice(0, 110);
+  }
+  // OS-rendered background FCM delivers the picture. Countdown metadata
+  // powers a live in-app timer and foreground Android chronometer. Background
+  // Android OS notification countdown needs an approved native delivery gate.
+  const standard = {
+    title: "সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ",
+    body: notice.notice_title.slice(0, 110),
+    ...(imageUrl ? { image: imageUrl } : {}),
+  };
   const result = await fetch(
     "https://fcm.googleapis.com/v1/projects/" +
       encodeURIComponent(firebaseProjectId) + "/messages:send",
@@ -53,19 +95,14 @@ async function sendPublicNotice(
       body: JSON.stringify({
         message: {
           topic: "sukun_public_notices_v1",
-          notification: {
-            title: "সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ",
-            body: notice.notice_title.slice(0, 110),
-          },
-          data: {
-            type: "universal_announcement",
-            announcement_id: notice.notice_id,
-          },
+          notification: standard,
+          data: commonData,
           android: {
             priority: "high",
             notification: {
               channel_id: "care_updates",
               sound: "default",
+              ...(imageUrl ? { image: imageUrl } : {}),
             },
           },
           apns: {
@@ -110,7 +147,7 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: claimed, error } = await supabase.rpc(
-      "claim_universal_announcement_batch",
+      "claim_universal_announcement_rich_batch",
       { p_batch_size: 10 },
     );
     if (error) throw new Error("Notice claim rejected.");
@@ -125,6 +162,7 @@ Deno.serve(async (request) => {
           account.projectId,
           token,
           notice,
+          url,
         );
         providerAccepted = result.ok;
         messageId = result.messageId;

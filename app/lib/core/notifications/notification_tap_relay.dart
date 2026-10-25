@@ -23,6 +23,13 @@ String? _validId(String value) {
   return RegExp(pattern).hasMatch(value) ? value.toLowerCase() : null;
 }
 
+String? universalNoticeIdFromLocalPayload(String? payload) {
+  if (payload == null || !payload.startsWith('universal_notice:')) {
+    return null;
+  }
+  return _validId(payload.substring('universal_notice:'.length));
+}
+
 String personalActionRoute(String actionId) =>
     Uri(pathSegments: ['', 'my-routines', 'action', actionId]).toString();
 
@@ -32,11 +39,21 @@ final class NotificationTapRelay {
       StreamController<String>.broadcast();
   String? _pending;
   String? _pendingPersonal;
+  String? _pendingNotice;
+  final StreamController<String> _openedNotice =
+      StreamController<String>.broadcast();
 
   Stream<String> get openedTaskIds => _opened.stream;
   Stream<String> get openedPersonalActionIds => _openedPersonal.stream;
+  Stream<String> get openedUniversalNoticeIds => _openedNotice.stream;
 
   void accept(String? payload) {
+    final noticeId = universalNoticeIdFromLocalPayload(payload);
+    if (noticeId != null) {
+      _pendingNotice = noticeId;
+      _openedNotice.add(noticeId);
+      return;
+    }
     final taskId = careTaskIdFromPayload(payload);
     if (taskId != null) {
       _pending = taskId;
@@ -62,7 +79,14 @@ final class NotificationTapRelay {
     return current;
   }
 
+  String? takePendingUniversalNotice() {
+    final id = _pendingNotice;
+    _pendingNotice = null;
+    return id;
+  }
+
   void dispose() {
+    _openedNotice.close();
     _opened.close();
     _openedPersonal.close();
   }

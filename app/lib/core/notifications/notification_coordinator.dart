@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
+import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
@@ -235,6 +236,30 @@ final class NotificationCoordinator {
 
   Future<void> _handleForegroundMessage(RemotePushMessage message) async {
     try {
+      if (message.type == 'universal_announcement') {
+        final id = universalNoticeIdFromPush({
+          'type': message.type,
+          'announcement_id': message.announcementId,
+        });
+        if (id != null &&
+            platform == 'android' &&
+            _local is PluginLocalNotificationsGateway) {
+          await _local.showUniversal(
+            noticeId: id,
+            title: message.body,
+            imageUrl: message.imageUrl,
+            countdownEndsAt: message.countdownEndsAt,
+          );
+        } else if (id != null) {
+          // iOS/older platform fallback remains a visible public notice.
+          await _local.showRemote(
+            title: 'সুকুন লাইফ',
+            body: message.body,
+            payload: 'universal_notice:$id',
+          );
+        }
+        return;
+      }
       // Do not trust provider-supplied push copy on an unlocked or locked
       // device: it could accidentally contain patient/prescription details.
       final taskId = message.type == 'care_reminder' && message.taskId != null

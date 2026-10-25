@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:sukun_life/core/notifications/reminder_schedule.dart';
@@ -200,6 +201,66 @@ final class PluginLocalNotificationsGateway
     notificationDetails: _details,
     payload: payload,
   );
+
+  /// Foreground Android receives a single public-only FCM notice and
+  /// renders a BigPicture with the system's countdown chronometer (API 24+).
+  /// Background OS-delivered FCM still uses its own standard image rendering.
+  Future<void> showUniversal({
+    required String noticeId,
+    required String title,
+    String? imageUrl,
+    DateTime? countdownEndsAt,
+  }) async {
+    if (defaultTargetPlatform != TargetPlatform.android || kIsWeb) return;
+    await initialize();
+    Uint8List? picture;
+    final uri = Uri.tryParse(imageUrl ?? '');
+    if (uri != null &&
+        uri.scheme == 'https' &&
+        uri.host == 'vydfafumxptanpkmtrpr.supabase.co' &&
+        uri.path.startsWith(
+          '/storage/v1/object/public/sukun-announcement-images/notices/',
+        )) {
+      try {
+        final response = await http
+            .get(uri)
+            .timeout(const Duration(seconds: 6));
+        if (response.statusCode == 200 &&
+            response.bodyBytes.isNotEmpty &&
+            response.bodyBytes.length <= 1024 * 1024) {
+          picture = response.bodyBytes;
+        }
+      } on Object {
+        // Missing artwork must not suppress an otherwise valid public notice.
+      }
+    }
+    final validDeadline =
+        countdownEndsAt != null &&
+        countdownEndsAt.isAfter(DateTime.now()) &&
+        countdownEndsAt.isBefore(DateTime.now().add(const Duration(days: 30)));
+    final android = AndroidNotificationDetails(
+      'sukun_public_notices',
+      'Sukun Life public notices',
+      channelDescription: 'Optional public notices from Sukun Life',
+      importance: Importance.high,
+      priority: Priority.high,
+      visibility: NotificationVisibility.public,
+      styleInformation: picture == null
+          ? const BigTextStyleInformation('')
+          : BigPictureStyleInformation(ByteArrayAndroidBitmap(picture)),
+      when: validDeadline ? countdownEndsAt.millisecondsSinceEpoch : null,
+      usesChronometer: validDeadline,
+      chronometerCountDown: validDeadline,
+      showWhen: validDeadline,
+    );
+    await _plugin.show(
+      id: noticeId.hashCode & 0x7fffffff,
+      title: 'সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ',
+      body: title,
+      notificationDetails: NotificationDetails(android: android),
+      payload: 'universal_notice:$noticeId',
+    );
+  }
 
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
