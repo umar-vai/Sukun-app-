@@ -42,7 +42,7 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
-    final body = FutureBuilder<List<Map<String, dynamic>>(
+    final body = FutureBuilder<List<Map<String, dynamic>>>(
         future: _history,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
