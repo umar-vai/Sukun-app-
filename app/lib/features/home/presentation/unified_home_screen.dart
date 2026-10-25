@@ -246,10 +246,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               ),
               if (_upcoming != null) ...[
                 const SizedBox(height: 12),
-                _UnifiedNextTasks(
-                  future: _upcoming!,
-                  isPatient: widget.isPatient,
-                ),
+                _UnifiedNextTasks(future: _upcoming!),
               ],
               const SizedBox(height: 22),
               SukunSectionHeader(
@@ -526,85 +523,58 @@ class _HomeTasksData {
 }
 
 class _UnifiedNextTasks extends StatelessWidget {
-  const _UnifiedNextTasks({required this.future, required this.isPatient});
+  const _UnifiedNextTasks({required this.future});
 
   final Future<_HomeTasksData> future;
-  final bool isPatient;
-
   @override
   Widget build(BuildContext context) => SukunSurface(
     key: const Key('home-unified-next-tasks'),
     tone: SukunSurfaceTone.soft,
     padding: const EdgeInsets.all(14),
+    onTap: () => context.push('/my-routines'),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'আপনার পরবর্তী কাজ',
-          style: Theme.of(context).textTheme.titleMedium,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'আপনার পরবর্তী আমল',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, size: 20),
+          ],
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
         FutureBuilder<_HomeTasksData>(
           future: future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('আপনার করণীয় খোঁজা হচ্ছে…');
+              return const Text('পরবর্তী আমল দেখা হচ্ছে…');
             }
-            if (snapshot.hasError || snapshot.data == null) {
-              return const Text(
-                'এখন কাজগুলো আনা যাচ্ছে না। পরে আবার চেষ্টা করুন।',
+            final data = snapshot.data;
+            if (data == null) return const Text('রুটিন খুলে আমল দেখুন।');
+            final next = data.actions.firstOrNull;
+            if (next == null) {
+              return Text(
+                data.planUnavailable || data.personalUnavailable
+                    ? 'রুটিন থেকে পরবর্তী আমল দেখুন।'
+                    : 'এই মুহূর্তে কোনো বাকি আমল নেই।',
               );
             }
-            final data = snapshot.data!;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Row(
               children: [
-                if (data.patientDay?.activePlan != null) ...[
-                  Text(
-                    'আজকের পরিকল্পনা: ${data.patientDay!.completedCount}/${data.patientDay!.tasks.length} সম্পন্ন',
-                    style: Theme.of(context).textTheme.bodySmall,
+                const Icon(Icons.schedule_outlined, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    next.title,
+                    key: const Key('home-next-amal-title'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 5),
-                  LinearProgressIndicator(
-                    value: data.patientDay!.completionRatio,
-                  ),
-                  const SizedBox(height: 7),
-                ],
-                if (data.actions.isEmpty)
-                  const Text('এই মুহূর্তে কোনো বাকি কাজ নেই।'),
-                for (final action in data.actions.take(3))
-                  ListTile(
-                    key: Key('upcoming-${action.id}'),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(
-                      action.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${action.origin} · ${HomeNextActions.dueLabel(action)}',
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push(action.route),
-                  ),
-                if (data.planUnavailable || data.personalUnavailable)
-                  const Text(
-                    'কিছু কাজ লোড হয়নি। নিচের রুটিন বা পরিকল্পনা খুলে দেখুন।',
-                  ),
-                Wrap(
-                  spacing: 6,
-                  children: [
-                    if (isPatient)
-                      TextButton(
-                        onPressed: () => context.push('/patient/today'),
-                        child: const Text('সব রোগীর কাজ'),
-                      ),
-                    TextButton(
-                      onPressed: () => context.push('/my-routines'),
-                      child: const Text('আমার রুটিন'),
-                    ),
-                  ],
                 ),
               ],
             );

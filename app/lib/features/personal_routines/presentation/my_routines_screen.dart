@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
@@ -17,9 +19,10 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyRoutinesScreen extends ConsumerStatefulWidget {
-  const MyRoutinesScreen({super.key, this.resourceId});
+  const MyRoutinesScreen({super.key, this.resourceId, this.initialTab});
 
   final String? resourceId;
+  final String? initialTab;
 
   @override
   ConsumerState<MyRoutinesScreen> createState() => _MyRoutinesScreenState();
@@ -541,7 +544,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('আমার রুটিন'),
+      title: const Text('রুটিন'),
       actions: [
         IconButton(
           onPressed: _working ? null : _toggleReminders,
@@ -561,186 +564,270 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         ),
       ],
     ),
-    body: FutureBuilder<_RoutinePageData>(
-      future: _data,
-      builder: (context, snap) {
-        if (!snap.hasData) {
-          if (snap.hasError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।'),
-                  OutlinedButton(
-                    onPressed: _refresh,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-          return const Center(child: CircularProgressIndicator());
-        }
-        final data = snap.data!;
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (widget.resourceId != null)
-              const Card(
-                child: ListTile(
-                  leading: Icon(Icons.library_books_outlined),
-                  title: Text('লাইব্রেরি থেকে রুটিনে যোগ করুন'),
-                  subtitle: Text('নিচের রুটিনের + করণীয় চাপুন।'),
-                ),
-              ),
-            if (data.routines.isEmpty)
-              const ListTile(
-                title: Text('এখনো রুটিন নেই'),
-                subtitle: Text(
-                  'উপরে + চাপুন এবং নিজের জন্য একটি রুটিন তৈরি করুন।',
-                ),
-              ),
-            for (final routine in data.routines) ...[
-              Card(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ListTile(
-                      title: Text(routine['title'].toString()),
-                      subtitle: Text(
-                        routine['is_active'] == true
-                            ? 'চালু আছে'
-                            : 'Pause করা আছে',
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'pause') {
-                            _mutate(
-                              () => _repository.setRoutineActive(
-                                routine['id'] as String,
-                                routine['is_active'] != true,
+    body: DefaultTabController(
+      length: 3,
+      initialIndex: widget.resourceId != null
+          ? 0
+          : widget.initialTab == 'progress'
+          ? 2
+          : widget.initialTab == 'assigned'
+          ? 1
+          : 0,
+      child: Column(
+        children: [
+          const TabBar(
+            key: Key('routine-hub-tabs'),
+            tabs: [
+              Tab(text: 'আমার রুটিন'),
+              Tab(text: 'নির্ধারিত'),
+              Tab(text: 'অগ্রগতি'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                FutureBuilder<_RoutinePageData>(
+                  future: _data,
+                  builder: (context, snap) {
+                    if (!snap.hasData) {
+                      if (snap.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।',
                               ),
-                            );
-                          } else if (value == 'delete') {
-                            _mutate(
-                              () => _repository.deleteRoutine(
-                                routine['id'] as String,
+                              OutlinedButton(
+                                onPressed: _refresh,
+                                child: const Text('Retry'),
                               ),
-                            );
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'pause',
-                            child: Text(
-                              routine['is_active'] == true ? 'Pause' : 'Resume',
+                            ],
+                          ),
+                        );
+                      }
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final data = snap.data!;
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (widget.resourceId != null)
+                          const Card(
+                            child: ListTile(
+                              leading: Icon(Icons.library_books_outlined),
+                              title: Text('লাইব্রেরি থেকে রুটিনে যোগ করুন'),
+                              subtitle: Text('নিচের রুটিনের + করণীয় চাপুন।'),
                             ),
                           ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Delete'),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: FilledButton.icon(
+                            onPressed: _working ? null : _createRoutine,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('নতুন রুটিন তৈরি করুন'),
+                          ),
+                        ),
+                        if (data.routines.isEmpty)
+                          const ListTile(
+                            title: Text('এখনো রুটিন নেই'),
+                            subtitle: Text(
+                              'নতুন রুটিন তৈরি করে করণীয় যোগ করুন।',
+                            ),
+                          ),
+                        for (final routine in data.routines) ...[
+                          Card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ListTile(
+                                  title: Text(routine['title'].toString()),
+                                  subtitle: Text(
+                                    routine['is_active'] == true
+                                        ? 'চালু আছে'
+                                        : 'Pause করা আছে',
+                                  ),
+                                  trailing: PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      if (value == 'pause') {
+                                        _mutate(
+                                          () => _repository.setRoutineActive(
+                                            routine['id'] as String,
+                                            routine['is_active'] != true,
+                                          ),
+                                        );
+                                      } else if (value == 'delete') {
+                                        _mutate(
+                                          () => _repository.deleteRoutine(
+                                            routine['id'] as String,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    itemBuilder: (_) => [
+                                      PopupMenuItem(
+                                        value: 'pause',
+                                        child: Text(
+                                          routine['is_active'] == true
+                                              ? 'Pause'
+                                              : 'Resume',
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                for (final action in data.actions.where(
+                                  (item) => item['routine_id'] == routine['id'],
+                                ))
+                                  ListTile(
+                                    onTap: () => context.push(
+                                      '/my-routines/action/${action['id']}',
+                                    ),
+                                    leading: const Icon(
+                                      Icons.check_circle_outline,
+                                    ),
+                                    title: Text(action['title'].toString()),
+                                    subtitle: Text(
+                                      "${action['schedule_kind']} · ${action['notification_title']}",
+                                    ),
+                                    trailing: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'edit') {
+                                          _editAction(
+                                            routineId: routine['id'] as String,
+                                            existing: action,
+                                          );
+                                        } else if (value == 'duplicate') {
+                                          _mutate(
+                                            () => _repository.duplicateAction(
+                                              action,
+                                            ),
+                                          );
+                                        } else if (value == 'done' ||
+                                            value == 'skipped') {
+                                          _mutate(
+                                            () => _repository.recordOutcome(
+                                              actionId: action['id'] as String,
+                                              localDate: DateTime.now(),
+                                              outcome: value,
+                                            ),
+                                          );
+                                        } else if (value == 'delete') {
+                                          _mutate(
+                                            () => _repository.deleteAction(
+                                              action['id'] as String,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      itemBuilder: (_) => [
+                                        PopupMenuItem(
+                                          enabled: false,
+                                          child: Text(
+                                            "আজ: ${data.outcomes[action['id']] ?? 'বাকি আছে'}",
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'done',
+                                          child: Text('Done'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'skipped',
+                                          child: Text('Skip'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Text('Edit'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'duplicate',
+                                          child: Text('Duplicate'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  child: OutlinedButton.icon(
+                                    onPressed: _working
+                                        ? null
+                                        : () => _editAction(
+                                            routineId: routine['id'] as String,
+                                          ),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('করণীয় যোগ করুন'),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                    for (final action in data.actions.where(
-                      (item) => item['routine_id'] == routine['id'],
-                    ))
-                      ListTile(
-                        onTap: () =>
-                            context.push('/my-routines/action/${action['id']}'),
-                        leading: const Icon(Icons.check_circle_outline),
-                        title: Text(action['title'].toString()),
-                        subtitle: Text(
-                          "${action['schedule_kind']} · ${action['notification_title']}",
+                        const SizedBox(height: 12),
+                        TextButton.icon(
+                          onPressed: () => context.push('/resources'),
+                          icon: const Icon(Icons.library_books_outlined),
+                          label: const Text('রিসোর্স লাইব্রেরি খুলুন'),
                         ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editAction(
-                                routineId: routine['id'] as String,
-                                existing: action,
-                              );
-                            } else if (value == 'duplicate') {
-                              _mutate(
-                                () => _repository.duplicateAction(action),
-                              );
-                            } else if (value == 'done' || value == 'skipped') {
-                              _mutate(
-                                () => _repository.recordOutcome(
-                                  actionId: action['id'] as String,
-                                  localDate: DateTime.now(),
-                                  outcome: value,
-                                ),
-                              );
-                            } else if (value == 'delete') {
-                              _mutate(
-                                () => _repository.deleteAction(
-                                  action['id'] as String,
-                                ),
-                              );
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              enabled: false,
-                              child: Text(
-                                "আজ: ${data.outcomes[action['id']] ?? 'বাকি আছে'}",
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'done',
-                              child: Text('Done'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'skipped',
-                              child: Text('Skip'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Edit'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'duplicate',
-                              child: Text('Duplicate'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: OutlinedButton.icon(
-                        onPressed: _working
-                            ? null
-                            : () => _editAction(
-                                routineId: routine['id'] as String,
-                              ),
-                        icon: const Icon(Icons.add),
-                        label: const Text('করণীয় যোগ করুন'),
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: () => context.push('/resources'),
-              icon: const Icon(Icons.library_books_outlined),
-              label: const Text('রিসোর্স লাইব্রেরি খুলুন'),
+                _assignedPlanTab(),
+                const UnifiedProgressScreen(embedded: true),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     ),
   );
+
+  Widget _assignedPlanTab() {
+    final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
+    return ListView(
+      key: const Key('routine-assigned-tab'),
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (isPatient) ...[
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_turned_in_outlined),
+              title: const Text('সেশন থেকে নির্ধারিত রুটিন'),
+              subtitle: const Text('আপনার অনুমোদিত পরিকল্পনা'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/patient/plan'),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.today_outlined),
+              title: const Text('আজকের নির্ধারিত আমল'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/patient/today'),
+            ),
+          ),
+        ],
+        const Card(
+          child: ListTile(
+            leading: Icon(Icons.auto_awesome_outlined),
+            title: Text('প্রস্তুত রুটিন'),
+            subtitle: Text('এখনো কোনো প্রস্তুত রুটিন পাওয়া যায়নি।'),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _RoutinePageData {

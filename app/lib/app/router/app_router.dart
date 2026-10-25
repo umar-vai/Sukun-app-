@@ -29,7 +29,6 @@ import 'package:sukun_life/features/account/presentation/unified_account_screen.
 import 'package:sukun_life/features/account/presentation/bengali_font_settings_screen.dart';
 import 'package:sukun_life/features/account/presentation/app_appearance_settings_screen.dart';
 import 'package:sukun_life/features/account/presentation/notification_health_settings_screen.dart';
-import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_action_detail_screen.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
@@ -208,11 +207,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/my-routines',
             builder: (context, state) => MyRoutinesScreen(
               resourceId: state.uri.queryParameters['resourceId'],
+              initialTab: state.uri.queryParameters['tab'],
             ),
           ),
           GoRoute(
             path: '/progress',
-            builder: (context, state) => const UnifiedProgressScreen(),
+            redirect: (context, state) => '/my-routines?tab=progress',
           ),
           GoRoute(
             path: '/settings/notifications',
