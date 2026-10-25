@@ -40,7 +40,9 @@ final class PersonalRoutineRepository {
   Future<List<Map<String, dynamic>>> listPublishedTemplates() async {
     final rows = await client
         .from('routine_templates')
-        .select('id,title,description,status,routine_template_steps(id,title,sort_order)')
+        .select(
+          'id,title,description,status,routine_template_steps(id,title,sort_order)',
+        )
         .eq('status', 'published')
         .order('created_at', ascending: false);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
