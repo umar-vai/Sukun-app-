@@ -80,6 +80,15 @@ jobs:
               ;;
           esac
 
+          # A rich-notice pilot can NEVER silently point to Production.
+          if [[ "${{ inputs.rich_notice_pilot }}" == true ]]; then
+            if [[ "$environment" != "staging" ||
+                  "$QA_URL" != "https://qacklgqvxvjjzsimjoip.supabase.co" ]]; then
+              echo "::error::Rich Notice device pilot is allowed only on the approved isolated staging project."
+              exit 1
+            fi
+          fi
+
           # Only the explicitly approved rich-notice pilot requires real Android
           # Firebase client configuration. General backend-connected QA may
           # still run without remote push, but is never labeled FCM-ready.
