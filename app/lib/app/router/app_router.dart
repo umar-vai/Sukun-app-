@@ -208,11 +208,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/my-routines',
             builder: (context, state) => MyRoutinesScreen(
               resourceId: state.uri.queryParameters['resourceId'],
+              initialTab: state.uri.queryParameters['tab'],
             ),
           ),
           GoRoute(
             path: '/progress',
-            builder: (context, state) => const UnifiedProgressScreen(),
+            redirect: (context, state) => '/my-routines?tab=progress',
           ),
           GoRoute(
             path: '/settings/notifications',
