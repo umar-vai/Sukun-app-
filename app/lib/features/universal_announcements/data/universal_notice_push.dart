@@ -11,6 +11,24 @@ abstract final class UniversalNoticePush {
 
   static bool get supported => !kIsWeb && AppEnvironment.isFirebaseConfigured;
 
+  // Only the isolated Android staging *debug* APK can offer a manual token
+  // copy action. Never expose an FCM registration token in a public Web UI,
+  // release APK, production build, logs, analytics or server responses.
+  static bool get canCopyQaToken => canCopyStagingFcmToken(
+    isWeb: kIsWeb,
+    isDebug: kDebugMode,
+    isAndroid: defaultTargetPlatform == TargetPlatform.android,
+    isFirebaseConfigured: AppEnvironment.isFirebaseConfigured,
+    environment: AppEnvironment.name,
+  );
+
+  /// Fetch fresh instance token only in response to an explicit QA button tap.
+  /// Caller may copy locally, but must never log, display or upload the value.
+  static Future<String?> currentQaToken() async {
+    if (!canCopyQaToken) return null;
+    return FirebaseMessaging.instance.getToken();
+  }
+
   static Future<bool> isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(preference) ?? false;
@@ -52,4 +70,19 @@ String? universalNoticeIdFromPush(Map<String, dynamic> data) {
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
   );
   return validUuid.hasMatch(id) ? id.toLowerCase() : null;
+}
+
+/// Pure, platform-independent gate for safe staging-only device diagnostics.
+bool canCopyStagingFcmToken({
+  required bool isWeb,
+  required bool isDebug,
+  required bool isAndroid,
+  required bool isFirebaseConfigured,
+  required String environment,
+}) {
+  return !isWeb &&
+      isDebug &&
+      isAndroid &&
+      isFirebaseConfigured &&
+      environment == 'staging';
 }
