@@ -2,31 +2,34 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 
 void main() {
-  test('only staging Android debug with Firebase config can copy FCM token', () {
-    expect(
-      canCopyStagingFcmToken(
-        isWeb: false,
-        isDebug: true,
-        isAndroid: true,
-        isFirebaseConfigured: true,
-        environment: 'staging',
-      ),
-      isTrue,
-    );
-
-    for (final environment in ['production', 'development', 'local']) {
+  test(
+    'only staging Android debug with Firebase config can copy FCM token',
+    () {
       expect(
         canCopyStagingFcmToken(
           isWeb: false,
           isDebug: true,
           isAndroid: true,
           isFirebaseConfigured: true,
-          environment: environment,
+          environment: 'staging',
         ),
-        isFalse,
+        isTrue,
       );
-    }
-  });
+
+      for (final environment in ['production', 'development', 'local']) {
+        expect(
+          canCopyStagingFcmToken(
+            isWeb: false,
+            isDebug: true,
+            isAndroid: true,
+            isFirebaseConfigured: true,
+            environment: environment,
+          ),
+          isFalse,
+        );
+      }
+    },
+  );
 
   test('deny web, release, non-Android and missing Firebase config', () {
     const variants = <({bool web, bool debug, bool android, bool firebase})>[
