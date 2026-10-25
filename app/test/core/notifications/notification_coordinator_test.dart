@@ -232,7 +232,7 @@ void main() {
 
   test('Guest foreground and tap public notice work without care token registration', () async {
     const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
-    final opened = <String>[];
+    final opened = <String?>[];
     final guest = NotificationCoordinator(
       repository,
       local,
@@ -287,7 +287,7 @@ void main() {
       body: 'Test',
       announcementId: noticeId,
     );
-    final opened = <String>[];
+    final opened = <String?>[];
     final guest = NotificationCoordinator(
       repository,
       local,
