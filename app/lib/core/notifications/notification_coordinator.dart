@@ -241,7 +241,8 @@ final class NotificationCoordinator {
           'type': message.type,
           'announcement_id': message.announcementId,
         });
-        if (id != null && platform == 'android' &&
+        if (id != null &&
+            platform == 'android' &&
             _local is PluginLocalNotificationsGateway) {
           await _local.showUniversal(
             noticeId: id,
