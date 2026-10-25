@@ -165,7 +165,10 @@ class UniversalNoticePanel extends StatelessWidget {
               IconButton(
                 tooltip: 'নোটিশ বন্ধ করুন',
                 onPressed: onClose,
-                icon: const Icon(Icons.close_rounded, color: SukunColors.deepTide),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: SukunColors.deepTide,
+                ),
               ),
             ],
           ),
