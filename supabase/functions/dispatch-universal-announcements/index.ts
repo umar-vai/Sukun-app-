@@ -51,7 +51,7 @@ async function authenticatedAdminNotice(
   key: string,
 ): Promise<{ noticeId: string } | { error: string; status: number }> {
   const jwt = request.headers.get("Authorization")
-    ?.match(/^Bearer\\s+(.+)$/i)?.[1];
+    ?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!jwt) return { error: "unauthorized", status: 401 };
   const server = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
