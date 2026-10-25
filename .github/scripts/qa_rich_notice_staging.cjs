@@ -24,6 +24,13 @@ async function request(endpoint, token, method='GET', body, mime='application/js
   });
   return result;
 }
+async function removeQaArtwork(token,name) {
+  const response=await request(
+    '/storage/v1/object/sukun-announcement-images',
+    token,'DELETE',{prefixes:[name]}
+  );
+  assert.equal(response.status,200,'Staging Storage API batch remove HTTP '+response.status);
+}
 async function rows(response, expected) {
   assert.equal(response.status,expected,'Staging REST operation failed');
   return response.json();
@@ -60,11 +67,7 @@ async function main(){
     const found=String(entry.name||'');
     const full=found.startsWith('notices/')?found:'notices/'+found;
     if(!/^notices\/qa-rich-[a-f0-9-]{36}\.png$/i.test(full))continue;
-    const deleted=await request(
-      '/storage/v1/object/sukun-announcement-images/'+encodeURI(full),
-      token,'DELETE'
-    );
-    assert.ok([200,204].includes(deleted.status),'Stale QA artwork cleanup denied');
+    await removeQaArtwork(token,full);
   }
   const uuid=crypto.randomUUID(), name='notices/qa-rich-'+uuid+'.png';
   const title='SUKUN QA ONLY '+uuid.slice(0,8);
@@ -123,8 +126,7 @@ async function main(){
     }
     if(uploaded){
       ck('Delete staging synthetic artwork');
-      const remove=await request('/storage/v1/object/sukun-announcement-images/'+name,token,'DELETE');
-      assert.ok([200,204].includes(remove.status),'QA storage artwork cleanup unavailable');
+      await removeQaArtwork(token,name);
     }
   }
   console.log('PASS: no published test notice remains; no broadcast invoked');
