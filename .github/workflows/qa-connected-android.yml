@@ -8,6 +8,11 @@ on:
         type: boolean
         required: true
         default: false
+      rich_notice_pilot:
+        description: 'Require all four Firebase Android client values for Special Notice device QA'
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -31,10 +36,25 @@ jobs:
       QA_KEY: ${{ secrets.SUKUN_QA_SUPABASE_PUBLISHABLE_KEY }}
       QA_TARGET: ${{ vars.SUKUN_QA_APP_ENVIRONMENT }}
       QA_ALLOW_PRODUCTION: ${{ vars.SUKUN_QA_ALLOW_PRODUCTION }}
+      QA_FIREBASE_PROJECT_ID: ${{ secrets.SUKUN_QA_FIREBASE_PROJECT_ID }}
+      QA_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_QA_FIREBASE_SENDER_ID }}
+      QA_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_API_KEY }}
+      QA_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_APP_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Pin approved public staging client config for rich-notice pilot
+        if: inputs.rich_notice_pilot == true
+        shell: bash
+        run: |
+          # A publishable key and project URL are public client configuration,
+          # not a service-role secret. Never accept a Production backend for
+          # this single-device QA gate, even if generic QA vars point elsewhere.
+          echo 'QA_URL=https://qacklgqvxvjjzsimjoip.supabase.co' >> "$GITHUB_ENV"
+          echo 'QA_KEY=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0' >> "$GITHUB_ENV"
+          echo 'QA_TARGET=staging' >> "$GITHUB_ENV"
 
       - name: Validate QA connection without printing credentials
         id: config
@@ -71,6 +91,36 @@ jobs:
               ;;
           esac
 
+          # A rich-notice pilot can NEVER silently point to Production.
+          if [[ "${{ inputs.rich_notice_pilot }}" == true ]]; then
+            if [[ "$environment" != "staging" ||
+                  "$QA_URL" != "https://qacklgqvxvjjzsimjoip.supabase.co" ]]; then
+              echo "::error::Rich Notice device pilot is allowed only on the approved isolated staging project."
+              exit 1
+            fi
+          fi
+
+          # Only the explicitly approved rich-notice pilot requires real Android
+          # Firebase client configuration. General backend-connected QA may
+          # still run without remote push, but is never labeled FCM-ready.
+          fcm_count=0
+          for item in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
+            if [[ -n "${!item:-}" ]]; then fcm_count=$((fcm_count + 1)); fi
+          done
+          if (( fcm_count != 0 && fcm_count != 4 )); then
+            echo "::error::Partial QA Firebase client configuration. All four SUKUN_QA_FIREBASE_* secrets are required."
+            exit 1
+          fi
+          if [[ "${{ inputs.rich_notice_pilot }}" == true && "$fcm_count" != 4 ]]; then
+            echo "::error::Rich Notice pilot needs four complete Android Firebase client secrets. APK was not built."
+            exit 1
+          fi
+          if (( fcm_count == 0 )); then
+            echo "::warning::Android QA client is UI/backend-only: Firebase remote push unavailable."
+          else
+            echo "Android Firebase QA client configured; device delivery still requires opted-in physical testing."
+          fi
+
           echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "environment=$environment" >> "$GITHUB_OUTPUT"
           echo "### Backend-connected QA build enabled" >> "$GITHUB_STEP_SUMMARY"
@@ -104,7 +154,11 @@ jobs:
           flutter build apk --debug \
             --dart-define="APP_ENVIRONMENT=${{ steps.config.outputs.environment }}" \
             --dart-define="SUPABASE_URL=$QA_URL" \
-            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY"
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY" \
+            --dart-define="FIREBASE_PROJECT_ID=$QA_FIREBASE_PROJECT_ID" \
+            --dart-define="FIREBASE_MESSAGING_SENDER_ID=$QA_FIREBASE_SENDER_ID" \
+            --dart-define="FIREBASE_ANDROID_API_KEY=$QA_FIREBASE_ANDROID_API_KEY" \
+            --dart-define="FIREBASE_ANDROID_APP_ID=$QA_FIREBASE_ANDROID_APP_ID"
 
       - name: Upload connected Android QA APK
         if: steps.config.outputs.ready == 'true'

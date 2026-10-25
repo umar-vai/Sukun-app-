@@ -117,7 +117,7 @@ void main() {
       );
     });
 
-    test('requires Android and iOS client values together', () {
+    test('allows complete Android-only FCM pilot without iOS config', () {
       expect(
         () => validateFirebaseRuntimeConfiguration(
           projectId: 'firebase-project',
@@ -127,8 +127,30 @@ void main() {
           iosApiKey: '',
           iosAppId: '',
         ),
-        throwsA(isA<StateError>()),
+        returnsNormally,
       );
+    });
+
+    test('rejects partially configured Android and iOS FCM clients', () {
+      for (final badConfig in [
+        ('android-public-key', '', '', ''),
+        ('', 'android-app-id', '', ''),
+        ('android-public-key', 'android-app-id', 'ios-key', ''),
+        ('', '', '', ''),
+      ]) {
+        final missingShared = badConfig == ('', '', '', '');
+        expect(
+          () => validateFirebaseRuntimeConfiguration(
+            projectId: missingShared ? '' : 'firebase-project',
+            messagingSenderId: missingShared ? '' : '123456',
+            androidApiKey: badConfig.$1,
+            androidAppId: badConfig.$2,
+            iosApiKey: badConfig.$3,
+            iosAppId: badConfig.$4,
+          ),
+          missingShared ? returnsNormally : throwsA(isA<StateError>()),
+        );
+      }
     });
   });
 }

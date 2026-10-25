@@ -131,19 +131,25 @@ void validateFirebaseRuntimeConfiguration({
   required String iosApiKey,
   required String iosAppId,
 }) {
-  final values = [
-    projectId,
-    messagingSenderId,
-    androidApiKey,
-    androidAppId,
-    iosApiKey,
-    iosAppId,
-  ];
-  final configured = values.where((value) => value.trim().isNotEmpty).length;
-  if (configured != 0 && configured != values.length) {
-    throw StateError(
-      'Firebase Android and iOS client configuration must be supplied together.',
-    );
+  final shared = [projectId, messagingSenderId];
+  final android = [androidApiKey, androidAppId];
+  final ios = [iosApiKey, iosAppId];
+  if ([...shared, ...android, ...ios].every((value) => value.trim().isEmpty)) {
+    return;
+  }
+  // A controlled Android QA APK requires only its own Firebase app config.
+  // Reject incomplete or mixed-platform values rather than shipping a client
+  // that appears push-capable but cannot register for FCM.
+  final sharedComplete = shared.every((value) => value.trim().isNotEmpty);
+  final androidComplete = android.every((value) => value.trim().isNotEmpty);
+  final iosComplete = ios.every((value) => value.trim().isNotEmpty);
+  final androidEmpty = android.every((value) => value.trim().isEmpty);
+  final iosEmpty = ios.every((value) => value.trim().isEmpty);
+  if (!sharedComplete ||
+      (!androidComplete && !androidEmpty) ||
+      (!iosComplete && !iosEmpty) ||
+      (!androidComplete && !iosComplete)) {
+    throw StateError('Firebase platform client configuration is incomplete.');
   }
 }
 

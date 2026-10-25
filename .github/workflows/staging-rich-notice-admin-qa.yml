@@ -1,0 +1,79 @@
+name: Synthetic Rich Notice Admin + Flutter Browser QA (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      approve_synthetic_staging_only:
+        description: 'I authorize synthetic staging Admin image/countdown QA (STAGING_ONLY)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sukun-staging-public-notice-admin-qa
+  cancel-in-progress: false
+
+jobs:
+  staging-notice-admin:
+    name: Staging Super Admin publish/Guest image & countdown browser gate
+    if: >-
+      github.repository == 'umar-vai/Sukun-app-' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.approve_synthetic_staging_only == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUKUN_STAGE_ONLY: STAGING_ONLY
+      # This is the publishable, non-secret staging key.
+      SUKUN_STAGE_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+      SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
+      SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Require exact current main and approved staging test account
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+          test -n "$SUKUN_STAGE_ADMIN_EMAIL"
+          test -n "$SUKUN_STAGE_ADMIN_PASSWORD"
+          node --check .github/scripts/qa_rich_notice_staging.cjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Build real Flutter Web from same source with isolated staging backend
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build web --release --base-href=/ \
+            --dart-define=APP_ENVIRONMENT=staging \
+            --dart-define=SUPABASE_URL=https://qacklgqvxvjjzsimjoip.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUKUN_STAGE_PUBLISHABLE_KEY"
+      - name: Synthetic Admin authenticated storage/RLS, published Guest Chrome and cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          google-chrome --version
+          npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
+          node .github/scripts/qa_rich_notice_staging.cjs
+      - name: Declare release boundary
+        if: always()
+        run: |
+          echo '### Staging only. Synthetic Admin JWT/API + Flutter Guest Chrome.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is not a physical Android delivery test or a production Admin UI sign-in test.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No topic dispatch, no production database writes, no permanent public notice intended.' >> "$GITHUB_STEP_SUMMARY"
