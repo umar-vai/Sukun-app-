@@ -30,6 +30,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   StreamSubscription<String>? _openedSubscription;
   StreamSubscription<String>? _openedPersonalSubscription;
   StreamSubscription<RemoteMessage>? _openedUniversalSubscription;
+  StreamSubscription<String>? _openedRichLocalSubscription;
   bool _nativeNotificationsInitialized = false;
 
   @override
@@ -41,6 +42,10 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         .read(notificationTapRelayProvider)
         .openedTaskIds
         .listen((_) => _routePendingTask());
+    _openedRichLocalSubscription = ref
+        .read(notificationTapRelayProvider)
+        .openedUniversalNoticeIds
+        .listen((_) => _routePendingUniversal());
     _openedPersonalSubscription = ref
         .read(notificationTapRelayProvider)
         .openedPersonalActionIds
@@ -83,6 +88,15 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     });
   }
 
+  void _routePendingUniversal() {
+    final id = ref.read(notificationTapRelayProvider).takePendingUniversalNotice();
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(appRouterProvider).go('/announcements/$id');
+    });
+  }
+
   void _routePendingTask() {
     // Auth is verified before opening the route. The destination independently
     // checks today's RLS-visible patient task before opening any resource.
@@ -120,6 +134,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   void dispose() {
     unawaited(_openedSubscription?.cancel());
     unawaited(_openedPersonalSubscription?.cancel());
+    unawaited(_openedRichLocalSubscription?.cancel());
     unawaited(_openedUniversalSubscription?.cancel());
     super.dispose();
   }
@@ -155,6 +170,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
                 .then((_) {
                   _routePendingTask();
                   _routePendingPersonal();
+                  _routePendingUniversal();
                 })
                 .catchError((Object _) {}),
           );
@@ -164,6 +180,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         if (mounted) {
           _routePendingTask();
           _routePendingPersonal();
+          _routePendingUniversal();
         }
       });
     }
