@@ -16,15 +16,14 @@ Status: **PREPARED, not built or device-verified**. Owner authorized one control
 
 Configure these **repository secrets** for the isolated QA environment. Do **not** paste values into code, public Pages, GitHub comments or ChatGPT messages.
 
-- `SUKUN_QA_SUPABASE_URL`: exact `https://qacklgqvxvjjzsimjoip.supabase.co`
-- `SUKUN_QA_SUPABASE_PUBLISHABLE_KEY`: the approved staging **public** publishable key, not a service-role key
+- For `rich_notice_pilot=true`, the manual workflow automatically pins the public staging URL and publishable key from the canonical repo. No production or service-role key is required.
 - `SUKUN_QA_FIREBASE_PROJECT_ID`: Firebase project ID for the test Android client
 - `SUKUN_QA_FIREBASE_SENDER_ID`: matching Firebase messaging sender ID
 - `SUKUN_QA_FIREBASE_ANDROID_API_KEY`: matching Android app's Firebase public API key
 - `SUKUN_QA_FIREBASE_ANDROID_APP_ID`: matching Android app ID for `com.sukunlife.app`
 - `SUKUN_STAGE_ADMIN_EMAIL`, `SUKUN_STAGE_ADMIN_PASSWORD`: a dedicated synthetic staging Super Admin, **not** a production or personal account
 
-Configure Actions **repository variable** `SUKUN_QA_APP_ENVIRONMENT=staging`. Confirm that the Firebase app's Android package matches `com.sukunlife.app`. These are **client registration values**, not Firebase Admin service account credentials. Do not configure production credentials as a shortcut.
+The rich-notice gate itself forces staging, even if generic QA variables differ. Confirm that the Firebase app's Android package matches `com.sukunlife.app`. These are **client registration values**, not Firebase Admin service account credentials. Do not configure production credentials as a shortcut.
 
 ## After those settings exist: manual, one-build gate
 
