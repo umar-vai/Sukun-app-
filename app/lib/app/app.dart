@@ -50,7 +50,9 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     // Native Android public notices are guest opt-in too. Create the OS
     // channel before any background FCM, without registering patient tokens,
     // requesting notification permission, or enabling global broadcasts.
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        !AppEnvironment.isFirebaseConfigured) {
       unawaited(
         ref
             .read(localNotificationsGatewayProvider)
