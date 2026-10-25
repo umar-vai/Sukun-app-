@@ -123,6 +123,11 @@ class AdminHomeScreen extends StatelessWidget {
                       label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
                     ),
                     OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/routine-templates'),
+                      icon: const Icon(Icons.checklist_outlined),
+                      label: const Text('প্রস্তুত রুটিন'),
+                    ),
+                    OutlinedButton.icon(
                       onPressed: () => context.go('/admin/content'),
                       icon: const Icon(Icons.library_books_outlined),
                       label: Text(

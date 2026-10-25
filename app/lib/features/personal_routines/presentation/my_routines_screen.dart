@@ -30,6 +30,7 @@ class MyRoutinesScreen extends ConsumerStatefulWidget {
 
 class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   late Future<_RoutinePageData> _data;
+  late Future<List<Map<String, dynamic>>> _templates;
   bool _working = false;
   bool _reminderEnabled = false;
 
@@ -44,6 +45,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
 
   void _refresh() {
     _data = _load();
+    _templates = _repository.listPublishedTemplates();
     unawaited(_readReminderEnabled());
     if (mounted) setState(() {});
   }
@@ -818,12 +820,57 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             ),
           ),
         ],
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.auto_awesome_outlined),
-            title: Text('প্রস্তুত রুটিন'),
-            subtitle: Text('এখনো কোনো প্রস্তুত রুটিন পাওয়া যায়নি।'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+          child: Text(
+            'প্রস্তুত রুটিন',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
+        ),
+        FutureBuilder<List<Map<String, dynamic>>>(
+          future: _templates,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return const ListTile(
+                title: Text('রুটিনগুলো এখন দেখানো যাচ্ছে না'),
+              );
+            }
+            final templates = snapshot.data ?? const [];
+            if (templates.isEmpty) {
+              return const ListTile(
+                title: Text('এখনো কোনো প্রস্তুত রুটিন নেই'),
+              );
+            }
+            return Column(
+              children: [
+                for (final template in templates)
+                  Card(
+                    key: Key('routine-template-${template['id']}'),
+                    child: ListTile(
+                      leading: const Icon(Icons.auto_awesome_outlined),
+                      title: Text(template['title'].toString()),
+                      subtitle: Text(
+                        '${(template['routine_template_steps'] as List?)?.length ?? 0}টি আমল',
+                      ),
+                      trailing: TextButton(
+                        onPressed: _working
+                            ? null
+                            : () => _mutate(() async {
+                                await _repository.adoptPublishedTemplate(
+                                  template['id'] as String,
+                                );
+                                _notice('রুটিনটি আমার রুটিনে যোগ হয়েছে।');
+                              }),
+                        child: const Text('রুটিনে যোগ করুন'),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
