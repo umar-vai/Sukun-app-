@@ -243,7 +243,7 @@ final class NotificationCoordinator {
         });
         if (id != null && platform == 'android' &&
             _local is PluginLocalNotificationsGateway) {
-          await (_local as PluginLocalNotificationsGateway).showUniversal(
+          await _local.showUniversal(
             noticeId: id,
             title: message.body,
             imageUrl: message.imageUrl,

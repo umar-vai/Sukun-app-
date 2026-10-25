@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -286,7 +285,7 @@ class _UniversalNoticeCountdownState extends State<UniversalNoticeCountdown> {
     final time = expired
         ? 'সময় শেষ'
         : days > 0
-        ? '${days} দিন ${pad(hours)}:${pad(minutes)}:${pad(sec)}'
+        ? '$days দিন ${pad(hours)}:${pad(minutes)}:${pad(sec)}'
         : '${pad(hours)}:${pad(minutes)}:${pad(sec)}';
     return Semantics(
       label: expired ? 'কাউন্টডাউন শেষ' : 'কাউন্টডাউন বাকি $time',

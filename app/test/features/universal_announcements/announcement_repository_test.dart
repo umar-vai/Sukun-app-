@@ -43,7 +43,7 @@ void main() {
         'countdown_ends_at': '2026-10-28T12:00:00Z',
       });
       expect(notice.countdownEndsAt, DateTime.utc(2026, 10, 28, 12));
-      expect(notice.remainingAt(DateTime.utc(2026, 10, 28, 11)).inHours, 1);
+      expect(notice.remainingAt(DateTime.utc(2026, 10, 28, 11))?.inHours, 1);
     });
 
     test('accepts copy without an image or external link', () {

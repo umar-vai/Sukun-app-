@@ -28,7 +28,7 @@ class UniversalAnnouncement {
 
   /// A public campaign countdown, not an always-on clinical reminder.
   Duration? remainingAt(DateTime now) =>
-      countdownEndsAt == null ? null : countdownEndsAt!.difference(now);
+      countdownEndsAt?.difference(now);
 
   bool get isPublished => status == 'published';
 
