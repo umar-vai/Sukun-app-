@@ -42,7 +42,12 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     _openedRichLocalSubscription = ref
         .read(notificationTapRelayProvider)
         .openedUniversalNoticeIds
-        .listen((_) => _routePendingUniversal());
+        .listen((_) {
+          // StreamController delivery can happen after a completed UI frame.
+          // Android may resume into an otherwise idle Flutter frame scheduler.
+          WidgetsBinding.instance.scheduleFrame();
+          _routePendingUniversal();
+        });
     _openedPersonalSubscription = ref
         .read(notificationTapRelayProvider)
         .openedPersonalActionIds
@@ -87,6 +92,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     if (ref.read(notificationTapRelayProvider).pendingUniversalNotice == null) {
       return;
     }
+    WidgetsBinding.instance.scheduleFrame();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !ref.read(appSessionProvider).hasValue) return;
       final relay = ref.read(notificationTapRelayProvider);
