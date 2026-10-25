@@ -197,9 +197,7 @@ class UniversalNoticePanel extends StatelessWidget {
                   const SizedBox(height: 14),
                 ],
                 if (notice.countdownEndsAt != null) ...[
-                  UniversalNoticeCountdown(
-                    endsAt: notice.countdownEndsAt!,
-                  ),
+                  UniversalNoticeCountdown(endsAt: notice.countdownEndsAt!),
                   const SizedBox(height: 12),
                 ],
                 SelectableText(notice.body),
@@ -224,7 +222,6 @@ class UniversalNoticePanel extends StatelessWidget {
     );
   }
 }
-
 
 class UniversalNoticeCountdown extends StatefulWidget {
   const UniversalNoticeCountdown({required this.endsAt, super.key});

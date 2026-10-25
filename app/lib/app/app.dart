@@ -89,7 +89,9 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   }
 
   void _routePendingUniversal() {
-    final id = ref.read(notificationTapRelayProvider).takePendingUniversalNotice();
+    final id = ref
+        .read(notificationTapRelayProvider)
+        .takePendingUniversalNotice();
     if (id == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

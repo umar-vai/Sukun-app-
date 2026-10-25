@@ -179,7 +179,8 @@ class _AdminAnnouncementEditorScreenState
 
   Future<void> _pickCountdownEnd() async {
     final now = DateTime.now();
-    final initial = _countdownEndsAt != null &&
+    final initial =
+        _countdownEndsAt != null &&
             _countdownEndsAt!.isAfter(now) &&
             _countdownEndsAt!.isBefore(now.add(const Duration(days: 30)))
         ? _countdownEndsAt!
@@ -197,7 +198,11 @@ class _AdminAnnouncementEditorScreenState
     );
     if (!mounted || time == null) return;
     final selected = DateTime(
-      date.year, date.month, date.day, time.hour, time.minute,
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
     );
     if (!selected.isAfter(now) ||
         selected.isAfter(now.add(const Duration(days: 30)))) {
@@ -437,9 +442,8 @@ class _AdminAnnouncementEditorScreenState
                               key: const Key('notice-clear-countdown'),
                               onPressed: _busy
                                   ? null
-                                  : () => setState(
-                                      () => _countdownEndsAt = null,
-                                    ),
+                                  : () =>
+                                        setState(() => _countdownEndsAt = null),
                               child: const Text('কাউন্টডাউন বাদ দিন'),
                             ),
                         ],

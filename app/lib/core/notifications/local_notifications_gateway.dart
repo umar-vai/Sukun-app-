@@ -224,7 +224,9 @@ final class PluginLocalNotificationsGateway
           '/storage/v1/object/public/sukun-announcement-images/notices/',
         )) {
       try {
-        final response = await http.get(uri).timeout(const Duration(seconds: 6));
+        final response = await http
+            .get(uri)
+            .timeout(const Duration(seconds: 6));
         if (response.statusCode == 200 &&
             response.bodyBytes.isNotEmpty &&
             response.bodyBytes.length <= 1024 * 1024) {
@@ -234,7 +236,8 @@ final class PluginLocalNotificationsGateway
         // Missing artwork must not suppress an otherwise valid public notice.
       }
     }
-    final validDeadline = countdownEndsAt != null &&
+    final validDeadline =
+        countdownEndsAt != null &&
         countdownEndsAt.isAfter(DateTime.now()) &&
         countdownEndsAt.isBefore(DateTime.now().add(const Duration(days: 30)));
     final android = AndroidNotificationDetails(
