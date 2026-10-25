@@ -213,7 +213,7 @@ class _UniversalNoticeAutoPopupState
                                               .read(
                                                 announcementRepositoryProvider,
                                               )
-                                              .imageUrl(notice.imagePath!)
+                                              .imageUrl(notice.imagePath!),
                                         ),
                                   onClose: _close,
                                 ),
