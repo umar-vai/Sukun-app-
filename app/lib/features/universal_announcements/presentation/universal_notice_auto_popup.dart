@@ -157,8 +157,12 @@ class _UniversalNoticeAutoPopupState
     return ListenableBuilder(
       listenable: ref.watch(appRouterProvider).routeInformationProvider,
       builder: (context, _) {
-        final path =
-            ref.read(appRouterProvider).routeInformationProvider.value.uri.path;
+        final path = ref
+            .read(appRouterProvider)
+            .routeInformationProvider
+            .value
+            .uri
+            .path;
         final onNoticeRoute = path.startsWith('/announcements');
         if (onNoticeRoute && _active != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -172,7 +176,10 @@ class _UniversalNoticeAutoPopupState
             widget.child,
             if (notice != null && _activeOwner == _owner()) ...[
               const Positioned.fill(
-                child: ModalBarrier(dismissible: false, color: Color(0x990D2B45)),
+                child: ModalBarrier(
+                  dismissible: false,
+                  color: Color(0x990D2B45),
+                ),
               ),
               Positioned.fill(
                 child: SafeArea(
@@ -192,7 +199,10 @@ class _UniversalNoticeAutoPopupState
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Container(height: 5, color: const Color(0xFFE6B53D)),
+                              Container(
+                                height: 5,
+                                color: const Color(0xFFE6B53D),
+                              ),
                               Flexible(
                                 child: UniversalNoticePanel(
                                   notice: notice,
@@ -200,8 +210,10 @@ class _UniversalNoticeAutoPopupState
                                       ? null
                                       : NetworkImage(
                                           ref
-                                              .read(announcementRepositoryProvider)
-                                              .imageUrl(notice.imagePath!),
+                                              .read(
+                                                announcementRepositoryProvider,
+                                              )
+                                              .imageUrl(notice.imagePath!)
                                         ),
                                   onClose: _close,
                                 ),
