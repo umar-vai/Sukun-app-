@@ -1,0 +1,33 @@
+name: Cleanup Finished Staging Rich Notice Device QA
+
+on:
+  push:
+    branches: [qa/staging-single-device-rich-fixture-20261026]
+    paths: ['.github/workflows/qa_staging_single_device_cleanup_20261026.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-completed-synthetic-notice:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
+      SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Validate isolated synthetic cleanup
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
+          test "$GITHUB_REF" = 'refs/heads/qa/staging-single-device-rich-fixture-20261026'
+          node --check .github/scripts/qa_staging_single_device_cleanup_20261026.cjs
+      - name: Archive only exact synthetic QA notice and delete sample via authorized Storage API
+        run: node .github/scripts/qa_staging_single_device_cleanup_20261026.cjs
+      - name: No FCM or production changes
+        if: always()
+        run: echo 'Only completed isolated staging device fixture cleanup. No public/topic push.' >> "$GITHUB_STEP_SUMMARY"
