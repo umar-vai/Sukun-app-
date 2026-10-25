@@ -138,6 +138,7 @@ class _AdminAnnouncementEditorScreenState
   String? _imageFileName;
   String? _imageExtension;
   String _status = 'draft';
+  DateTime? _countdownEndsAt;
   bool _busy = false;
   bool _loading = false;
   String? _error;
@@ -167,12 +168,46 @@ class _AdminAnnouncementEditorScreenState
         _link.text = notice.linkUrl ?? '';
         _imagePath = notice.imagePath;
         _status = notice.status;
+        _countdownEndsAt = notice.countdownEndsAt?.toLocal();
       });
     } catch (_) {
       if (mounted) setState(() => _error = 'নোটিশ লোড করা যায়নি।');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _pickCountdownEnd() async {
+    final now = DateTime.now();
+    final initial = _countdownEndsAt != null &&
+            _countdownEndsAt!.isAfter(now) &&
+            _countdownEndsAt!.isBefore(now.add(const Duration(days: 30)))
+        ? _countdownEndsAt!
+        : now.add(const Duration(days: 1));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 30)),
+    );
+    if (!mounted || date == null) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (!mounted || time == null) return;
+    final selected = DateTime(
+      date.year, date.month, date.day, time.hour, time.minute,
+    );
+    if (!selected.isAfter(now) ||
+        selected.isAfter(now.add(const Duration(days: 30)))) {
+      setState(() => _error = 'আগামী ৩০ দিনের মধ্যে সময় নির্বাচন করুন।');
+      return;
+    }
+    setState(() {
+      _countdownEndsAt = selected;
+      _error = null;
+    });
   }
 
   Future<void> _chooseImage() async {
@@ -183,8 +218,8 @@ class _AdminAnnouncementEditorScreenState
     if (!mounted || selected == null) return;
     final bytes = await selected.readAsBytes();
     if (!mounted) return;
-    if (bytes.isEmpty || bytes.length > 3 * 1024 * 1024) {
-      setState(() => _error = '৩ MB-এর কম PNG/JPG/WebP ছবি বেছে নিন।');
+    if (bytes.isEmpty || bytes.length > 900 * 1024) {
+      setState(() => _error = 'পুশ ছবির জন্য ৯০০ KB-এর মধ্যে ছবি দিন।');
       return;
     }
     setState(() {
@@ -200,6 +235,7 @@ class _AdminAnnouncementEditorScreenState
       title: _title.text,
       body: _body.text,
       imagePath: _imagePath,
+      countdownEndsAt: _countdownEndsAt,
       linkUrl: _link.text,
     );
     final problem = draft.validate();
@@ -220,6 +256,7 @@ class _AdminAnnouncementEditorScreenState
       body: draft.body.trim(),
       status: 'draft',
       imagePath: draft.imagePath,
+      countdownEndsAt: draft.countdownEndsAt,
       linkUrl: draft.linkUrl,
     );
     showDialog<void>(
@@ -250,6 +287,7 @@ class _AdminAnnouncementEditorScreenState
       title: _title.text,
       body: _body.text,
       imagePath: _imagePath,
+      countdownEndsAt: _countdownEndsAt,
       linkUrl: _link.text,
       status: newStatus,
     );
@@ -284,6 +322,7 @@ class _AdminAnnouncementEditorScreenState
           body: _body.text,
           linkUrl: _link.text,
           imagePath: uploadedPath,
+          countdownEndsAt: _countdownEndsAt,
           status: newStatus,
         ),
       );
@@ -366,6 +405,49 @@ class _AdminAnnouncementEditorScreenState
                         }),
                   child: const Text('ছবি বাদ দিন'),
                 ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'কাউন্টডাউন (ঐচ্ছিক)',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _countdownEndsAt == null
+                            ? 'কোনো শেষ সময় দেওয়া হয়নি'
+                            : 'শেষ: ${MaterialLocalizations.of(context).formatMediumDate(_countdownEndsAt!)} • ${TimeOfDay.fromDateTime(_countdownEndsAt!).format(context)}',
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            key: const Key('notice-set-countdown'),
+                            onPressed: _busy ? null : _pickCountdownEnd,
+                            icon: const Icon(Icons.timer_outlined),
+                            label: const Text('শেষ সময় নির্ধারণ'),
+                          ),
+                          if (_countdownEndsAt != null)
+                            TextButton(
+                              key: const Key('notice-clear-countdown'),
+                              onPressed: _busy
+                                  ? null
+                                  : () => setState(
+                                      () => _countdownEndsAt = null,
+                                    ),
+                              child: const Text('কাউন্টডাউন বাদ দিন'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 key: const Key('notice-link'),
