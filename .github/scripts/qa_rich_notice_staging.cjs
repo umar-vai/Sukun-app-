@@ -51,6 +51,21 @@ async function main(){
   ck('staging server-authorized Super Admin identity');
   const role=await rows(await request('/rest/v1/user_roles?select=role,user_id&user_id=eq.'+uid,token),200);
   assert.ok(role.some(x=>x.user_id===uid&&x.role==='super_admin'),'Staging account lacks real Super Admin role');
+  ck('Clean up stale synthetic QA artwork through authorized Storage API');
+  const listed=await rows(await request(
+    '/storage/v1/object/list/sukun-announcement-images',token,'POST',
+    {prefix:'notices',limit:100,offset:0}
+  ),200);
+  for(const entry of listed){
+    const found=String(entry.name||'');
+    const full=found.startsWith('notices/')?found:'notices/'+found;
+    if(!/^notices\\/qa-rich-[a-f0-9-]{36}\\.png$/i.test(full))continue;
+    const deleted=await request(
+      '/storage/v1/object/sukun-announcement-images/'+encodeURI(full),
+      token,'DELETE'
+    );
+    assert.ok([200,204].includes(deleted.status),'Stale QA artwork cleanup denied');
+  }
   const uuid=crypto.randomUUID(), name='notices/qa-rich-'+uuid+'.png';
   const title='SUKUN QA ONLY '+uuid.slice(0,8);
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+iXgAAAABJRU5ErkJggg==','base64');
