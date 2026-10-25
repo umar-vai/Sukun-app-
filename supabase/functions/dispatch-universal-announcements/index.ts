@@ -100,7 +100,7 @@ async function sendPublicNotice(
           android: {
             priority: "high",
             notification: {
-              channel_id: "care_updates",
+              channel_id: "sukun_public_notices",
               sound: "default",
               ...(imageUrl ? { image: imageUrl } : {}),
             },
