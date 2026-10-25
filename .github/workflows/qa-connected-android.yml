@@ -45,6 +45,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Pin approved public staging client config for rich-notice pilot
+        if: inputs.rich_notice_pilot == true
+        shell: bash
+        run: |
+          # A publishable key and project URL are public client configuration,
+          # not a service-role secret. Never accept a Production backend for
+          # this single-device QA gate, even if generic QA vars point elsewhere.
+          echo 'QA_URL=https://qacklgqvxvjjzsimjoip.supabase.co' >> "$GITHUB_ENV"
+          echo 'QA_KEY=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0' >> "$GITHUB_ENV"
+          echo 'QA_TARGET=staging' >> "$GITHUB_ENV"
+
       - name: Validate QA connection without printing credentials
         id: config
         shell: bash
