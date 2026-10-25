@@ -28,7 +28,7 @@ void main() {
     );
     expect(navigationParent('/prayer-times', null), '/');
     expect(navigationIndex('/admin/announcements/new', admin), 3);
-    expect(navigationIndex('/resources/ruqyah', patient), 0);
+    expect(navigationIndex('/resources/ruqyah', patient), 2);
     expect(showsNavigationShell('/patient/resources'), isFalse);
     expect(showsNavigationShell('/admin/dashboard'), isFalse);
     expect(showsNavigationShell('/admin/announcements/new'), isTrue);
