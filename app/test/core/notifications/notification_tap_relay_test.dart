@@ -2,6 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 
 void main() {
+  test('only verified public UUID can route local rich notice taps', () {
+    const id = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+    expect(universalNoticeIdFromLocalPayload('universal_notice:$id'), id);
+    expect(universalNoticeIdFromLocalPayload('universal_notice:javascript:foo'), isNull);
+    final relay = NotificationTapRelay();
+    relay.accept('universal_notice:$id');
+    expect(relay.takePendingUniversalNotice(), id);
+    expect(relay.takePendingUniversalNotice(), isNull);
+    relay.dispose();
+  });
+
   const uuid = 'a4ba5d60-81df-4688-81c8-b1064f7cf45e';
 
   test('reminder opens only a well-formed patient task route', () {
