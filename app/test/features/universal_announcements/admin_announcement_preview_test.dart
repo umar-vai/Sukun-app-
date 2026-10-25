@@ -58,6 +58,7 @@ void main() {
       find.byKey(const Key('notice-body')),
       'প্রকাশের আগের লেখা।',
     );
+    expect(find.byKey(const Key('notice-set-countdown')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('notice-preview')));
     await tester.tap(find.byKey(const Key('notice-preview')));
     await tester.pumpAndSettle();
@@ -73,6 +74,5 @@ void main() {
       findsOneWidget,
     );
     expect(repository.saves, 0);
-    expect(find.byKey(const Key('notice-set-countdown')), findsOneWidget);
   });
 }
