@@ -14,6 +14,7 @@ class UniversalAnnouncement {
     this.imagePath,
     this.linkUrl,
     this.publishedAt,
+    this.countdownEndsAt,
   });
 
   final String id;
@@ -23,6 +24,12 @@ class UniversalAnnouncement {
   final String? imagePath;
   final String? linkUrl;
   final DateTime? publishedAt;
+  final DateTime? countdownEndsAt;
+
+  /// A public campaign countdown, not an always-on clinical reminder.
+  Duration? remainingAt(DateTime now) => countdownEndsAt == null
+      ? null
+      : countdownEndsAt!.difference(now);
 
   bool get isPublished => status == 'published';
 
@@ -35,6 +42,9 @@ class UniversalAnnouncement {
       imagePath: json['image_path'] as String?,
       linkUrl: json['link_url'] as String?,
       publishedAt: DateTime.tryParse(json['published_at'] as String? ?? ''),
+      countdownEndsAt: DateTime.tryParse(
+        json['countdown_ends_at'] as String? ?? '',
+      ),
     );
   }
 }
@@ -47,6 +57,7 @@ class AnnouncementDraft {
     this.imagePath,
     this.linkUrl,
     this.status = 'draft',
+    this.countdownEndsAt,
   });
 
   final String? id;
@@ -55,8 +66,9 @@ class AnnouncementDraft {
   final String? imagePath;
   final String? linkUrl;
   final String status;
+  final DateTime? countdownEndsAt;
 
-  String? validate() {
+  String? validate({DateTime? now}) {
     if (title.trim().isEmpty || title.trim().length > 120) {
       return 'শিরোনাম ১–১২০ অক্ষরের মধ্যে হতে হবে।';
     }
@@ -65,6 +77,13 @@ class AnnouncementDraft {
     }
     if (status != 'draft' && status != 'published' && status != 'archived') {
       return 'নোটিশের অবস্থা সঠিক নয়।';
+    }
+    if (countdownEndsAt != null) {
+      final instant = now ?? DateTime.now();
+      final remaining = countdownEndsAt!.difference(instant);
+      if (remaining <= Duration.zero || remaining > const Duration(days: 30)) {
+        return 'কাউন্টডাউন শেষ হওয়ার সময় আগামী ৩০ দিনের মধ্যে দিন।';
+      }
     }
     if (linkUrl != null && linkUrl!.trim().isNotEmpty) {
       final link = Uri.tryParse(linkUrl!.trim());
@@ -80,6 +99,7 @@ class AnnouncementDraft {
     'body': body.trim(),
     'status': status,
     'image_path': imagePath,
+    'countdown_ends_at': countdownEndsAt?.toUtc().toIso8601String(),
     'link_url': linkUrl?.trim().isEmpty == true ? null : linkUrl?.trim(),
   };
 }
@@ -193,8 +213,10 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
     required List<int> bytes,
     required String mimeType,
   }) async {
-    if (bytes.isEmpty || bytes.length > 3 * 1024 * 1024) {
-      throw const FormatException('ছবি ৩ MB-এর মধ্যে হতে হবে।');
+    // FCM Android BigPicture downloads at most 1 MB. Enforce at upload so
+    // a notice preview cannot promise an image the handset may reject.
+    if (bytes.isEmpty || bytes.length > 900 * 1024) {
+      throw const FormatException('পুশ নোটিশের ছবি সর্বোচ্চ ৯০০ KB হতে পারে।');
     }
     const mimeToExtension = {
       'image/png': 'png',
