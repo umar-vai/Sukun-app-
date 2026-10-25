@@ -157,6 +157,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.byKey(const Key('notice-preview')),
       260,
+      scrollable: find.byType(Scrollable).first,
     );
 
     final previewButton = tester.widget<OutlinedButton>(
