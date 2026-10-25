@@ -45,23 +45,28 @@ async function sendPublicNotice(
   // Only the public announcement bucket may provide an image. No arbitrary
   // URL, private bucket, signed token, clinical message, or patient data.
   const allowed = notice.notice_image_path != null &&
-    /^notices\/[a-zA-Z0-9_-]+\.(?:png|jpe?g|webp)$/.test(notice.notice_image_path);
+    /^notices\/[a-zA-Z0-9_-]+\.(?:png|jpe?g|webp)$/.test(
+      notice.notice_image_path,
+    );
   const base = new URL(supabaseUrl);
-  if (base.protocol !== "https:") throw new Error("Invalid public storage origin");
+  if (base.protocol !== "https:") {
+    throw new Error("Invalid public storage origin");
+  }
   const imageUrl = allowed
     ? new URL(
       "/storage/v1/object/public/sukun-announcement-images/" +
-      notice.notice_image_path!.split("/").map(encodeURIComponent).join("/"),
+        notice.notice_image_path!.split("/").map(encodeURIComponent).join("/"),
       base,
     ).toString()
     : null;
   const deadline = notice.countdown_ends_at == null
     ? null
     : new Date(notice.countdown_ends_at);
-  const activeDeadline = deadline != null && Number.isFinite(deadline.getTime()) &&
+  const activeDeadline = deadline != null &&
+    Number.isFinite(deadline.getTime()) &&
     deadline.getTime() > Date.now() &&
     deadline.getTime() <= Date.now() + 30 * 86400000;
-  const commonData: Record<string,string> = {
+  const commonData: Record<string, string> = {
     type: "universal_announcement",
     announcement_id: notice.notice_id,
   };
