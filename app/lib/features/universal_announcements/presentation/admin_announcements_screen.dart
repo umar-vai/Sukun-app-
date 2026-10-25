@@ -322,8 +322,8 @@ class _AdminAnnouncementEditorScreenState
           mimeType: mime,
         );
       }
-      final firstPublication = newStatus == 'published' &&
-          _status != 'published';
+      final firstPublication =
+          newStatus == 'published' && _status != 'published';
       final saved = await repo.save(
         AnnouncementDraft(
           id: widget.id,
