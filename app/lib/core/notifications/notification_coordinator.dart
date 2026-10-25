@@ -241,12 +241,20 @@ final class NotificationCoordinator {
           'type': message.type,
           'announcement_id': message.announcementId,
         });
-        if (id != null && _local is PluginLocalNotificationsGateway) {
+        if (id != null && platform == 'android' &&
+            _local is PluginLocalNotificationsGateway) {
           await (_local as PluginLocalNotificationsGateway).showUniversal(
             noticeId: id,
             title: message.body,
             imageUrl: message.imageUrl,
             countdownEndsAt: message.countdownEndsAt,
+          );
+        } else if (id != null) {
+          // iOS/older platform fallback remains a visible public notice.
+          await _local.showRemote(
+            title: 'সুকুন লাইফ',
+            body: message.body,
+            payload: 'universal_notice:$id',
           );
         }
         return;
