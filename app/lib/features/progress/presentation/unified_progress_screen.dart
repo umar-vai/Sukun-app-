@@ -7,7 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A shared, owner-private personal routine history for Members and Patients.
 class UnifiedProgressScreen extends ConsumerStatefulWidget {
-  const UnifiedProgressScreen({super.key});
+  const UnifiedProgressScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   ConsumerState<UnifiedProgressScreen> createState() =>
@@ -40,9 +42,7 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
-    return Scaffold(
-      appBar: AppBar(title: const Text('আমার অগ্রগতি')),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+    final body = FutureBuilder<List<Map<String, dynamic>>(
         future: _history,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -207,7 +207,11 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
             ),
           );
         },
-      ),
+      );
+    if (widget.embedded) return body;
+    return Scaffold(
+      appBar: AppBar(title: const Text('আমার অগ্রগতি')),
+      body: body,
     );
   }
 }
