@@ -152,57 +152,72 @@ class _UniversalNoticeAutoPopupState
       });
     });
 
-    final notice = _active;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        if (notice != null && _activeOwner == _owner()) ...[
-          const Positioned.fill(
-            child: ModalBarrier(dismissible: false, color: Color(0x990D2B45)),
-          ),
-          Positioned.fill(
-            child: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: 510,
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.84,
-                    ),
-                    child: Material(
-                      color: Theme.of(context).colorScheme.surface,
-                      elevation: 14,
-                      borderRadius: BorderRadius.circular(22),
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(height: 5, color: const Color(0xFFE6B53D)),
-                          Flexible(
-                            child: UniversalNoticePanel(
-                              notice: notice,
-                              image: notice.imagePath == null
-                                  ? null
-                                  : NetworkImage(
-                                      ref
-                                          .read(announcementRepositoryProvider)
-                                          .imageUrl(notice.imagePath!),
-                                    ),
-                              onClose: _close,
-                            ),
+    // A tapped notice detail route must take precedence over any automatic
+    // publish-time overlay, even when the app resumes from Android background.
+    return ListenableBuilder(
+      listenable: ref.watch(appRouterProvider).routeInformationProvider,
+      builder: (context, _) {
+        final path =
+            ref.read(appRouterProvider).routeInformationProvider.value.uri.path;
+        final onNoticeRoute = path.startsWith('/announcements');
+        if (onNoticeRoute && _active != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_eligibleRoute()) _close();
+          });
+        }
+        final notice = onNoticeRoute ? null : _active;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            widget.child,
+            if (notice != null && _activeOwner == _owner()) ...[
+              const Positioned.fill(
+                child: ModalBarrier(dismissible: false, color: Color(0x990D2B45)),
+              ),
+              Positioned.fill(
+                child: SafeArea(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: 510,
+                          maxHeight: MediaQuery.sizeOf(context).height * 0.84,
+                        ),
+                        child: Material(
+                          color: Theme.of(context).colorScheme.surface,
+                          elevation: 14,
+                          borderRadius: BorderRadius.circular(22),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(height: 5, color: const Color(0xFFE6B53D)),
+                              Flexible(
+                                child: UniversalNoticePanel(
+                                  notice: notice,
+                                  image: notice.imagePath == null
+                                      ? null
+                                      : NetworkImage(
+                                          ref
+                                              .read(announcementRepositoryProvider)
+                                              .imageUrl(notice.imagePath!),
+                                        ),
+                                  onClose: _close,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ],
+            ],
+          ],
+        );
+      },
     );
   }
 }
