@@ -59,7 +59,7 @@ async function main(){
   for(const entry of listed){
     const found=String(entry.name||'');
     const full=found.startsWith('notices/')?found:'notices/'+found;
-    if(!/^notices\\/qa-rich-[a-f0-9-]{36}\\.png$/i.test(full))continue;
+    if(!/^notices\/qa-rich-[a-f0-9-]{36}\.png$/i.test(full))continue;
     const deleted=await request(
       '/storage/v1/object/sukun-announcement-images/'+encodeURI(full),
       token,'DELETE'
