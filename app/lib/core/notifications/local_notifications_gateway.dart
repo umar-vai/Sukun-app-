@@ -35,6 +35,8 @@ final class PluginLocalNotificationsGateway
   static const _channelName = 'Care plan reminders';
   static const _updatesChannelId = 'care_updates';
   static const _updatesChannelName = 'Care plan updates';
+  static const publicNoticeChannelId = 'sukun_public_notices';
+  static const _publicNoticeChannelName = 'Sukun Life notices';
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
@@ -75,6 +77,16 @@ final class PluginLocalNotificationsGateway
         _updatesChannelId,
         _updatesChannelName,
         description: 'Updates to an assigned Sukun Life care plan',
+        importance: Importance.high,
+      ),
+    );
+    // FCM requires the channel to exist *before* a background public notice.
+    // Guests can opt in without signing into patient care.
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        publicNoticeChannelId,
+        _publicNoticeChannelName,
+        description: 'Optional public Sukun Life announcements',
         importance: Importance.high,
       ),
     );
@@ -239,8 +251,8 @@ final class PluginLocalNotificationsGateway
         countdownEndsAt.isAfter(DateTime.now()) &&
         countdownEndsAt.isBefore(DateTime.now().add(const Duration(days: 30)));
     final android = AndroidNotificationDetails(
-      'sukun_public_notices',
-      'Sukun Life public notices',
+      publicNoticeChannelId,
+      _publicNoticeChannelName,
       channelDescription: 'Optional public notices from Sukun Life',
       importance: Importance.high,
       priority: Priority.high,
