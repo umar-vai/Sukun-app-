@@ -12,11 +12,75 @@ type ClaimedNotice = {
   countdown_ends_at: string | null;
 };
 
-function response(body: unknown, status = 200): Response {
+const publicWebOrigins = new Set([
+  "https://app.sukunlife.com",
+  "https://umar-vai.github.io",
+  "http://localhost:3000",
+  "http://localhost:5173",
+]);
+
+function corsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get("Origin");
+  return origin && publicWebOrigins.has(origin)
+    ? {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Headers":
+        "authorization, x-client-info, apikey, content-type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Vary": "Origin",
+    }
+    : {};
+}
+
+function response(body: unknown, status = 200, request?: Request): Response {
   return Response.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      "Cache-Control": "no-store",
+      ...(request ? corsHeaders(request) : {}),
+    },
   });
+}
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function authenticatedAdminNotice(
+  request: Request,
+  url: string,
+  key: string,
+): Promise<{ noticeId: string } | { error: string; status: number }> {
+  const jwt = request.headers.get("Authorization")
+    ?.match(/^Bearer\\s+(.+)$/i)?.[1];
+  if (!jwt) return { error: "unauthorized", status: 401 };
+  const server = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await server.auth.getUser(jwt);
+  if (userError || !userData.user) {
+    return { error: "unauthorized", status: 401 };
+  }
+  const { data: role, error: roleError } = await server
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userData.user.id)
+    .eq("role", "super_admin")
+    .maybeSingle();
+  if (roleError || !role) return { error: "forbidden", status: 403 };
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return { error: "invalid_request", status: 400 };
+  }
+  if (body == null || typeof body !== "object" ||
+    Array.isArray(body) ||
+    !("announcement_id" in body) ||
+    typeof body.announcement_id !== "string" ||
+    !uuidPattern.test(body.announcement_id)) {
+    return { error: "invalid_notice_id", status: 400 };
+  }
+  return { noticeId: body.announcement_id.toLowerCase() };
 }
 
 async function validCronToken(request: Request): Promise<boolean> {
@@ -121,35 +185,59 @@ async function sendPublicNotice(
 }
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") {
+    const origin = request.headers.get("Origin");
+    return origin && publicWebOrigins.has(origin)
+      ? new Response(null, { status: 204, headers: corsHeaders(request) })
+      : response({ code: "forbidden" }, 403);
+  }
   if (request.method !== "POST") {
-    return response({ code: "method_not_allowed" }, 405);
+    return response({ code: "method_not_allowed" }, 405, request);
   }
-  if (!await validCronToken(request)) {
-    return response({ code: "unauthorized" }, 401);
+  const origin = request.headers.get("Origin");
+  if (origin && !publicWebOrigins.has(origin)) {
+    return response({ code: "forbidden" }, 403);
   }
-  if (Deno.env.get("SUKUN_UNIVERSAL_PUSH_RELEASE_READY") !== "true") {
-    return response({ code: "release_gate_closed" }, 503);
-  }
+  const reply = (body: unknown, status = 200) =>
+    response(body, status, request);
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const url = Deno.env.get("SUPABASE_URL");
   const rawFirebase = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+  const fromCron = await validCronToken(request);
+  let requestedNotice: string | null = null;
+  if (!fromCron) {
+    if (!key || !url) return reply({ code: "delivery_not_configured" }, 503);
+    const admin = await authenticatedAdminNotice(request, url, key);
+    if ("error" in admin) {
+      return reply({ code: admin.error }, admin.status);
+    }
+    requestedNotice = admin.noticeId;
+  }
+  // Always fail closed until authorized native-device acceptance, consent,
+  // and private server credentials are verified. Never toggle this from Flutter.
+  if (Deno.env.get("SUKUN_UNIVERSAL_PUSH_RELEASE_READY") !== "true") {
+    return reply({ code: "release_gate_closed" }, 503);
+  }
   if (!key || !url || !rawFirebase) {
-    return response({ code: "delivery_not_configured" }, 503);
+    return reply({ code: "delivery_not_configured" }, 503);
   }
 
   try {
     const account = parseServiceAccount(rawFirebase);
     if (account.projectId !== Deno.env.get("FIREBASE_PROJECT_ID")) {
-      return response({ code: "firebase_project_mismatch" }, 503);
+      return reply({ code: "firebase_project_mismatch" }, 503);
     }
     const token = await createFirebaseAccessToken(account);
     const supabase = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: claimed, error } = await supabase.rpc(
-      "claim_universal_announcement_rich_batch",
-      { p_batch_size: 10 },
-    );
+    const { data: claimed, error } = requestedNotice == null
+      ? await supabase.rpc("claim_universal_announcement_rich_batch", {
+        p_batch_size: 10,
+      })
+      : await supabase.rpc("claim_universal_announcement_rich_one", {
+        p_notice_id: requestedNotice,
+      });
     if (error) throw new Error("Notice claim rejected.");
 
     let accepted = 0;
@@ -184,8 +272,8 @@ Deno.serve(async (request) => {
       else failed++;
     }
     // Provider acceptance is NOT per-device delivery or a recipient count.
-    return response({ status: "processed", accepted, failed });
+    return reply({ status: "processed", accepted, failed });
   } catch {
-    return response({ code: "broadcast_unavailable" }, 503);
+    return reply({ code: "broadcast_unavailable" }, 503);
   }
 });
