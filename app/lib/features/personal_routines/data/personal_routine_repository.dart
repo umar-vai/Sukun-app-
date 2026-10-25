@@ -35,6 +35,29 @@ final class PersonalRoutineRepository {
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
+  /// Admin-published templates are public to signed-in Members/Patients only.
+  /// Drafts and unpublished steps remain protected by Supabase RLS.
+  Future<List<Map<String, dynamic>>> listPublishedTemplates() async {
+    final rows = await client
+        .from('routine_templates')
+        .select(
+          'id,title,description,status,routine_template_steps(id,title,sort_order)',
+        )
+        .eq('status', 'published')
+        .order('created_at', ascending: false);
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  }
+
+  /// The owner-private routine and all its steps are created atomically by an
+  /// invoker-security RPC. No clinic/patient plan is modified or copied.
+  Future<String> adoptPublishedTemplate(String templateId) async {
+    final result = await client.rpc(
+      'adopt_published_routine_template',
+      params: {'p_template_id': templateId},
+    );
+    return result as String;
+  }
+
   Future<Map<String, dynamic>> createRoutine(String title) async {
     final result = await client
         .from('personal_routines')

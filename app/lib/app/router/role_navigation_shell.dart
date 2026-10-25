@@ -119,6 +119,7 @@ bool showsNavigationShell(String path) {
     '/patient/progress',
     '/patient/profile',
     '/admin/dashboard',
+    '/admin/routine-templates',
     '/admin/patients',
     '/admin/content',
     '/admin/announcements',

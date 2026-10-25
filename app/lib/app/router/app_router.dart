@@ -25,6 +25,7 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_lis
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
+import 'package:sukun_life/features/personal_routines/presentation/admin_routine_templates_screen.dart';
 import 'package:sukun_life/features/account/presentation/unified_account_screen.dart';
 import 'package:sukun_life/features/account/presentation/bengali_font_settings_screen.dart';
 import 'package:sukun_life/features/account/presentation/app_appearance_settings_screen.dart';
@@ -397,6 +398,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => PatientProfileScreen(
               displayName: _patientSession(session)?.displayName,
             ),
+          ),
+          GoRoute(
+            path: '/admin/routine-templates',
+            builder: (context, state) => const AdminRoutineTemplatesScreen(),
           ),
           GoRoute(
             path: '/admin/dashboard',
