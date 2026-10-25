@@ -246,9 +246,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               ),
               if (_upcoming != null) ...[
                 const SizedBox(height: 12),
-                _UnifiedNextTasks(
-                  future: _upcoming!,
-                ),
+                _UnifiedNextTasks(future: _upcoming!),
               ],
               const SizedBox(height: 22),
               SukunSectionHeader(

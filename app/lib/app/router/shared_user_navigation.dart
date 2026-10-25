@@ -3,7 +3,12 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// The same primary destinations for every authenticated non-admin account.
 /// Care assignments add content, never a second navigation system.
-const sharedUserRoutes = <String>['/', '/my-routines', '/resources', '/account'];
+const sharedUserRoutes = <String>[
+  '/',
+  '/my-routines',
+  '/resources',
+  '/account',
+];
 
 const sharedUserDestinations = <SukunNavDestination>[
   SukunNavDestination(
