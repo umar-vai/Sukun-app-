@@ -248,7 +248,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 const SizedBox(height: 12),
                 _UnifiedNextTasks(
                   future: _upcoming!,
-                  isPatient: widget.isPatient,
                 ),
               ],
               const SizedBox(height: 22),
@@ -526,11 +525,9 @@ class _HomeTasksData {
 }
 
 class _UnifiedNextTasks extends StatelessWidget {
-  const _UnifiedNextTasks({required this.future, required this.isPatient});
+  const _UnifiedNextTasks({required this.future});
 
   final Future<_HomeTasksData> future;
-  final bool isPatient;
-
   @override
   Widget build(BuildContext context) => SukunSurface(
     key: const Key('home-unified-next-tasks'),
