@@ -186,8 +186,9 @@ class _AdminRoutineTemplatesScreenState
                               : 'খসড়া',
                         ),
                       ),
-                      for (final step in
-                          (template['routine_template_steps'] as List? ?? const []))
+                      for (final step
+                          in (template['routine_template_steps'] as List? ??
+                              const []))
                         ListTile(
                           dense: true,
                           leading: const Icon(Icons.check_circle_outline),
@@ -212,7 +213,8 @@ class _AdminRoutineTemplatesScreenState
                                   ? null
                                   : () => _addStep(
                                       template['id'] as String,
-                                      (template['routine_template_steps'] as List?)
+                                      (template['routine_template_steps']
+                                                  as List?)
                                               ?.length ??
                                           0,
                                     ),
@@ -225,7 +227,8 @@ class _AdminRoutineTemplatesScreenState
                                 : () => _setPublished(
                                     id: template['id'] as String,
                                     publish: template['status'] != 'published',
-                                    count: (template['routine_template_steps']
+                                    count:
+                                        (template['routine_template_steps']
                                                 as List?)
                                             ?.length ??
                                         0,
