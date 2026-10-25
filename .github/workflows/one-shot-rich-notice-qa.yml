@@ -1,0 +1,140 @@
+name: One-shot Rich Notice Android + Synthetic Staging QA
+
+# One explicitly owner-approved pilot. NOT added to ordinary/main CI.
+on:
+  push:
+    branches: [qa/rich-notice-pilot-20261025]
+    paths: ['.github/workflows/one-shot-rich-notice-qa.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-time-sukun-rich-notice-pilot-20261025
+  cancel-in-progress: false
+
+jobs:
+  staging-admin-browser:
+    name: Synthetic Super Admin API, image/countdown, Guest Flutter Chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUKUN_STAGE_ONLY: STAGING_ONLY
+      SUKUN_STAGE_PUBLISHABLE_KEY: sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0
+      SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
+      SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Refuse non-pilot or untrusted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
+          test "$GITHUB_REF" = 'refs/heads/qa/rich-notice-pilot-20261025'
+          test -n "$SUKUN_STAGE_ADMIN_EMAIL" && test -n "$SUKUN_STAGE_ADMIN_PASSWORD"
+          node --check .github/scripts/qa_rich_notice_staging.cjs
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build real Flutter Web against only isolated staging
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build web --release --base-href=/ \
+            --dart-define=APP_ENVIRONMENT=staging \
+            --dart-define=SUPABASE_URL=https://qacklgqvxvjjzsimjoip.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUKUN_STAGE_PUBLISHABLE_KEY"
+      - name: Controlled Chrome + authenticated staging notice E2E and cleanup
+        shell: bash
+        run: |
+          npm install --no-save --no-package-lock --prefix .github/scripts playwright-core@1.55.1
+          node .github/scripts/qa_rich_notice_staging.cjs
+      - name: Describe test scope accurately
+        if: always()
+        run: |
+          echo "### Staging QA is NOT a live Android push" >> "$GITHUB_STEP_SUMMARY"
+          echo "Synthetic Super Admin via staged REST/JWT; Flutter Guest Chrome route. No public topic dispatch." >> "$GITHUB_STEP_SUMMARY"
+          echo "Real Flutter authenticated Admin screen interaction and physical phone reception require separate gates." >> "$GITHUB_STEP_SUMMARY"
+
+  android-pilot:
+    name: One owner-approved FCM-capable Android debug APK (staging only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    defaults:
+      run:
+        working-directory: app
+    env:
+      QA_FIREBASE_PROJECT_ID: ${{ secrets.SUKUN_QA_FIREBASE_PROJECT_ID }}
+      QA_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_QA_FIREBASE_SENDER_ID }}
+      QA_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_API_KEY }}
+      QA_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_APP_ID }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Assert explicit pilot and complete Android Firebase client setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
+          test "$GITHUB_REF" = 'refs/heads/qa/rich-notice-pilot-20261025'
+          for name in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::A required QA Android Firebase Actions secret is not configured ($name). No APK built."
+              exit 1
+            fi
+          done
+          echo '### Staging-only Android FCM QA client preflight passed' >> "$GITHUB_STEP_SUMMARY"
+          echo 'FCM keys are client configuration, not Firebase sender service account. No broadcast is enabled.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Validate source and native-client Firebase configuration
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test test/core/config/app_environment_test.dart test/features/universal_announcements/universal_notice_panel_test.dart
+      - name: Build ONE controlled staging debug APK (no signing/upload to Play)
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --debug \
+            --dart-define=APP_ENVIRONMENT=staging \
+            --dart-define=SUPABASE_URL=https://qacklgqvxvjjzsimjoip.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0 \
+            --dart-define="FIREBASE_PROJECT_ID=$QA_FIREBASE_PROJECT_ID" \
+            --dart-define="FIREBASE_MESSAGING_SENDER_ID=$QA_FIREBASE_SENDER_ID" \
+            --dart-define="FIREBASE_ANDROID_API_KEY=$QA_FIREBASE_ANDROID_API_KEY" \
+            --dart-define="FIREBASE_ANDROID_APP_ID=$QA_FIREBASE_ANDROID_APP_ID"
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/SHA256SUMS.txt
+      - name: Upload private short-lived installable QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukun-rich-notice-staging-android-pilot
+          path: |
+            app/build/app/outputs/flutter-apk/app-debug.apk
+            app/build/app/outputs/flutter-apk/SHA256SUMS.txt
+          retention-days: 2
+          if-no-files-found: error
+      - name: Release boundary
+        if: always()
+        run: |
+          echo '### One-off debug-only pilot; not Play / public release' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Image, countdown, tap, notification permission and channel need a real opted-in test handset.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'NO production Firebase topic send or device token export is performed.' >> "$GITHUB_STEP_SUMMARY"
