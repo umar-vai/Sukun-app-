@@ -37,8 +37,8 @@ class PatientScaffold extends StatelessWidget {
         selectedIndex: switch (selectedIndex) {
           // Legacy patient 'Resources' page still exists, but Home is its
           // primary-nav destination. Clinical paths keep their contracts.
-          2 => 0,
-          3 => 2,
+          2 => 2,
+          3 => 1,
           4 => 3,
           _ => selectedIndex,
         },
