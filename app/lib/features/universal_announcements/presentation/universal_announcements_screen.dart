@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -449,12 +450,54 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
     }
   }
 
+  Future<void> _copyTestToken() async {
+    if (_busy || !UniversalNoticePush.canCopyQaToken) return;
+    setState(() => _busy = true);
+    try {
+      final current = await UniversalNoticePush.currentQaToken();
+      if (current == null || current.isEmpty) {
+        throw StateError('Token unavailable');
+      }
+      await Clipboard.setData(ClipboardData(text: current));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('টেস্ট টোকেন কপি হয়েছে।')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('টেস্ট টোকেন পাওয়া যায়নি।')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => SwitchListTile(
-    title: const Text('সবার গুরুত্বপূর্ণ নোটিশ ফোনে পেতে চাই'),
-    subtitle: const Text('ইচ্ছামতো চালু বা বন্ধ করতে পারবেন।'),
-    secondary: const Icon(Icons.notifications_active_outlined),
-    value: _enabled,
-    onChanged: _busy ? null : _change,
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SwitchListTile(
+        title: const Text('সবার গুরুত্বপূর্ণ নোটিশ ফোনে পেতে চাই'),
+        subtitle: const Text('ইচ্ছামতো চালু বা বন্ধ করতে পারবেন।'),
+        secondary: const Icon(Icons.notifications_active_outlined),
+        value: _enabled,
+        onChanged: _busy ? null : _change,
+      ),
+      if (UniversalNoticePush.canCopyQaToken)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('টেস্ট টোকেন কপি'),
+              onPressed: _busy ? null : _copyTestToken,
+            ),
+          ),
+        ),
+    ],
   );
 }
