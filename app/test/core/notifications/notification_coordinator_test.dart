@@ -230,6 +230,80 @@ void main() {
     expect(local.lastRemotePayload, isNull);
   });
 
+  test('Guest foreground and tap public notice work without care token registration', () async {
+    const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+    final opened = <String?>[];
+    final guest = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'android',
+      onTaskOpened: opened.add,
+    );
+    try {
+      await guest.initialize();
+      expect(store.enabled, isFalse);
+      expect(repository.registeredToken, isNull);
+      push.emitForeground(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Public campaign',
+          body: 'Test only',
+          announcementId: noticeId,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(local.lastRemotePayload, 'universal_notice:$noticeId');
+
+      push.emit(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Public campaign',
+          body: 'Test only',
+          announcementId: noticeId,
+        ),
+      );
+      push.emit(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Do not redirect',
+          body: 'Untrusted',
+          announcementId: 'https://evil.example',
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(opened, ['universal_notice:$noticeId']);
+    } finally {
+      await guest.dispose();
+    }
+  });
+
+  test('cold-start public FCM message is validated and routed once', () async {
+    const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+    push.initial = const RemotePushMessage(
+      type: 'universal_announcement',
+      title: 'Public notice',
+      body: 'Test',
+      announcementId: noticeId,
+    );
+    final opened = <String?>[];
+    final guest = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'android',
+      onTaskOpened: opened.add,
+    );
+    try {
+      await guest.initialize();
+      expect(opened, ['universal_notice:$noticeId']);
+    } finally {
+      await guest.dispose();
+    }
+  });
+
   test('disable cancels reminders and removes the registered device', () async {
     store.enabled = true;
     store.ids = {7, 8};
@@ -356,6 +430,7 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
 final class _FakePushMessaging implements PushMessagingGateway {
   bool deleted = false;
   String? token = 'fresh-token';
+  RemotePushMessage? initial;
 
   @override
   bool get isAvailable => true;
@@ -386,7 +461,7 @@ final class _FakePushMessaging implements PushMessagingGateway {
   Stream<RemotePushMessage> get openedMessages => _opened.stream;
 
   @override
-  Future<RemotePushMessage?> getInitialMessage() async => null;
+  Future<RemotePushMessage?> getInitialMessage() async => initial;
 
   @override
   Future<void> deleteToken() async {

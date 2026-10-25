@@ -1,10 +1,53 @@
 import 'package:flutter/foundation.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+/// Accept only public notice artwork on our configured production or staging
+/// Supabase project. This must never fetch a patient asset or an arbitrary FCM
+/// supplied URL (including redirect-like query strings or host lookalikes).
+bool isApprovedUniversalNoticeImageUrl(
+  String? rawUrl, {
+  String backendUrl = AppEnvironment.supabaseUrl,
+}) {
+  if (backendUrl != AppEnvironment.productionSupabaseUrl &&
+      backendUrl != AppEnvironment.stagingSupabaseUrl) {
+    return false;
+  }
+  final url = Uri.tryParse(rawUrl ?? '');
+  final backend = Uri.tryParse(backendUrl);
+  if (url == null ||
+      backend == null ||
+      url.scheme != 'https' ||
+      url.host != backend.host ||
+      url.userInfo.isNotEmpty ||
+      url.hasPort ||
+      url.hasQuery ||
+      url.hasFragment) {
+    return false;
+  }
+  const expected = [
+    'storage',
+    'v1',
+    'object',
+    'public',
+    'sukun-announcement-images',
+    'notices',
+  ];
+  final parts = url.pathSegments;
+  if (parts.length != expected.length + 1) return false;
+  for (var i = 0; i < expected.length; i++) {
+    if (parts[i] != expected[i]) return false;
+  }
+  return RegExp(
+    r'^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,149}\.(png|jpg|jpeg|webp)$',
+    caseSensitive: false,
+  ).hasMatch(parts.last);
+}
 
 abstract interface class LocalNotificationsGateway {
   Future<void> initialize();
@@ -227,12 +270,7 @@ final class PluginLocalNotificationsGateway
     await initialize();
     Uint8List? picture;
     final uri = Uri.tryParse(imageUrl ?? '');
-    if (uri != null &&
-        uri.scheme == 'https' &&
-        uri.host == 'vydfafumxptanpkmtrpr.supabase.co' &&
-        uri.path.startsWith(
-          '/storage/v1/object/public/sukun-announcement-images/notices/',
-        )) {
+    if (uri != null && isApprovedUniversalNoticeImageUrl(imageUrl)) {
       try {
         final response = await http
             .get(uri)

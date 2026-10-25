@@ -277,6 +277,14 @@ final class NotificationCoordinator {
   }
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
+    if (message.type == 'universal_announcement') {
+      final id = universalNoticeIdFromPush({
+        'type': message.type,
+        'announcement_id': message.announcementId,
+      });
+      if (id != null) onTaskOpened?.call('universal_notice:$id');
+      return;
+    }
     if (message.type == 'care_reminder' && message.taskId != null) {
       final taskId = careTaskIdFromPayload('care_task:${message.taskId}');
       if (taskId != null) onTaskOpened?.call('care_task:$taskId');
