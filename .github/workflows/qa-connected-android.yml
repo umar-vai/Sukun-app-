@@ -118,6 +118,29 @@ jobs:
           if (( fcm_count == 0 )); then
             echo "::warning::Android QA client is UI/backend-only: Firebase remote push unavailable."
           else
+            # Firebase Console values copied into Actions Secrets can include a
+            # trailing newline. Remove whitespace without logging any value;
+            # otherwise Flutter parses part of the secret as a target filename.
+            for item in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
+              original="${!item}"
+              clean="$(printf '%s' "$original" | tr -d '[:space:]')"
+              if [[ -z "$clean" || ! "$clean" =~ ^[A-Za-z0-9:_-]+$ ]]; then
+                echo "::error::Malformed Android Firebase QA setting ($item)."
+                exit 1
+              fi
+              if [[ "$original" != "$clean" ]]; then
+                echo "::notice::Normalized pasted whitespace in $item (value not displayed)."
+              fi
+              printf '%s=%s\n' "$item" "$clean" >> "$GITHUB_ENV"
+              case "$item" in
+                QA_FIREBASE_SENDER_ID) sender_id="$clean" ;;
+                QA_FIREBASE_ANDROID_APP_ID) android_id="$clean" ;;
+              esac
+            done
+            if [[ ! "$sender_id" =~ ^[0-9]+$ || "$android_id" != "1:${sender_id}:android:"* ]]; then
+              echo "::error::Android App ID does not match the Firebase sender ID."
+              exit 1
+            fi
             echo "Android Firebase QA client configured; device delivery still requires opted-in physical testing."
           fi
 
