@@ -153,6 +153,12 @@ void main() {
     expect(find.text('ছবি পরিবর্তন করুন'), findsOneWidget);
     expect(find.byKey(const Key('notice-clear-countdown')), findsOneWidget);
 
+    // The editor is a lazy ListView; publishing actions start below the fold.
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('notice-preview')),
+      260,
+    );
+
     final previewButton = tester.widget<OutlinedButton>(
       find.byKey(const Key('notice-preview')),
     );
