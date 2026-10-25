@@ -460,9 +460,9 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
       }
       await Clipboard.setData(ClipboardData(text: current));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('টেস্ট টোকেন কপি হয়েছে।')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('টেস্ট টোকেন কপি হয়েছে।')));
       }
     } catch (_) {
       if (mounted) {
