@@ -1,0 +1,43 @@
+name: One-shot Staging Single Device Rich Notice Fixture
+
+# Never builds an APK or sends FCM. Creates ONE expiring staging fixture
+# with real synthetic Super Admin Auth/RLS, solely for Console token QA.
+on:
+  push:
+    branches: [qa/staging-single-device-rich-fixture-20261026]
+    paths:
+      - '.github/workflows/qa_staging_single_device_fixture_20261026.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  create-one-expiring-staging-notice:
+    if: github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUKUN_STAGE_ADMIN_EMAIL: ${{ secrets.SUKUN_STAGE_ADMIN_EMAIL }}
+      SUKUN_STAGE_ADMIN_PASSWORD: ${{ secrets.SUKUN_STAGE_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Assert staging-only source, one-shot authorization and zero FCM scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
+          test "$GITHUB_REF" = 'refs/heads/qa/staging-single-device-rich-fixture-20261026'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          node --check .github/scripts/qa_staging_single_device_notice_20261026.cjs
+          test -n "$SUKUN_STAGE_ADMIN_EMAIL" && test -n "$SUKUN_STAGE_ADMIN_PASSWORD"
+      - name: Create verified synthetic staging notice + public image + countdown
+        run: node .github/scripts/qa_staging_single_device_notice_20261026.cjs
+      - name: Record single-device-only gate
+        if: always()
+        run: |
+          echo '### No Firebase message was sent' >> "$GITHUB_STEP_SUMMARY"
+          echo 'ONLY Firebase Console Send TEST Message to the owners private device token is authorized.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Never select topic or audience. Do not publish a campaign.' >> "$GITHUB_STEP_SUMMARY"
