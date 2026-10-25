@@ -73,5 +73,6 @@ void main() {
       findsOneWidget,
     );
     expect(repository.saves, 0);
+    expect(find.byKey(const Key('notice-set-countdown')), findsOneWidget);
   });
 }
