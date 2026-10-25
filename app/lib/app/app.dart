@@ -42,7 +42,12 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     _openedRichLocalSubscription = ref
         .read(notificationTapRelayProvider)
         .openedUniversalNoticeIds
-        .listen((_) => _routePendingUniversal());
+        .listen((_) {
+          // StreamController delivery can happen after a completed UI frame.
+          // Android may resume into an otherwise idle Flutter frame scheduler.
+          WidgetsBinding.instance.scheduleFrame();
+          _routePendingUniversal();
+        });
     _openedPersonalSubscription = ref
         .read(notificationTapRelayProvider)
         .openedPersonalActionIds
@@ -81,13 +86,23 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   }
 
   void _routePendingUniversal() {
-    final id = ref
-        .read(notificationTapRelayProvider)
-        .takePendingUniversalNotice();
-    if (id == null) return;
+    // An Android FCM tap may arrive before the asynchronous Guest session
+    // and MaterialApp.router are ready. Never consume the UUID that early.
+    if (!mounted || !ref.read(appSessionProvider).hasValue) return;
+    if (ref.read(notificationTapRelayProvider).pendingUniversalNotice == null) {
+      return;
+    }
+    WidgetsBinding.instance.scheduleFrame();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(appRouterProvider).go('/announcements/$id');
+      if (!mounted || !ref.read(appSessionProvider).hasValue) return;
+      final relay = ref.read(notificationTapRelayProvider);
+      final id = relay.pendingUniversalNotice;
+      if (id == null) return;
+      // Read the live router *after* session restoration. Earlier GoRouter
+      // instances are replaced by the role-aware provider during startup.
+      final router = ref.read(appRouterProvider);
+      if (relay.takePendingUniversalNotice() != id) return;
+      router.go('/announcements/$id');
     });
   }
 
@@ -148,7 +163,15 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         unawaited(service.refresh().catchError((Object _) => 0));
       }
     });
-    final session = ref.watch(appSessionProvider).value;
+    final sessionState = ref.watch(appSessionProvider);
+    final session = sessionState.value;
+    if (sessionState.hasValue) {
+      // Guest users must also finish a deferred background/cold-start tap.
+      // MaterialApp.router is attached by this frame's end.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _routePendingUniversal();
+      });
+    }
     if (session?.isAuthenticated == true) {
       // Browser app uses guarded URL navigation; unsupported native local
       // notification initialization is never run by this root on Web.
@@ -173,7 +196,6 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         if (mounted) {
           _routePendingTask();
           _routePendingPersonal();
-          _routePendingUniversal();
         }
       });
     }

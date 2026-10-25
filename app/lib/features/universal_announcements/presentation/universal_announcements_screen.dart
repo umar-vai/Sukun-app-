@@ -156,13 +156,19 @@ class UniversalNoticePanel extends StatelessWidget {
                   isPreview
                       ? 'প্রকাশের আগে নোটিশ দেখুন'
                       : 'সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: SukunColors.nightNavy,
+                  ),
                 ),
               ),
               IconButton(
                 tooltip: 'নোটিশ বন্ধ করুন',
                 onPressed: onClose,
-                icon: const Icon(Icons.close_rounded),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: SukunColors.deepTide,
+                ),
               ),
             ],
           ),
@@ -307,6 +313,7 @@ class _UniversalNoticeCountdownState extends State<UniversalNoticeCountdown> {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontFeatures: const [FontFeature.tabularFigures()],
                   fontWeight: FontWeight.bold,
+                  color: SukunColors.nightNavy,
                 ),
               ),
             ),

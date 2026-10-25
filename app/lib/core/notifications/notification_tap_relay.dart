@@ -79,6 +79,10 @@ final class NotificationTapRelay {
     return current;
   }
 
+  /// Inspect but never consume a cold-start public tap before Guest session
+  /// restoration and MaterialApp.router are ready to navigate.
+  String? get pendingUniversalNotice => _pendingNotice;
+
   String? takePendingUniversalNotice() {
     final id = _pendingNotice;
     _pendingNotice = null;
