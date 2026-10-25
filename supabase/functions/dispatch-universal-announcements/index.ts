@@ -73,11 +73,13 @@ async function authenticatedAdminNotice(
   } catch {
     return { error: "invalid_request", status: 400 };
   }
-  if (body == null || typeof body !== "object" ||
+  if (
+    body == null || typeof body !== "object" ||
     Array.isArray(body) ||
     !("announcement_id" in body) ||
     typeof body.announcement_id !== "string" ||
-    !uuidPattern.test(body.announcement_id)) {
+    !uuidPattern.test(body.announcement_id)
+  ) {
     return { error: "invalid_notice_id", status: 400 };
   }
   return { noticeId: body.announcement_id.toLowerCase() };
