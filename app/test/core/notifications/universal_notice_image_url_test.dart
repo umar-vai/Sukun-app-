@@ -6,29 +6,32 @@ void main() {
   const publicPath =
       '/storage/v1/object/public/sukun-announcement-images/notices/qa-rich-a1b2.png';
 
-  test('only configured staging and production public notice artwork is accepted', () {
-    expect(
-      isApprovedUniversalNoticeImageUrl(
-        AppEnvironment.stagingSupabaseUrl + publicPath,
-        backendUrl: AppEnvironment.stagingSupabaseUrl,
-      ),
-      isTrue,
-    );
-    expect(
-      isApprovedUniversalNoticeImageUrl(
-        AppEnvironment.productionSupabaseUrl + publicPath,
-        backendUrl: AppEnvironment.productionSupabaseUrl,
-      ),
-      isTrue,
-    );
-    expect(
-      isApprovedUniversalNoticeImageUrl(
-        AppEnvironment.productionSupabaseUrl + publicPath,
-        backendUrl: AppEnvironment.stagingSupabaseUrl,
-      ),
-      isFalse,
-    );
-  });
+  test(
+    'only configured staging and production public notice artwork is accepted',
+    () {
+      expect(
+        isApprovedUniversalNoticeImageUrl(
+          AppEnvironment.stagingSupabaseUrl + publicPath,
+          backendUrl: AppEnvironment.stagingSupabaseUrl,
+        ),
+        isTrue,
+      );
+      expect(
+        isApprovedUniversalNoticeImageUrl(
+          AppEnvironment.productionSupabaseUrl + publicPath,
+          backendUrl: AppEnvironment.productionSupabaseUrl,
+        ),
+        isTrue,
+      );
+      expect(
+        isApprovedUniversalNoticeImageUrl(
+          AppEnvironment.productionSupabaseUrl + publicPath,
+          backendUrl: AppEnvironment.stagingSupabaseUrl,
+        ),
+        isFalse,
+      );
+    },
+  );
 
   test('push payload URLs cannot fetch unrelated hosts or patient assets', () {
     const staging = AppEnvironment.stagingSupabaseUrl;
