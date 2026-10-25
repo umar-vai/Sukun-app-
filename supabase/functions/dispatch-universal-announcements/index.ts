@@ -70,10 +70,9 @@ async function sendPublicNotice(
     commonData.countdown_ends_at = deadline!.toISOString();
     commonData.notice_title = notice.notice_title.slice(0, 110);
   }
-  // With countdown, Android gets one data-only message. The app renders
-  // BigPicture + a system chronometer via its Firebase background handler.
-  // Do NOT send a simultaneous Android notification payload (duplicates).
-  // Without countdown Android uses native FCM BigPicture delivery directly.
+  // OS-rendered background FCM delivers the picture. Countdown metadata
+  // powers a live in-app timer and foreground Android chronometer. Background
+  // Android OS notification countdown needs an approved native delivery gate.
   const standard = {
     title: "সুকুন লাইফ • গুরুত্বপূর্ণ নোটিশ",
     body: notice.notice_title.slice(0, 110),
@@ -95,16 +94,11 @@ async function sendPublicNotice(
           data: commonData,
           android: {
             priority: "high",
-            // FCM's common notification payload would auto-display alongside
-            // Android's data-only countdown. Use Android override only on
-            // non-countdown notices. Countdown native QA remains gated.
-            ...(activeDeadline
-              ? { notification: { channel_id: "care_updates", sound: "default" } }
-              : { notification: {
-                channel_id: "care_updates",
-                sound: "default",
-                ...(imageUrl ? { image: imageUrl } : {}),
-              } }),
+            notification: {
+              channel_id: "care_updates",
+              sound: "default",
+              ...(imageUrl ? { image: imageUrl } : {}),
+            },
           },
           apns: {
             payload: { aps: { sound: "default" } },
