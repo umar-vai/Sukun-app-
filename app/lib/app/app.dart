@@ -67,11 +67,15 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     // notice route cannot race a second getInitialMessage() consumer.
     if (!kIsWeb && AppEnvironment.isFirebaseConfigured) {
       unawaited(
-        ref.read(notificationCoordinatorProvider).initialize().then((_) {
-          _routePendingTask();
-          _routePendingPersonal();
-          _routePendingUniversal();
-        }).catchError((Object _) {}),
+        ref
+            .read(notificationCoordinatorProvider)
+            .initialize()
+            .then((_) {
+              _routePendingTask();
+              _routePendingPersonal();
+              _routePendingUniversal();
+            })
+            .catchError((Object _) {}),
       );
     }
   }
