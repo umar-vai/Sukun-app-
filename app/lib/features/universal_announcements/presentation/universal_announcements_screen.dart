@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -195,6 +196,12 @@ class UniversalNoticePanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                 ],
+                if (notice.countdownEndsAt != null) ...[
+                  UniversalNoticeCountdown(
+                    endsAt: notice.countdownEndsAt!,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 SelectableText(notice.body),
                 if (safeLink) ...[
                   const SizedBox(height: 20),
@@ -214,6 +221,102 @@ class UniversalNoticePanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+
+class UniversalNoticeCountdown extends StatefulWidget {
+  const UniversalNoticeCountdown({required this.endsAt, super.key});
+
+  final DateTime endsAt;
+
+  @override
+  State<UniversalNoticeCountdown> createState() =>
+      _UniversalNoticeCountdownState();
+}
+
+class _UniversalNoticeCountdownState extends State<UniversalNoticeCountdown> {
+  Timer? _timer;
+  late DateTime _now;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    if (widget.endsAt.isAfter(_now)) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() => _now = DateTime.now());
+        if (!widget.endsAt.isAfter(_now)) {
+          _timer?.cancel();
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UniversalNoticeCountdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.endsAt == widget.endsAt) return;
+    _timer?.cancel();
+    _now = DateTime.now();
+    if (widget.endsAt.isAfter(_now)) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() => _now = DateTime.now());
+        if (!widget.endsAt.isAfter(_now)) _timer?.cancel();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = widget.endsAt.difference(_now);
+    final seconds = remaining.inSeconds;
+    final expired = seconds <= 0;
+    final days = seconds ~/ 86400;
+    final hours = (seconds % 86400) ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final sec = seconds % 60;
+    String pad(int n) => n.toString().padLeft(2, '0');
+    final time = expired
+        ? 'সময় শেষ'
+        : days > 0
+        ? '${days} দিন ${pad(hours)}:${pad(minutes)}:${pad(sec)}'
+        : '${pad(hours)}:${pad(minutes)}:${pad(sec)}';
+    return Semantics(
+      label: expired ? 'কাউন্টডাউন শেষ' : 'কাউন্টডাউন বাকি $time',
+      child: Container(
+        key: const Key('universal-notice-countdown'),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: SukunColors.mist,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.timer_outlined, color: SukunColors.deepTide),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                time,
+                key: const Key('universal-notice-countdown-time'),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
