@@ -1,0 +1,116 @@
+name: One-shot Approved Rich Notice Android QA 20261026
+
+# Explicit owner approval: one staging debug APK for a single authorized handset.
+# This branch-only build is not part of normal CI or the Flutter Web deployment.
+on:
+  push:
+    branches: [qa/approved-rich-notice-device-20261026]
+    paths: ['.github/workflows/one-shot-approved-rich-notice-device-qa-20261026.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-shot-sukun-rich-notice-device-qa-20261026
+  cancel-in-progress: false
+
+jobs:
+  controlled-staging-debug-apk:
+    name: Owner-approved Android rich notice staging QA (single APK)
+    if: github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    defaults:
+      run:
+        working-directory: app
+    env:
+      QA_FIREBASE_PROJECT_ID: ${{ secrets.SUKUN_QA_FIREBASE_PROJECT_ID }}
+      QA_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_QA_FIREBASE_SENDER_ID }}
+      QA_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_API_KEY }}
+      QA_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_APP_ID }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Enforce approved source commit and staging-only Firebase QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'umar-vai/Sukun-app-'
+          test "$GITHUB_REF" = 'refs/heads/qa/approved-rich-notice-device-20261026'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$(git rev-parse HEAD^)" = '3aa7f5a1ca34c0d6b69574d21e23330ec22bf385'
+          for name in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
+            raw="${!name:-}"
+            clean="$(printf '%s' "$raw" | tr -d '[:space:]')"
+            if [[ -z "$clean" || ! "$clean" =~ ^[A-Za-z0-9:_-]+$ ]]; then
+              echo "::error::Invalid/missing QA Firebase client configuration ($name). Refusing native build."
+              exit 1
+            fi
+            printf '%s=%s\n' "$name" "$clean" >> "$GITHUB_ENV"
+            case "$name" in
+              QA_FIREBASE_SENDER_ID) sender_id="$clean" ;;
+              QA_FIREBASE_ANDROID_APP_ID) android_id="$clean" ;;
+            esac
+          done
+          if [[ ! "$sender_id" =~ ^[0-9]+$ || "$android_id" != "1:${sender_id}:android:"* ]]; then
+            echo "::error::Firebase Android App ID / sender mismatch"
+            exit 1
+          fi
+          echo 'Source pin and staging-only FCM QA preflight passed; no public topic send.' >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Verify rich notice source, security and tap regression tests
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test \
+            test/core/notifications/notification_coordinator_test.dart \
+            test/core/notifications/notification_tap_relay_test.dart \
+            test/core/notifications/universal_notice_image_url_test.dart \
+            test/features/universal_announcements/universal_notice_panel_test.dart \
+            test/core/config/app_environment_test.dart
+
+      - name: Compile ONE Android debug APK against isolated staging only
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --debug \
+            --dart-define=APP_ENVIRONMENT=staging \
+            --dart-define=SUPABASE_URL=https://qacklgqvxvjjzsimjoip.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_V6ALSIa032kI_Ec2q-gpJg_vgpbtXK0 \
+            --dart-define="FIREBASE_PROJECT_ID=$QA_FIREBASE_PROJECT_ID" \
+            --dart-define="FIREBASE_MESSAGING_SENDER_ID=$QA_FIREBASE_SENDER_ID" \
+            --dart-define="FIREBASE_ANDROID_API_KEY=$QA_FIREBASE_ANDROID_API_KEY" \
+            --dart-define="FIREBASE_ANDROID_APP_ID=$QA_FIREBASE_ANDROID_APP_ID"
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/SHA256SUMS.txt
+
+      - name: Upload private short-lived device QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukunlife-rich-notice-staging-device-qa-20261026
+          path: |
+            app/build/app/outputs/flutter-apk/app-debug.apk
+            app/build/app/outputs/flutter-apk/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Clarify device QA release boundary
+        if: always()
+        run: |
+          echo '### Staging Android debug APK only; no Play Store signing or release' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No FCM test token exported, no Firebase topic dispatch or server sender invoked.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only a real authorized test device can verify foreground picture/countdown, background notification and tap routing.' >> "$GITHUB_STEP_SUMMARY"
