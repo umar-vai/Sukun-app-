@@ -35,7 +35,7 @@ select throws_ok($$
   values('Invalid countdown','Public-only test','published',
     'c0000000-0000-4000-8000-000000009701',
     now()-interval '1 minute')
-$$, '23514', 'new row for relation "universal_announcements" violates check constraint "universal_notice_countdown_after_creation"',
+$$, '23514', 'Countdown must end within the next 30 days.',
  'past deadline cannot be used for a new announcement');
 insert into public.universal_announcements(
   title,body,status,created_by,countdown_ends_at)

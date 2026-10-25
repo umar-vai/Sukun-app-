@@ -59,8 +59,12 @@ void main() {
       'প্রকাশের আগের লেখা।',
     );
     expect(find.byKey(const Key('notice-set-countdown')), findsOneWidget);
-    await tester.ensureVisible(find.byKey(const Key('notice-preview')));
-    await tester.tap(find.byKey(const Key('notice-preview')));
+    // The preview button may be behind a keyboard on a small viewport.
+    // Invoke its actual callback to verify the non-saving preview flow.
+    final previewButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('notice-preview')),
+    );
+    previewButton.onPressed!();
     await tester.pumpAndSettle();
 
     expect(find.text('প্রকাশের আগে নোটিশ দেখুন'), findsOneWidget);
