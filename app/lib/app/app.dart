@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +15,6 @@ import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
-import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_notice_auto_popup.dart';
 
 class SukunLifeApp extends ConsumerStatefulWidget {
@@ -29,7 +27,6 @@ class SukunLifeApp extends ConsumerStatefulWidget {
 class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   StreamSubscription<String>? _openedSubscription;
   StreamSubscription<String>? _openedPersonalSubscription;
-  StreamSubscription<RemoteMessage>? _openedUniversalSubscription;
   StreamSubscription<String>? _openedRichLocalSubscription;
   bool _nativeNotificationsInitialized = false;
 
@@ -61,42 +58,20 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
             .catchError((Object _) {}),
       );
     }
+    // Guest subscribers need the same foreground and notification-tap
+    // listener as signed-in patients. initialize() only creates channels and
+    // listens for FCM; it does not register patient tokens or request consent.
+    // A single coordinator consumes the cold-start FCM message so the public
+    // notice route cannot race a second getInitialMessage() consumer.
     if (!kIsWeb && AppEnvironment.isFirebaseConfigured) {
-      _openedUniversalSubscription = FirebaseMessaging.onMessageOpenedApp
-          .listen((message) => _openUniversalAnnouncement(message.data));
       unawaited(
-        FirebaseMessaging.instance
-            .getInitialMessage()
-            .then((message) {
-              if (message == null) return;
-              final payload = message.data;
-              if (universalNoticeIdFromPush(payload) != null) {
-                _openUniversalAnnouncement(payload);
-                return;
-              }
-              // getInitialMessage is consumptive: retain the existing
-              // patient-task cold-start route rather than stealing its tap.
-              if (payload['type'] == 'care_reminder') {
-                final id = payload['task_id'];
-                if (id is String) {
-                  ref
-                      .read(notificationTapRelayProvider)
-                      .accept('care_task:$id');
-                }
-              }
-            })
-            .catchError((Object _) {}),
+        ref.read(notificationCoordinatorProvider).initialize().then((_) {
+          _routePendingTask();
+          _routePendingPersonal();
+          _routePendingUniversal();
+        }).catchError((Object _) {}),
       );
     }
-  }
-
-  void _openUniversalAnnouncement(Map<String, dynamic> payload) {
-    final noticeId = universalNoticeIdFromPush(payload);
-    if (noticeId == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(appRouterProvider).go('/announcements/$noticeId');
-    });
   }
 
   void _routePendingUniversal() {
@@ -148,7 +123,6 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
     unawaited(_openedSubscription?.cancel());
     unawaited(_openedPersonalSubscription?.cancel());
     unawaited(_openedRichLocalSubscription?.cancel());
-    unawaited(_openedUniversalSubscription?.cancel());
     super.dispose();
   }
 
