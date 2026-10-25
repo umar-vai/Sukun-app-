@@ -8,6 +8,9 @@ on:
         type: boolean
         required: true
         default: false
+  # One explicitly requested client pilot gate; no general push/PR packaging.
+  push:
+    branches: [chore/android-pilot-official-logo-20261018]
 
 permissions:
   contents: read
@@ -20,9 +23,14 @@ jobs:
   android-connected-qa:
     name: Backend-connected Android QA
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    # Secrets must never be used on pull requests from forks.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_native_qa_build == true }}
+    timeout-minutes: 40
+    # Only a manual approval or the user's single named pilot commit is allowed.
+    # Never make native packaging part of ordinary push / PR CI.
+    if: >-
+      ${{ (github.event_name == 'workflow_dispatch' && inputs.approve_native_qa_build == true) ||
+          (github.event_name == 'push' &&
+           github.ref == 'refs/heads/chore/android-pilot-official-logo-20261018' &&
+           contains(github.event.head_commit.message, '[client-pilot-qa-approved]')) }}
     defaults:
       run:
         working-directory: app
@@ -31,6 +39,10 @@ jobs:
       QA_KEY: ${{ secrets.SUKUN_QA_SUPABASE_PUBLISHABLE_KEY }}
       QA_TARGET: ${{ vars.SUKUN_QA_APP_ENVIRONMENT }}
       QA_ALLOW_PRODUCTION: ${{ vars.SUKUN_QA_ALLOW_PRODUCTION }}
+      QA_FIREBASE_PROJECT_ID: ${{ secrets.SUKUN_QA_FIREBASE_PROJECT_ID }}
+      QA_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_QA_FIREBASE_SENDER_ID }}
+      QA_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_API_KEY }}
+      QA_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_APP_ID }}
 
     steps:
       - name: Checkout
@@ -71,6 +83,22 @@ jobs:
               ;;
           esac
 
+          # A native pilot may use Android-only Firebase configuration. Never
+          # silently claim push delivery when only part of it is available.
+          fcm_count=0
+          for flag in QA_FIREBASE_PROJECT_ID QA_FIREBASE_SENDER_ID QA_FIREBASE_ANDROID_API_KEY QA_FIREBASE_ANDROID_APP_ID; do
+            if [[ -n "${!flag:-}" ]]; then fcm_count=$((fcm_count + 1)); fi
+          done
+          if [[ "$fcm_count" -ne 0 && "$fcm_count" -ne 4 ]]; then
+            echo "::error::Firebase Android pilot configuration incomplete (requires all four SUKUN_QA_FIREBASE_* secrets)."
+            exit 1
+          fi
+          if [[ "$fcm_count" -eq 0 ]]; then
+            echo "::warning::FCM not configured: only device-local opt-in reminders can work. Do not promise server push."
+          else
+            echo "FCM Android client configuration present. Server sender and real-device delivery still need separate verification."
+          fi
+
           echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "environment=$environment" >> "$GITHUB_OUTPUT"
           echo "### Backend-connected QA build enabled" >> "$GITHUB_STEP_SUMMARY"
@@ -96,6 +124,23 @@ jobs:
         if: steps.config.outputs.ready == 'true'
         run: flutter pub get
 
+      - name: Prepare official Sukun Life Android launcher icons
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/sukun-icon-venv"
+          "$RUNNER_TEMP/sukun-icon-venv/bin/python" -m pip install 'Pillow==11.3.0'
+          "$RUNNER_TEMP/sukun-icon-venv/bin/python" ../scripts/generate_android_launcher_icons.py
+          test -s android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+
+      - name: Verify Android pilot Firebase configuration tests
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          dart format --output=none --set-exit-if-changed lib/core/config/app_environment.dart test/core/config/app_environment_test.dart
+          flutter test test/core/config/app_environment_test.dart
+
       - name: Build connected debug APK
         if: steps.config.outputs.ready == 'true'
         shell: bash
@@ -104,7 +149,11 @@ jobs:
           flutter build apk --debug \
             --dart-define="APP_ENVIRONMENT=${{ steps.config.outputs.environment }}" \
             --dart-define="SUPABASE_URL=$QA_URL" \
-            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY"
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$QA_KEY" \
+            --dart-define="FIREBASE_PROJECT_ID=$QA_FIREBASE_PROJECT_ID" \
+            --dart-define="FIREBASE_MESSAGING_SENDER_ID=$QA_FIREBASE_SENDER_ID" \
+            --dart-define="FIREBASE_ANDROID_API_KEY=$QA_FIREBASE_ANDROID_API_KEY" \
+            --dart-define="FIREBASE_ANDROID_APP_ID=$QA_FIREBASE_ANDROID_APP_ID"
 
       - name: Upload connected Android QA APK
         if: steps.config.outputs.ready == 'true'

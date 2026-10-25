@@ -131,18 +131,27 @@ void validateFirebaseRuntimeConfiguration({
   required String iosApiKey,
   required String iosAppId,
 }) {
-  final values = [
-    projectId,
-    messagingSenderId,
-    androidApiKey,
-    androidAppId,
-    iosApiKey,
-    iosAppId,
-  ];
-  final configured = values.where((value) => value.trim().isNotEmpty).length;
-  if (configured != 0 && configured != values.length) {
+  final shared = [projectId, messagingSenderId];
+  final android = [androidApiKey, androidAppId];
+  final ios = [iosApiKey, iosAppId];
+  final anyValue = [...shared, ...android, ...ios].any(
+    (value) => value.trim().isNotEmpty,
+  );
+  if (!anyValue) return; // Explicitly unconfigured: local reminders still work.
+
+  // Native pilot releases can register only their own Firebase app. Never
+  // require iOS keys for Android-only QA (or vice versa).
+  final sharedComplete = shared.every((value) => value.trim().isNotEmpty);
+  final androidComplete = android.every((value) => value.trim().isNotEmpty);
+  final iosComplete = ios.every((value) => value.trim().isNotEmpty);
+  final androidEmpty = android.every((value) => value.trim().isEmpty);
+  final iosEmpty = ios.every((value) => value.trim().isEmpty);
+  if (!sharedComplete ||
+      (!androidComplete && !androidEmpty) ||
+      (!iosComplete && !iosEmpty) ||
+      (!androidComplete && !iosComplete)) {
     throw StateError(
-      'Firebase Android and iOS client configuration must be supplied together.',
+      'Firebase requires project and sender IDs plus complete platform credentials.',
     );
   }
 }
