@@ -38,7 +38,6 @@ class _PreviewRepository implements AnnouncementRepository {
   }) async => throw StateError('Preview must not upload.');
 }
 
-
 class _PublishingRepository extends _PreviewRepository {
   _PublishingRepository(this.current);
 
@@ -135,9 +134,8 @@ void main() {
         ),
         GoRoute(
           path: '/admin/announcements/:id/edit',
-          builder: (context, state) => AdminAnnouncementEditorScreen(
-            id: state.pathParameters['id'],
-          ),
+          builder: (context, state) =>
+              AdminAnnouncementEditorScreen(id: state.pathParameters['id']),
         ),
       ],
     );
