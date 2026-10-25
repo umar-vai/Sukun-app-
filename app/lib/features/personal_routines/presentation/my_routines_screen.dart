@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
@@ -17,9 +19,10 @@ import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyRoutinesScreen extends ConsumerStatefulWidget {
-  const MyRoutinesScreen({super.key, this.resourceId});
+  const MyRoutinesScreen({super.key, this.resourceId, this.initialTab});
 
   final String? resourceId;
+  final String? initialTab;
 
   @override
   ConsumerState<MyRoutinesScreen> createState() => _MyRoutinesScreenState();
@@ -541,7 +544,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('আমার রুটিন'),
+      title: const Text('রুটিন'),
       actions: [
         IconButton(
           onPressed: _working ? null : _toggleReminders,
@@ -561,7 +564,29 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         ),
       ],
     ),
-    body: FutureBuilder<_RoutinePageData>(
+    body: DefaultTabController(
+      length: 3,
+      initialIndex: widget.resourceId != null
+          ? 0
+          : widget.initialTab == 'progress'
+          ? 2
+          : widget.initialTab == 'assigned'
+          ? 1
+          : 0,
+      child: Column(
+        children: [
+          const TabBar(
+            key: Key('routine-hub-tabs'),
+            tabs: [
+              Tab(text: 'আমার রুটিন'),
+              Tab(text: 'নির্ধারিত'),
+              Tab(text: 'অগ্রগতি'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                FutureBuilder<_RoutinePageData>(
       future: _data,
       builder: (context, snap) {
         if (!snap.hasData) {
@@ -593,11 +618,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   subtitle: Text('নিচের রুটিনের + করণীয় চাপুন।'),
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FilledButton.icon(
+                onPressed: _working ? null : _createRoutine,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('নতুন রুটিন তৈরি করুন'),
+              ),
+            ),
             if (data.routines.isEmpty)
               const ListTile(
                 title: Text('এখনো রুটিন নেই'),
                 subtitle: Text(
-                  'উপরে + চাপুন এবং নিজের জন্য একটি রুটিন তৈরি করুন।',
+                  'নতুন রুটিন তৈরি করে করণীয় যোগ করুন।',
                 ),
               ),
             for (final routine in data.routines) ...[
@@ -739,8 +772,52 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           ],
         );
       },
+                ),
+                _assignedPlanTab(),
+                const UnifiedProgressScreen(embedded: true),
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
   );
+
+  Widget _assignedPlanTab() {
+    final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
+    return ListView(
+      key: const Key('routine-assigned-tab'),
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (isPatient) ...[
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_turned_in_outlined),
+              title: const Text('সেশন থেকে নির্ধারিত রুটিন'),
+              subtitle: const Text('আপনার অনুমোদিত পরিকল্পনা'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/patient/plan'),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.today_outlined),
+              title: const Text('আজকের নির্ধারিত আমল'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/patient/today'),
+            ),
+          ),
+        ],
+        const Card(
+          child: ListTile(
+            leading: Icon(Icons.auto_awesome_outlined),
+            title: Text('প্রস্তুত রুটিন'),
+            subtitle: Text('এখনো কোনো প্রস্তুত রুটিন পাওয়া যায়নি।'),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _RoutinePageData {
