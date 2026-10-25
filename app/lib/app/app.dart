@@ -50,6 +50,17 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
         .read(notificationTapRelayProvider)
         .openedPersonalActionIds
         .listen((_) => _routePendingPersonal());
+    // Native Android public notices are guest opt-in too. Create the OS
+    // channel before any background FCM, without registering patient tokens,
+    // requesting notification permission, or enabling global broadcasts.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      unawaited(
+        ref
+            .read(localNotificationsGatewayProvider)
+            .initialize()
+            .catchError((Object _) {}),
+      );
+    }
     if (!kIsWeb && AppEnvironment.isFirebaseConfigured) {
       _openedUniversalSubscription = FirebaseMessaging.onMessageOpenedApp
           .listen((message) => _openUniversalAnnouncement(message.data));
