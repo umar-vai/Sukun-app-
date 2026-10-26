@@ -174,59 +174,75 @@ class _UniversalNoticeAutoPopupState
           fit: StackFit.expand,
           children: [
             widget.child,
-            if (notice != null && _activeOwner == _owner()) ...[
-              const Positioned.fill(
-                child: ModalBarrier(
-                  dismissible: false,
-                  color: Color(0x990D2B45),
-                ),
-              ),
+            if (notice != null && _activeOwner == _owner())
               Positioned.fill(
-                child: SafeArea(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: 510,
-                          maxHeight: MediaQuery.sizeOf(context).height * 0.84,
-                        ),
-                        child: Material(
-                          color: Theme.of(context).colorScheme.surface,
-                          elevation: 14,
-                          borderRadius: BorderRadius.circular(22),
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                height: 5,
-                                color: const Color(0xFFE6B53D),
-                              ),
-                              Flexible(
-                                child: UniversalNoticePanel(
-                                  notice: notice,
-                                  image: notice.imagePath == null
-                                      ? null
-                                      : NetworkImage(
-                                          ref
-                                              .read(
-                                                announcementRepositoryProvider,
-                                              )
-                                              .imageUrl(notice.imagePath!),
+                // MaterialApp.router.builder sits ABOVE Navigator's Overlay.
+                // The public notice popup is therefore given its own
+                // bounded Overlay, preserving Tooltip and text-selection
+                // behavior without rebuilding or replacing the route stack.
+                child: Overlay(
+                  initialEntries: [
+                    OverlayEntry(
+                      builder: (overlayContext) => Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          const ModalBarrier(
+                            dismissible: false,
+                            color: Color(0x990D2B45),
+                          ),
+                          SafeArea(
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: 510,
+                                    maxHeight:
+                                        MediaQuery.sizeOf(context).height * 0.84,
+                                  ),
+                                  child: Material(
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
+                                    elevation: 14,
+                                    borderRadius: BorderRadius.circular(22),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          height: 5,
+                                          color: const Color(0xFFE6B53D),
                                         ),
-                                  onClose: _close,
+                                        Flexible(
+                                          child: UniversalNoticePanel(
+                                            notice: notice,
+                                            image: notice.imagePath == null
+                                                ? null
+                                                : NetworkImage(
+                                                    ref
+                                                        .read(
+                                                          announcementRepositoryProvider,
+                                                        )
+                                                        .imageUrl(
+                                                          notice.imagePath!,
+                                                        ),
+                                                  ),
+                                            onClose: _close,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
+              )
           ],
         );
       },
