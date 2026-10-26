@@ -52,20 +52,36 @@ final class NotificationCoordinator {
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
+  Future<void>? _initialization;
   bool _lastSyncSucceeded = true;
 
-  Future<void> initialize() async {
+  Future<void> initialize() {
+    // Concurrent Guest and signed-in startup paths share the same setup.
+    return _initialization ??= _initializeOnce();
+  }
+
+  Future<void> _initializeOnce() async {
     if (_initialized) return;
-    await _local.initialize();
+    _initialized = true;
+    // Subscribe *before* any async plugin initialization. Android can deliver
+    // onMessageOpenedApp while local channels/timezones are still loading.
+    // An optional local plugin failure must never prevent an FCM notice tap
+    // from reaching the validated public route.
     _subscriptions
       ..add(_push.tokenRefresh.listen(_registerRefreshedToken))
       ..add(_push.foregroundMessages.listen(_handleForegroundMessage))
       ..add(_push.openedMessages.listen(_handleOpenedMessage));
-    _initialized = true;
-    final initialMessage = await _push.getInitialMessage();
-    if (initialMessage != null) {
-      await _handleOpenedMessage(initialMessage);
+    try {
+      // A terminated-app tap is consumed once, independently of whether the
+      // local reminder gateway is available on this handset.
+      final initialMessage = await _push.getInitialMessage();
+      if (initialMessage != null) {
+        await _handleOpenedMessage(initialMessage);
+      }
+    } on Object {
+      // Failed FCM initial-message retrieval must not block local reminders.
     }
+    await _local.initialize();
   }
 
   Future<CareNotificationStatus> status() async {
