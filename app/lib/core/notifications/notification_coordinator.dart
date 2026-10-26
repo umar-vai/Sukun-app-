@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
+import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
@@ -293,6 +294,7 @@ final class NotificationCoordinator {
   }
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
+    PublicNoticeTapQaDiagnostics.record(message);
     if (message.type == 'universal_announcement') {
       final id = universalNoticeIdFromPush({
         'type': message.type,
