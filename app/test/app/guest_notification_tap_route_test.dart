@@ -93,6 +93,67 @@ void main() {
     expect(relay.pendingUniversalNotice, isNull);
   });
 
+
+  testWidgets('same public notice reopens on second tap after Home and refresh', (
+    tester,
+  ) async {
+    final sessions = StreamController<AppSession>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    final container = ProviderContainer(
+      overrides: [appSessionProvider.overrideWith((ref) => sessions.stream)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pump();
+
+    sessions.add(const AppSession.guest());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump();
+
+    final relay = container.read(notificationTapRelayProvider);
+    relay.accept('universal_notice:$noticeId');
+    await tester.pump();
+    await tester.pump();
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/announcements/$noticeId',
+    );
+    expect(relay.pendingUniversalNotice, isNull);
+
+    // The user closes the notice and returns to Home. A later auth/session
+    // replay must not turn the same notice ID into a one-shot push action.
+    container.read(appRouterProvider).go('/');
+    await tester.pump();
+    await tester.pump();
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/',
+    );
+    sessions.add(const AppSession.guest());
+    await tester.pump();
+    await tester.pump();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    relay.accept('universal_notice:$noticeId');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/announcements/$noticeId',
+    );
+    expect(relay.pendingUniversalNotice, isNull);
+  });
+
+
   testWidgets('Guest returning from background navigates on valid public tap', (
     tester,
   ) async {
