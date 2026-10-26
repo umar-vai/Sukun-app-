@@ -313,34 +313,37 @@ void main() {
     }
   });
 
-  test('local plugin init failure does not disable FCM notice tap listener', () async {
-    const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
-    final opened = <String?>[];
-    local.failInitialization = true;
-    final guest = NotificationCoordinator(
-      repository,
-      local,
-      push,
-      store,
-      platform: 'android',
-      onTaskOpened: opened.add,
-    );
-    try {
-      await expectLater(guest.initialize(), throwsStateError);
-      push.emit(
-        const RemotePushMessage(
-          type: 'universal_announcement',
-          title: 'Public QA notice',
-          body: 'Public notice',
-          announcementId: noticeId,
-        ),
+  test(
+    'local plugin init failure does not disable FCM notice tap listener',
+    () async {
+      const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+      final opened = <String?>[];
+      local.failInitialization = true;
+      final guest = NotificationCoordinator(
+        repository,
+        local,
+        push,
+        store,
+        platform: 'android',
+        onTaskOpened: opened.add,
       );
-      await Future<void>.delayed(Duration.zero);
-      expect(opened, ['universal_notice:$noticeId']);
-    } finally {
-      await guest.dispose();
-    }
-  });
+      try {
+        await expectLater(guest.initialize(), throwsStateError);
+        push.emit(
+          const RemotePushMessage(
+            type: 'universal_announcement',
+            title: 'Public QA notice',
+            body: 'Public notice',
+            announcementId: noticeId,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(opened, ['universal_notice:$noticeId']);
+      } finally {
+        await guest.dispose();
+      }
+    },
+  );
 
   test('cold-start public FCM message is validated and routed once', () async {
     const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
