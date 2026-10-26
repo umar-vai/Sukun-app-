@@ -329,6 +329,8 @@ void main() {
       );
       try {
         await expectLater(guest.initialize(), throwsStateError);
+        local.failInitialization = false;
+        await guest.initialize();
         push.emit(
           const RemotePushMessage(
             type: 'universal_announcement',
