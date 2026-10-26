@@ -504,10 +504,8 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: ValueListenableBuilder<String>(
             valueListenable: PublicNoticeTapQaDiagnostics.status,
-            builder: (context, status, _) => Text(
-              status,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            builder: (context, status, _) =>
+                Text(status, style: Theme.of(context).textTheme.bodySmall),
           ),
         ),
     ],
