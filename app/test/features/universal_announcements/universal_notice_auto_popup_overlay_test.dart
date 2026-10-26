@@ -43,48 +43,49 @@ class _PublicNoticeRepository implements AnnouncementRepository {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('published guest auto-popup has Overlay and closes without error', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({});
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets(
+    'published guest auto-popup has Overlay and closes without error',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final notice = UniversalAnnouncement(
-      id: 'b6f2057f-a924-4422-853f-d4c0fa851799',
-      title: 'QA popup overlay notice',
-      body: 'Public test message.',
-      status: 'published',
-      publishedAt: DateTime.utc(2026, 10, 26, 17),
-    );
+      final notice = UniversalAnnouncement(
+        id: 'b6f2057f-a924-4422-853f-d4c0fa851799',
+        title: 'QA popup overlay notice',
+        body: 'Public test message.',
+        status: 'published',
+        publishedAt: DateTime.utc(2026, 10, 26, 17),
+      );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appSessionProvider.overrideWith(
-            (ref) => Stream.value(const AppSession.guest()),
-          ),
-          announcementRepositoryProvider.overrideWithValue(
-            _PublicNoticeRepository(notice),
-          ),
-        ],
-        child: const SukunLifeApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appSessionProvider.overrideWith(
+              (ref) => Stream.value(const AppSession.guest()),
+            ),
+            announcementRepositoryProvider.overrideWithValue(
+              _PublicNoticeRepository(notice),
+            ),
+          ],
+          child: const SukunLifeApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byType(UniversalNoticePanel), findsOneWidget);
-    expect(find.text('QA popup overlay notice'), findsOneWidget);
-    expect(find.byType(Overlay), findsWidgets);
-    expect(tester.takeException(), isNull);
+      expect(find.byType(UniversalNoticePanel), findsOneWidget);
+      expect(find.text('QA popup overlay notice'), findsOneWidget);
+      expect(find.byType(Overlay), findsWidgets);
+      expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('নোটিশ বন্ধ করুন'));
-    await tester.pumpAndSettle();
-    expect(find.text('QA popup overlay notice'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.tap(find.byTooltip('নোটিশ বন্ধ করুন'));
+      await tester.pumpAndSettle();
+      expect(find.text('QA popup overlay notice'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
