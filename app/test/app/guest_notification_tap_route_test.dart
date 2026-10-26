@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/app/app.dart';
 import 'package:sukun_life/app/router/app_router.dart';
@@ -59,6 +60,38 @@ void main() {
       expect(relay.pendingUniversalNotice, isNull);
     },
   );
+
+  testWidgets('background public tap survives pause and resume', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        appSessionProvider.overrideWith(
+          (ref) => Stream.value(const AppSession.guest()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const SukunLifeApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    final relay = container.read(notificationTapRelayProvider);
+    relay.accept('universal_notice:$noticeId');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/announcements/$noticeId',
+    );
+    expect(relay.pendingUniversalNotice, isNull);
+  });
 
   testWidgets('Guest returning from background navigates on valid public tap', (
     tester,

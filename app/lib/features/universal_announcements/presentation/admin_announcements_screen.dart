@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
@@ -320,7 +322,9 @@ class _AdminAnnouncementEditorScreenState
           mimeType: mime,
         );
       }
-      await repo.save(
+      final firstPublication =
+          newStatus == 'published' && _status != 'published';
+      final saved = await repo.save(
         AnnouncementDraft(
           id: widget.id,
           title: _title.text,
@@ -331,8 +335,38 @@ class _AdminAnnouncementEditorScreenState
           status: newStatus,
         ),
       );
+      // Publication already committed under Super Admin RLS. The server
+      // independently verifies the caller and atomically claims this UUID's
+      // outbox job. Any delivery failure keeps the queued notice in the backend
+      // without rolling back the visible publication; queue status is auditable.
+      var providerAccepted = false;
+      if (firstPublication && AppEnvironment.isSupabaseConfigured) {
+        try {
+          final dispatch = await Supabase.instance.client.functions
+              .invoke(
+                'dispatch-universal-announcements',
+                body: {'announcement_id': saved.id},
+              )
+              .timeout(const Duration(seconds: 8));
+          final result = dispatch.data;
+          providerAccepted =
+              dispatch.status == 200 &&
+              result is Map &&
+              result['accepted'] == 1;
+        } catch (_) {
+          // The protected sender can be undeployed or intentionally gated off.
+          // The server outbox records the delivery state independently.
+        }
+      }
       ref.invalidate(publishedAnnouncementsProvider);
       if (!mounted) return;
+      if (firstPublication && !providerAccepted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('নোটিশ প্রকাশিত। পুশ পাঠানো নিশ্চিত হয়নি।'),
+          ),
+        );
+      }
       context.go('/admin/announcements');
     } catch (_) {
       if (mounted) {

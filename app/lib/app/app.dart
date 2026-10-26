@@ -24,7 +24,8 @@ class SukunLifeApp extends ConsumerStatefulWidget {
   ConsumerState<SukunLifeApp> createState() => _SukunLifeAppState();
 }
 
-class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
+class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
+    with WidgetsBindingObserver {
   StreamSubscription<String>? _openedSubscription;
   StreamSubscription<String>? _openedPersonalSubscription;
   StreamSubscription<String>? _openedRichLocalSubscription;
@@ -33,6 +34,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(BengaliFontSettings.instance.load());
     unawaited(AppDisplaySettings.instance.load());
     _openedSubscription = ref
@@ -83,6 +85,18 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
             .catchError((Object _) {}),
       );
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    // The platform can resume before a pending FCM tap callback reaches
+    // Flutter. Retry after the resumed frame without consuming an early UUID.
+    WidgetsBinding.instance.scheduleFrame();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _routePendingUniversal();
+    });
   }
 
   void _routePendingUniversal() {
@@ -141,6 +155,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_openedSubscription?.cancel());
     unawaited(_openedPersonalSubscription?.cancel());
     unawaited(_openedRichLocalSubscription?.cancel());
