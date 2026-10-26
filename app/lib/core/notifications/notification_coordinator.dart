@@ -62,27 +62,32 @@ final class NotificationCoordinator {
   }
 
   Future<void> _initializeOnce() async {
-    if (_initialized) return;
-    _initialized = true;
-    // Subscribe *before* any async plugin initialization. Android can deliver
-    // onMessageOpenedApp while local channels/timezones are still loading.
-    // An optional local plugin failure must never prevent an FCM notice tap
-    // from reaching the validated public route.
-    _subscriptions
-      ..add(_push.tokenRefresh.listen(_registerRefreshedToken))
-      ..add(_push.foregroundMessages.listen(_handleForegroundMessage))
-      ..add(_push.openedMessages.listen(_handleOpenedMessage));
-    try {
-      // A terminated-app tap is consumed once, independently of whether the
-      // local reminder gateway is available on this handset.
-      final initialMessage = await _push.getInitialMessage();
-      if (initialMessage != null) {
-        await _handleOpenedMessage(initialMessage);
+    if (!_initialized) {
+      _initialized = true;
+      // Subscribe *before* any async plugin initialization. Android can
+      // deliver a tap while notification channels/timezones are loading.
+      _subscriptions
+        ..add(_push.tokenRefresh.listen(_registerRefreshedToken))
+        ..add(_push.foregroundMessages.listen(_handleForegroundMessage))
+        ..add(_push.openedMessages.listen(_handleOpenedMessage));
+      try {
+        // Consumed exactly once, including when local channels fail to load.
+        final initialMessage = await _push.getInitialMessage();
+        if (initialMessage != null) {
+          await _handleOpenedMessage(initialMessage);
+        }
+      } on Object {
+        // Failed FCM initial-message lookup must not block local reminders.
       }
-    } on Object {
-      // Failed FCM initial-message retrieval must not block local reminders.
     }
-    await _local.initialize();
+    try {
+      await _local.initialize();
+    } on Object {
+      // Keep FCM tap listeners, but permit a later app action to retry a
+      // transient local plugin failure without duplicating FCM listeners.
+      _initialization = null;
+      rethrow;
+    }
   }
 
   Future<CareNotificationStatus> status() async {
