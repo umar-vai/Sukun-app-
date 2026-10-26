@@ -11,6 +11,7 @@ import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
+import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
@@ -117,6 +118,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
       final router = ref.read(appRouterProvider);
       if (relay.takePendingUniversalNotice() != id) return;
       router.go('/announcements/$id');
+      PublicNoticeTapQaDiagnostics.routeRequested();
     });
   }
 

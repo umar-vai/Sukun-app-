@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
+import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
 import 'package:sukun_life/core/notifications/notification_repository.dart';
 import 'package:sukun_life/core/notifications/notification_state_store.dart';
@@ -52,19 +53,40 @@ final class NotificationCoordinator {
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
+  Future<void>? _initialization;
   bool _lastSyncSucceeded = true;
 
-  Future<void> initialize() async {
-    if (_initialized) return;
-    await _local.initialize();
-    _subscriptions
-      ..add(_push.tokenRefresh.listen(_registerRefreshedToken))
-      ..add(_push.foregroundMessages.listen(_handleForegroundMessage))
-      ..add(_push.openedMessages.listen(_handleOpenedMessage));
-    _initialized = true;
-    final initialMessage = await _push.getInitialMessage();
-    if (initialMessage != null) {
-      await _handleOpenedMessage(initialMessage);
+  Future<void> initialize() {
+    // Concurrent Guest and signed-in startup paths share the same setup.
+    return _initialization ??= _initializeOnce();
+  }
+
+  Future<void> _initializeOnce() async {
+    if (!_initialized) {
+      _initialized = true;
+      // Subscribe *before* any async plugin initialization. Android can
+      // deliver a tap while notification channels/timezones are loading.
+      _subscriptions
+        ..add(_push.tokenRefresh.listen(_registerRefreshedToken))
+        ..add(_push.foregroundMessages.listen(_handleForegroundMessage))
+        ..add(_push.openedMessages.listen(_handleOpenedMessage));
+      try {
+        // Consumed exactly once, including when local channels fail to load.
+        final initialMessage = await _push.getInitialMessage();
+        if (initialMessage != null) {
+          await _handleOpenedMessage(initialMessage);
+        }
+      } on Object {
+        // Failed FCM initial-message lookup must not block local reminders.
+      }
+    }
+    try {
+      await _local.initialize();
+    } on Object {
+      // Keep FCM tap listeners, but permit a later app action to retry a
+      // transient local plugin failure without duplicating FCM listeners.
+      _initialization = null;
+      rethrow;
     }
   }
 
@@ -277,6 +299,7 @@ final class NotificationCoordinator {
   }
 
   Future<void> _handleOpenedMessage(RemotePushMessage message) async {
+    PublicNoticeTapQaDiagnostics.record(message);
     if (message.type == 'universal_announcement') {
       final id = universalNoticeIdFromPush({
         'type': message.type,

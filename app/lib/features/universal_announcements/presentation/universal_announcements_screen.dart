@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
+import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_seen_store.dart';
 
@@ -496,6 +497,15 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
               label: const Text('টেস্ট টোকেন কপি'),
               onPressed: _busy ? null : _copyTestToken,
             ),
+          ),
+        ),
+      if (PublicNoticeTapQaDiagnostics.enabled)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: ValueListenableBuilder<String>(
+            valueListenable: PublicNoticeTapQaDiagnostics.status,
+            builder: (context, status, _) =>
+                Text(status, style: Theme.of(context).textTheme.bodySmall),
           ),
         ),
     ],

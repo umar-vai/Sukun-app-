@@ -279,6 +279,74 @@ void main() {
     }
   });
 
+  test('Android FCM tap arrives while local plugin init is pending', () async {
+    const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+    final opened = <String?>[];
+    local.initializationGate = Completer<void>();
+    final guest = NotificationCoordinator(
+      repository,
+      local,
+      push,
+      store,
+      platform: 'android',
+      onTaskOpened: opened.add,
+    );
+    try {
+      final initialization = guest.initialize();
+      push.emit(
+        const RemotePushMessage(
+          type: 'universal_announcement',
+          title: 'Public QA notice',
+          body: 'Public notice',
+          announcementId: noticeId,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(opened, ['universal_notice:$noticeId']);
+      local.initializationGate!.complete();
+      await initialization;
+    } finally {
+      if (!(local.initializationGate?.isCompleted ?? true)) {
+        local.initializationGate!.complete();
+      }
+      await guest.dispose();
+    }
+  });
+
+  test(
+    'local plugin init failure does not disable FCM notice tap listener',
+    () async {
+      const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
+      final opened = <String?>[];
+      local.failInitialization = true;
+      final guest = NotificationCoordinator(
+        repository,
+        local,
+        push,
+        store,
+        platform: 'android',
+        onTaskOpened: opened.add,
+      );
+      try {
+        await expectLater(guest.initialize(), throwsStateError);
+        local.failInitialization = false;
+        await guest.initialize();
+        push.emit(
+          const RemotePushMessage(
+            type: 'universal_announcement',
+            title: 'Public QA notice',
+            body: 'Public notice',
+            announcementId: noticeId,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(opened, ['universal_notice:$noticeId']);
+      } finally {
+        await guest.dispose();
+      }
+    },
+  );
+
   test('cold-start public FCM message is validated and routed once', () async {
     const noticeId = 'a1b2c3d4-a123-4fff-8aaa-123456789abc';
     push.initial = const RemotePushMessage(
@@ -375,13 +443,20 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
   bool precisePermission = true;
   bool precisePermissionRequested = false;
   bool failScheduling = false;
+  bool failInitialization = false;
+  Completer<void>? initializationGate;
   final List<({ReminderSchedule reminder, bool precise})> scheduledCalls = [];
 
   List<ReminderSchedule> get scheduled =>
       scheduledCalls.map((call) => call.reminder).toList(growable: false);
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize() async {
+    if (initializationGate != null) await initializationGate!.future;
+    if (failInitialization) {
+      throw StateError('local notification plugin failed');
+    }
+  }
 
   @override
   Future<bool> requestPermission() async => permission;
