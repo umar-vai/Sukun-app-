@@ -453,8 +453,9 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
   @override
   Future<void> initialize() async {
     if (initializationGate != null) await initializationGate!.future;
-    if (failInitialization)
+    if (failInitialization) {
       throw StateError('local notification plugin failed');
+    }
   }
 
   @override
