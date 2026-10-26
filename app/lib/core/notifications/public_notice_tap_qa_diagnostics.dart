@@ -6,11 +6,11 @@ import 'package:sukun_life/features/universal_announcements/data/universal_notic
 /// A device-local, process-only diagnostic for an explicitly authorized
 /// staging debug APK. No identifiers, tokens, message bodies or URLs are kept.
 abstract final class PublicNoticeTapQaDiagnostics {
-  static bool get enabled =>
-      kDebugMode && AppEnvironment.name == 'staging';
+  static bool get enabled => kDebugMode && AppEnvironment.name == 'staging';
 
-  static final ValueNotifier<String> status =
-      ValueNotifier<String>('এখনো কোনো Push ট্যাপ পাওয়া যায়নি।');
+  static final ValueNotifier<String> status = ValueNotifier<String>(
+    'এখনো কোনো Push ট্যাপ পাওয়া যায়নি।',
+  );
 
   static void record(RemotePushMessage message) {
     if (!enabled) return;
