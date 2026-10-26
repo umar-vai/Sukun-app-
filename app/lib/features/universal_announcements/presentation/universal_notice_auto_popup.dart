@@ -198,11 +198,13 @@ class _UniversalNoticeAutoPopupState
                                   constraints: BoxConstraints(
                                     maxWidth: 510,
                                     maxHeight:
-                                        MediaQuery.sizeOf(context).height * 0.84,
+                                        MediaQuery.sizeOf(context).height *
+                                        0.84,
                                   ),
                                   child: Material(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface,
                                     elevation: 14,
                                     borderRadius: BorderRadius.circular(22),
                                     clipBehavior: Clip.antiAlias,
@@ -242,7 +244,7 @@ class _UniversalNoticeAutoPopupState
                     ),
                   ],
                 ),
-              )
+              ),
           ],
         );
       },
