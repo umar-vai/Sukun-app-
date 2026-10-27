@@ -84,7 +84,6 @@ void main() {
     },
   );
 
-
   test('guests and distinct users never share local seen identifiers', () {
     expect(
       UniversalNoticeSeenStore.storageKey(null),
