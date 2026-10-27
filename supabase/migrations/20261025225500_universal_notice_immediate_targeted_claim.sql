@@ -1,7 +1,7 @@
 -- Permit an authenticated Admin Publish event to dispatch only its own
 -- newly queued public notice. Service-role only, never a client-side RPC.
 -- Existing cron batch claim/complete functions remain unchanged.
-create function public.claim_universal_announcement_rich_one(
+create or replace function public.claim_universal_announcement_rich_one(
   p_notice_id uuid
 )
 returns table(
