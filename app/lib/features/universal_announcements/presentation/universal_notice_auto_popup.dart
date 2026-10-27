@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,8 @@ class _UniversalNoticeAutoPopupState
     extends ConsumerState<UniversalNoticeAutoPopup>
     with WidgetsBindingObserver {
   Timer? _pollTimer;
+  final Random _pollJitter = Random();
+  bool _foreground = true;
   bool _checking = false;
   UniversalAnnouncement? _active;
   String? _activeOwner;
@@ -33,19 +36,33 @@ class _UniversalNoticeAutoPopupState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => unawaited(_check()),
-    );
+    _scheduleNextPoll();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_check());
+    });
+  }
+
+  // Spread active-device reads over time instead of synchronizing thousands
+  // of app installations into the same fixed 60-second polling boundary.
+  // This remains independent of notification permission and FCM opt-in.
+  void _scheduleNextPoll() {
+    _pollTimer = Timer(Duration(seconds: 70 + _pollJitter.nextInt(51)), () {
+      if (!mounted) return;
+      if (_foreground) unawaited(_check());
+      _scheduleNextPoll();
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _foreground = true;
       unawaited(_check());
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _foreground = false;
     }
   }
 
@@ -70,7 +87,7 @@ class _UniversalNoticeAutoPopupState
   }
 
   Future<void> _check() async {
-    if (_checking || _active != null) return;
+    if (!_foreground || _checking || _active != null) return;
     final auth = ref.read(appSessionProvider);
     if (!auth.hasValue || auth.value?.requiresCredentialChange == true) {
       return;
@@ -85,10 +102,18 @@ class _UniversalNoticeAutoPopupState
           .read(announcementRepositoryProvider)
           .recentPublished();
       final seenStore = ref.read(universalNoticeSeenStoreProvider);
+      // Local receipts are authoritative for this installation. Avoid a
+      // second Supabase request on every poll once a publication was seen.
+      final localSeen = await seenStore.readLocal(ownerId);
+      final localCandidate = nextUnseenUniversalNotice(notices, localSeen);
+      if (localCandidate == null) return;
+      // A different device could have marked this publication too. Only
+      // consult owner-scoped server receipts when there is a local candidate.
       final seen = await seenStore.read(ownerId);
       final fresh = nextUnseenUniversalNotice(notices, seen);
       if (fresh == null ||
           !mounted ||
+          !_foreground ||
           _owner() != ownerId ||
           generation != _checkGeneration ||
           !_eligibleRoute()) {
