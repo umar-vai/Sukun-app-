@@ -34,9 +34,15 @@ class UniversalNoticeSeenStore {
       ? 'sukun_public_notice_seen_guest_v1'
       : 'sukun_public_notice_seen_user_${userId}_v1';
 
-  Future<Set<String>> read(String? userId) async {
+  /// Fast on-device filter for the frequent foreground public feed checks.
+  /// A server receipt is needed only when a new publication is a candidate.
+  Future<Set<String>> readLocal(String? userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getStringList(storageKey(userId))?.toSet() ?? <String>{};
+    return prefs.getStringList(storageKey(userId))?.toSet() ?? <String>{};
+  }
+
+  Future<Set<String>> read(String? userId) async {
+    final seen = await readLocal(userId);
     if (userId == null || _client == null) return seen;
 
     try {
