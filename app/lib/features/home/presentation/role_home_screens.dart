@@ -140,62 +140,92 @@ class AdminHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          SukunSurface(
-            tone: SukunSurfaceTone.navy,
-            padding: const EdgeInsets.all(22),
-            onTap: () => context.go('/admin/patients'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    SukunStatusPill(
-                      label: 'রোগী সেবা',
-                      tone: SukunStatusTone.brand,
-                    ),
-                    Spacer(),
-                    Icon(Icons.arrow_forward_rounded),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Patient care',
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 7),
-                const Text(
-                  'রোগী, প্রেসক্রিপশন, পরিকল্পনা ও অগ্রগতি',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 18),
-                const Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _WorkflowStep(number: '01', label: 'Patient'),
-                    _WorkflowStep(number: '02', label: 'Prescription'),
-                    _WorkflowStep(number: '03', label: 'Plan'),
-                    _WorkflowStep(number: '04', label: 'Progress'),
-                  ],
-                ),
-              ],
+          SukunSectionHeader(
+            title: 'রোগী ও অগ্রগতি',
+            action: TextButton(
+              onPressed: () => context.go('/admin/patients'),
+              child: const Text('রোগীর তালিকা'),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           _DashboardAction(
-            icon: Icons.library_books_outlined,
-            title: 'ইসলামিক রিসোর্স',
-            description: 'রিসোর্স ও প্রকাশনা পরিচালনা',
-            actionLabel: 'রিসোর্স দেখুন',
-            onTap: () => context.go('/admin/content'),
+            icon: Icons.people_alt_outlined,
+            title: 'রোগীর পরিকল্পনা ও অগ্রগতি',
+            description:
+                'নির্বাচিত রোগীর প্রোফাইলে যান। সেখানে পরিকল্পনা তৈরি ও '
+                'অগ্রগতি দেখার অনুমোদিত টুলস পাবেন।',
+            actionLabel: 'রোগী বাছুন',
+            onTap: () => context.go('/admin/patients'),
           ),
-          _DashboardAction(
-            icon: Icons.campaign_outlined,
-            title: 'সবার জন্য নোটিশ',
-            description: 'নোটিশ ড্রাফট, ছবি ও লিংক যোগ করে প্রকাশ করুন।',
-            actionLabel: 'নোটিশ পরিচালনা করুন',
-            onTap: () => context.go('/admin/announcements'),
+          const SizedBox(height: 18),
+          SukunSectionHeader(
+            title: 'একই উপকরণ, সবার জন্য',
+            action: TextButton(
+              onPressed: () => context.push('/resources'),
+              child: const Text('সবার লাইব্রেরি'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth >= 720
+                  ? (constraints.maxWidth - 12) / 2
+                  : constraints.maxWidth;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: width,
+                    child: _DashboardAction(
+                      icon: Icons.menu_book_outlined,
+                      title: 'পাবলিক উপকরণ লাইব্রেরি',
+                      description:
+                          'সাধারণ ইউজার ও রোগী যেভাবে কুরআন, হাদিস, '
+                          'দোয়া ও রুকইয়াহ দেখেন, সেই একই তালিকা দেখুন।',
+                      actionLabel: 'লাইব্রেরি খুলুন',
+                      onTap: () => context.push('/resources'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _DashboardAction(
+                      icon: Icons.edit_note_outlined,
+                      title: 'উপকরণ পরিচালনা',
+                      description:
+                          'অ্যাডমিনের আলাদা Draft, Review, '
+                          'Publish ও Content Editor।',
+                      actionLabel: 'কনটেন্ট পরিচালনা',
+                      onTap: () => context.go('/admin/content'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _DashboardAction(
+                      icon: Icons.playlist_add_check_rounded,
+                      title: 'রুটিন টেমপ্লেট',
+                      description:
+                          'প্রকাশযোগ্য রুটিন প্রস্তুত ও পরিচালনা করুন। '
+                          'ব্যক্তিগত রুটিন স্বয়ংক্রিয়ভাবে বদলাবে না।',
+                      actionLabel: 'রুটিন দেখুন',
+                      onTap: () => context.go('/admin/routine-templates'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _DashboardAction(
+                      icon: Icons.campaign_outlined,
+                      title: 'সবার জন্য নোটিশ',
+                      description:
+                          'নোটিশ, ছবি ও অনুমোদিত লিংক '
+                          'যোগ করে প্রকাশ করুন।',
+                      actionLabel: 'নোটিশ পরিচালনা',
+                      onTap: () => context.go('/admin/announcements'),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 28),
           SukunSectionHeader(
@@ -212,8 +242,8 @@ class AdminHomeScreen extends StatelessWidget {
               Expanded(
                 child: _UtilityCard(
                   icon: Icons.schedule_rounded,
-                  label: 'Prayer times',
-                  caption: 'Daily timetable',
+                  label: 'নামাজের সময়',
+                  caption: 'দৈনিক সময়সূচি',
                   onTap: () => context.push('/prayer-times'),
                 ),
               ),
@@ -221,8 +251,8 @@ class AdminHomeScreen extends StatelessWidget {
               Expanded(
                 child: _UtilityCard(
                   icon: Icons.explore_rounded,
-                  label: 'Qibla',
-                  caption: 'Direction utility',
+                  label: 'কিবলা',
+                  caption: 'দিকনির্দেশনা',
                   onTap: () => context.push('/qibla'),
                 ),
               ),
@@ -232,24 +262,6 @@ class AdminHomeScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _WorkflowStep extends StatelessWidget {
-  const _WorkflowStep({required this.number, required this.label});
-
-  final String number;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white24),
-    ),
-    child: Text('$number  $label', style: const TextStyle(color: Colors.white)),
-  );
 }
 
 class _DashboardAction extends StatelessWidget {
