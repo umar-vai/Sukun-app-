@@ -13,6 +13,7 @@ import 'package:sukun_life/features/personal_routines/data/personal_reminder_ser
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
+import 'package:sukun_life/features/personal_routines/domain/personal_routine_reminder_planner.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
@@ -425,6 +426,25 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                               fixed ?? const TimeOfDay(hour: 22, minute: 0),
                         );
                         if (chosen != null) update(() => fixed = chosen);
+                      },
+                    ),
+                  if (kind == 'fixed' && fixed != null)
+                    Builder(
+                      builder: (context) {
+                        final now = DateTime.now();
+                        final next = nextPersonalFixedOccurrence(
+                          now,
+                          hour: fixed!.hour,
+                          minute: fixed!.minute,
+                        );
+                        final when = DateUtils.isSameDay(now, next)
+                            ? 'আজ'
+                            : 'আগামীকাল';
+                        return Text(
+                          'পরবর্তী রিমাইন্ডার: $when ${fixed!.format(context)}। '
+                          'রিমাইন্ডার চালু ও অনুমোদিত থাকলে নোটিফিকেশন আসবে।',
+                          style: const TextStyle(fontSize: 12),
+                        );
                       },
                     ),
                   if (kind == 'fajr' || kind == 'maghrib') ...[
