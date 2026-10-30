@@ -69,7 +69,7 @@ void main() {
     );
     final decoration = surface.decoration! as BoxDecoration;
     expect(decoration.color, Colors.white);
-    expect(decoration.border!.top.color, SukunColors.border);
+    expect((decoration.border! as Border).top.color, SukunColors.border);
     expect(decoration.boxShadow, isNotEmpty);
   });
 }
