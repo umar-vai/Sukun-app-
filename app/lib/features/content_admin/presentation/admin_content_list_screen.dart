@@ -738,7 +738,7 @@ class _AdminContentListScreenState
   Widget build(BuildContext context) {
     return AdminScaffold(
       title: 'উপকরণ ব্যবস্থাপনা',
-      selectedIndex: 2,
+      selectedIndex: -1,
       body: FutureBuilder<_ContentDashboardData>(
         future: _data,
         builder: (context, snapshot) {
@@ -794,7 +794,7 @@ class _AdminContentListScreenState
       const SukunPageIntro(
         eyebrow: 'সহজে কাজ শুরু করুন',
         title: 'উপকরণ ব্যবস্থাপনা',
-        subtitle: 'যে ধরনের উপকরণ যোগ বা সংশোধন করতে চান, সেই বিভাগ খুলুন।',
+        subtitle: 'এখানে শুধু CMS কনটেন্ট পরিচালিত হয়; সম্পূর্ণ কুরআন ও সবার উপকরণ মূল লাইব্রেরিতে আছে।',
       ),
       const SizedBox(height: 16),
       _DashboardShortcut(

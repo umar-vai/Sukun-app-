@@ -118,8 +118,9 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
       );
       return;
     }
+    final isPatient = ref.read(appSessionProvider).value?.isPatient == true;
     context.push(
-      widget.embedded
+      widget.embedded && isPatient
           ? '/patient/resources/${resource.id}'
           : '/resources/${resource.id}',
     );

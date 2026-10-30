@@ -94,8 +94,8 @@ class _AdminScaffoldState extends State<AdminScaffold> {
           if (index == widget.selectedIndex) return;
           context.go(switch (index) {
             0 => '/admin/dashboard',
-            1 => '/admin/patients',
-            2 => '/admin/content',
+            1 => '/admin/users',
+            2 => '/admin/library',
             _ => '/admin/announcements',
           });
         },
@@ -108,12 +108,12 @@ class _AdminScaffoldState extends State<AdminScaffold> {
           SukunNavDestination(
             icon: Icons.people_outline,
             selectedIcon: Icons.people,
-            label: copy?.adminPatients ?? 'রোগীরা',
+            label: 'ব্যবহারকারী',
           ),
           SukunNavDestination(
             icon: Icons.library_books_outlined,
             selectedIcon: Icons.library_books,
-            label: copy?.adminContent ?? 'উপকরণ',
+            label: 'উপকরণ',
           ),
           const SukunNavDestination(
             icon: Icons.campaign_outlined,

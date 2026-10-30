@@ -66,7 +66,7 @@ class _PatientsListScreenState extends ConsumerState<PatientsListScreen> {
   Widget build(BuildContext context) {
     return AdminScaffold(
       title: 'রোগীদের তালিকা',
-      selectedIndex: 1,
+      selectedIndex: -1,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createPatient,
         icon: const Icon(Icons.person_add_alt_1),
