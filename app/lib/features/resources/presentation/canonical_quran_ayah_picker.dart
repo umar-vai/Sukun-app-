@@ -91,11 +91,7 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
     try {
       final response = await Supabase.instance.client.functions.invoke(
         'quran-content',
-        body: {
-          'action': 'verses',
-          'chapter': surah,
-          'page': _page + 1,
-        },
+        body: {'action': 'verses', 'chapter': surah, 'page': _page + 1},
       );
       final data = response.data;
       if (data is! Map || data['verses'] is! List) {
@@ -207,8 +203,9 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                                 prefixIcon: Icon(Icons.search_rounded),
                                 hintText: 'সূরার নাম বা নম্বর লিখুন',
                               ),
-                              onChanged: (v) =>
-                                  setState(() => _search = v.trim().toLowerCase()),
+                              onChanged: (v) => setState(
+                                () => _search = v.trim().toLowerCase(),
+                              ),
                             ),
                           ),
                           Expanded(
@@ -286,7 +283,9 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                           padding: const EdgeInsets.all(16),
                           child: OutlinedButton(
                             onPressed: _loading ? null : _nextPage,
-                            child: Text(_loading ? 'আয়াত লোড হচ্ছে…' : 'আরও আয়াত দেখুন'),
+                            child: Text(
+                              _loading ? 'আয়াত লোড হচ্ছে…' : 'আরও আয়াত দেখুন',
+                            ),
                           ),
                         ),
                       if (_loading && _verses.isEmpty)
