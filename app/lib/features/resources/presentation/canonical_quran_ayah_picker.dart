@@ -248,6 +248,20 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                             final excluded = widget.excludedReferences.contains(
                               choice.reference,
                             );
+                            final translated = (verse['translations'] as List? ??
+                                    const [])
+                                .whereType<Map>()
+                                .where(
+                                  (item) =>
+                                      (item['language_name'] ?? '')
+                                          .toString()
+                                          .toLowerCase() ==
+                                      'bengali',
+                                )
+                                .toList(growable: false);
+                            final bangla = translated.isEmpty
+                                ? null
+                                : translated.first['text']?.toString();
                             return ListTile(
                               key: Key('canonical-ayah-$key'),
                               leading: CircleAvatar(child: Text('$ayah')),
@@ -258,10 +272,21 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.titleMedium,
                               ),
-                              subtitle: Text(
-                                excluded
-                                    ? 'ইতিমধ্যে রুটিনে আছে'
-                                    : 'সূরা ${_selectedSurah!} · আয়াত $ayah',
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (bangla != null && bangla.trim().isNotEmpty)
+                                    Text(
+                                      bangla,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  Text(
+                                    excluded
+                                        ? 'ইতিমধ্যে রুটিনে আছে'
+                                        : 'সূরা ${_selectedSurah!} · আয়াত $ayah',
+                                  ),
+                                ],
                               ),
                               enabled: !excluded,
                               onTap: excluded
