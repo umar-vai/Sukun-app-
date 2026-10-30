@@ -399,7 +399,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                 )) {
                               update(
                                 () => selected.add(
-                                  PersonalRoutineResourceSelection.quranAyah(
+                                  PersonalActionResourceSelection.quranAyah(
                                     choice.surahNumber,
                                     choice.ayahNumber,
                                   ),
