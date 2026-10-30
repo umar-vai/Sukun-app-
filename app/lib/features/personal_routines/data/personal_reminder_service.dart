@@ -118,15 +118,28 @@ class PersonalReminderService {
     // stored under this owner-specific personal namespace.
     await cancelOwner(owner);
     final precise = await local.canSchedulePrecisely();
-    final ids = <String>[];
-    for (final reminder in scheduled) {
-      await local.schedule(reminder, precise: precise);
-      ids.add(reminder.notificationId.toString());
+    final ids = <int>[];
+    try {
+      for (final reminder in scheduled) {
+        await local.schedule(reminder, precise: precise);
+        ids.add(reminder.notificationId);
+      }
+      await (await SharedPreferences.getInstance()).setStringList(
+        _idsKey(owner),
+        ids.map((id) => id.toString()).toList(),
+      );
+      return ids.length;
+    } on Object {
+      // Do not leave a partially scheduled batch behind when an OS/plugin
+      // request fails after one or more alarms have already been installed.
+      for (final id in ids) {
+        try {
+          await local.cancel(id);
+        } on Object {
+          // The original scheduling error is the actionable failure.
+        }
+      }
+      rethrow;
     }
-    await (await SharedPreferences.getInstance()).setStringList(
-      _idsKey(owner),
-      ids,
-    );
-    return ids.length;
   }
 }
