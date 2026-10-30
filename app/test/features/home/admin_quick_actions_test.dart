@@ -72,12 +72,7 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-    final sharedLibrary = find.text('লাইব্রেরি খুলুন');
-    await tester.scrollUntilVisible(
-      sharedLibrary,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    final sharedLibrary = find.text('সবার লাইব্রেরি');
     await tester.ensureVisible(sharedLibrary);
     await tester.pumpAndSettle();
     await tester.tap(sharedLibrary);
