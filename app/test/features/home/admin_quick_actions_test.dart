@@ -71,7 +71,11 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
     final sharedLibrary = find.text('লাইব্রেরি খুলুন');
-    await tester.ensureVisible(sharedLibrary);
+    await tester.scrollUntilVisible(
+      sharedLibrary,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(sharedLibrary);
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/resources');
