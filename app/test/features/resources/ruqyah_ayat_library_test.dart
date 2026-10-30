@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:sukun_life/features/resources/presentation/ruqyah_ayat_library.dart';
 
 void main() {
@@ -94,6 +96,36 @@ void main() {
     }
     expect(ruqyahTrustedVerseAudioUrl(null), isNull);
     expect(ruqyahTrustedVerseAudioUrl({'text': 'verse'}), isNull);
+  });
+
+  test('Ruqyah audio uses native-safe MediaItem metadata', () {
+    const url = 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3';
+    final source = ruqyahTaggedAudioSource(
+      url: url,
+      id: 'ruqyah-start-114-1',
+      title: 'সূরা আন-নাস · আয়াত ১',
+    );
+
+    final taggedSource = source as UriAudioSource;
+    expect(taggedSource.uri.toString(), url);
+    expect(taggedSource.tag, isA<MediaItem>());
+    final media = taggedSource.tag as MediaItem;
+    expect(media.id, 'ruqyah-start-114-1');
+    expect(media.title, contains('আন-নাস'));
+    expect(media.album, 'Sukun Life');
+  });
+
+  test('Ruqyah player rejects malformed or insecure source URLs', () {
+    for (final url in <String>[
+      'http://cdn.islamic.network/verse.mp3',
+      'javascript:alert(1)',
+      'https://user@cdn.islamic.network/verse.mp3',
+    ]) {
+      expect(
+        () => ruqyahTaggedAudioSource(url: url, id: 'x', title: 'x'),
+        throwsFormatException,
+      );
+    }
   });
 
   test('unverified editorial introductions cannot acquire guessed ayat', () {
