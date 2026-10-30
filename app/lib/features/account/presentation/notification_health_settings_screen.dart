@@ -136,8 +136,7 @@ class _NotificationHealthSettingsScreenState
     );
     if (mounted) {
       setState(
-        () => _notice =
-            'টেস্ট নোটিফিকেশন পাঠানো হয়েছে। ফোনের নোটিফিকেশন প্যানেল পরীক্ষা করুন।',
+        () => _notice = 'টেস্ট নোটিফিকেশন পাঠানো হয়েছে। ফোনের নোটিফিকেশন প্যানেল পরীক্ষা করুন।',
       );
     }
   });
@@ -146,7 +145,9 @@ class _NotificationHealthSettingsScreenState
     final service = ref.read(personalReminderServiceProvider);
     if (!await service.isEnabled()) {
       if (mounted) {
-        setState(() => _notice = 'নিজের তৈরি রুটিনের রিমাইন্ডার আগে চালু করুন।');
+        setState(
+          () => _notice = 'নিজের তৈরি রুটিনের রিমাইন্ডার আগে চালু করুন।',
+        );
       }
       return;
     }
@@ -284,10 +285,14 @@ class _NotificationHealthSettingsScreenState
                                           .requestPreciseSchedulingPermission();
                                       if (granted &&
                                           await ref
-                                              .read(personalReminderServiceProvider)
+                                              .read(
+                                                personalReminderServiceProvider,
+                                              )
                                               .isEnabled()) {
                                         await ref
-                                            .read(personalReminderServiceProvider)
+                                            .read(
+                                              personalReminderServiceProvider,
+                                            )
                                             .refresh();
                                       }
                                     }),
