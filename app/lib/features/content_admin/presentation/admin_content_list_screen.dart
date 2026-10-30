@@ -794,20 +794,7 @@ class _AdminContentListScreenState
       const SukunPageIntro(
         eyebrow: 'সহজে কাজ শুরু করুন',
         title: 'উপকরণ ব্যবস্থাপনা',
-        subtitle: 'যে ধরনের উপকরণ যোগ বা সংশোধন করতে চান, সেই বিভাগ খুলুন।',
-      ),
-      const SizedBox(height: 16),
-      _DashboardShortcut(
-        icon: Icons.auto_stories_outlined,
-        title: 'সবার একই কুরআন ও উপকরণ লাইব্রেরি',
-        detail: 'মূল Quran Reader, ১১৪ সূরা, হাদিস, দোয়া, রুকইয়াহ, অডিও ও প্রকাশিত উপকরণ দেখুন',
-        onTap: () => context.push('/admin/library'),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        'নিচের গণনা শুধু Admin CMS-এ যোগ করা কনটেন্টের; '
-        'মূল কুরআন রিডারের সূরা ও আয়াতের সংখ্যা নয়।',
-        style: Theme.of(context).textTheme.bodySmall,
+        subtitle: 'এখানে শুধু CMS কনটেন্ট পরিচালিত হয়; সম্পূর্ণ কুরআন ও সবার উপকরণ মূল লাইব্রেরিতে আছে।',
       ),
       const SizedBox(height: 16),
       _DashboardShortcut(
