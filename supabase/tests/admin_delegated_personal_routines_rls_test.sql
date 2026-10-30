@@ -83,8 +83,8 @@ select set_config('request.jwt.claim.sub',
   'f0000000-0000-4000-8000-000000002612',true);
 select is((select count(*) from public.personal_routines),
   1::bigint,'target owner sees delegated draft');
-select is((select count(*) from public.personal_routine_actions where is_active),
-  0::bigint,'delegated action does not auto-enable reminders');
+select is((select count(*) from public.personal_routines where is_active),
+  0::bigint,'delegated routine remains inactive until owner opts in');
 
 select * from finish();
 rollback;
