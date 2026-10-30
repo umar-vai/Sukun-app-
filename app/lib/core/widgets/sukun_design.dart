@@ -395,7 +395,9 @@ class SukunSearchField extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final surface = isDark ? scheme.surfaceContainerLow : Colors.white;
     final contentColor = scheme.onSurface;
-    final subtleColor = scheme.onSurface.withValues(alpha: isDark ? 0.74 : 0.64);
+    final subtleColor = scheme.onSurface.withValues(
+      alpha: isDark ? 0.74 : 0.64,
+    );
 
     return Container(
       key: const Key('sukun-search-surface'),
