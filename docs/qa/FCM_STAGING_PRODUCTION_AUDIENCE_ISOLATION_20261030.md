@@ -19,9 +19,9 @@ Both the Android app and Edge sender use topic
 a Supabase database. An isolated Supabase staging URL does not isolate FCM
 subscribers when staging and production use the same Firebase project.
 
-The connected Android pilot workflow now requires **two independently checked
-project IDs** before another **explicitly authorized** rich-notice debug APK
-may build:
+The connected Android QA workflow now requires **two independently checked
+project IDs** before **any Firebase-configured** staging or production QA APK
+may build (including generic connected QA, not only rich-notice pilot):
 
 - Existing Actions Secret `SUKUN_QA_FIREBASE_PROJECT_ID`: the isolated
   staging Firebase Android client project ID.
@@ -30,10 +30,14 @@ may build:
   settings → General**. Firebase project IDs are public metadata, not
   Firebase service-account credentials.
 
-The guard fails closed if either is absent or if they match, without
-printing IDs, secrets or tokens. It only runs for
-`rich_notice_pilot=true`; routine Web-first CI runs five offline synthetic
-guard regression tests without building an APK.
+For staging, the guard fails closed if either project ID is absent or if they
+match. For explicitly authorized production-targeted QA, the Firebase client
+project ID must instead **equal** the verified production Firebase project.
+Unknown targets also fail closed. The guard runs whenever a connected APK
+would contain real Firebase client configuration, even if
+`rich_notice_pilot=false`, without printing IDs, credentials or tokens.
+UI-only builds with no Firebase config remain supported. Routine Web-first CI
+runs eleven offline synthetic/workflow regression checks without building an APK.
 
 **Scope limitation:** This guards **future QA APK builds only**. It does not
 change the Firebase project used by the already-installed APK or the live
