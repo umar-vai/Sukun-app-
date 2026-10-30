@@ -62,9 +62,8 @@ void main() {
         ),
         GoRoute(
           path: '/admin/users',
-          builder: (context, state) => const Scaffold(
-            body: Text('Admin user routines destination'),
-          ),
+          builder: (context, state) =>
+              const Scaffold(body: Text('Admin user routines destination')),
         ),
       ],
     );
