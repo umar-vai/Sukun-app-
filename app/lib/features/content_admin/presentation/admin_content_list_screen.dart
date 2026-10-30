@@ -738,7 +738,7 @@ class _AdminContentListScreenState
   Widget build(BuildContext context) {
     return AdminScaffold(
       title: 'উপকরণ ব্যবস্থাপনা',
-      selectedIndex: 2,
+      selectedIndex: -1,
       body: FutureBuilder<_ContentDashboardData>(
         future: _data,
         builder: (context, snapshot) {
