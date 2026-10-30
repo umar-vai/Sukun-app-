@@ -429,7 +429,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
   Future<void> _addSurah(_ComposerAction action) async {
     if (action.resources.length >= 16) return;
     final excluded = action.resources
-.where(
+        .where(
           (r) =>
               r['provider'] == 'quran' &&
               (r['external_resource_ref']?.split(':').length ?? 0) == 2,
