@@ -35,15 +35,11 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadUsers(String query) async {
-    var request = _client
-        .from('profiles')
-        .select('id,display_name')
-        .order('display_name')
-        .limit(40);
+    var request = _client.from('profiles').select('id,display_name');
     if (query.trim().isNotEmpty) {
       request = request.ilike('display_name', '%${query.trim()}%');
     }
-    final rows = await request;
+    final rows = await request.order('display_name').limit(40);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
