@@ -221,8 +221,8 @@ class _ResourceReferenceTile extends StatelessWidget {
               ? name
               : surahNumber != null
               ? ayahNumber == null
-                  ? 'সূরা $surahNumber'
-                  : 'সূরা $surahNumber · আয়াত $ayahNumber'
+                    ? 'সূরা $surahNumber'
+                    : 'সূরা $surahNumber · আয়াত $ayahNumber'
               : 'রিসোর্স অনুপলব্ধ',
         ),
         subtitle: Text(
