@@ -137,7 +137,10 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
                             child: Icon(Icons.person_outline_rounded),
                           ),
                           title: Text(
-                            (user['display_name']?.toString().trim().isNotEmpty ??
+                            (user['display_name']
+                                        ?.toString()
+                                        .trim()
+                                        .isNotEmpty ??
                                     false)
                                 ? user['display_name'].toString()
                                 : 'নাম দেওয়া হয়নি',
