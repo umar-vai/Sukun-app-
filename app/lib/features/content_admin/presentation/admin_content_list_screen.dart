@@ -798,6 +798,19 @@ class _AdminContentListScreenState
       ),
       const SizedBox(height: 16),
       _DashboardShortcut(
+        icon: Icons.auto_stories_outlined,
+        title: 'সবার একই কুরআন ও উপকরণ লাইব্রেরি',
+        detail: 'মূল Quran Reader, ১১৪ সূরা, হাদিস, দোয়া, রুকইয়াহ, অডিও ও প্রকাশিত উপকরণ দেখুন',
+        onTap: () => context.push('/admin/library'),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        'নিচের গণনা শুধু Admin CMS-এ যোগ করা কনটেন্টের; '
+        'মূল কুরআন রিডারের সূরা ও আয়াতের সংখ্যা নয়।',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      const SizedBox(height: 16),
+      _DashboardShortcut(
         icon: Icons.edit_note_rounded,
         title: 'সংরক্ষিত খসড়া',
         detail: data == null
