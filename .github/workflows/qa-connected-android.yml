@@ -143,11 +143,10 @@ jobs:
               echo "::error::Android App ID does not match the Firebase sender ID."
               exit 1
             fi
-            if [[ "${{ inputs.rich_notice_pilot }}" == true ]]; then
-              # A staging Supabase URL does NOT isolate Firebase topic subscribers.
-              # Refuse future rich-notice APK builds unless project IDs differ.
-              bash ../.github/scripts/check_qa_firebase_project_isolation.sh
-            fi
+            # Applies to EVERY Firebase-configured QA build. The generic
+            # connected build must not bypass the rich-notice audience boundary.
+            # Production-targeted QA also requires a matching Firebase project.
+            QA_FIREBASE_TARGET="$environment" bash ../.github/scripts/check_qa_firebase_project_isolation.sh
             echo "Android Firebase QA client configured; device delivery still requires opted-in physical testing."
           fi
 
