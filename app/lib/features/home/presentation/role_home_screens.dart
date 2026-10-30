@@ -118,6 +118,11 @@ class AdminHomeScreen extends StatelessWidget {
                       label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
                     ),
                     OutlinedButton.icon(
+                      onPressed: () => context.go('/admin/users'),
+                      icon: const Icon(Icons.people_alt_outlined),
+                      label: const Text('সকল ব্যবহারকারী'),
+                    ),
+                    OutlinedButton.icon(
                       onPressed: () => context.go('/admin/patients'),
                       icon: const Icon(Icons.search_rounded),
                       label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
@@ -143,8 +148,8 @@ class AdminHomeScreen extends StatelessWidget {
           SukunSectionHeader(
             title: 'রোগী ও অগ্রগতি',
             action: TextButton(
-              onPressed: () => context.go('/admin/patients'),
-              child: const Text('রোগীর তালিকা'),
+              onPressed: () => context.go('/admin/users'),
+              child: const Text('সকল ব্যবহারকারী'),
             ),
           ),
           const SizedBox(height: 10),
