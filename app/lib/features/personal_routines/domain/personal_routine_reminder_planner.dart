@@ -3,6 +3,22 @@ import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_se
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
 
+/// Daily wall-clock reminders do not fire retroactively. In particular,
+/// choosing the phone's current minute after its :00 second has passed means
+/// the next occurrence is tomorrow, not an immediate test notification.
+DateTime nextPersonalFixedOccurrence(
+  DateTime now, {
+  required int hour,
+  required int minute,
+}) {
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    throw RangeError('Invalid reminder wall-clock time');
+  }
+  final today = DateTime(now.year, now.month, now.day, hour, minute);
+  if (today.isAfter(now)) return today;
+  return DateTime(now.year, now.month, now.day + 1, hour, minute);
+}
+
 /// Bounded schedule of future reminders. This does not claim background
 /// delivery on Web; that depends on the gateway and active-tab state.
 List<ReminderSchedule> planPersonalRoutineReminders({

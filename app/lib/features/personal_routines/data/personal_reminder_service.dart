@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
@@ -49,10 +50,26 @@ class PersonalReminderService {
   Future<bool> enable() async {
     await local.initialize();
     if (!await local.requestPermission()) return false;
+    // An explicit reminder opt-in is the right time to request Android's
+    // separate exact alarm access. If declined, inexact reminders remain
+    // possible and the diagnostics screen must explain the limitation.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      if (!await local.canSchedulePrecisely()) {
+        await local.requestPreciseSchedulingPermission();
+      }
+    }
     final owner = repository.ownerId;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey(owner), true);
-    await refresh();
+    try {
+      await refresh();
+    } on Object {
+      // Do not claim that reminders are enabled if scheduling failed. The
+      // owner can retry without risking reminders left from a partial pass.
+      await prefs.setBool(_enabledKey(owner), false);
+      await cancelOwner(owner);
+      rethrow;
+    }
     return true;
   }
 
@@ -101,15 +118,28 @@ class PersonalReminderService {
     // stored under this owner-specific personal namespace.
     await cancelOwner(owner);
     final precise = await local.canSchedulePrecisely();
-    final ids = <String>[];
-    for (final reminder in scheduled) {
-      await local.schedule(reminder, precise: precise);
-      ids.add(reminder.notificationId.toString());
+    final ids = <int>[];
+    try {
+      for (final reminder in scheduled) {
+        await local.schedule(reminder, precise: precise);
+        ids.add(reminder.notificationId);
+      }
+      await (await SharedPreferences.getInstance()).setStringList(
+        _idsKey(owner),
+        ids.map((id) => id.toString()).toList(),
+      );
+      return ids.length;
+    } on Object {
+      // Do not leave a partially scheduled batch behind when an OS/plugin
+      // request fails after one or more alarms have already been installed.
+      for (final id in ids) {
+        try {
+          await local.cancel(id);
+        } on Object {
+          // The original scheduling error is the actionable failure.
+        }
+      }
+      rethrow;
     }
-    await (await SharedPreferences.getInstance()).setStringList(
-      _idsKey(owner),
-      ids,
-    );
-    return ids.length;
   }
 }

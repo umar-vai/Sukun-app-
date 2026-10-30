@@ -7,6 +7,14 @@ import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+/// Convert a scheduled instant to the timezone used by the notification
+/// plugin. Rebuilding a wall clock in a fallback UTC timezone can shift a
+/// reminder by hours (e.g. Asia/Dhaka +06), so preserve the original instant.
+tz.TZDateTime reminderDeliveryInstant(
+  DateTime scheduledAt, {
+  required tz.Location timezone,
+}) => tz.TZDateTime.from(scheduledAt, timezone);
+
 /// Accept only public notice artwork on our configured production or staging
 /// Supabase project. This must never fetch a patient asset or an arbitrary FCM
 /// supplied URL (including redirect-like query strings or host lookalikes).
@@ -220,18 +228,15 @@ final class PluginLocalNotificationsGateway
     ReminderSchedule reminder, {
     required bool precise,
   }) async {
-    final local = reminder.scheduledAt.toLocal();
     await _plugin.zonedSchedule(
       id: reminder.notificationId,
       title: reminder.title,
       body: reminder.body,
-      scheduledDate: tz.TZDateTime(
-        tz.local,
-        local.year,
-        local.month,
-        local.day,
-        local.hour,
-        local.minute,
+      // Preserve the requested instant even if Android returns an unknown
+      // timezone identifier and configureTimezone falls back to UTC.
+      scheduledDate: reminderDeliveryInstant(
+        reminder.scheduledAt,
+        timezone: tz.local,
       ),
       notificationDetails: _details,
       androidScheduleMode: precise

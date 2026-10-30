@@ -8,6 +8,18 @@ void main() {
   const routineId = 'b4ba5d60-81df-4688-81c8-b1064f7cf45e';
   const ownerId = 'c4ba5d60-81df-4688-81c8-b1064f7cf45e';
 
+  test('a fixed time in the current minute is next scheduled tomorrow', () {
+    final now = DateTime(2026, 10, 31, 0, 32, 12);
+    final next = nextPersonalFixedOccurrence(now, hour: 0, minute: 32);
+    expect(next, DateTime(2026, 11, 1, 0, 32));
+  });
+
+  test('a fixed time ahead today remains scheduled today', () {
+    final now = DateTime(2026, 10, 31, 0, 27);
+    final next = nextPersonalFixedOccurrence(now, hour: 0, minute: 32);
+    expect(next, DateTime(2026, 10, 31, 0, 32));
+  });
+
   test('fixed-time reminder has direct safe personal action payload', () {
     final rows = [
       {

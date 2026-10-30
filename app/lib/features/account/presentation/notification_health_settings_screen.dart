@@ -121,6 +121,46 @@ class _NotificationHealthSettingsScreenState
     }
   });
 
+  Future<void> _sendTestNotification() => _change(() async {
+    final gateway = ref.read(localNotificationsGatewayProvider);
+    await gateway.initialize();
+    if (!await gateway.isPermissionGranted()) {
+      if (mounted) {
+        setState(() => _notice = 'প্রথমে ফোনে নোটিফিকেশন অনুমতি দিন।');
+      }
+      return;
+    }
+    await gateway.showRemote(
+      title: 'সুকুন লাইফ · টেস্ট নোটিফিকেশন',
+      body: 'এই বার্তাটি আপনার ফোনের নোটিফিকেশন প্যানেলে দেখা যাওয়ার কথা।',
+    );
+    if (mounted) {
+      setState(
+        () => _notice = 'টেস্ট নোটিফিকেশন পাঠানো হয়েছে। ফোনের নোটিফিকেশন প্যানেল পরীক্ষা করুন।',
+      );
+    }
+  });
+
+  Future<void> _reschedulePersonal() => _change(() async {
+    final service = ref.read(personalReminderServiceProvider);
+    if (!await service.isEnabled()) {
+      if (mounted) {
+        setState(
+          () => _notice = 'নিজের তৈরি রুটিনের রিমাইন্ডার আগে চালু করুন।',
+        );
+      }
+      return;
+    }
+    final count = await service.refresh();
+    if (mounted) {
+      setState(
+        () => _notice = count == 0
+            ? 'এখন কোনো ভবিষ্যৎ রিমাইন্ডার শিডিউল হয়নি। সক্রিয় রুটিন ও সময় পরীক্ষা করুন।'
+            : '$countটি আসন্ন রিমাইন্ডার শিডিউল করা হয়েছে। ফোনের ব্যাটারি ও অ্যালার্ম অনুমতি ডেলিভারি প্রভাবিত করতে পারে।',
+      );
+    }
+  });
+
   Future<void> _togglePersonal(bool enabled) => _change(() async {
     final service = ref.read(personalReminderServiceProvider);
     if (enabled) {
@@ -195,6 +235,17 @@ class _NotificationHealthSettingsScreenState
                                 ),
                         ),
                       ),
+                      if (_permissionGranted == true)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => unawaited(_sendTestNotification()),
+                            icon: const Icon(Icons.notification_add_outlined),
+                            label: const Text('এখন টেস্ট নোটিফিকেশন পাঠান'),
+                          ),
+                        ),
                       if (_permissionGranted == false)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -227,11 +278,23 @@ class _NotificationHealthSettingsScreenState
                                 ? null
                                 : () => unawaited(
                                     _change(() async {
-                                      await ref
+                                      final granted = await ref
                                           .read(
                                             localNotificationsGatewayProvider,
                                           )
                                           .requestPreciseSchedulingPermission();
+                                      if (granted &&
+                                          await ref
+                                              .read(
+                                                personalReminderServiceProvider,
+                                              )
+                                              .isEnabled()) {
+                                        await ref
+                                            .read(
+                                              personalReminderServiceProvider,
+                                            )
+                                            .refresh();
+                                      }
                                     }),
                                   ),
                             child: const Text('পরীক্ষা করুন'),
@@ -261,6 +324,18 @@ class _NotificationHealthSettingsScreenState
                             ? null
                             : (value) => unawaited(_togglePersonal(value)),
                       ),
+                      if (_personalEnabled == true) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => unawaited(_reschedulePersonal()),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('রিমাইন্ডার আবার শিডিউল করুন'),
+                          ),
+                        ),
+                      ],
                       if (patient) ...[
                         const Divider(height: 1),
                         SwitchListTile(
