@@ -1,7 +1,8 @@
 -- Explicit Super Admin-only delegation and scoped, audited progress reads.
 -- Individual users still own all personal routine, action and progress rows.
 -- This migration deliberately does NOT expand their existing RLS policies.
--- Admin-created routines and actions are inactive until their owner opts in.
+-- Admin-created ROUTINES remain inactive until their owner opts in.
+-- Their actions are ready but cannot schedule while the parent routine is off.
 create or replace function public.admin_create_user_routine(
   p_target_user_id uuid,
   p_title text,
@@ -64,7 +65,7 @@ begin
       schedule_kind,resource_provider,is_active
     ) values (
       v_routine,p_target_user_id,v_step_title,v_step_title,
-      'manual','manual',false
+      'manual','manual',true
     ) returning id into v_action;
 
     v_count := v_count + 1;
