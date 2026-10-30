@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -175,6 +176,25 @@ String? ruqyahTrustedVerseAudioUrl(Object? audio) {
     return null;
   }
   return value;
+}
+
+/// just_audio_background requires every source to carry a MediaItem tag.
+/// Without a tag a native Android player can reject setAudioSource even when
+/// the Quran provider returns a valid HTTPS URL. Keep the metadata generic and
+/// cite only the exact start verse or the named section recording.
+AudioSource ruqyahTaggedAudioSource({
+  required String url,
+  required String id,
+  required String title,
+}) {
+  final uri = Uri.parse(url);
+  if (uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.host.isEmpty) {
+    throw const FormatException('Invalid secure Ruqyah audio URL');
+  }
+  return AudioSource.uri(
+    uri,
+    tag: MediaItem(id: id, title: title, album: 'Sukun Life'),
+  );
 }
 
 class _FirstAyahBangla {
@@ -558,7 +578,13 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
         }
         verifiedAudioUri = Uri.parse(url);
         await _audioPlayer.stop();
-        await _audioPlayer.setUrl(url);
+        await _audioPlayer.setAudioSource(
+          ruqyahTaggedAudioSource(
+            url: url,
+            id: 'ruqyah-start-${entry.slug}',
+            title: entry.citation!,
+          ),
+        );
         if (!mounted) return;
         _playingSlug = entry.slug;
         unawaited(_audioPlayer.play());
@@ -608,7 +634,13 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       } else {
         setState(() => _loadingAudio = true);
         await _audioPlayer.stop();
-        await _audioPlayer.setUrl(url);
+        await _audioPlayer.setAudioSource(
+          ruqyahTaggedAudioSource(
+            url: url,
+            id: 'ruqyah-section-$slug',
+            title: ruqyahSections[_section].title,
+          ),
+        );
         if (!mounted) return;
         _playingSlug = slug;
         unawaited(_audioPlayer.play());
