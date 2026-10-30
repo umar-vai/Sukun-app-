@@ -248,17 +248,17 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                             final excluded = widget.excludedReferences.contains(
                               choice.reference,
                             );
-                            final translated = (verse['translations'] as List? ??
-                                    const [])
-                                .whereType<Map>()
-                                .where(
-                                  (item) =>
-                                      (item['language_name'] ?? '')
-                                          .toString()
-                                          .toLowerCase() ==
-                                      'bengali',
-                                )
-                                .toList(growable: false);
+                            final translated =
+                                (verse['translations'] as List? ?? const [])
+                                    .whereType<Map>()
+                                    .where(
+                                      (item) =>
+                                          (item['language_name'] ?? '')
+                                              .toString()
+                                              .toLowerCase() ==
+                                          'bengali',
+                                    )
+                                    .toList(growable: false);
                             final bangla = translated.isEmpty
                                 ? null
                                 : translated.first['text']?.toString();
@@ -275,7 +275,8 @@ class _CanonicalAyahPickerState extends State<_CanonicalAyahPicker> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (bangla != null && bangla.trim().isNotEmpty)
+                                  if (bangla != null &&
+                                      bangla.trim().isNotEmpty)
                                     Text(
                                       bangla,
                                       maxLines: 3,
