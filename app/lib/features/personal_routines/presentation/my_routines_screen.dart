@@ -274,8 +274,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                           title: Text(
                             selectedItem.provider == 'quran'
                                 ? selectedItem.ayahNumber == null
-                                    ? 'সূরা ${selectedItem.surahNumber}'
-                                    : 'সূরা ${selectedItem.surahNumber} · আয়াত ${selectedItem.ayahNumber}'
+                                      ? 'সূরা ${selectedItem.surahNumber}'
+                                      : 'সূরা ${selectedItem.surahNumber} · আয়াত ${selectedItem.ayahNumber}'
                                 : resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
                           ),
                           subtitle: Text(
