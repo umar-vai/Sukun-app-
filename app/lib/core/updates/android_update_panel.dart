@@ -146,7 +146,11 @@ Future<void> checkAndroidUpdateManually(BuildContext context) async {
     if (!context.mounted) return;
     if (release == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('আপনার অ্যাপের সর্বশেষ সংস্করণ রয়েছে।')),
+        const SnackBar(
+          content: Text(
+            'এই মুহূর্তে নতুন কোনো প্রকাশিত অ্যাপ আপডেট পাওয়া যায়নি।',
+          ),
+        ),
       );
       return;
     }
