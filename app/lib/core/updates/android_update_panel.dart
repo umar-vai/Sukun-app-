@@ -244,8 +244,9 @@ class _AndroidUpdatePanelState extends State<AndroidUpdatePanel> {
         _progress = state.progress;
       });
       if (state.state == 'ready') {
+        // The verified APK is ready. Let the user tap "ইনস্টল করুন" rather
+        // than automatically opening Android's installer after download.
         _poll?.cancel();
-        await _install();
       } else if (state.state == 'failed' || state.state == 'integrity_failed') {
         _poll?.cancel();
         setState(() {
