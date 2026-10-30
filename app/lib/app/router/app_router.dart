@@ -405,7 +405,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminRoutineTemplatesScreen(),
           ),
           GoRoute(
-            path: '/admin/users',
+            path: '/admin/user-routines',
             builder: (context, state) => const AdminUserRoutinesScreen(),
           ),
           GoRoute(
