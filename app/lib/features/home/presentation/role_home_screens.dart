@@ -128,7 +128,7 @@ class AdminHomeScreen extends StatelessWidget {
                       label: const Text('প্রস্তুত রুটিন'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/users'),
+                      onPressed: () => context.go('/admin/user-routines'),
                       icon: const Icon(Icons.assignment_ind_outlined),
                       label: const Text('ব্যবহারকারীর রুটিন ও অগ্রগতি'),
                     ),
