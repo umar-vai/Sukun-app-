@@ -48,6 +48,8 @@ void main() {
   testWidgets('admin opens the same public resource library as members', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final router = GoRouter(
       initialLocation: '/admin/dashboard',
       routes: [
@@ -76,6 +78,8 @@ void main() {
       250,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.ensureVisible(sharedLibrary);
+    await tester.pumpAndSettle();
     await tester.tap(sharedLibrary);
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/resources');
