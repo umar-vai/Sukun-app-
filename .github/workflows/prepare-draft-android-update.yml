@@ -1,0 +1,136 @@
+name: Prepare Draft Android Update — Manual Only
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Successful signed Android Sideload run ID'
+        type: string
+        required: true
+      version_name:
+        description: 'Signed versionName (example 1.0.2)'
+        type: string
+        required: true
+      version_code:
+        description: 'Signed versionCode (example 3)'
+        type: string
+        required: true
+      approve_draft:
+        description: 'I approve a private draft release, NOT public publication'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: sukun-android-draft-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Verify signed APK and prepare review-only draft
+    if: ${{ github.ref == 'refs/heads/main' && inputs.approve_draft == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: android-sideload-release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      VERSION: ${{ inputs.version_name }}
+      CODE: ${{ inputs.version_code }}
+      APPROVED_CERT: ${{ vars.SUKUN_SIDELOAD_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify owner-approved successful workflow run
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$CODE" =~ ^[1-9][0-9]*$ ]]
+          [[ "$APPROVED_CERT" =~ ^([A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}$ ]]
+          info=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")
+          [[ "$(jq -r '.name' <<<"$info")" == 'Official Android Sideload APK — Manual Only' ]]
+          [[ "$(jq -r '.path' <<<"$info")" == '.github/workflows/android-sideload-release.yml' ]]
+          [[ "$(jq -r '.conclusion' <<<"$info")" == 'success' ]]
+          [[ "$(jq -r '.status' <<<"$info")" == 'completed' ]]
+          [[ "$(jq -r '.event' <<<"$info")" == 'workflow_dispatch' ]]
+          [[ "$(jq -r '.head_branch' <<<"$info")" == 'main' ]]
+          source_sha=$(jq -r '.head_sha' <<<"$info")
+          [[ "$source_sha" =~ ^[a-f0-9]{40}$ ]]
+          git merge-base --is-ancestor "$source_sha" "$GITHUB_SHA"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo '::error::Release exists; never overwrite'; exit 1
+          fi
+          echo "SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+      - name: Download precisely this signed run artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.source_run_id }}
+          name: sukunlife-signed-sideload-apk
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Verify package, version, checksum, signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=candidate/app-release.apk
+          sums=candidate/SHA256SUMS.txt
+          test -s "$apk" && test -s "$sums"
+          [[ "$(wc -l < "$sums")" -eq 1 ]]
+          expected_sha=$(awk '{print $1}' "$sums")
+          [[ "$expected_sha" =~ ^[a-fA-F0-9]{64}$ ]]
+          real_sha=$(sha256sum "$apk" | awk '{print $1}')
+          [[ "${expected_sha,,}" == "$real_sha" ]]
+          size=$(stat -c '%s' "$apk")
+          (( size > 1048576 && size <= 136314880 ))
+          test -n "${ANDROID_HOME:-}"
+          aapt=$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name aapt -type f | sort -V | tail -1)
+          signer_tool=$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)
+          test -x "$aapt" && test -x "$signer_tool"
+          line=$("$aapt" dump badging "$apk" | grep -m1 '^package:')
+          pkg=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<<"$line")
+          actual_code=$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" <<<"$line")
+          actual_version=$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" <<<"$line")
+          [[ "$pkg" == 'com.sukunlife.app' && "$actual_code" == "$CODE" && "$actual_version" == "$VERSION" ]]
+          cert=$("$signer_tool" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)
+          [[ "$cert" =~ ^[a-fA-F0-9]{64}$ ]]
+          approved=$(printf '%s' "$APPROVED_CERT" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          [[ "${cert,,}" == "$approved" ]]
+          mv "$apk" candidate/SukunLife.apk
+          echo "APK_SHA=$real_sha" >> "$GITHUB_ENV"
+          echo "APK_BYTES=$size" >> "$GITHUB_ENV"
+      - name: Create a non-public DRAFT GitHub Release and candidate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          printf 'Sukun Life %s (%s)\nInternal testing candidate. NOT approved for general distribution.\n' \
+            "$VERSION" "$CODE" > candidate/notes.txt
+          gh release create "$tag" candidate/SukunLife.apk \
+            --draft --target "$SOURCE_SHA" \
+            --title "Sukun Life $VERSION (Internal QA candidate)" \
+            --notes-file candidate/notes.txt
+          [[ "$(gh release view "$tag" --json isDraft --jq '.isDraft')" == 'true' ]]
+          jq -n \
+            --arg version "$VERSION" --argjson code "$CODE" \
+            --arg url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/SukunLife.apk" \
+            --arg sha "$APK_SHA" --argjson bytes "$APK_BYTES" \
+            '{schema_version:1,platform:"android",package_name:"com.sukunlife.app",enabled:true,version_code:$code,version_name:$version,min_supported_version_code:0,apk_url:$url,sha256:$sha,size_bytes:$bytes,notes_bn:"যাচাইকৃত নতুন সংস্করণ।"}' \
+            > candidate/android-manifest-REVIEW-ONLY.json
+          {
+            echo '## Draft APK prepared; no public release or feed publication'
+            echo "Tag: $tag, source run: $SOURCE_RUN_ID"
+            echo "Version: $VERSION ($CODE), size: $APK_BYTES bytes, SHA256: $APK_SHA"
+            echo 'Owner must finish real-device QA, publish the draft manually, and separately review an update-feed PR.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve candidate feed JSON for a later owner-reviewed pull request
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-manifest-REVIEW-ONLY
+          path: candidate/android-manifest-REVIEW-ONLY.json
+          retention-days: 14
+          if-no-files-found: error
