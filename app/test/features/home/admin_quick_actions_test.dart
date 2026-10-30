@@ -25,6 +25,11 @@ void main() {
               const Scaffold(body: Text('Patient list destination')),
         ),
         GoRoute(
+          path: '/admin/users',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Admin user routines destination')),
+        ),
+        GoRoute(
           path: '/admin/content',
           builder: (context, state) =>
               const Scaffold(body: Text('Content destination')),
@@ -44,5 +49,31 @@ void main() {
       '/admin/patients/new',
     );
     expect(find.text('Create patient destination'), findsOneWidget);
+  });
+  testWidgets('admin can navigate to user progress and routine delegation', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/admin/dashboard',
+      routes: [
+        GoRoute(
+          path: '/admin/dashboard',
+          builder: (context, state) => const AdminHomeScreen(),
+        ),
+        GoRoute(
+          path: '/admin/users',
+          builder: (context, state) => const Scaffold(
+            body: Text('Admin user routines destination'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ব্যবহারকারীর রুটিন ও অগ্রগতি'));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/admin/users');
+    expect(find.text('Admin user routines destination'), findsOneWidget);
   });
 }
