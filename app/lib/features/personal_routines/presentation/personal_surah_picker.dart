@@ -14,9 +14,33 @@ Future<int?> showPersonalSurahPicker({
 );
 
 int? quranNumberFromRef(String? reference) {
-  if (reference == null || !reference.startsWith('quran:')) return null;
-  final number = int.tryParse(reference.substring('quran:'.length));
-  return number != null && number >= 1 && number <= 114 ? number : null;
+  if (reference == null) return null;
+  final parts = reference.split(':');
+  if ((parts.length != 2 && parts.length != 3) || parts[0] != 'quran') {
+    return null;
+  }
+  final number = int.tryParse(parts[1]);
+  if (number == null || number < 1 || number > 114) return null;
+  if (parts.length == 3 && quranAyahNumberFromRef(reference) == null) {
+    return null;
+  }
+  return number;
+}
+
+int? quranAyahNumberFromRef(String? reference) {
+  if (reference == null) return null;
+  final parts = reference.split(':');
+  if (parts.length != 3 || parts[0] != 'quran') return null;
+  final surah = int.tryParse(parts[1]);
+  final ayah = int.tryParse(parts[2]);
+  return surah != null &&
+          surah >= 1 &&
+          surah <= 114 &&
+          ayah != null &&
+          ayah >= 1 &&
+          ayah <= 286
+      ? ayah
+      : null;
 }
 
 class _PersonalSurahPicker extends StatefulWidget {

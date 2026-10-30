@@ -45,4 +45,40 @@ void main() {
     );
     expect(find.text('Create patient destination'), findsOneWidget);
   });
+  testWidgets('admin opens the same public resource library as members', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final router = GoRouter(
+      initialLocation: '/admin/dashboard',
+      routes: [
+        GoRoute(
+          path: '/admin/dashboard',
+          builder: (context, state) => const AdminHomeScreen(),
+        ),
+        GoRoute(
+          path: '/resources',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Shared public resource library')),
+        ),
+        GoRoute(
+          path: '/admin/patients',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Patient list')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    final sharedLibrary = find.text('সবার লাইব্রেরি');
+    await tester.ensureVisible(sharedLibrary);
+    await tester.pumpAndSettle();
+    await tester.tap(sharedLibrary);
+    await tester.pumpAndSettle();
+    // go_router.push adds an imperative page while the route information
+    // provider can retain the underlying dashboard URI.
+    expect(find.text('Shared public resource library'), findsOneWidget);
+  });
 }

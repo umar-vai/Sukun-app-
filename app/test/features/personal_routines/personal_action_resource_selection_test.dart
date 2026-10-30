@@ -25,6 +25,34 @@ void main() {
     PersonalActionResourceSelection.validate(selected);
   });
 
+  test('specific Quran ayat have stable references and remain distinct', () {
+    final selections = PersonalActionResourceSelection.fromLinks([
+      {'provider': 'quran', 'external_resource_ref': 'quran:2:255'},
+      {'provider': 'quran', 'external_resource_ref': 'quran:2'},
+      {'provider': 'quran', 'external_resource_ref': 'quran:2:255'},
+      {'provider': 'quran', 'external_resource_ref': 'quran:114:6'},
+    ]);
+    expect(selections.map((item) => item.key), [
+      'quran:2:255',
+      'quran:2',
+      'quran:114:6',
+    ]);
+    expect(selections.first.ayahNumber, 255);
+    expect(selections.first.rpcValue, {
+      'provider': 'quran',
+      'external_resource_ref': 'quran:2:255',
+    });
+    PersonalActionResourceSelection.validate(selections);
+    expect(
+      PersonalActionResourceSelection.fromLinks([
+        {'provider': 'quran', 'external_resource_ref': 'quran:2:287'},
+        {'provider': 'quran', 'external_resource_ref': 'quran:2:0'},
+        {'provider': 'quran', 'external_resource_ref': 'quran:115:1'},
+      ]),
+      isEmpty,
+    );
+  });
+
   test('legacy single CMS link survives without creating a duplicate', () {
     final legacy = PersonalActionResourceSelection.fromLinks(
       [],

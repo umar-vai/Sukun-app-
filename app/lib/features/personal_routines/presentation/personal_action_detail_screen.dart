@@ -187,10 +187,13 @@ class _ResourceReferenceTile extends StatelessWidget {
     final surahNumber = provider == 'quran'
         ? quranNumberFromRef(external)
         : null;
+    final ayahNumber = provider == 'quran'
+        ? quranAyahNumberFromRef(external)
+        : null;
     final route = canOpen
         ? '/resources/${Uri.encodeComponent(id)}'
         : surahNumber != null
-        ? '/resources/quran/$surahNumber'
+        ? '/resources/quran/$surahNumber${ayahNumber == null ? '' : '?ayah=$ayahNumber'}'
         : null;
     final audioResource = canOpen && cms['type'] == 'audio'
         ? LinkedResource(
@@ -217,7 +220,9 @@ class _ResourceReferenceTile extends StatelessWidget {
           provider == 'cms'
               ? name
               : surahNumber != null
-              ? 'সূরা $surahNumber'
+              ? ayahNumber == null
+                    ? 'সূরা $surahNumber'
+                    : 'সূরা $surahNumber · আয়াত $ayahNumber'
               : 'রিসোর্স অনুপলব্ধ',
         ),
         subtitle: Text(

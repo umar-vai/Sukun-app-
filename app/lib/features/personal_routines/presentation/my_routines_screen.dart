@@ -17,6 +17,7 @@ import 'package:sukun_life/features/personal_routines/domain/personal_routine_re
 import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
+import 'package:sukun_life/features/resources/presentation/canonical_quran_ayah_picker.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -216,7 +217,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     final resourceRows = await Supabase.instance.client
         .from('content_items')
         .select(
-          'id,slug,title,title_bn,type,status,visibility,verification_status,media_source_type,media_url,category_id',
+          'id,slug,title,title_bn,type,status,visibility,verification_status,'
+          'media_source_type,media_url,category_id,surah_number,ayah_number,'
+          'ayah_end_number,content_categories(id,name,name_bn,slug,sort_order)',
         )
         .eq('status', 'published')
         .eq('visibility', 'public')
@@ -270,7 +273,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                           dense: true,
                           title: Text(
                             selectedItem.provider == 'quran'
-                                ? 'সূরা ${selectedItem.surahNumber}'
+                                ? selectedItem.ayahNumber == null
+                                      ? 'সূরা ${selectedItem.surahNumber}'
+                                      : 'সূরা ${selectedItem.surahNumber} · আয়াত ${selectedItem.ayahNumber}'
                                 : resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
                           ),
                           subtitle: Text(
@@ -373,7 +378,37 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                             }
                           },
                     icon: const Icon(Icons.menu_book_outlined),
-                    label: const Text('কুরআন থেকে সূরা বাছুন'),
+                    label: const Text('কুরআন থেকে সম্পূর্ণ সূরা বাছুন'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: selected.length >= 16
+                        ? null
+                        : () async {
+                            final choice = await showCanonicalQuranAyahPicker(
+                              context: ctx,
+                              excludedReferences: selected
+                                  .where((item) => item.provider == 'quran')
+                                  .map((item) => item.key)
+                                  .toSet(),
+                            );
+                            if (choice != null &&
+                                ctx.mounted &&
+                                !selected.any(
+                                  (item) => item.key == choice.reference,
+                                )) {
+                              update(
+                                () => selected.add(
+                                  PersonalActionResourceSelection.quranAyah(
+                                    choice.surahNumber,
+                                    choice.ayahNumber,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.format_list_numbered_rounded),
+                    label: const Text('কুরআনের নির্দিষ্ট আয়াত বাছুন'),
                   ),
                   const SizedBox(height: 16),
                   TextField(

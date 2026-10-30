@@ -8,6 +8,18 @@ void main() {
     expect(quranNumberFromRef('quran:114'), 114);
   });
 
+  test('specific Quran ayah deep links resolve safely', () {
+    expect(quranNumberFromRef('quran:2:255'), 2);
+    expect(quranAyahNumberFromRef('quran:2:255'), 255);
+    expect(quranNumberFromRef('quran:114:6'), 114);
+    expect(quranAyahNumberFromRef('quran:114:6'), 6);
+    expect(quranAyahNumberFromRef('quran:2'), isNull);
+    for (final bad in ['quran:2:0', 'quran:2:287', 'quran:115:1']) {
+      expect(quranNumberFromRef(bad), isNull);
+      expect(quranAyahNumberFromRef(bad), isNull);
+    }
+  });
+
   test('malformed or out-of-range references never become links', () {
     for (final invalid in [
       null,
