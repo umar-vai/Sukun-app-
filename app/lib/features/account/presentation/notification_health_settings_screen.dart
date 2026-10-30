@@ -121,6 +121,27 @@ class _NotificationHealthSettingsScreenState
     }
   });
 
+  Future<void> _sendTestNotification() => _change(() async {
+    final gateway = ref.read(localNotificationsGatewayProvider);
+    await gateway.initialize();
+    if (!await gateway.isPermissionGranted()) {
+      if (mounted) {
+        setState(() => _notice = 'প্রথমে ফোনে নোটিফিকেশন অনুমতি দিন।');
+      }
+      return;
+    }
+    await gateway.showRemote(
+      title: 'সুকুন লাইফ · টেস্ট নোটিফিকেশন',
+      body: 'এই বার্তাটি আপনার ফোনের নোটিফিকেশন প্যানেলে দেখা যাওয়ার কথা।',
+    );
+    if (mounted) {
+      setState(
+        () => _notice =
+            'টেস্ট নোটিফিকেশন পাঠানো হয়েছে। ফোনের নোটিফিকেশন প্যানেল পরীক্ষা করুন।',
+      );
+    }
+  });
+
   Future<void> _reschedulePersonal() => _change(() async {
     final service = ref.read(personalReminderServiceProvider);
     if (!await service.isEnabled()) {
@@ -213,6 +234,17 @@ class _NotificationHealthSettingsScreenState
                                 ),
                         ),
                       ),
+                      if (_permissionGranted == true)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => unawaited(_sendTestNotification()),
+                            icon: const Icon(Icons.notification_add_outlined),
+                            label: const Text('এখন টেস্ট নোটিফিকেশন পাঠান'),
+                          ),
+                        ),
                       if (_permissionGranted == false)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
