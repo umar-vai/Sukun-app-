@@ -389,41 +389,60 @@ class SukunSearchField extends StatelessWidget {
   final VoidCallback? onClear;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: SukunColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: SukunColors.nightNavy.withValues(alpha: 0.045),
-          blurRadius: 18,
-          offset: const Offset(0, 6),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = isDark ? scheme.surfaceContainerLow : Colors.white;
+    final contentColor = scheme.onSurface;
+    final subtleColor = scheme.onSurface.withValues(alpha: isDark ? 0.74 : 0.64);
+
+    return Container(
+      key: const Key('sukun-search-surface'),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? scheme.outline.withValues(alpha: 0.62)
+              : SukunColors.border,
         ),
-      ],
-    ),
-    child: TextField(
-      controller: controller,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: hintText,
-        prefixIcon: const Icon(Icons.search_rounded),
-        suffixIcon: controller.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: 'Clear search',
-                onPressed: onClear,
-                icon: const Icon(Icons.close_rounded),
-              ),
-        filled: false,
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
+        boxShadow: isDark
+            ? const []
+            : [
+                BoxShadow(
+                  color: SukunColors.nightNavy.withValues(alpha: 0.045),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
       ),
-    ),
-  );
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        textInputAction: TextInputAction.search,
+        style: theme.textTheme.bodyMedium?.copyWith(color: contentColor),
+        cursorColor: scheme.primary,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: theme.textTheme.bodyMedium?.copyWith(color: subtleColor),
+          prefixIcon: Icon(Icons.search_rounded, color: subtleColor),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: onClear,
+                  icon: Icon(Icons.close_rounded, color: subtleColor),
+                ),
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
+      ),
+    );
+  }
 }
 
 class SukunChoiceOption<T> {
