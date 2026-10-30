@@ -57,6 +57,12 @@ jobs:
       SUKUN_UPLOAD_KEY_PASSWORD: ${{ secrets.SUKUN_SIDELOAD_KEY_PASSWORD }}
       PUBLIC_SUPABASE_URL: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_URL }}
       PUBLIC_SUPABASE_KEY: ${{ secrets.SUKUN_PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      # Public Android Firebase client identifiers, never the server service account.
+      PRODUCTION_FIREBASE_PROJECT_ID: ${{ vars.SUKUN_PRODUCTION_FIREBASE_PROJECT_ID }}
+      PRODUCTION_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_PRODUCTION_FIREBASE_SENDER_ID }}
+      PRODUCTION_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_PRODUCTION_FIREBASE_ANDROID_API_KEY }}
+      PRODUCTION_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_PRODUCTION_FIREBASE_ANDROID_APP_ID }}
+      PRODUCTION_MEMBER_SIGNUP_READY: ${{ vars.SUKUN_PRODUCTION_MEMBER_SIGNUP_READY }}
 
     steps:
       - uses: actions/checkout@v5
@@ -85,6 +91,13 @@ jobs:
           [[ "$RELEASE_CHANNEL" != "public" || "$APPROVED_GOOGLE_OAUTH" == "true" ]] || {
             echo "::error::Public APK needs approved device-level Google OAuth QA"; exit 1;
           }
+          if [[ "$RELEASE_CHANNEL" == "public" && "$PRODUCTION_MEMBER_SIGNUP_READY" != "true" ]]; then
+            echo "::error::Public APK requires verified Production member signup and email verification policy."
+            exit 1
+          fi
+          # Fail closed before touching signing keys when production FCM values are
+          # absent. Native QA must then prove real delivery on a physical phone.
+          bash ../.github/scripts/verify-production-android-client.sh
           echo "Manual release policy accepted; no Play upload is configured."
 
       - uses: actions/setup-java@v4
@@ -129,8 +142,23 @@ jobs:
             --dart-define=APP_ENVIRONMENT=production \
             --dart-define="SUPABASE_URL=$PUBLIC_SUPABASE_URL" \
             --dart-define="SUPABASE_PUBLISHABLE_KEY=$PUBLIC_SUPABASE_KEY" \
-            --dart-define="ENABLE_GOOGLE_OAUTH=$APPROVED_GOOGLE_OAUTH"
+            --dart-define="FIREBASE_PROJECT_ID=$PRODUCTION_FIREBASE_PROJECT_ID" \
+            --dart-define="FIREBASE_MESSAGING_SENDER_ID=$PRODUCTION_FIREBASE_SENDER_ID" \
+            --dart-define="FIREBASE_ANDROID_API_KEY=$PRODUCTION_FIREBASE_ANDROID_API_KEY" \
+            --dart-define="FIREBASE_ANDROID_APP_ID=$PRODUCTION_FIREBASE_ANDROID_APP_ID" \
+            --dart-define="ENABLE_GOOGLE_OAUTH=true" \
+            --dart-define="ENABLE_MEMBER_SIGNUP=true"
           test -s build/app/outputs/flutter-apk/app-release.apk
+          # Universal release APK supports 32/64-bit devices; unlike the
+          # previous debug QA APK it uses optimized Flutter AOT compilation.
+          # Enforce an initial generous ceiling and record actual bytes. Size
+          # optimization decisions must be based on a measured signed artifact.
+          size=$(stat -c '%s' build/app/outputs/flutter-apk/app-release.apk)
+          echo "Universal signed release APK size: $size bytes" >> "$GITHUB_STEP_SUMMARY"
+          if (( size > 130 * 1024 * 1024 )); then
+            echo "::error::Release APK exceeds 130 MiB budget. Investigate assets/ABIs before distribution."
+            exit 1
+          fi
 
       - name: Record artifact checksum (NOT auto-publish)
         shell: bash
