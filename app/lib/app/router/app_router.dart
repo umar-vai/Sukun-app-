@@ -22,6 +22,7 @@ import 'package:sukun_life/features/content_admin/presentation/admin_content_edi
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_collections_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
+import 'package:sukun_life/features/content_admin/presentation/admin_shared_library_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
@@ -45,6 +46,7 @@ import 'package:sukun_life/features/patients/presentation/create_patient_screen.
 import 'package:sukun_life/features/patients/presentation/create_prescription_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
+import 'package:sukun_life/features/patients/presentation/admin_all_users_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
@@ -408,6 +410,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => AdminHomeScreen(
               displayName: _adminSession(session)?.displayName,
             ),
+          ),
+          GoRoute(
+            path: '/admin/users',
+            builder: (context, state) => const AdminAllUsersScreen(),
+          ),
+          GoRoute(
+            path: '/admin/library',
+            builder: (context, state) => const AdminSharedLibraryScreen(),
           ),
           GoRoute(
             path: '/admin/patients',
