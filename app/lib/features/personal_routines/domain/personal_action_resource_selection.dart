@@ -52,9 +52,10 @@ final class PersonalActionResourceSelection {
             : null;
         final ayah = parts.length == 3 ? int.tryParse(parts[2]) : null;
         if ((parts.length == 2 || parts.length == 3) &&
-            surah != null && surah >= 1 && surah <= 114 &&
-            (parts.length == 2 ||
-                (ayah != null && ayah >= 1 && ayah <= 286))) {
+            surah != null &&
+            surah >= 1 &&
+            surah <= 114 &&
+            (parts.length == 2 || (ayah != null && ayah >= 1 && ayah <= 286))) {
           value = ayah == null
               ? PersonalActionResourceSelection.quran(surah)
               : PersonalActionResourceSelection.quranAyah(surah, ayah);
