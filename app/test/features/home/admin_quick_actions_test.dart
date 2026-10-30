@@ -45,4 +45,36 @@ void main() {
     );
     expect(find.text('Create patient destination'), findsOneWidget);
   });
+  testWidgets('admin opens the same public resource library as members', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/admin/dashboard',
+      routes: [
+        GoRoute(
+          path: '/admin/dashboard',
+          builder: (context, state) => const AdminHomeScreen(),
+        ),
+        GoRoute(
+          path: '/resources',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Shared public resource library')),
+        ),
+        GoRoute(
+          path: '/admin/patients',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Patient list')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    final sharedLibrary = find.text('লাইব্রেরি খুলুন');
+    await tester.ensureVisible(sharedLibrary);
+    await tester.tap(sharedLibrary);
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
+    expect(find.text('Shared public resource library'), findsOneWidget);
+  });
 }
