@@ -103,7 +103,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('ব্যবহারকারীর রুটিন ও অগ্রগতি'));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/admin/user-routines');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/admin/user-routines',
+    );
     expect(find.text('Admin user routines destination'), findsOneWidget);
   });
 }
