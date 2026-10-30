@@ -87,7 +87,11 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         if (!granted) {
           _notice('রিমাইন্ডারের জন্য নোটিফিকেশন অনুমতি প্রয়োজন।');
         } else {
-          _notice('রিমাইন্ডার চালু। ব্রাউজারে শুধু খোলা ট্যাবে কাজ করবে।');
+          _notice(
+            kIsWeb
+                ? 'রিমাইন্ডার চালু। ব্রাউজারে শুধু খোলা ট্যাবে কাজ করবে।'
+                : 'রিমাইন্ডার চালু। নির্দিষ্ট সময়ে পেতে অ্যালার্মের অনুমতি ও ফোনের ব্যাটারি সেটিংস পরীক্ষা করুন।',
+          );
         }
       }
       await _readReminderEnabled();
@@ -480,6 +484,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       ),
     );
     if (result == true) {
+      var saved = false;
       await _mutate(() async {
         final resourceId = selected
             .where((item) => item.provider == 'cms')
@@ -514,7 +519,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
           actionId: savedId,
           orderedResources: selected,
         );
+        saved = true;
       });
+      // Saving a time does not grant notification permission or opt the user
+      // in. Explain the additional step instead of promising delivery.
+      if (saved &&
+          kind != 'manual' &&
+          !await ref.read(personalReminderServiceProvider).isEnabled()) {
+        _notice(
+          'সময় সংরক্ষিত হয়েছে। নোটিফিকেশন পেতে রুটিন পেজের ঘণ্টা আইকন থেকে রিমাইন্ডার চালু করুন।',
+        );
+      }
     }
     title.dispose();
     reminder.dispose();
