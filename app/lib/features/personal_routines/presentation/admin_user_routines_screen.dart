@@ -204,7 +204,8 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
                         selected: selectedId,
                         leading: const Icon(Icons.person_outline_rounded),
                         title: Text(
-                          user['display_name']?.toString().trim().isNotEmpty == true
+                          user['display_name']?.toString().trim().isNotEmpty ==
+                                  true
                               ? user['display_name'].toString()
                               : 'নাম দেওয়া নেই',
                         ),
@@ -428,14 +429,12 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
   Future<void> _addSurah(_ComposerAction action) async {
     if (action.resources.length >= 16) return;
     final excluded = action.resources
-        .where((r) =>
-            r['provider'] == 'quran' &&
-            (r['external_resource_ref']?.split(':').length ?? 0) == 2)
-        .map(
-          (r) => int.tryParse(
-            r['external_resource_ref']!.split(':').last,
-          ),
+.where(
+          (r) =>
+              r['provider'] == 'quran' &&
+              (r['external_resource_ref']?.split(':').length ?? 0) == 2,
         )
+        .map((r) => int.tryParse(r['external_resource_ref']!.split(':').last))
         .whereType<int>()
         .toSet();
     final number = await showPersonalSurahPicker(
@@ -454,9 +453,10 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
   void _save() {
     if (_title.text.trim().isEmpty ||
         _title.text.trim().length > 120 ||
-        _actions.any((a) =>
-            a.title.text.trim().isEmpty ||
-            a.title.text.trim().length > 160)) {
+        _actions.any(
+          (a) =>
+              a.title.text.trim().isEmpty || a.title.text.trim().length > 160,
+        )) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('রুটিন ও প্রতিটি করণীয়ের নাম লিখুন।')),
       );
@@ -466,10 +466,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
       'title': _title.text.trim(),
       'actions': [
         for (final action in _actions)
-          {
-            'title': action.title.text.trim(),
-            'resources': action.resources,
-          },
+          {'title': action.title.text.trim(), 'resources': action.resources},
       ],
     });
   }
@@ -505,9 +502,8 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
                 if (_actions.length > 1)
                   IconButton(
                     tooltip: 'করণীয় বাদ দিন',
-                    onPressed: () => setState(
-                      () => _actions.removeAt(index).dispose(),
-                    ),
+                    onPressed: () =>
+                        setState(() => _actions.removeAt(index).dispose()),
                     icon: const Icon(Icons.delete_outline),
                   ),
               ],
@@ -546,24 +542,25 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
                 dense: true,
                 title: Text(
                   _actions[index].resources[item]['provider'] == 'quran'
-                      ? _actions[index].resources[item]
-                                ['external_resource_ref'] ??
+                      ? _actions[index]
+                                .resources[item]['external_resource_ref'] ??
                             'কুরআন'
                       : widget.resources
-                              .where((r) =>
-                                  r.id ==
-                                  _actions[index].resources[item]
-                                      ['content_item_id'])
-                              .firstOrNull
-                              ?.displayTitle ??
-                          'উপকরণ',
+                                .where(
+                                  (r) =>
+                                      r.id ==
+                                      _actions[index]
+                                          .resources[item]['content_item_id'],
+                                )
+                                .firstOrNull
+                                ?.displayTitle ??
+                            'উপকরণ',
                 ),
                 trailing: IconButton(
                   tooltip: 'সংযুক্ত উপকরণ বাদ দিন',
                   icon: const Icon(Icons.close),
-                  onPressed: () => setState(
-                    () => _actions[index].resources.removeAt(item),
-                  ),
+                  onPressed: () =>
+                      setState(() => _actions[index].resources.removeAt(item)),
                 ),
               ),
           ],
