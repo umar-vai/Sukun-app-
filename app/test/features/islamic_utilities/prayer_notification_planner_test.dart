@@ -52,9 +52,7 @@ void main() {
     );
     for (var index = 1; index < scheduled.length; index++) {
       expect(
-        scheduled[index].scheduledAt.isBefore(
-          scheduled[index - 1].scheduledAt,
-        ),
+        scheduled[index].scheduledAt.isBefore(scheduled[index - 1].scheduledAt),
         isFalse,
       );
     }
