@@ -91,7 +91,8 @@ class _AdminScaffoldState extends State<AdminScaffold> {
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: widget.selectedIndex,
         onSelected: (index) {
-          if (index == widget.selectedIndex) return;
+          // Detail screens share an active tab with their parent. A tap must
+          // still return to that tab's root instead of becoming a no-op.
           context.go(switch (index) {
             0 => '/admin/dashboard',
             1 => '/admin/users',
