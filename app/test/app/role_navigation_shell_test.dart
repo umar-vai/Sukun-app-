@@ -28,6 +28,11 @@ void main() {
       '/admin/announcements',
     );
     expect(navigationParent('/prayer-times', null), '/');
+    expect(navigationParent('/settings/appearance', patient), '/account');
+    expect(
+      navigationParent('/settings/bengali-font', patient),
+      '/settings/appearance',
+    );
     expect(navigationIndex('/admin/announcements/new', admin), 3);
     expect(navigationIndex('/admin/users', admin), 1);
     expect(navigationIndex('/admin/user-routines', admin), 1);
@@ -61,6 +66,8 @@ void main() {
     expect(navigationIndex('/patient/progress', patient), 1);
     expect(navigationIndex('/resources/audio', member), 2);
     expect(navigationIndex('/account', member), 3);
+    expect(navigationIndex('/settings/appearance', member), 3);
+    expect(navigationIndex('/settings/notifications', patient), 3);
     expect(navigationIndex('/admin/announcements/new', admin), 3);
     expect(navigationParent('/my-routines/action/a', member), '/my-routines');
   });
