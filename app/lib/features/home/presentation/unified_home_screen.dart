@@ -207,7 +207,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                       size: 18,
                     ),
                     label: const Text(
-                      'গুরুত্বপূর্ণ নোটিশ',
+                      'নোটিশ',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -446,38 +446,10 @@ class _CompactPrayerStrip extends StatelessWidget {
                       for (final entry in prayers)
                         Padding(
                           padding: const EdgeInsets.only(right: 5),
-                          child: Container(
-                            width: 61,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 2,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: entry.id == data.schedule.nextPrayer.id
-                                  ? SukunColors.paleBlue
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  _prayerLabel(entry.id),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  MaterialLocalizations.of(context)
-                                      .formatTimeOfDay(
-                                        TimeOfDay.fromDateTime(entry.time),
-                                      ),
-                                  maxLines: 1,
-                                  style: const TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
+                          child: HomePrayerTimeChip(
+                            entry: entry,
+                            highlighted:
+                                entry.id == data.schedule.nextPrayer.id,
                           ),
                         ),
                     ],
@@ -497,6 +469,57 @@ class _CompactPrayerStrip extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Next-prayer tile with explicit contrast in both light and dark mode.
+class HomePrayerTimeChip extends StatelessWidget {
+  const HomePrayerTimeChip({
+    super.key,
+    required this.entry,
+    required this.highlighted,
+  });
+
+  final PrayerTimeEntry entry;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = highlighted
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
+
+    return Container(
+      key: Key('home-prayer-chip-${entry.id}'),
+      width: 61,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
+      decoration: BoxDecoration(
+        color: highlighted ? SukunColors.deepTide : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(
+            _prayerLabel(entry.id),
+            key: Key('home-prayer-label-${entry.id}'),
+            style: TextStyle(
+              color: foreground,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            MaterialLocalizations.of(context).formatTimeOfDay(
+              TimeOfDay.fromDateTime(entry.time),
+            ),
+            key: Key('home-prayer-time-${entry.id}'),
+            maxLines: 1,
+            style: TextStyle(color: foreground, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String _prayerLabel(String id) => switch (id) {
