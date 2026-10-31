@@ -61,6 +61,35 @@ void main() {
     },
   );
 
+  test('concurrent refresh requests share one scheduling pass', () async {
+    final gateway = _FakeGateway();
+    final service = PrayerNotificationService(
+      local: gateway,
+      calculator: AdhanPrayerCalculationService(),
+      settingsStore: const _StoredPrayerSettings(settings),
+    );
+    expect(await service.enable(), isTrue);
+    gateway.scheduleCalls = 0;
+    await Future.wait([service.refresh(), service.refresh()]);
+    expect(gateway.scheduleCalls, gateway.scheduled.length);
+    expect(gateway.scheduled, isNotEmpty);
+  });
+
+  test('turning off during refresh leaves no new alarms', () async {
+    final gateway = _FakeGateway();
+    final service = PrayerNotificationService(
+      local: gateway,
+      calculator: AdhanPrayerCalculationService(),
+      settingsStore: const _StoredPrayerSettings(settings),
+    );
+    expect(await service.enable(), isTrue);
+    final updating = service.refresh();
+    await service.disable();
+    await updating;
+    expect(await service.isEnabled(), isFalse);
+    expect(gateway.scheduled, isEmpty);
+  });
+
   test('missing city prevents permission prompts and scheduling', () async {
     final gateway = _FakeGateway();
     final service = PrayerNotificationService(
@@ -88,6 +117,7 @@ class _StoredPrayerSettings implements UtilityPreferencesStore {
 
 class _FakeGateway implements LocalNotificationsGateway {
   int permissionRequests = 0;
+  int scheduleCalls = 0;
   final Map<int, ReminderSchedule> scheduled = {};
   final Set<int> cancelled = {};
 
@@ -117,6 +147,7 @@ class _FakeGateway implements LocalNotificationsGateway {
     ReminderSchedule reminder, {
     required bool precise,
   }) async {
+    scheduleCalls++;
     scheduled[reminder.notificationId] = reminder;
   }
 
