@@ -10,7 +10,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// The server checks Super Admin authorization on EVERY cross-user read/write.
 /// Profiles are filtered by existing server RLS; no service key is in the app.
 class AdminUserRoutinesScreen extends StatefulWidget {
-  const AdminUserRoutinesScreen({super.key});
+  const AdminUserRoutinesScreen({super.key, this.initialUserId});
+
+  /// The selected user is resolved through normal RLS; a URL never grants access.
+  final String? initialUserId;
 
   @override
   State<AdminUserRoutinesScreen> createState() =>
@@ -19,7 +22,7 @@ class AdminUserRoutinesScreen extends StatefulWidget {
 
 class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   final _search = TextEditingController();
-  late Future<List<Map<String, dynamic>>> _users = _loadUsers('');
+  late Future<List<Map<String, dynamic>>> _users;
   Future<Map<String, dynamic>>? _progress;
   Map<String, dynamic>? _selected;
   String _query = '';
@@ -27,6 +30,32 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   bool _saving = false;
 
   SupabaseClient get _client => Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialUserId?.trim() ?? '';
+    _query = initial;
+    _search.text = initial;
+    _users = _loadUsers(initial);
+    if (initial.isNotEmpty) _selectInitialUser();
+  }
+
+  Future<void> _selectInitialUser() async {
+    try {
+      final users = await _users;
+      if (!mounted || users.isEmpty) return;
+      final target = widget.initialUserId;
+      for (final user in users) {
+        if (user['id']?.toString() == target) {
+          _selectUser(user);
+          return;
+        }
+      }
+    } catch (_) {
+      // FutureBuilder displays the permission/network error in the directory.
+    }
+  }
 
   @override
   void dispose() {
@@ -143,8 +172,14 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
       title: 'ব্যবহারকারী ও রুটিন',
       selectedIndex: -1,
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 90),
         children: [
+          TextButton.icon(
+            onPressed: () => context.go('/admin/users'),
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text('সকল ব্যবহারকারী'),
+          ),
+          const SizedBox(height: 10),
           Text(
             'ব্যবহারকারীকে রুটিন দিন',
             style: Theme.of(context).textTheme.headlineSmall,
