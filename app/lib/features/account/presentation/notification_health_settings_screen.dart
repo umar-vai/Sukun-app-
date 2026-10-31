@@ -8,6 +8,7 @@ import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/notifications/notification_coordinator.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
+import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
 
 String notificationPermissionHint({
   required bool granted,
@@ -41,6 +42,7 @@ class _NotificationHealthSettingsScreenState
   bool? _permissionGranted;
   bool? _preciseAvailable;
   bool? _personalEnabled;
+  bool? _prayerEnabled;
   CareNotificationStatus? _care;
   String? _notice;
 
@@ -65,6 +67,9 @@ class _NotificationHealthSettingsScreenState
       final personal = await ref
           .read(personalReminderServiceProvider)
           .isEnabled();
+      final prayerEnabled = await ref
+          .read(prayerNotificationServiceProvider)
+          .isEnabled();
       final isPatient = ref.read(appSessionProvider).value?.isPatient == true;
       final care = isPatient
           ? await ref.read(notificationCoordinatorProvider).status()
@@ -77,6 +82,7 @@ class _NotificationHealthSettingsScreenState
         _permissionGranted = permission;
         _preciseAvailable = precise;
         _personalEnabled = personal;
+        _prayerEnabled = prayerEnabled;
         _care = care;
         _loading = false;
       });
@@ -166,6 +172,17 @@ class _NotificationHealthSettingsScreenState
     if (enabled) {
       if (!await service.enable()) {
         throw StateError('Permission not granted');
+      }
+    } else {
+      await service.disable();
+    }
+  });
+
+  Future<void> _togglePrayer(bool enabled) => _change(() async {
+    final service = ref.read(prayerNotificationServiceProvider);
+    if (enabled) {
+      if (!await service.enable()) {
+        throw StateError('Permission denied');
       }
     } else {
       await service.disable();
@@ -358,13 +375,22 @@ class _NotificationHealthSettingsScreenState
                           ),
                       ],
                       const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.mosque_outlined),
-                        title: const Text('নামাজের সময়'),
-                        subtitle: const Text(
-                          'শহর ও হিসাবপদ্ধতি পরিবর্তন করুন। পাঁচ ওয়াক্তের স্বতন্ত্র '
-                          'অ্যালার্ম সিডিউলিং এখনও প্রস্তুত নয়।',
+                      SwitchListTile(
+                        key: const Key('prayer-waqt-alert-settings-opt-in'),
+                        secondary: const Icon(Icons.mosque_outlined),
+                        title: const Text('পাঁচ ওয়াক্তের নোটিফিকেশন'),
+                        subtitle: Text(
+                          kIsWeb
+                              ? 'ট্যাব চালু থাকা অবস্থায় ওয়াক্তের সময় নোটিফিকেশন। বন্ধ ব্রাউজারে Web Push এখনো নেই।'
+                              : 'নিজের শহর অনুযায়ী পাঁচ ওয়াক্ত শুরু হলে ফোনে নোটিফিকেশন।',
                         ),
+                        value: _prayerEnabled ?? false,
+                        onChanged: _busy || _loading || _prayerEnabled == null
+                            ? null
+                            : (enabled) => unawaited(_togglePrayer(enabled)),
+                      ),
+                      ListTile(
+                        title: const Text('শহর ও হিসাবপদ্ধতি'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/prayer-times/settings'),
                       ),
