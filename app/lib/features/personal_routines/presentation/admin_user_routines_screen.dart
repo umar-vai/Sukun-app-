@@ -192,77 +192,77 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
           const SizedBox(height: 14),
           if (selected == null) ...[
             TextField(
-            controller: _search,
-            decoration: InputDecoration(
-              labelText: 'ব্যবহারকারীর নাম বা ID খুঁজুন',
-              hintText: 'নাম লিখে খুঁজুন',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: IconButton(
-                tooltip: 'খুঁজুন',
-                icon: const Icon(Icons.arrow_forward_rounded),
-                onPressed: _searchUsers,
-              ),
-            ),
-            onSubmitted: (_) => _searchUsers(),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _query.isEmpty
-                ? 'প্রথম ৪০ জনের তালিকা · নির্দিষ্ট নাম দিয়ে খুঁজুন'
-                : '“$_query” অনুসন্ধানের প্রথম ৪০টি ফলাফল',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _users,
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const ListTile(
-                  leading: Icon(Icons.error_outline),
-                  title: Text('ব্যবহারকারীর তালিকা আনা যাচ্ছে না।'),
-                  subtitle: Text('অনুমতি ও সংযোগ যাচাই করুন।'),
-                );
-              }
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.data!.isEmpty) {
-                return const ListTile(
-                  title: Text('কোনো ব্যবহারকারী পাওয়া যায়নি।'),
-                );
-              }
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 260),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final user = snapshot.data![index];
-                    final selectedId = selected?['id'] == user['id'];
-                    return Card(
-                      child: ListTile(
-                        selected: selectedId,
-                        leading: const Icon(Icons.person_outline_rounded),
-                        title: Text(
-                          user['display_name']?.toString().trim().isNotEmpty ==
-                                  true
-                              ? user['display_name'].toString()
-                              : 'নাম দেওয়া নেই',
-                        ),
-                        subtitle: Text(
-                          selectedId
-                              ? 'নির্বাচিত ব্যবহারকারী'
-                              : 'অগ্রগতি ও রুটিন দেখতে বাছুন',
-                        ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => _selectUser(user),
-                      ),
-                    );
-                  },
+              controller: _search,
+              decoration: InputDecoration(
+                labelText: 'ব্যবহারকারীর নাম বা ID খুঁজুন',
+                hintText: 'নাম লিখে খুঁজুন',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: IconButton(
+                  tooltip: 'খুঁজুন',
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  onPressed: _searchUsers,
                 ),
-              );
-            },
-          ),
+              ),
+              onSubmitted: (_) => _searchUsers(),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _query.isEmpty
+                  ? 'প্রথম ৪০ জনের তালিকা · নির্দিষ্ট নাম দিয়ে খুঁজুন'
+                  : '“$_query” অনুসন্ধানের প্রথম ৪০টি ফলাফল',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _users,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const ListTile(
+                    leading: Icon(Icons.error_outline),
+                    title: Text('ব্যবহারকারীর তালিকা আনা যাচ্ছে না।'),
+                    subtitle: Text('অনুমতি ও সংযোগ যাচাই করুন।'),
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.data!.isEmpty) {
+                  return const ListTile(
+                    title: Text('কোনো ব্যবহারকারী পাওয়া যায়নি।'),
+                  );
+                }
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final user = snapshot.data![index];
+                      final selectedId = selected?['id'] == user['id'];
+                      return Card(
+                        child: ListTile(
+                          selected: selectedId,
+                          leading: const Icon(Icons.person_outline_rounded),
+                          title: Text(
+                            user['display_name']?.toString().trim().isNotEmpty ==
+                                    true
+                                ? user['display_name'].toString()
+                                : 'নাম দেওয়া নেই',
+                          ),
+                          subtitle: Text(
+                            selectedId
+                                ? 'নির্বাচিত ব্যবহারকারী'
+                                : 'অগ্রগতি ও রুটিন দেখতে বাছুন',
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => _selectUser(user),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
           ],
           const SizedBox(height: 18),
           if (selected != null) ...[
