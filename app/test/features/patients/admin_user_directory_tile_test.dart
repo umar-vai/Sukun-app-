@@ -15,10 +15,7 @@ void main() {
           path: '/admin/users',
           builder: (context, state) => Scaffold(
             body: AdminUserDirectoryTile(
-              user: const {
-                'id': userId,
-                'display_name': 'Test Member',
-              },
+              user: const {'id': userId, 'display_name': 'Test Member'},
               onOpen: () => context.go(
                 '/admin/user-routines?userId=${Uri.encodeComponent(userId)}',
               ),
