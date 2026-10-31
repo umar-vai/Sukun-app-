@@ -14,7 +14,7 @@ void main() {
   setUpAll(() async {
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'public-test-key',
+      publishableKey: 'public-test-key',
     );
   });
 
