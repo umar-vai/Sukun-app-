@@ -22,7 +22,7 @@ final prayerNotificationServiceProvider = Provider<PrayerNotificationService>(
 /// Personal, device-only, opt-in alerts. Does not read patient data or
 /// silently register a push token. On Web delivery requires an active tab.
 class PrayerNotificationService {
-  const PrayerNotificationService({
+  PrayerNotificationService({
     required this.local,
     required this.calculator,
     required this.settingsStore,
@@ -31,6 +31,10 @@ class PrayerNotificationService {
   final LocalNotificationsGateway local;
   final PrayerCalculationService calculator;
   final UtilityPreferencesStore settingsStore;
+
+  // App startup and resume can request a refresh concurrently. Never let
+  // one pass cancel another pass's pending OS alarms.
+  Future<int>? _activeRefresh;
 
   static const _enabledKey = 'prayer_waqt_notifications_enabled_v1';
   static const _idsKey = 'prayer_waqt_notification_ids_v1';
@@ -63,6 +67,16 @@ class PrayerNotificationService {
   }
 
   Future<void> disable() async {
+    // A refresh already in progress must finish before the opt-out removes
+    // its alarms; otherwise late scheduling could revive disabled alerts.
+    final active = _activeRefresh;
+    if (active != null) {
+      try {
+        await active;
+      } on Object {
+        // Opt-out must proceed even after a failed refresh.
+      }
+    }
     await (await SharedPreferences.getInstance()).setBool(_enabledKey, false);
     await _cancelExisting();
   }
@@ -77,7 +91,17 @@ class PrayerNotificationService {
     await prefs.remove(_idsKey);
   }
 
-  Future<int> refresh() async {
+  Future<int> refresh() {
+    final active = _activeRefresh;
+    if (active != null) return active;
+    final pending = _refreshOnce();
+    _activeRefresh = pending;
+    return pending.whenComplete(() {
+      if (identical(_activeRefresh, pending)) _activeRefresh = null;
+    });
+  }
+
+  Future<int> _refreshOnce() async {
     if (!await isEnabled()) return 0;
     await local.initialize();
     if (!await local.isPermissionGranted()) {
@@ -89,10 +113,15 @@ class PrayerNotificationService {
       await _cancelExisting();
       return 0;
     }
+    final ios = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     final reminders = planPrayerWaqtReminders(
       calculator: calculator,
       settings: settings,
       now: DateTime.now(),
+      // iOS retains at most 64 pending notifications across every feature.
+      // Reserve room for patient-care and personal-routine reminders.
+      horizonDays: ios || kIsWeb ? 3 : 14,
+      maximumPending: ios ? 12 : 70,
     );
     await local.configureTimezone();
     await _cancelExisting();
@@ -136,8 +165,11 @@ List<ReminderSchedule> planPrayerWaqtReminders({
   required PrayerUtilitySettings settings,
   required DateTime now,
   int horizonDays = 14,
+  int maximumPending = 70,
 }) {
-  if (!settings.isComplete || horizonDays < 1) return const [];
+  if (!settings.isComplete || horizonDays < 1 || maximumPending < 1) {
+    return const [];
+  }
   tz_data.initializeTimeZones();
   final zone = tz.getLocation(settings.location!.timezone);
   final today = tz.TZDateTime.from(now, zone);
@@ -170,5 +202,5 @@ List<ReminderSchedule> planPrayerWaqtReminders({
     }
   }
   reminders.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-  return List.unmodifiable(reminders.take(70));
+  return List.unmodifiable(reminders.take(maximumPending));
 }
