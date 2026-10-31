@@ -190,7 +190,8 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
             'প্রতিটি রুটিন তৈরি ও অগ্রগতি দেখার ঘটনা Audit Log-এ থাকবে।',
           ),
           const SizedBox(height: 14),
-          TextField(
+          if (selected == null) ...[
+            TextField(
             controller: _search,
             decoration: InputDecoration(
               labelText: 'ব্যবহারকারীর নাম বা ID খুঁজুন',
@@ -262,6 +263,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
               );
             },
           ),
+          ],
           const SizedBox(height: 18),
           if (selected != null) ...[
             Card(
