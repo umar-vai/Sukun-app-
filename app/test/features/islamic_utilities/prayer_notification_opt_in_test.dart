@@ -110,7 +110,10 @@ class _FakeGateway implements LocalNotificationsGateway {
   Future<String> configureTimezone() async => 'Asia/Dhaka';
 
   @override
-  Future<void> schedule(ReminderSchedule reminder, {required bool precise}) async {
+  Future<void> schedule(
+    ReminderSchedule reminder, {
+    required bool precise,
+  }) async {
     scheduled[reminder.notificationId] = reminder;
   }
 
