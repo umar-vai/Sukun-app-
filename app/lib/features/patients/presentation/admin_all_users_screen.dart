@@ -206,9 +206,7 @@ class AdminUserDirectoryTile extends StatelessWidget {
         key: Key('admin-user-$id'),
         enabled: id.isNotEmpty,
         onTap: id.isEmpty ? null : onOpen,
-        leading: const CircleAvatar(
-          child: Icon(Icons.person_outline_rounded),
-        ),
+        leading: const CircleAvatar(child: Icon(Icons.person_outline_rounded)),
         title: Text(name.isEmpty ? 'নাম দেওয়া হয়নি' : name),
         subtitle: Text(
           'User ID: ${id.isEmpty ? '—' : id}',
