@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -559,7 +558,7 @@ String formatPrayerCountdown(Duration remaining) {
   final hours = (seconds ~/ 3600).toString().padLeft(2, '0');
   final minutes = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
   final secs = (seconds % 60).toString().padLeft(2, '0');
-  return '\${hours}:\${minutes}:\${secs}';
+  return '${hours}:${minutes}:${secs}';
 }
 
 /// Next-prayer tile with explicit contrast in both light and dark mode.
