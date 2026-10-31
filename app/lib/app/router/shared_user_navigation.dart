@@ -47,7 +47,9 @@ int sharedUserNavigationIndex(String path) {
   if (path.startsWith('/resources') || path.startsWith('/patient/resources')) {
     return 2;
   }
-  if (path.startsWith('/account') || path.startsWith('/patient/profile')) {
+  if (path.startsWith('/account') ||
+      path.startsWith('/settings/') ||
+      path.startsWith('/patient/profile')) {
     return 3;
   }
   return 0;
