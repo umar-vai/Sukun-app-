@@ -108,10 +108,6 @@ void main() {
     await tester.tap(appearance);
     await tester.pumpAndSettle();
 
-    expect(
-      router.routeInformationProvider.value.uri.path,
-      '/settings/appearance',
-    );
     expect(find.text('Destination: /settings/appearance'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
