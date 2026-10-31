@@ -11,13 +11,13 @@ import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dar
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-final prayerNotificationServiceProvider = Provider<PrayerNotificationService>((
-  ref,
-) => PrayerNotificationService(
-  local: ref.watch(localNotificationsGatewayProvider),
-  calculator: ref.watch(prayerCalculationServiceProvider),
-  settingsStore: ref.watch(utilityPreferencesStoreProvider),
-));
+final prayerNotificationServiceProvider = Provider<PrayerNotificationService>(
+  (ref) => PrayerNotificationService(
+    local: ref.watch(localNotificationsGatewayProvider),
+    calculator: ref.watch(prayerCalculationServiceProvider),
+    settingsStore: ref.watch(utilityPreferencesStoreProvider),
+  ),
+);
 
 /// Personal, device-only, opt-in alerts. Does not read patient data or
 /// silently register a push token. On Web delivery requires an active tab.
@@ -45,7 +45,8 @@ class PrayerNotificationService {
     }
     await local.initialize();
     if (!await local.requestPermission()) return false;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android &&
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
         !await local.canSchedulePrecisely()) {
       await local.requestPreciseSchedulingPermission();
     }
@@ -143,7 +144,11 @@ List<ReminderSchedule> planPrayerWaqtReminders({
   final reminders = <ReminderSchedule>[];
   for (var day = 0; day < horizonDays; day++) {
     final noon = tz.TZDateTime(
-      zone, today.year, today.month, today.day + day, 12,
+      zone,
+      today.year,
+      today.month,
+      today.day + day,
+      12,
     );
     final schedule = calculator.calculate(settings: settings, now: noon);
     for (final entry in schedule.entries.where((e) => e.isPrayer)) {
