@@ -103,7 +103,7 @@ void main() {
     addTearDown(router.dispose);
 
     final appearance = find.byKey(const Key('account-appearance'));
-    await tester.ensureVisible(appearance);
+    await tester.scrollUntilVisible(appearance, 220);
     await tester.pumpAndSettle();
     await tester.tap(appearance);
     await tester.pumpAndSettle();
