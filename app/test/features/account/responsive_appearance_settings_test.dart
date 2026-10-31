@@ -27,7 +27,15 @@ void main() {
         find.byKey(const Key('accent-palette-sukunBlue')),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('bengali-font-size')),
+        160,
+      );
       expect(find.byKey(const Key('bengali-font-size')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('arabic-font-size')),
+        160,
+      );
       expect(find.byKey(const Key('arabic-font-size')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
