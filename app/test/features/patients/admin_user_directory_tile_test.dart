@@ -43,7 +43,10 @@ void main() {
     await tester.tap(find.text('Test Member'));
     await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/admin/user-routines');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/admin/user-routines',
+    );
     expect(find.text(userId), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
