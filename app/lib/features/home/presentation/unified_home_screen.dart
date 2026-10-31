@@ -230,30 +230,30 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               if (_showFortyDayChallenge) ...[
                 const SizedBox(height: 12),
                 SukunSurface(
-                key: const Key('home-forty-day-challenge'),
-                tone: SukunSurfaceTone.soft,
-                onTap: () => context.push('/challenge/40-day'),
-                child: const Row(
-                  children: [
-                    Icon(Icons.event_available_outlined, size: 30),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '৪০ দিনের বিনামূল্যের চ্যালেঞ্জ',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          SizedBox(height: 4),
-                          Text('৫টি ধাপ • নিজের অগ্রগতি সংরক্ষণ করুন'),
-                        ],
+                  key: const Key('home-forty-day-challenge'),
+                  tone: SukunSurfaceTone.soft,
+                  onTap: () => context.push('/challenge/40-day'),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.event_available_outlined, size: 30),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '৪০ দিনের বিনামূল্যের চ্যালেঞ্জ',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            SizedBox(height: 4),
+                            Text('৫টি ধাপ • নিজের অগ্রগতি সংরক্ষণ করুন'),
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(Icons.chevron_right),
-                  ],
+                      Icon(Icons.chevron_right),
+                    ],
+                  ),
                 ),
-              ),
               ],
               if (_upcoming != null) ...[
                 const SizedBox(height: 12),
@@ -418,9 +418,7 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
       if (!mounted) return;
       setState(() => _now = DateTime.now());
       final next = _lastSchedule?.nextPrayer.time;
-      if (!_refreshing &&
-          next != null &&
-          !_now.isBefore(next)) {
+      if (!_refreshing && next != null && !_now.isBefore(next)) {
         _refreshing = true;
         _lastSchedule = null;
         setState(() => _future = widget.reload());
