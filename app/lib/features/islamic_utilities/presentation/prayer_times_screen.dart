@@ -59,7 +59,9 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('নামাজের নোটিফিকেশন চালু করা যায়নি। অনুমতি ও শহর পরীক্ষা করুন।'),
+            content: Text(
+              'নামাজের নোটিফিকেশন চালু করা যায়নি। অনুমতি ও শহর পরীক্ষা করুন।',
+            ),
           ),
         );
       }
