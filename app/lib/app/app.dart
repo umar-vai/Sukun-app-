@@ -41,8 +41,10 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
     unawaited(AppDisplaySettings.instance.load());
     // Never ask permission on startup; refresh only previously opted-in alerts.
     unawaited(
-      ref.read(prayerNotificationServiceProvider)
-          .refresh().catchError((Object _) => 0),
+      ref
+          .read(prayerNotificationServiceProvider)
+          .refresh()
+          .catchError((Object _) => 0),
     );
     _openedSubscription = ref
         .read(notificationTapRelayProvider)
@@ -99,8 +101,10 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
     super.didChangeAppLifecycleState(state);
     if (state != AppLifecycleState.resumed) return;
     unawaited(
-      ref.read(prayerNotificationServiceProvider)
-          .refresh().catchError((Object _) => 0),
+      ref
+          .read(prayerNotificationServiceProvider)
+          .refresh()
+          .catchError((Object _) => 0),
     );
     // The platform can resume before a pending FCM tap callback reaches
     // Flutter. Retry after the resumed frame without consuming an early UUID.
