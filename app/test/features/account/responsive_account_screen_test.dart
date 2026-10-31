@@ -81,9 +81,10 @@ void main() {
       addTearDown(router.dispose);
 
       expect(find.text('আমার কার্যক্রম'), findsOneWidget);
+      expect(find.byKey(const Key('account-audio-library')), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('পছন্দ ও সেটিংস'), 220);
       expect(find.text('পছন্দ ও সেটিংস'), findsOneWidget);
       expect(find.text('আমার যত্ন'), findsNothing);
-      expect(find.byKey(const Key('account-audio-library')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -125,6 +126,7 @@ void main() {
     addTearDown(router.dispose);
 
     expect(find.text('রোগী অ্যাকাউন্ট'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('আমার যত্ন'), 220);
     expect(find.text('আমার যত্ন'), findsOneWidget);
     expect(find.text('আমার চিকিৎসা পরিকল্পনা'), findsOneWidget);
     expect(tester.takeException(), isNull);
