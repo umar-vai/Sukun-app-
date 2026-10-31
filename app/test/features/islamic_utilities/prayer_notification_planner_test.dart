@@ -36,6 +36,30 @@ void main() {
     expect(planned.every((r) => r.title.contains('ওয়াক্ত')), isTrue);
   });
 
+  test('bounded pending queue retains the earliest waqt alerts', () {
+    final now = DateTime.utc(2026, 11, 1);
+    final scheduled = planPrayerWaqtReminders(
+      calculator: AdhanPrayerCalculationService(),
+      settings: settings,
+      now: now,
+      horizonDays: 14,
+      maximumPending: 12,
+    );
+    expect(scheduled.length, 12);
+    expect(
+      scheduled.map((item) => item.notificationId).toSet().length,
+      scheduled.length,
+    );
+    for (var index = 1; index < scheduled.length; index++) {
+      expect(
+        scheduled[index].scheduledAt.isBefore(
+          scheduled[index - 1].scheduledAt,
+        ),
+        isFalse,
+      );
+    }
+  });
+
   test('incomplete settings never create notifications', () {
     expect(
       planPrayerWaqtReminders(
