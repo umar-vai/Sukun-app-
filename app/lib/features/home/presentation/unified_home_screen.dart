@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +17,12 @@ import 'package:sukun_life/features/personal_routines/data/personal_routine_repo
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
+
+/// The challenge remains in source but is hidden until an approved relaunch.
+const bool _showFortyDayChallenge = bool.fromEnvironment(
+  'SUKUN_SHOW_40_DAY_CHALLENGE',
+  defaultValue: false,
+);
 
 /// Shared public landing page. Personal care is loaded only for patient sessions.
 class UnifiedHomeScreen extends ConsumerStatefulWidget {
@@ -217,9 +226,10 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              _CompactPrayerStrip(prayer: _prayer),
-              const SizedBox(height: 12),
-              SukunSurface(
+              _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
+              if (_showFortyDayChallenge) ...[
+                const SizedBox(height: 12),
+                SukunSurface(
                 key: const Key('home-forty-day-challenge'),
                 tone: SukunSurfaceTone.soft,
                 onTap: () => context.push('/challenge/40-day'),
@@ -244,6 +254,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   ],
                 ),
               ),
+              ],
               if (_upcoming != null) ...[
                 const SizedBox(height: 12),
                 _UnifiedNextTasks(future: _upcoming!),
@@ -380,10 +391,58 @@ class _PrayerSummary {
 }
 
 /// Compact five-prayer preview; never guesses missing location or method.
-class _CompactPrayerStrip extends StatelessWidget {
-  const _CompactPrayerStrip({required this.prayer});
+/// Compact five-prayer preview with a one-second countdown.
+/// Recalculates at a waqt boundary or after the calendar day changes.
+class _CompactPrayerStrip extends StatefulWidget {
+  const _CompactPrayerStrip({required this.prayer, required this.reload});
 
   final Future<_PrayerSummary?> prayer;
+  final Future<_PrayerSummary?> Function() reload;
+
+  @override
+  State<_CompactPrayerStrip> createState() => _CompactPrayerStripState();
+}
+
+class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
+  late Future<_PrayerSummary?> _future;
+  Timer? _ticker;
+  DateTime _now = DateTime.now();
+  PrayerDaySchedule? _lastSchedule;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.prayer;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+      final next = _lastSchedule?.nextPrayer.time;
+      if (!_refreshing &&
+          next != null &&
+          !_now.isBefore(next)) {
+        _refreshing = true;
+        _lastSchedule = null;
+        setState(() => _future = widget.reload());
+        _future.whenComplete(() => _refreshing = false);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _CompactPrayerStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.prayer != widget.prayer) {
+      _future = widget.prayer;
+      _lastSchedule = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => SukunSurface(
@@ -398,7 +457,7 @@ class _CompactPrayerStrip extends StatelessWidget {
             const SizedBox(width: 6),
             const Expanded(
               child: Text(
-                'নামাজের সময়',
+                'পরবর্তী নামাজ',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -417,7 +476,7 @@ class _CompactPrayerStrip extends StatelessWidget {
           ],
         ),
         FutureBuilder<_PrayerSummary?>(
-          future: prayer,
+          future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Padding(
@@ -433,12 +492,37 @@ class _CompactPrayerStrip extends StatelessWidget {
                 label: const Text('নামাজের সময় দেখতে শহর সেট করুন'),
               );
             }
+            _lastSchedule = data.schedule;
+            final next = data.schedule.nextPrayer;
+            final remaining = next.time.difference(_now);
             final prayers = data.schedule.entries
                 .where((entry) => entry.isPrayer)
                 .toList(growable: false);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${prayerNamesForHome(next.id)} · ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(next.time))}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      formatPrayerCountdown(remaining),
+                      key: const Key('home-next-prayer-countdown'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -448,8 +532,7 @@ class _CompactPrayerStrip extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 5),
                           child: HomePrayerTimeChip(
                             entry: entry,
-                            highlighted:
-                                entry.id == data.schedule.nextPrayer.id,
+                            highlighted: entry.id == next.id,
                           ),
                         ),
                     ],
@@ -469,6 +552,16 @@ class _CompactPrayerStrip extends StatelessWidget {
       ],
     ),
   );
+}
+
+String prayerNamesForHome(String id) => _prayerLabel(id);
+
+String formatPrayerCountdown(Duration remaining) {
+  final seconds = remaining.isNegative ? 0 : remaining.inSeconds;
+  final hours = (seconds ~/ 3600).toString().padLeft(2, '0');
+  final minutes = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
+  final secs = (seconds % 60).toString().padLeft(2, '0');
+  return '$' + "{hours}:" + '$' + "{minutes}:" + '$' + "{secs}";
 }
 
 /// Next-prayer tile with explicit contrast in both light and dark mode.
