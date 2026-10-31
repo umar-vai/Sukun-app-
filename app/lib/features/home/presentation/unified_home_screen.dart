@@ -509,9 +509,8 @@ class HomePrayerTimeChip extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            MaterialLocalizations.of(context).formatTimeOfDay(
-              TimeOfDay.fromDateTime(entry.time),
-            ),
+            MaterialLocalizations.of(context)
+                .formatTimeOfDay(TimeOfDay.fromDateTime(entry.time)),
             key: Key('home-prayer-time-${entry.id}'),
             maxLines: 1,
             style: TextStyle(color: foreground, fontSize: 10),
