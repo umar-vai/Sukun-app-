@@ -9,6 +9,7 @@ import 'package:sukun_life/app/theme/sukun_theme.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
+import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
@@ -38,6 +39,13 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
     WidgetsBinding.instance.addObserver(this);
     unawaited(BengaliFontSettings.instance.load());
     unawaited(AppDisplaySettings.instance.load());
+    // Never ask permission on startup; refresh only previously opted-in alerts.
+    unawaited(
+      ref
+          .read(prayerNotificationServiceProvider)
+          .refresh()
+          .catchError((Object _) => 0),
+    );
     _openedSubscription = ref
         .read(notificationTapRelayProvider)
         .openedTaskIds
@@ -92,6 +100,12 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state != AppLifecycleState.resumed) return;
+    unawaited(
+      ref
+          .read(prayerNotificationServiceProvider)
+          .refresh()
+          .catchError((Object _) => 0),
+    );
     // The platform can resume before a pending FCM tap callback reaches
     // Flutter. Retry after the resumed frame without consuming an early UUID.
     WidgetsBinding.instance.scheduleFrame();

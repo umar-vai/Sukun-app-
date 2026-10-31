@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +8,7 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
+import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 
@@ -17,11 +21,53 @@ class PrayerTimesScreen extends ConsumerStatefulWidget {
 
 class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
   late Future<_PrayerPageData> _data;
+  bool _prayerAlerts = false;
+  bool _alertsBusy = false;
 
   @override
   void initState() {
     super.initState();
     _data = _load();
+    unawaited(_loadPrayerAlerts());
+  }
+
+  Future<void> _loadPrayerAlerts() async {
+    try {
+      final enabled = await ref
+          .read(prayerNotificationServiceProvider)
+          .isEnabled();
+      if (mounted) setState(() => _prayerAlerts = enabled);
+    } on Object {
+      // The main prayer timetable remains usable if preferences are unavailable.
+    }
+  }
+
+  Future<void> _togglePrayerAlerts(bool enabled) async {
+    if (_alertsBusy) return;
+    setState(() => _alertsBusy = true);
+    try {
+      final service = ref.read(prayerNotificationServiceProvider);
+      if (enabled) {
+        if (!await service.enable()) {
+          throw StateError('Notification permission declined');
+        }
+      } else {
+        await service.disable();
+      }
+      if (mounted) setState(() => _prayerAlerts = enabled);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'নামাজের নোটিফিকেশন চালু করা যায়নি। অনুমতি ও শহর পরীক্ষা করুন।',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _alertsBusy = false);
+    }
   }
 
   Future<_PrayerPageData> _load() async {
@@ -90,7 +136,13 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
           if (!data.settings.isComplete) {
             return _SetupRequired(onConfigure: _configure);
           }
-          return _PrayerScheduleView(data: data, onRefresh: _refresh);
+          return _PrayerScheduleView(
+            data: data,
+            onRefresh: _refresh,
+            prayerAlerts: _prayerAlerts,
+            alertsBusy: _alertsBusy,
+            onToggleAlerts: _togglePrayerAlerts,
+          );
         },
       ),
     );
@@ -145,10 +197,19 @@ class _SetupRequired extends StatelessWidget {
 }
 
 class _PrayerScheduleView extends StatelessWidget {
-  const _PrayerScheduleView({required this.data, required this.onRefresh});
+  const _PrayerScheduleView({
+    required this.data,
+    required this.onRefresh,
+    required this.prayerAlerts,
+    required this.alertsBusy,
+    required this.onToggleAlerts,
+  });
 
   final _PrayerPageData data;
   final Future<void> Function() onRefresh;
+  final bool prayerAlerts;
+  final bool alertsBusy;
+  final ValueChanged<bool> onToggleAlerts;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +280,22 @@ class _PrayerScheduleView extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          SukunSurface(
+            padding: const EdgeInsets.all(10),
+            child: SwitchListTile(
+              key: const Key('prayer-waqt-alert-opt-in'),
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text('প্রতি ওয়াক্তে নোটিফিকেশন'),
+              subtitle: Text(
+                kIsWeb
+                    ? 'ব্রাউজারের ট্যাব খোলা থাকলে নোটিফিকেশন আসবে। বন্ধ ব্রাউজারে Web Push এখনো চালু নয়।'
+                    : 'অনুমতি দিলে পাঁচ ওয়াক্তের শুরুর সময় ফোনে নোটিফিকেশন শিডিউল হবে।',
+              ),
+              value: prayerAlerts,
+              onChanged: alertsBusy ? null : onToggleAlerts,
             ),
           ),
           const SizedBox(height: 24),

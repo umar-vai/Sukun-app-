@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -81,6 +82,11 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
               asrConvention: _asrConvention,
             ),
           );
+      try {
+        await ref.read(prayerNotificationServiceProvider).refresh();
+      } on Object {
+        // Saved location remains valid; a subsequent open retries scheduling.
+      }
       if (mounted) context.pop(true);
     } on Object {
       if (!mounted) return;
