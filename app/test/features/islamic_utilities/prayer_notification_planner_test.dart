@@ -32,10 +32,7 @@ void main() {
       planned.length,
     );
     expect(planned.every((r) => r.scheduledAt.isAfter(now)), isTrue);
-    expect(
-      planned.every((r) => r.payload.startsWith('prayer_time:')),
-      isTrue,
-    );
+    expect(planned.every((r) => r.payload.startsWith('prayer_time:')), isTrue);
     expect(planned.every((r) => r.title.contains('ওয়াক্ত')), isTrue);
   });
 
