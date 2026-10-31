@@ -48,6 +48,7 @@ class RoleNavigationShell extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (path != '/account' &&
+                    !path.startsWith('/settings/') &&
                     path != '/resources' &&
                     !path.startsWith('/resources/'))
                   SafeArea(
