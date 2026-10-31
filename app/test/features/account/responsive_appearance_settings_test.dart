@@ -19,14 +19,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const Key('appearance-theme-system')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('accent-palette-sukunBlue')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('appearance-theme-system')), findsOneWidget);
+      expect(find.byKey(const Key('accent-palette-sukunBlue')), findsOneWidget);
       await tester.scrollUntilVisible(
         find.byKey(const Key('bengali-font-size')),
         160,
