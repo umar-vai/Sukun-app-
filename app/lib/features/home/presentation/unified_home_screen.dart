@@ -408,6 +408,7 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
   DateTime _now = DateTime.now();
   PrayerDaySchedule? _lastSchedule;
   bool _refreshing = false;
+  int _secondsSinceRefresh = 0;
 
   @override
   void initState() {
@@ -417,11 +418,18 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
       if (!mounted) return;
       setState(() => _now = DateTime.now());
       final next = _lastSchedule?.nextPrayer.time;
-      if (!_refreshing && next != null && !_now.isBefore(next)) {
+      _secondsSinceRefresh++;
+      if (!_refreshing &&
+          (_secondsSinceRefresh >= 60 ||
+              (next != null && !_now.isBefore(next)))) {
+        _secondsSinceRefresh = 0;
         _refreshing = true;
         _lastSchedule = null;
         setState(() => _future = widget.reload());
-        _future.whenComplete(() => _refreshing = false);
+        _future.then(
+          (_) => _refreshing = false,
+          onError: (Object _) => _refreshing = false,
+        );
       }
     });
   }
