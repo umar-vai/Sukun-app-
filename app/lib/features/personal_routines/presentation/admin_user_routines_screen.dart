@@ -244,7 +244,10 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
                           selected: selectedId,
                           leading: const Icon(Icons.person_outline_rounded),
                           title: Text(
-                            user['display_name']?.toString().trim().isNotEmpty ==
+                            user['display_name']
+                                        ?.toString()
+                                        .trim()
+                                        .isNotEmpty ==
                                     true
                                 ? user['display_name'].toString()
                                 : 'নাম দেওয়া নেই',
