@@ -119,6 +119,9 @@ bool showsNavigationShell(String path) {
     '/patient/progress',
     '/patient/profile',
     '/admin/dashboard',
+    '/admin/users',
+    '/admin/user-routines',
+    '/admin/library',
     '/admin/routine-templates',
     '/admin/patients',
     '/admin/content',
@@ -129,6 +132,8 @@ bool showsNavigationShell(String path) {
 String navigationParent(String path, AppSession? session) {
   if (path == '/prayer-times/settings') return '/prayer-times';
   if (path.startsWith('/admin/announcements/')) return '/admin/announcements';
+  if (path.startsWith('/admin/users/')) return '/admin/users';
+  if (path.startsWith('/admin/user-routines')) return '/admin/users';
   if (path.startsWith('/admin/content/')) return '/admin/content';
   if (path.startsWith('/admin/patients/')) {
     final segments = path.split('/');
@@ -153,8 +158,14 @@ String navigationParent(String path, AppSession? session) {
 
 int navigationIndex(String path, AppSession? session) {
   if (session?.isSuperAdmin == true) {
-    if (path.startsWith('/admin/patients/')) return 1;
-    if (path.startsWith('/admin/content/') || path.startsWith('/resources')) {
+    if (path.startsWith('/admin/patients') ||
+        path.startsWith('/admin/users') ||
+        path.startsWith('/admin/user-routines')) {
+      return 1;
+    }
+    if (path.startsWith('/admin/content') ||
+        path.startsWith('/admin/library') ||
+        path.startsWith('/resources')) {
       return 2;
     }
     if (path.startsWith('/admin/announcements/') ||
@@ -173,8 +184,8 @@ int navigationIndex(String path, AppSession? session) {
 
 const _adminRoutes = [
   '/admin/dashboard',
-  '/admin/patients',
-  '/admin/content',
+  '/admin/users',
+  '/admin/library',
   '/admin/announcements',
 ];
 const _publicRoutes = ['/', '/announcements'];
@@ -188,7 +199,7 @@ const _adminDestinations = [
   SukunNavDestination(
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
-    label: 'রোগী',
+    label: 'ব্যবহারকারী',
   ),
   SukunNavDestination(
     icon: Icons.library_books_outlined,
