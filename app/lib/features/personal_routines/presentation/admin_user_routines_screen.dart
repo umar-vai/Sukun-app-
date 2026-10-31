@@ -170,7 +170,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
     final selected = _selected;
     return AdminScaffold(
       title: 'ব্যবহারকারী ও রুটিন',
-      selectedIndex: -1,
+      selectedIndex: 1,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 90),
         children: [
