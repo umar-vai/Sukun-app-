@@ -182,6 +182,8 @@ jobs:
             test/features/auth/member_signup_screen_test.dart \
             test/features/patient_care/patient_scaffold_test.dart \
             test/features/home/admin_quick_actions_test.dart \
+            test/features/home/admin_bottom_navigation_test.dart \
+            test/features/patients/admin_user_directory_tile_test.dart \
             test/features/home/admin_logout_action_test.dart \
             test/features/home/member_session_logout_layout_test.dart \
             test/features/islamic_utilities/compass_web_fallback_test.dart \

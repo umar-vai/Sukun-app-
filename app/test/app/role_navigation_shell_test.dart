@@ -7,6 +7,7 @@ import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/user_role.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 
 void main() {
   test('deep links have a safe parent for each role', () {
@@ -28,9 +29,15 @@ void main() {
     );
     expect(navigationParent('/prayer-times', null), '/');
     expect(navigationIndex('/admin/announcements/new', admin), 3);
+    expect(navigationIndex('/admin/users', admin), 1);
+    expect(navigationIndex('/admin/user-routines', admin), 1);
+    expect(navigationIndex('/admin/library', admin), 2);
     expect(navigationIndex('/resources/ruqyah', patient), 2);
     expect(showsNavigationShell('/patient/resources'), isFalse);
     expect(showsNavigationShell('/admin/dashboard'), isFalse);
+    expect(showsNavigationShell('/admin/users'), isFalse);
+    expect(showsNavigationShell('/admin/user-routines'), isFalse);
+    expect(showsNavigationShell('/admin/library'), isFalse);
     expect(showsNavigationShell('/admin/announcements/new'), isTrue);
     expect(showsNavigationShell('/patient/notifications'), isTrue);
     expect(showsNavigationShell('/resources/quran/2'), isTrue);
@@ -56,6 +63,59 @@ void main() {
     expect(navigationIndex('/account', member), 3);
     expect(navigationIndex('/admin/announcements/new', admin), 3);
     expect(navigationParent('/my-routines/action/a', member), '/my-routines');
+  });
+
+  testWidgets('admin primary screens never stack two bottom menus', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const admin = AppSession(
+      role: UserRole.superAdmin,
+      userId: 'synthetic-admin',
+    );
+    for (final path in <String>[
+      '/admin/users',
+      '/admin/user-routines',
+      '/admin/library',
+    ]) {
+      final router = GoRouter(
+        initialLocation: path,
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) => RoleNavigationShell(
+              path: state.uri.path,
+              session: admin,
+              child: child,
+            ),
+            routes: [
+              for (final destination in <String>[
+                '/admin/users',
+                '/admin/user-routines',
+                '/admin/library',
+              ])
+                GoRoute(
+                  path: destination,
+                  builder: (context, state) => AdminScaffold(
+                    title: 'Admin',
+                    selectedIndex: 1,
+                    body: const Center(child: Text('Admin content')),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(SukunBottomNavigation), findsOneWidget);
+      expect(find.byKey(const Key('navigation-home')), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      router.dispose();
+    }
   });
 
   testWidgets('guest resource deep link keeps back and home available', (

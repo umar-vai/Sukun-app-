@@ -10,7 +10,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// The server checks Super Admin authorization on EVERY cross-user read/write.
 /// Profiles are filtered by existing server RLS; no service key is in the app.
 class AdminUserRoutinesScreen extends StatefulWidget {
-  const AdminUserRoutinesScreen({super.key});
+  const AdminUserRoutinesScreen({super.key, this.initialUserId});
+
+  /// The selected user is resolved through normal RLS; a URL never grants access.
+  final String? initialUserId;
 
   @override
   State<AdminUserRoutinesScreen> createState() =>
@@ -19,7 +22,7 @@ class AdminUserRoutinesScreen extends StatefulWidget {
 
 class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   final _search = TextEditingController();
-  late Future<List<Map<String, dynamic>>> _users = _loadUsers('');
+  late Future<List<Map<String, dynamic>>> _users;
   Future<Map<String, dynamic>>? _progress;
   Map<String, dynamic>? _selected;
   String _query = '';
@@ -27,6 +30,32 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   bool _saving = false;
 
   SupabaseClient get _client => Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialUserId?.trim() ?? '';
+    _query = initial;
+    _search.text = initial;
+    _users = _loadUsers(initial);
+    if (initial.isNotEmpty) _selectInitialUser();
+  }
+
+  Future<void> _selectInitialUser() async {
+    try {
+      final users = await _users;
+      if (!mounted || users.isEmpty) return;
+      final target = widget.initialUserId;
+      for (final user in users) {
+        if (user['id']?.toString() == target) {
+          _selectUser(user);
+          return;
+        }
+      }
+    } catch (_) {
+      // FutureBuilder displays the permission/network error in the directory.
+    }
+  }
 
   @override
   void dispose() {
@@ -141,10 +170,16 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
     final selected = _selected;
     return AdminScaffold(
       title: 'ব্যবহারকারী ও রুটিন',
-      selectedIndex: -1,
+      selectedIndex: 1,
       body: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 90),
         children: [
+          TextButton.icon(
+            onPressed: () => context.go('/admin/users'),
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text('সকল ব্যবহারকারী'),
+          ),
+          const SizedBox(height: 10),
           Text(
             'ব্যবহারকারীকে রুটিন দিন',
             style: Theme.of(context).textTheme.headlineSmall,
@@ -155,78 +190,83 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
             'প্রতিটি রুটিন তৈরি ও অগ্রগতি দেখার ঘটনা Audit Log-এ থাকবে।',
           ),
           const SizedBox(height: 14),
-          TextField(
-            controller: _search,
-            decoration: InputDecoration(
-              labelText: 'ব্যবহারকারীর নাম বা ID খুঁজুন',
-              hintText: 'নাম লিখে খুঁজুন',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: IconButton(
-                tooltip: 'খুঁজুন',
-                icon: const Icon(Icons.arrow_forward_rounded),
-                onPressed: _searchUsers,
-              ),
-            ),
-            onSubmitted: (_) => _searchUsers(),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _query.isEmpty
-                ? 'প্রথম ৪০ জনের তালিকা · নির্দিষ্ট নাম দিয়ে খুঁজুন'
-                : '“$_query” অনুসন্ধানের প্রথম ৪০টি ফলাফল',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _users,
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const ListTile(
-                  leading: Icon(Icons.error_outline),
-                  title: Text('ব্যবহারকারীর তালিকা আনা যাচ্ছে না।'),
-                  subtitle: Text('অনুমতি ও সংযোগ যাচাই করুন।'),
-                );
-              }
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.data!.isEmpty) {
-                return const ListTile(
-                  title: Text('কোনো ব্যবহারকারী পাওয়া যায়নি।'),
-                );
-              }
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 260),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final user = snapshot.data![index];
-                    final selectedId = selected?['id'] == user['id'];
-                    return Card(
-                      child: ListTile(
-                        selected: selectedId,
-                        leading: const Icon(Icons.person_outline_rounded),
-                        title: Text(
-                          user['display_name']?.toString().trim().isNotEmpty ==
-                                  true
-                              ? user['display_name'].toString()
-                              : 'নাম দেওয়া নেই',
-                        ),
-                        subtitle: Text(
-                          selectedId
-                              ? 'নির্বাচিত ব্যবহারকারী'
-                              : 'অগ্রগতি ও রুটিন দেখতে বাছুন',
-                        ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => _selectUser(user),
-                      ),
-                    );
-                  },
+          if (selected == null) ...[
+            TextField(
+              controller: _search,
+              decoration: InputDecoration(
+                labelText: 'ব্যবহারকারীর নাম বা ID খুঁজুন',
+                hintText: 'নাম লিখে খুঁজুন',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: IconButton(
+                  tooltip: 'খুঁজুন',
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  onPressed: _searchUsers,
                 ),
-              );
-            },
-          ),
+              ),
+              onSubmitted: (_) => _searchUsers(),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _query.isEmpty
+                  ? 'প্রথম ৪০ জনের তালিকা · নির্দিষ্ট নাম দিয়ে খুঁজুন'
+                  : '“$_query” অনুসন্ধানের প্রথম ৪০টি ফলাফল',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _users,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const ListTile(
+                    leading: Icon(Icons.error_outline),
+                    title: Text('ব্যবহারকারীর তালিকা আনা যাচ্ছে না।'),
+                    subtitle: Text('অনুমতি ও সংযোগ যাচাই করুন।'),
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.data!.isEmpty) {
+                  return const ListTile(
+                    title: Text('কোনো ব্যবহারকারী পাওয়া যায়নি।'),
+                  );
+                }
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final user = snapshot.data![index];
+                      final selectedId = selected?['id'] == user['id'];
+                      return Card(
+                        child: ListTile(
+                          selected: selectedId,
+                          leading: const Icon(Icons.person_outline_rounded),
+                          title: Text(
+                            user['display_name']
+                                        ?.toString()
+                                        .trim()
+                                        .isNotEmpty ==
+                                    true
+                                ? user['display_name'].toString()
+                                : 'নাম দেওয়া নেই',
+                          ),
+                          subtitle: Text(
+                            selectedId
+                                ? 'নির্বাচিত ব্যবহারকারী'
+                                : 'অগ্রগতি ও রুটিন দেখতে বাছুন',
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => _selectUser(user),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 18),
           if (selected != null) ...[
             Card(

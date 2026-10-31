@@ -408,7 +408,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/user-routines',
-            builder: (context, state) => const AdminUserRoutinesScreen(),
+            builder: (context, state) => AdminUserRoutinesScreen(
+              initialUserId: state.uri.queryParameters['userId'],
+            ),
           ),
           GoRoute(
             path: '/admin/dashboard',
