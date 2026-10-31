@@ -84,6 +84,8 @@ final class PluginLocalNotificationsGateway
 
   static const _channelId = 'care_reminders';
   static const _channelName = 'Care plan reminders';
+  static const _prayerChannelId = 'prayer_waqt';
+  static const _prayerChannelName = 'Prayer time alerts';
   static const _updatesChannelId = 'care_updates';
   static const _updatesChannelName = 'Care plan updates';
   static const publicNoticeChannelId = 'sukun_public_notices';
@@ -120,6 +122,14 @@ final class PluginLocalNotificationsGateway
         _channelId,
         _channelName,
         description: 'Approved Sukun Life care plan reminders',
+        importance: Importance.high,
+      ),
+    );
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _prayerChannelId,
+        _prayerChannelName,
+        description: 'Optional start-of-waqt prayer reminders',
         importance: Importance.high,
       ),
     );
@@ -238,7 +248,9 @@ final class PluginLocalNotificationsGateway
         reminder.scheduledAt,
         timezone: tz.local,
       ),
-      notificationDetails: _details,
+      notificationDetails: reminder.payload.startsWith('prayer_time:')
+          ? _prayerDetails
+          : _details,
       androidScheduleMode: precise
           ? AndroidScheduleMode.exactAllowWhileIdle
           : AndroidScheduleMode.inexactAllowWhileIdle,
@@ -316,6 +328,17 @@ final class PluginLocalNotificationsGateway
       payload: 'universal_notice:$noticeId',
     );
   }
+
+  static const _prayerDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      _prayerChannelId,
+      _prayerChannelName,
+      channelDescription: 'Optional prayer waqt reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(),
+  );
 
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
