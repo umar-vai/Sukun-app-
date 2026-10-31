@@ -106,7 +106,8 @@ void main() {
         .width;
     expect(width, lessThanOrEqualTo(1140));
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
-    expect(find.text('নামাজের সময়'), findsOneWidget);
+    expect(find.text('পরবর্তী নামাজ'), findsOneWidget);
+    expect(find.byKey(const Key('home-forty-day-challenge')), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('universal-announcements-shortcut')),
