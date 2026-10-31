@@ -176,11 +176,14 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                                     vertical: 5,
                                   ),
                                   child: Text(
-                                    isPatient ? 'রোগী অ্যাকাউন্ট' : 'সদস্য অ্যাকাউন্ট',
-                                    style: theme.textTheme.labelMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    isPatient
+                                        ? 'রোগী অ্যাকাউন্ট'
+                                        : 'সদস্য অ্যাকাউন্ট',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                                 ),
                               ),
