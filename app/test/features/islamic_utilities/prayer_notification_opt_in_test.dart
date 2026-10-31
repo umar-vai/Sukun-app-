@@ -39,24 +39,27 @@ void main() {
     expect(gateway.permissionRequests, 0);
   });
 
-  test('explicit opt-in schedules and disable cancels only prayer IDs', () async {
-    final gateway = _FakeGateway();
-    final service = PrayerNotificationService(
-      local: gateway,
-      calculator: AdhanPrayerCalculationService(),
-      settingsStore: const _StoredPrayerSettings(settings),
-    );
-    expect(await service.enable(), isTrue);
-    expect(await service.isEnabled(), isTrue);
-    expect(gateway.permissionRequests, 1);
-    expect(gateway.scheduled, isNotEmpty);
-    final ids = gateway.scheduled.keys.toSet();
+  test(
+    'explicit opt-in schedules and disable cancels only prayer IDs',
+    () async {
+      final gateway = _FakeGateway();
+      final service = PrayerNotificationService(
+        local: gateway,
+        calculator: AdhanPrayerCalculationService(),
+        settingsStore: const _StoredPrayerSettings(settings),
+      );
+      expect(await service.enable(), isTrue);
+      expect(await service.isEnabled(), isTrue);
+      expect(gateway.permissionRequests, 1);
+      expect(gateway.scheduled, isNotEmpty);
+      final ids = gateway.scheduled.keys.toSet();
 
-    await service.disable();
-    expect(await service.isEnabled(), isFalse);
-    expect(gateway.scheduled, isEmpty);
-    expect(gateway.cancelled.containsAll(ids), isTrue);
-  });
+      await service.disable();
+      expect(await service.isEnabled(), isFalse);
+      expect(gateway.scheduled, isEmpty);
+      expect(gateway.cancelled.containsAll(ids), isTrue);
+    },
+  );
 
   test('missing city prevents permission prompts and scheduling', () async {
     final gateway = _FakeGateway();
