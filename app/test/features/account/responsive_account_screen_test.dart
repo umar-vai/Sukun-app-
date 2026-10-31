@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -12,6 +13,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
       publishableKey: 'public-test-key',
