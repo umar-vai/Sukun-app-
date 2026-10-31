@@ -47,7 +47,10 @@ class RoleNavigationShell extends ConsumerWidget {
           : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (path != '/resources' && !path.startsWith('/resources/'))
+                if (path != '/account' &&
+                    !path.startsWith('/settings/') &&
+                    path != '/resources' &&
+                    !path.startsWith('/resources/'))
                   SafeArea(
                     top: false,
                     bottom: false,
@@ -131,6 +134,10 @@ bool showsNavigationShell(String path) {
 
 String navigationParent(String path, AppSession? session) {
   if (path == '/prayer-times/settings') return '/prayer-times';
+  if (path == '/settings/bengali-font') return '/settings/appearance';
+  if (path.startsWith('/settings/')) {
+    return session?.isSuperAdmin == true ? '/admin/dashboard' : '/account';
+  }
   if (path.startsWith('/admin/announcements/')) return '/admin/announcements';
   if (path.startsWith('/admin/users/')) return '/admin/users';
   if (path.startsWith('/admin/user-routines')) return '/admin/users';
