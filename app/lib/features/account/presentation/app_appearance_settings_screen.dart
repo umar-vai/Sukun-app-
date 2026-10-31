@@ -43,9 +43,8 @@ class _AppAppearanceSettingsScreenState
           avatar: Icon(icon, size: 18),
           label: Text(label),
           selected: settings.themeMode == mode,
-          onSelected: (_) => unawaited(
-            AppDisplaySettings.instance.setThemeMode(mode),
-          ),
+          onSelected: (_) =>
+              unawaited(AppDisplaySettings.instance.setThemeMode(mode)),
         ),
     ],
   );
@@ -63,9 +62,8 @@ class _AppAppearanceSettingsScreenState
             backgroundColor: palette.previewColor,
           ),
           selected: settings.accentPalette == palette,
-          onSelected: (_) => unawaited(
-            AppDisplaySettings.instance.setAccentPalette(palette),
-          ),
+          onSelected: (_) =>
+              unawaited(AppDisplaySettings.instance.setAccentPalette(palette)),
         ),
     ],
   );
