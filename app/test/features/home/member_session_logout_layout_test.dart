@@ -107,6 +107,13 @@ void main() {
     expect(width, lessThanOrEqualTo(1140));
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
     expect(find.text('নামাজের সময়'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('universal-announcements-shortcut')),
+        matching: find.text('নোটিশ'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('home-compact-prayer')), findsOneWidget);
     expect(find.byTooltip('কিবলার দিক'), findsOneWidget);
     expect(resourceSections.length, 8);
