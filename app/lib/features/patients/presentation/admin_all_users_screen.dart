@@ -68,13 +68,19 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
             const SizedBox(height: 5),
             const Text(
               'এই তালিকায় সাধারণ ব্যবহারকারী ও রোগী অ্যাকাউন্টের Profile আছে। '
-              'রোগীর চিকিৎসাসংক্রান্ত তথ্য আলাদা সুরক্ষিত।',
+              'রোগীর চিকিৎসাসংক্রান্ত তথ্য আলাদা সুরক্ষিত। '
+              'কোনো ব্যবহারকারীর নাম চাপলে তাঁর রুটিন ও অগ্রগতি খুলবে।',
             ),
             const SizedBox(height: 14),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
+                FilledButton.icon(
+                  onPressed: () => context.go('/admin/user-routines'),
+                  icon: const Icon(Icons.playlist_add_check_rounded),
+                  label: const Text('রুটিন ও অগ্রগতি'),
+                ),
                 OutlinedButton.icon(
                   onPressed: () => context.go('/admin/patients'),
                   icon: const Icon(Icons.medical_information_outlined),
@@ -131,25 +137,10 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
                     ),
                     const SizedBox(height: 8),
                     for (final user in users)
-                      Card(
-                        child: ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person_outline_rounded),
-                          ),
-                          title: Text(
-                            (user['display_name']
-                                        ?.toString()
-                                        .trim()
-                                        .isNotEmpty ??
-                                    false)
-                                ? user['display_name'].toString()
-                                : 'নাম দেওয়া হয়নি',
-                          ),
-                          subtitle: Text(
-                            'User ID: ${user['id'] ?? '—'}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      AdminUserDirectoryTile(
+                        user: user,
+                        onOpen: () => context.go(
+                          '/admin/user-routines?userId=${Uri.encodeComponent(user['id'].toString())}',
                         ),
                       ),
                     const SizedBox(height: 14),
@@ -179,8 +170,8 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'অন্য ব্যবহারকারীর রুটিন তৈরি ও অগ্রগতি দেখার '
-                      'ফিচার নিরাপদ সার্ভার অনুমোদন চালুর পর পাওয়া যাবে।',
+                      'রুটিন সুপারিশ করতে ব্যবহারকারীর নাম চাপুন। '
+                      'প্রস্তাবিত রুটিন ব্যবহারকারী নিজে চালু না করা পর্যন্ত নিষ্ক্রিয় থাকবে।',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -189,6 +180,42 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A tappable directory row; its callback always uses the server-guarded
+/// Super Admin routine page, never a patient record or a privileged client API.
+class AdminUserDirectoryTile extends StatelessWidget {
+  const AdminUserDirectoryTile({
+    super.key,
+    required this.user,
+    required this.onOpen,
+  });
+
+  final Map<String, dynamic> user;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = user['id']?.toString() ?? '';
+    final name = user['display_name']?.toString().trim() ?? '';
+    return Card(
+      child: ListTile(
+        key: Key('admin-user-$id'),
+        enabled: id.isNotEmpty,
+        onTap: id.isEmpty ? null : onOpen,
+        leading: const CircleAvatar(
+          child: Icon(Icons.person_outline_rounded),
+        ),
+        title: Text(name.isEmpty ? 'নাম দেওয়া হয়নি' : name),
+        subtitle: Text(
+          'User ID: ${id.isEmpty ? '—' : id}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded),
       ),
     );
   }
