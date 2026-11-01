@@ -603,7 +603,7 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                         'home-prayer-progress-ring',
                                       ),
                                       value: sunriseBreak
-                                          ? 0
+                                          ? 0.0
                                           : prayerWindowProgress(
                                               windowStart,
                                               windowEnd,
