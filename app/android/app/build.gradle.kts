@@ -73,6 +73,46 @@ android {
     }
 }
 
+// Generate Android launcher assets from the approved Sukun Life logo during a
+// native build only. This task does not package APK/AAB or touch signing.
+val sukunAppRoot = file("../..")
+val sukunIconGenerator = file("../../tool/branding/GenerateSukunIcons.java")
+val sukunLogo = file("../../assets/brand/sukunlife_logo.png")
+val javaSuffix = if (System.getProperty("os.name").lowercase().startsWith("windows")) {
+    ".exe"
+} else {
+    ""
+}
+val javaBin = file("${System.getProperty("java.home")}/bin/java$javaSuffix")
+val generateOfficialSukunLauncherIcons = tasks.register<Exec>("generateOfficialSukunLauncherIcons") {
+    group = "branding"
+    description = "Generate brand-preserving Android launcher icons without an APK build"
+    inputs.files(sukunIconGenerator, sukunLogo)
+    outputs.files(
+        listOf("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi").flatMap { density ->
+            listOf(
+                file("src/main/res/mipmap-$density/ic_launcher.png"),
+                file("src/main/res/mipmap-$density/ic_launcher_foreground.png"),
+            )
+        },
+    )
+    commandLine(
+        javaBin.absolutePath,
+        "-Djava.awt.headless=true",
+        sukunIconGenerator.absolutePath,
+        "--android",
+        sukunAppRoot.absolutePath,
+    )
+}
+
+// Resource merging must not package the template Flutter launcher bitmap.
+tasks.matching {
+    it.name == "preBuild" ||
+        (it.name.startsWith("merge") && it.name.endsWith("Resources"))
+}.configureEach {
+    dependsOn(generateOfficialSukunLauncherIcons)
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

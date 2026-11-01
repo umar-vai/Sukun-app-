@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Browser icons are reproducibly generated from the official brand PNG.
+/web/favicon.png
+/web/icons/
+# Android generated adaptive foreground; existing legacy mipmaps are refreshed
+# by the approved Gradle task at the next native test/release gate.
+/android/app/src/main/res/mipmap-*/ic_launcher_foreground.png
