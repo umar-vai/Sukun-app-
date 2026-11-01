@@ -376,27 +376,45 @@ class _PrayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = isCurrent ? Colors.white : theme.colorScheme.onSurface;
+    final iconColor = isCurrent
+        ? Colors.white
+        : theme.colorScheme.onSurfaceVariant;
+    final icon = switch (entry.id) {
+      'fajr' => Icons.wb_twilight_outlined,
+      'sunrise' => Icons.wb_sunny_outlined,
+      'dhuhr' => Icons.wb_sunny_outlined,
+      'asr' => Icons.cloud_outlined,
+      'maghrib' => Icons.wb_twilight_outlined,
+      'isha' => Icons.nightlight_round,
+      _ => Icons.schedule_outlined,
+    };
+
     return Container(
-      color: isCurrent ? SukunColors.mist : Colors.transparent,
+      key: Key('prayer-time-row-${entry.id}'),
+      color: isCurrent ? SukunColors.deepTide : Colors.transparent,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       child: Row(
         children: [
-          Icon(
-            entry.isPrayer
-                ? Icons.nights_stay_outlined
-                : Icons.wb_sunny_outlined,
-            color: isCurrent ? SukunColors.deepTide : SukunColors.nightNavy,
-          ),
+          Icon(icon, color: iconColor),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               entry.label,
-              style: TextStyle(fontWeight: isCurrent ? FontWeight.w600 : null),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: foreground,
+                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+              ),
             ),
           ),
+          const SizedBox(width: 10),
           Text(
             _time(context, entry.time),
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
