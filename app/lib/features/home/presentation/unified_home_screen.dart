@@ -476,8 +476,9 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                 .firstOrNull;
             final sunriseBreak =
                 schedule != null && isSunriseBreak(schedule, _now);
-            final windowEnd =
-                schedule == null ? null : prayerWindowEnd(schedule, _now);
+            final windowEnd = schedule == null
+                ? null
+                : prayerWindowEnd(schedule, _now);
             final windowStart = sunriseBreak ? sunrise : current;
             final prayers = schedule?.entries
                 .where((entry) => entry.isPrayer)
@@ -625,8 +626,8 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                           sunriseBreak
                                               ? 'যোহর পর্যন্ত'
                                               : current.id == 'fajr'
-                                                  ? 'ফজরের শেষ'
-                                                  : 'পরের ওয়াক্ত',
+                                              ? 'ফজরের শেষ'
+                                              : 'পরের ওয়াক্ত',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             color: Color(0xFFB3D5E6),
@@ -689,7 +690,9 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                     children: [
                                       Expanded(
                                         child: _HomePrayerWindowTime(
-                                          title: sunriseBreak ? 'সূর্যোদয়' : 'শুরু',
+                                          title: sunriseBreak
+                                              ? 'সূর্যোদয়'
+                                              : 'শুরু',
                                           time: windowStart.time,
                                         ),
                                       ),
@@ -722,8 +725,8 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                               ),
                               child: HomePrayerTimeChip(
                                 entry: entry,
-                                highlighted: !sunriseBreak &&
-                                    entry.id == current.id,
+                                highlighted:
+                                    !sunriseBreak && entry.id == current.id,
                                 width: double.infinity,
                                 onDarkBackground: true,
                                 onTap: () => context.push('/prayer-times'),
