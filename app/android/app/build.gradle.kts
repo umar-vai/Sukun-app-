@@ -73,16 +73,17 @@ android {
     }
 }
 
-
 // Generate Android launcher assets from the approved Sukun Life logo during a
 // native build only. This task does not package APK/AAB or touch signing.
 val sukunAppRoot = file("../..")
 val sukunIconGenerator = file("../../tool/branding/GenerateSukunIcons.java")
 val sukunLogo = file("../../assets/brand/sukunlife_logo.png")
-val javaBin = file(
-    System.getProperty("java.home") + "/bin/java" +
-        if (System.getProperty("os.name").lowercase().startsWith("windows")) ".exe" else "",
-)
+val javaSuffix = if (System.getProperty("os.name").lowercase().startsWith("windows")) {
+    ".exe"
+} else {
+    ""
+}
+val javaBin = file("${System.getProperty("java.home")}/bin/java$javaSuffix")
 val generateOfficialSukunLauncherIcons = tasks.register<Exec>("generateOfficialSukunLauncherIcons") {
     group = "branding"
     description = "Generate brand-preserving Android launcher icons without an APK build"
