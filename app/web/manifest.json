@@ -6,5 +6,25 @@
   "background_color": "#E8F5FC",
   "theme_color": "#0F9BD7",
   "description": "সুকুন লাইফ: ইসলামিক রিসোর্স ও রোগীর ব্যক্তিগত কেয়ার প্ল্যান",
-  "orientation": "portrait-primary"
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
