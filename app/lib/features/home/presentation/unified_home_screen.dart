@@ -533,8 +533,10 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                       Text(
                         schedule == null
                             ? 'নামাজের সময়'
-                            : DateFormat('EEE, d MMM', 'en')
-                                .format(schedule.date),
+                            : DateFormat(
+                                'EEE, d MMM',
+                                'en',
+                              ).format(schedule.date),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -574,8 +576,9 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                     padding: const EdgeInsets.fromLTRB(13, 14, 13, 8),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final ringSize =
-                            constraints.maxWidth < 290 ? 91.0 : 112.0;
+                        final ringSize = constraints.maxWidth < 290
+                            ? 91.0
+                            : 112.0;
                         return Row(
                           children: [
                             SizedBox(
@@ -597,8 +600,7 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                       strokeWidth: 5,
                                       strokeCap: StrokeCap.round,
                                       color: SukunColors.sukunBlue,
-                                      backgroundColor:
-                                          const Color(0xFF36576D),
+                                      backgroundColor: const Color(0xFF36576D),
                                     ),
                                   ),
                                   Padding(
@@ -657,9 +659,7 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                   ),
                                   Text(
                                     prayerNamesForHome(current.id),
-                                    key: const Key(
-                                      'home-current-prayer-name',
-                                    ),
+                                    key: const Key('home-current-prayer-name'),
                                     style: const TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.w800,
@@ -772,18 +772,14 @@ class _HomePrayerWindowTime extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFB3D5E6),
-            fontSize: 10,
-          ),
+          style: const TextStyle(color: Color(0xFFB3D5E6), fontSize: 10),
         ),
         const SizedBox(height: 2),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            MaterialLocalizations.of(
-              context,
-            ).formatTimeOfDay(TimeOfDay.fromDateTime(time)),
+            MaterialLocalizations.of(context)
+                .formatTimeOfDay(TimeOfDay.fromDateTime(time)),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -839,8 +835,8 @@ class HomePrayerTimeChip extends StatelessWidget {
     final foreground = highlighted
         ? Colors.white
         : onDarkBackground
-            ? const Color(0xFFE5F1F7)
-            : Theme.of(context).colorScheme.onSurface;
+        ? const Color(0xFFE5F1F7)
+        : Theme.of(context).colorScheme.onSurface;
     final accent = onDarkBackground
         ? const Color(0xFFB3D5E6)
         : Theme.of(context).colorScheme.onSurfaceVariant;
@@ -881,9 +877,8 @@ class HomePrayerTimeChip extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                MaterialLocalizations.of(context).formatTimeOfDay(
-                  TimeOfDay.fromDateTime(entry.time),
-                ),
+                MaterialLocalizations.of(context)
+                    .formatTimeOfDay(TimeOfDay.fromDateTime(entry.time)),
                 key: Key('home-prayer-time-' + entry.id),
                 maxLines: 1,
                 style: TextStyle(
