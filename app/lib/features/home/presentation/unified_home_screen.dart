@@ -852,7 +852,7 @@ class HomePrayerTimeChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(13),
       child: Container(
-        key: Key('home-prayer-chip-' + entry.id),
+        key: Key('home-prayer-chip-${entry.id}'),
         width: width,
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
         decoration: BoxDecoration(
@@ -864,7 +864,7 @@ class HomePrayerTimeChip extends StatelessWidget {
           children: [
             Text(
               _prayerLabel(entry.id),
-              key: Key('home-prayer-label-' + entry.id),
+              key: Key('home-prayer-label-${entry.id}'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -879,7 +879,7 @@ class HomePrayerTimeChip extends StatelessWidget {
               child: Text(
                 MaterialLocalizations.of(context)
                     .formatTimeOfDay(TimeOfDay.fromDateTime(entry.time)),
-                key: Key('home-prayer-time-' + entry.id),
+                key: Key('home-prayer-time-${entry.id}'),
                 maxLines: 1,
                 style: TextStyle(
                   color: foreground,
