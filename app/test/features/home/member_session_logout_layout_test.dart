@@ -116,8 +116,14 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('home-compact-prayer')), findsOneWidget);
-    expect(find.byKey(const Key('home-prayer-location-action')), findsOneWidget);
-    expect(find.text('নামাজের সময় দেখতে শহর ও পদ্ধতি সেট করুন'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-prayer-location-action')),
+      findsOneWidget,
+    );
+    expect(
+      find.text('নামাজের সময় দেখতে শহর ও পদ্ধতি সেট করুন'),
+      findsOneWidget,
+    );
     expect(resourceSections.length, 8);
     for (final section in resourceSections) {
       expect(
