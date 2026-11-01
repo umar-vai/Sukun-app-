@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -450,113 +451,360 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
   }
 
   @override
-  Widget build(BuildContext context) => SukunSurface(
-    key: const Key('home-compact-prayer'),
-    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.schedule_outlined, size: 18),
-            const SizedBox(width: 6),
-            const Expanded(
-              child: Text(
-                'পরবর্তী নামাজ',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            IconButton(
-              tooltip: 'কিবলার দিক',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.explore_outlined, size: 20),
-              onPressed: () => context.push('/qibla'),
-            ),
-            IconButton(
-              tooltip: 'সম্পূর্ণ নামাজের সময়সূচি',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.chevron_right_rounded, size: 22),
-              onPressed: () => context.push('/prayer-times'),
-            ),
-          ],
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: Container(
+        key: const Key('home-compact-prayer'),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: SukunColors.nightNavy,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF31506B)),
         ),
-        FutureBuilder<_PrayerSummary?>(
+        child: FutureBuilder<_PrayerSummary?>(
           future: _future,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text('নামাজের সময় হিসাব হচ্ছে…'),
-              );
-            }
-            final data = snapshot.data;
-            if (snapshot.hasError || data == null) {
-              return TextButton.icon(
-                onPressed: () => context.push('/prayer-times/settings'),
-                icon: const Icon(Icons.location_on_outlined, size: 18),
-                label: const Text('নামাজের সময় দেখতে শহর সেট করুন'),
-              );
-            }
-            _lastSchedule = data.schedule;
-            final next = data.schedule.nextPrayer;
-            final remaining = next.time.difference(_now);
-            final prayers = data.schedule.entries
+            final data = snapshot.hasError ? null : snapshot.data;
+            final schedule = data?.schedule;
+            if (schedule != null) _lastSchedule = schedule;
+            final current = schedule?.currentPrayer;
+            final next = schedule?.nextPrayer;
+            final prayers = schedule?.entries
                 .where((entry) => entry.isPrayer)
                 .toList(growable: false);
+            final remaining = next?.time.difference(_now);
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${prayerNamesForHome(next.id)} · ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(next.time))}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [SukunColors.deepTide, SukunColors.sukunBlue],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      formatPrayerCountdown(remaining),
-                      key: const Key('home-next-prayer-countdown'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 11,
+                  ),
                   child: Row(
                     children: [
-                      for (final entry in prayers)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 5),
-                          child: HomePrayerTimeChip(
-                            entry: entry,
-                            highlighted: entry.id == next.id,
+                      Expanded(
+                        child: InkWell(
+                          key: const Key('home-prayer-location-action'),
+                          onTap: () => context.push('/prayer-times/settings'),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 17,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  data?.locationName ?? 'শহর নির্বাচন',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 9),
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        size: 17,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        schedule == null
+                            ? 'নামাজের সময়'
+                            : DateFormat('EEE, d MMM', 'en')
+                                .format(schedule.date),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  data.locationName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Text(
+                      'নামাজের সময় হিসাব হচ্ছে…',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                else if (current == null ||
+                    next == null ||
+                    prayers == null ||
+                    remaining == null)
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: TextButton.icon(
+                      onPressed: () => context.push('/prayer-times/settings'),
+                      icon: const Icon(Icons.location_on_outlined),
+                      label: const Text(
+                        'নামাজের সময় দেখতে শহর ও পদ্ধতি সেট করুন',
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(13, 14, 13, 8),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final ringSize =
+                            constraints.maxWidth < 290 ? 91.0 : 112.0;
+                        return Row(
+                          children: [
+                            SizedBox(
+                              height: ringSize,
+                              width: ringSize,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox.expand(
+                                    child: CircularProgressIndicator(
+                                      key: const Key(
+                                        'home-prayer-progress-ring',
+                                      ),
+                                      value: prayerWindowProgress(
+                                        current,
+                                        next,
+                                        _now,
+                                      ),
+                                      strokeWidth: 5,
+                                      strokeCap: StrokeCap.round,
+                                      color: SukunColors.sukunBlue,
+                                      backgroundColor:
+                                          const Color(0xFF36576D),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Text(
+                                          'পরের ওয়াক্ত',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFB3D5E6),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          formatPrayerCountdown(remaining),
+                                          key: const Key(
+                                            'home-next-prayer-countdown',
+                                          ),
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: ringSize < 100 ? 12 : 14,
+                                            fontWeight: FontWeight.w800,
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                        const Text(
+                                          'বাকি',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFB3D5E6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'এখন',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFFB3D5E6),
+                                    ),
+                                  ),
+                                  Text(
+                                    prayerNamesForHome(current.id),
+                                    key: const Key(
+                                      'home-current-prayer-name',
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 7),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _HomePrayerWindowTime(
+                                          title: 'শুরু',
+                                          time: current.time,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: _HomePrayerWindowTime(
+                                          title: 'শেষ',
+                                          time: next.time,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                    child: Row(
+                      children: [
+                        for (final entry in prayers)
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 1,
+                              ),
+                              child: HomePrayerTimeChip(
+                                entry: entry,
+                                highlighted: entry.id == current.id,
+                                width: double.infinity,
+                                onDarkBackground: true,
+                                onTap: () => context.push('/prayer-times'),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 3),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => context.push('/qibla'),
+                          icon: const Icon(Icons.explore_outlined, size: 16),
+                          label: const Text('কিবলা'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFD2EAF6),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => context.push('/prayer-times'),
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                          ),
+                          label: const Text('পূর্ণ সময়সূচি'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             );
           },
         ),
+      ),
+    ),
+  );
+}
+
+class _HomePrayerWindowTime extends StatelessWidget {
+  const _HomePrayerWindowTime({required this.title, required this.time});
+
+  final String title;
+  final DateTime time;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+    decoration: BoxDecoration(
+      color: const Color(0xFF214258),
+      borderRadius: BorderRadius.circular(11),
+      border: Border.all(color: const Color(0xFF37566B)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFB3D5E6),
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            MaterialLocalizations.of(
+              context,
+            ).formatTimeOfDay(TimeOfDay.fromDateTime(time)),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ],
     ),
   );
+}
+
+/// Fraction elapsed between the actual prayer boundaries, clamped to [0, 1].
+double prayerWindowProgress(
+  PrayerTimeEntry current,
+  PrayerTimeEntry next,
+  DateTime now,
+) {
+  final window = next.time.difference(current.time).inSeconds;
+  if (window <= 0) return 0;
+  return (now.difference(current.time).inSeconds / window).clamp(0.0, 1.0);
 }
 
 String prayerNamesForHome(String id) => _prayerLabel(id);
@@ -575,45 +823,80 @@ class HomePrayerTimeChip extends StatelessWidget {
     super.key,
     required this.entry,
     required this.highlighted,
+    this.width = 61,
+    this.onDarkBackground = false,
+    this.onTap,
   });
 
   final PrayerTimeEntry entry;
   final bool highlighted;
+  final double width;
+  final bool onDarkBackground;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final foreground = highlighted
         ? Colors.white
-        : Theme.of(context).colorScheme.onSurface;
-
-    return Container(
-      key: Key('home-prayer-chip-${entry.id}'),
-      width: 61,
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
-      decoration: BoxDecoration(
-        color: highlighted ? SukunColors.deepTide : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Text(
-            _prayerLabel(entry.id),
-            key: Key('home-prayer-label-${entry.id}'),
-            style: TextStyle(
-              color: foreground,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+        : onDarkBackground
+            ? const Color(0xFFE5F1F7)
+            : Theme.of(context).colorScheme.onSurface;
+    final accent = onDarkBackground
+        ? const Color(0xFFB3D5E6)
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final icon = switch (entry.id) {
+      'fajr' => Icons.wb_twilight_outlined,
+      'dhuhr' => Icons.wb_sunny_outlined,
+      'asr' => Icons.cloud_outlined,
+      'maghrib' => Icons.wb_twilight_outlined,
+      'isha' => Icons.nightlight_round,
+      _ => Icons.schedule_outlined,
+    };
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(13),
+      child: Container(
+        key: Key('home-prayer-chip-' + entry.id),
+        width: width,
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+        decoration: BoxDecoration(
+          color: highlighted ? SukunColors.deepTide : Colors.transparent,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _prayerLabel(entry.id),
+              key: Key('home-prayer-label-' + entry.id),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            MaterialLocalizations.of(context)
-                .formatTimeOfDay(TimeOfDay.fromDateTime(entry.time)),
-            key: Key('home-prayer-time-${entry.id}'),
-            maxLines: 1,
-            style: TextStyle(color: foreground, fontSize: 10),
-          ),
-        ],
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                MaterialLocalizations.of(context).formatTimeOfDay(
+                  TimeOfDay.fromDateTime(entry.time),
+                ),
+                key: Key('home-prayer-time-' + entry.id),
+                maxLines: 1,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Icon(icon, color: highlighted ? Colors.white70 : accent, size: 17),
+          ],
+        ),
       ),
     );
   }
