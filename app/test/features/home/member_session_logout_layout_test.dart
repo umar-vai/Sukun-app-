@@ -106,7 +106,7 @@ void main() {
         .width;
     expect(width, lessThanOrEqualTo(1140));
     expect(find.text('আপনার প্রতিদিনের সুকুন'), findsOneWidget);
-    expect(find.text('পরবর্তী নামাজ'), findsOneWidget);
+    expect(find.text('নামাজের সময়'), findsOneWidget);
     expect(find.byKey(const Key('home-forty-day-challenge')), findsNothing);
     expect(
       find.descendant(
@@ -116,7 +116,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('home-compact-prayer')), findsOneWidget);
-    expect(find.byTooltip('কিবলার দিক'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-prayer-location-action')),
+      findsOneWidget,
+    );
     expect(resourceSections.length, 8);
     for (final section in resourceSections) {
       expect(
