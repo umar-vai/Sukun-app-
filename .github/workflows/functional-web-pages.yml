@@ -77,6 +77,19 @@ jobs:
       - name: Resolve Flutter dependencies
         run: flutter pub get
 
+      - name: Generate official favicon, PWA and Android icon assets (no APK)
+        shell: bash
+        run: |
+          set -euo pipefail
+          before=$(sha256sum assets/brand/sukunlife_logo.png | cut -d' ' -f1)
+          java -Djava.awt.headless=true tool/branding/GenerateSukunIcons.java --web .
+          # Verify the next Android build will use the same official art without
+          # actually compiling or packaging an APK/AAB on normal web development.
+          java -Djava.awt.headless=true tool/branding/GenerateSukunIcons.java --android .
+          python3 tool/branding/verify_brand_icons.py
+          after=$(sha256sum assets/brand/sukunlife_logo.png | cut -d' ' -f1)
+          test "$before" = "$after"
+
       - name: Check anonymous production privacy gate syntax
         shell: bash
         run: bash -n "$GITHUB_WORKSPACE/.github/scripts/verify-staging-preview.sh"
