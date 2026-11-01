@@ -471,10 +471,18 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
             if (schedule != null) _lastSchedule = schedule;
             final current = schedule?.currentPrayer;
             final next = schedule?.nextPrayer;
+            final sunrise = schedule?.entries
+                .where((entry) => entry.id == 'sunrise')
+                .firstOrNull;
+            final sunriseBreak =
+                schedule != null && isSunriseBreak(schedule, _now);
+            final windowEnd =
+                schedule == null ? null : prayerWindowEnd(schedule, _now);
+            final windowStart = sunriseBreak ? sunrise : current;
             final prayers = schedule?.entries
                 .where((entry) => entry.isPrayer)
                 .toList(growable: false);
-            final remaining = next?.time.difference(_now);
+            final remaining = windowEnd?.time.difference(_now);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -557,6 +565,8 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                 else if (current == null ||
                     next == null ||
                     prayers == null ||
+                    windowStart == null ||
+                    windowEnd == null ||
                     remaining == null)
                   Padding(
                     padding: const EdgeInsets.all(14),
@@ -592,11 +602,13 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                       key: const Key(
                                         'home-prayer-progress-ring',
                                       ),
-                                      value: prayerWindowProgress(
-                                        current,
-                                        next,
-                                        _now,
-                                      ),
+                                      value: sunriseBreak
+                                          ? 0
+                                          : prayerWindowProgress(
+                                              windowStart,
+                                              windowEnd,
+                                              _now,
+                                            ),
                                       strokeWidth: 5,
                                       strokeCap: StrokeCap.round,
                                       color: SukunColors.sukunBlue,
@@ -609,9 +621,13 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        const Text(
-                                          'পরের ওয়াক্ত',
-                                          style: TextStyle(
+                                        Text(
+                                          sunriseBreak
+                                              ? 'যোহর পর্যন্ত'
+                                              : current.id == 'fajr'
+                                                  ? 'ফজরের শেষ'
+                                                  : 'পরের ওয়াক্ত',
+                                          style: const TextStyle(
                                             fontSize: 10,
                                             color: Color(0xFFB3D5E6),
                                           ),
@@ -658,7 +674,9 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                     ),
                                   ),
                                   Text(
-                                    prayerNamesForHome(current.id),
+                                    sunriseBreak
+                                        ? 'ওয়াক্তের বিরতি'
+                                        : prayerNamesForHome(current.id),
                                     key: const Key('home-current-prayer-name'),
                                     style: const TextStyle(
                                       fontSize: 26,
@@ -671,15 +689,15 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                                     children: [
                                       Expanded(
                                         child: _HomePrayerWindowTime(
-                                          title: 'শুরু',
-                                          time: current.time,
+                                          title: sunriseBreak ? 'সূর্যোদয়' : 'শুরু',
+                                          time: windowStart.time,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: _HomePrayerWindowTime(
-                                          title: 'শেষ',
-                                          time: next.time,
+                                          title: sunriseBreak ? 'যোহর' : 'শেষ',
+                                          time: windowEnd.time,
                                         ),
                                       ),
                                     ],
@@ -704,7 +722,8 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
                               ),
                               child: HomePrayerTimeChip(
                                 entry: entry,
-                                highlighted: entry.id == current.id,
+                                highlighted: !sunriseBreak &&
+                                    entry.id == current.id,
                                 width: double.infinity,
                                 onDarkBackground: true,
                                 onTap: () => context.push('/prayer-times'),
@@ -790,6 +809,29 @@ class _HomePrayerWindowTime extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Fajr ends at sunrise, not when Dhuhr begins.
+PrayerTimeEntry prayerWindowEnd(PrayerDaySchedule schedule, DateTime now) {
+  final sunrise = schedule.entries
+      .where((entry) => entry.id == 'sunrise')
+      .firstOrNull;
+  if (schedule.currentPrayer.id == 'fajr' &&
+      sunrise != null &&
+      now.isBefore(sunrise.time)) {
+    return sunrise;
+  }
+  return schedule.nextPrayer;
+}
+
+/// After sunrise and before Dhuhr the Fajr window has already ended.
+bool isSunriseBreak(PrayerDaySchedule schedule, DateTime now) {
+  final sunrise = schedule.entries
+      .where((entry) => entry.id == 'sunrise')
+      .firstOrNull;
+  return schedule.currentPrayer.id == 'fajr' &&
+      sunrise != null &&
+      !now.isBefore(sunrise.time);
 }
 
 /// Fraction elapsed between the actual prayer boundaries, clamped to [0, 1].
