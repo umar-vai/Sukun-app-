@@ -6,7 +6,7 @@ This proposal updates the real Sukun Life Flutter Home for Guest, General User a
 
 1. Header: selected city (tap opens Prayer Settings) and Gregorian date of the computed local schedule.
 2. Current prayer: its Bengali name, a circular progress indicator for the elapsed time of the waqt, and a live countdown until the next prayer.
-3. Window: separate start and end times. End is the next prayer's start from the selected calculation method, not a universal local mosque ruling.
+3. Window: separate start and end times. Fajr ends at **sunrise**, not Dhuhr; other displayed prayer windows use their next calculated prayer boundary. Between sunrise and Dhuhr, show a **break** rather than falsely marking Fajr as ongoing. These calculated boundaries may differ from a local mosque timetable.
 4. Bottom: five equal-width slots for Fajr, Dhuhr, Asr, Maghrib, Isha. Current waqt is highlighted; sunrise is not a fifth/sixth prayer.
 5. Actions: open Qibla or full Prayer Times. Loading and missing-settings states never fabricate times.
 
