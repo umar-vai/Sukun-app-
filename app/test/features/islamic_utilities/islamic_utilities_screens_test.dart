@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_theme.dart';
 import 'package:sukun_life/features/islamic_utilities/data/compass_gateway.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
@@ -8,6 +10,7 @@ import 'package:sukun_life/features/islamic_utilities/data/utility_location_gate
 import 'package:sukun_life/features/islamic_utilities/data/utility_preferences_store.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/compass_reading.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
+import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/utility_location.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
@@ -42,6 +45,60 @@ void main() {
     await tester.scrollUntilVisible(find.text('Dhaka'), 300);
     expect(find.text('Dhaka'), findsOneWidget);
   });
+
+  for (final brightness in <Brightness>[Brightness.light, Brightness.dark]) {
+    testWidgets('selected Dhuhr row remains readable in ${brightness.name}', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 720));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final theme = brightness == Brightness.dark
+          ? SukunTheme.dark()
+          : SukunTheme.light();
+      await tester.pumpWidget(
+        _testApp(
+          const PrayerTimesScreen(),
+          settings: _configuredSettings,
+          theme: theme,
+          calculationService: const _FixedDhuhrSchedule(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final selected = find.byKey(const Key('prayer-time-row-dhuhr'));
+      await tester.scrollUntilVisible(selected, 250);
+      await tester.pumpAndSettle();
+
+      final tile = tester.widget<Container>(selected);
+      expect(tile.color, SukunColors.deepTide);
+      final selectedTexts = tester
+          .widgetList<Text>(
+            find.descendant(of: selected, matching: find.byType(Text)),
+          )
+          .toList();
+      expect(selectedTexts.map((text) => text.data), contains('Dhuhr'));
+      expect(selectedTexts.length, 2);
+      for (final text in selectedTexts) {
+        expect(text.style?.color, Colors.white);
+      }
+      final selectedIcon = tester.widget<Icon>(
+        find.descendant(of: selected, matching: find.byType(Icon)),
+      );
+      expect(selectedIcon.icon, Icons.wb_sunny_outlined);
+      expect(selectedIcon.color, Colors.white);
+
+      final normal = find.byKey(const Key('prayer-time-row-fajr'));
+      final normalTile = tester.widget<Container>(normal);
+      expect(normalTile.color, Colors.transparent);
+      final normalTexts = tester.widgetList<Text>(
+        find.descendant(of: normal, matching: find.byType(Text)),
+      );
+      for (final text in normalTexts) {
+        expect(text.style?.color, theme.colorScheme.onSurface);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('manual city fallback remains available after denial', (
     tester,
@@ -129,6 +186,8 @@ Widget _testApp(
   required PrayerUtilitySettings settings,
   UtilityLocationGateway locationGateway = const _DeniedLocationGateway(),
   CompassGateway compassGateway = const _UnavailableCompassGateway(),
+  PrayerCalculationService? calculationService,
+  ThemeData? theme,
 }) {
   return ProviderScope(
     overrides: [
@@ -138,10 +197,10 @@ Widget _testApp(
       utilityLocationGatewayProvider.overrideWithValue(locationGateway),
       compassGatewayProvider.overrideWithValue(compassGateway),
       prayerCalculationServiceProvider.overrideWithValue(
-        AdhanPrayerCalculationService(),
+        calculationService ?? AdhanPrayerCalculationService(),
       ),
     ],
-    child: MaterialApp(home: home),
+    child: MaterialApp(theme: theme, home: home),
   );
 }
 
@@ -196,4 +255,54 @@ final class _CalibrationCompassGateway implements CompassGateway {
       calibrationState: CompassCalibrationState.needsCalibration,
     ),
   );
+}
+
+final class _FixedDhuhrSchedule implements PrayerCalculationService {
+  const _FixedDhuhrSchedule();
+
+  @override
+  PrayerDaySchedule calculate({
+    required PrayerUtilitySettings settings,
+    required DateTime now,
+  }) {
+    final day = DateTime(2026, 11, 1);
+    final fajr = PrayerTimeEntry(
+      id: 'fajr',
+      label: 'Fajr',
+      time: day.add(const Duration(hours: 5)),
+    );
+    final sunrise = PrayerTimeEntry(
+      id: 'sunrise',
+      label: 'Sunrise',
+      time: day.add(const Duration(hours: 6)),
+      isPrayer: false,
+    );
+    final dhuhr = PrayerTimeEntry(
+      id: 'dhuhr',
+      label: 'Dhuhr',
+      time: day.add(const Duration(hours: 12)),
+    );
+    final asr = PrayerTimeEntry(
+      id: 'asr',
+      label: 'Asr',
+      time: day.add(const Duration(hours: 16)),
+    );
+    final maghrib = PrayerTimeEntry(
+      id: 'maghrib',
+      label: 'Maghrib',
+      time: day.add(const Duration(hours: 18)),
+    );
+    final isha = PrayerTimeEntry(
+      id: 'isha',
+      label: 'Isha',
+      time: day.add(const Duration(hours: 20)),
+    );
+    return PrayerDaySchedule(
+      date: day,
+      entries: [fajr, sunrise, dhuhr, asr, maghrib, isha],
+      currentPrayer: dhuhr,
+      nextPrayer: asr,
+      qiblaBearing: 270,
+    );
+  }
 }
