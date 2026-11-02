@@ -86,13 +86,9 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const _WelcomeHeader(),
-                          SizedBox(height: small ? 38 : 62),
-                          _WelcomeHero(
-                            small: small,
-                            canDownload: canDownload,
-                            onDownload: () => _downloadAndroid(context, uri),
-                          ),
-                          SizedBox(height: small ? 42 : 64),
+                          SizedBox(height: small ? 22 : 40),
+                          _WelcomeHero(small: small),
+                          SizedBox(height: small ? 34 : 64),
                           Text(
                             'সুকুন লাইফে যা পাবেন',
                             style: Theme.of(context).textTheme.headlineSmall
@@ -111,8 +107,8 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                                   ? constraints.maxWidth
                                   : (constraints.maxWidth - 36) / 3;
                               return Wrap(
-                                spacing: 18,
-                                runSpacing: 18,
+                                spacing: 14,
+                                runSpacing: 12,
                                 children: [
                                   _WelcomeBenefit(
                                     width: cardWidth,
@@ -200,77 +196,160 @@ class _WelcomeHeader extends StatelessWidget {
 }
 
 class _WelcomeHero extends StatelessWidget {
-  const _WelcomeHero({
-    required this.small,
-    required this.canDownload,
-    required this.onDownload,
-  });
+  const _WelcomeHero({required this.small});
   final bool small;
-  final bool canDownload;
-  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final message = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: SukunColors.mist,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: SukunColors.border),
           ),
-          child: const Text(
-            'আপনার শান্ত, গুছানো দিনের সঙ্গী',
-            style: TextStyle(color: SukunColors.deepTide),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: SukunColors.saffron,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Flexible(
+                child: Text(
+                  'আপনার শান্ত, গুছানো দিনের সঙ্গী',
+                  style: TextStyle(
+                    color: SukunColors.deepTide,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 20),
         Text(
           'যত্ন, চর্চা ও প্রশান্তির পথে সুকুন লাইফ',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          style: theme.textTheme.headlineLarge?.copyWith(
             color: SukunColors.nightNavy,
-            fontSize: small ? 34 : 48,
-            height: 1.23,
+            fontSize: small ? 32 : 48,
+            fontWeight: FontWeight.w700,
+            height: 1.25,
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
-          'কুরআন, দোয়া, রুকইয়াহ অডিও ও নিজের দৈনন্দিন আমল এক জায়গায়।',
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: SukunColors.muted, height: 1.7),
+          'কুরআন, দোয়া, রুকইয়াহ অডিও ও নিজের দৈনন্দিন আমল এক জায়গায়।',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: SukunColors.muted,
+            height: 1.7,
+          ),
         ),
-        const SizedBox(height: 26),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            FilledButton.icon(
-              onPressed: () => context.go('/resources'),
-              icon: const Icon(Icons.auto_stories_outlined),
-              label: const Text('রিসোর্স দেখুন'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.go('/login'),
-              icon: const Icon(Icons.login_rounded),
-              label: const Text('লগইন'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _DownloadAction(canDownload: canDownload, onDownload: onDownload),
+        const SizedBox(height: 24),
+        if (small)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                onPressed: () => context.go('/resources'),
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: const Text('রিসোর্স দেখুন'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/login'),
+                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                icon: const Icon(Icons.login_rounded),
+                label: const Text('লগইন'),
+              ),
+            ],
+          )
+        else
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.icon(
+                onPressed: () => context.go('/resources'),
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: const Text('রিসোর্স দেখুন'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/login'),
+                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                icon: const Icon(Icons.login_rounded),
+                label: const Text('লগইন'),
+              ),
+            ],
+          ),
       ],
     );
-    if (small) return message;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(flex: 6, child: message),
-        const SizedBox(width: 58),
-        const Expanded(flex: 4, child: _CareJourneyCard()),
-      ],
+    final panel = Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SukunColors.mist,
+        borderRadius: BorderRadius.circular(small ? 28 : 36),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -60,
+            top: -70,
+            child: _SoftCircle(size: small ? 190 : 300),
+          ),
+          Positioned(
+            right: small ? 40 : 160,
+            bottom: -90,
+            child: _SoftCircle(size: small ? 140 : 220),
+          ),
+          Padding(
+            padding: EdgeInsets.all(small ? 22 : 44),
+            child: small
+                ? message
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(flex: 6, child: message),
+                      const SizedBox(width: 48),
+                      const Expanded(flex: 4, child: _CareJourneyCard()),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+    if (!small) return panel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [panel, const SizedBox(height: 16), const _CareJourneyCard()],
     );
   }
+}
+
+class _SoftCircle extends StatelessWidget {
+  const _SoftCircle({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: 0.55),
+    ),
+  );
 }
 
 class _CareJourneyCard extends StatelessWidget {
@@ -355,8 +434,17 @@ class _WelcomeBenefit extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: SukunColors.deepTide, size: 30),
-          const SizedBox(height: 16),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: SukunColors.mist,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: SukunColors.deepTide, size: 24),
+          ),
+          const SizedBox(height: 14),
           Text(
             title,
             style: Theme.of(context).textTheme.titleMedium

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -223,7 +224,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         )
         .eq('status', 'published')
         .eq('visibility', 'public')
-        .order('title');
+        .order('title', ascending: true);
     final resources = resourceRows
         .map((row) => ContentResourceOption.fromJson(row))
         .where((resource) => resource.isLinkable)
@@ -763,7 +764,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                     ),
                                     title: Text(action['title'].toString()),
                                     subtitle: Text(
-                                      "${action['schedule_kind']} · ${action['notification_title']}",
+                                      '${routineScheduleLabel(action)} · ${action['notification_title']}',
                                     ),
                                     trailing: PopupMenuButton<String>(
                                       onSelected: (value) {
@@ -955,4 +956,28 @@ class _RoutinePageData {
   final List<Map<String, dynamic>> routines;
   final List<Map<String, dynamic>> actions;
   final Map<String, String> outcomes;
+}
+
+/// Human-readable Bangla schedule for a personal routine action.
+String routineScheduleLabel(Map<String, dynamic> action) {
+  final offset = action['prayer_offset_minutes'];
+  final minutes = offset is int && offset > 0
+      ? ' ${banglaDigits(offset)} মিনিট পর'
+      : 'ের পর';
+  switch (action['schedule_kind']) {
+    case 'fixed':
+      final raw = action['local_time']?.toString() ?? '';
+      final parts = raw.split(':');
+      final hour = parts.isNotEmpty ? int.tryParse(parts[0]) : null;
+      final minute = parts.length > 1 ? int.tryParse(parts[1]) : null;
+      if (hour == null || minute == null) return 'প্রতিদিন নির্দিষ্ট সময়ে';
+      final now = DateTime.now();
+      return 'প্রতিদিন ${banglaClock(DateTime(now.year, now.month, now.day, hour, minute))}';
+    case 'fajr':
+      return 'ফজর$minutes';
+    case 'maghrib':
+      return 'মাগরিব$minutes';
+    default:
+      return 'নিজের সুবিধামতো';
+  }
 }

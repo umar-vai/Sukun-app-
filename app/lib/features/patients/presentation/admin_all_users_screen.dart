@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -206,10 +207,26 @@ class AdminUserDirectoryTile extends StatelessWidget {
         key: Key('admin-user-$id'),
         enabled: id.isNotEmpty,
         onTap: id.isEmpty ? null : onOpen,
-        leading: const CircleAvatar(child: Icon(Icons.person_outline_rounded)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: CircleAvatar(
+          radius: 21,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.secondary,
+          child: name.isEmpty
+              ? const Icon(Icons.person_outline_rounded)
+              : Text(
+                  name.characters.first,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+        ),
         title: Text(name.isEmpty ? 'নাম দেওয়া হয়নি' : name),
         subtitle: Text(
-          'User ID: ${id.isEmpty ? '—' : id}',
+          [
+            if (DateTime.tryParse(user['created_at']?.toString() ?? '')
+                case final joined?)
+              'যোগ দিয়েছেন ${banglaWeekdayDate(joined.toLocal())}',
+            'ID …${id.isEmpty ? '—' : id.substring(id.length > 8 ? id.length - 8 : 0)}',
+          ].join(' · '),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

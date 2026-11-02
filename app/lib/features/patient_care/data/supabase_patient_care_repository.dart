@@ -78,7 +78,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
         )
         .eq('care_plan_id', planId)
         .eq('review_status', 'approved')
-        .order('sort_order');
+        .order('sort_order', ascending: true);
     return response.map(PlanAction.fromJson).toList(growable: false);
   }
 

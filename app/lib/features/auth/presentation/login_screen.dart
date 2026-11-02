@@ -88,7 +88,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: IconButton.filledTonal(
+                    child: IconButton.outlined(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        foregroundColor: Theme.of(context)
+                            .colorScheme
+                            .secondary,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
                       onPressed: () => Navigator.maybePop(context),
                       icon: const Icon(Icons.arrow_back_rounded),
                       tooltip: copy?.goBack ?? 'ফিরে যান',

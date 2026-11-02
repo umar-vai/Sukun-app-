@@ -55,9 +55,37 @@ abstract final class SukunTheme {
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
         toolbarHeight: 68,
-        titleTextStyle: textTheme.titleMedium?.copyWith(
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          fontSize: 19,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: SukunColors.deepTide,
+        unselectedLabelColor: SukunColors.muted,
+        labelStyle: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+        indicatorSize: TabBarIndicatorSize.label,
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(color: SukunColors.sukunBlue, width: 3),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+        ),
+        dividerColor: SukunColors.border,
+        overlayColor: WidgetStatePropertyAll(
+          SukunColors.sukunBlue.withValues(alpha: 0.06),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: SukunColors.deepTide,
+        titleTextStyle: textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
         ),
+        subtitleTextStyle: textTheme.bodySmall?.copyWith(
+          color: SukunColors.muted,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       cardTheme: CardThemeData(
         color: SukunColors.surface,

@@ -58,8 +58,8 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
       final response = await _client
           .from('content_categories')
           .select()
-          .order('sort_order')
-          .order('name');
+          .order('sort_order', ascending: true)
+          .order('name', ascending: true);
       return response.map(ContentCategory.fromJson).toList(growable: false);
     } on PostgrestException catch (error) {
       throw ContentAdminException(error.message);

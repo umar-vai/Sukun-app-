@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -305,11 +306,12 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
                   Expanded(
                     child: Text(
                       'গত ৭ দিন',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(color: Colors.white),
                     ),
                   ),
                   SukunStatusPill(
-                    label: '$percentage% সম্পন্ন',
+                    label: '${banglaDigits(percentage)}% সম্পন্ন',
                     tone: SukunStatusTone.brand,
                   ),
                 ],
@@ -318,7 +320,7 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
               LinearProgressIndicator(value: progress.completionRate),
               const SizedBox(height: 10),
               Text(
-                '${progress.completed}টি সম্পন্ন · ${progress.skipped}টি বাদ · ${progress.remaining}টি বাকি',
+                '${banglaDigits(progress.completed)}টি সম্পন্ন · ${banglaDigits(progress.skipped)}টি বাদ · ${banglaDigits(progress.remaining)}টি বাকি',
               ),
             ],
           ),

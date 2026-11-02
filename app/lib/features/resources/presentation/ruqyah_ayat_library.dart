@@ -268,7 +268,7 @@ class _RuqyahAyatLibraryState extends State<RuqyahAyatLibrary> {
           )
           .eq('status', 'published')
           .like('slug', 'srg2024-qur-%')
-          .order('slug'),
+          .order('slug', ascending: true),
       client
           .from('content_items')
           .select(
@@ -276,7 +276,7 @@ class _RuqyahAyatLibraryState extends State<RuqyahAyatLibrary> {
           )
           .eq('status', 'published')
           .like('slug', 'srg2024-dua-%')
-          .order('slug'),
+          .order('slug', ascending: true),
       client
           .from('content_items')
           .select('slug,media_url')

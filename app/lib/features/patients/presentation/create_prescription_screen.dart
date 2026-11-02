@@ -478,11 +478,11 @@ class _CreatePrescriptionScreenState
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
-                          title: const Text('Visible to patient'),
+                          title: const Text('রোগী দেখতে পারবেন'),
                           subtitle: Text(
                             _patientVisible
-                                ? 'The patient may read the preserved prescription text.'
-                                : 'The source remains staff-only.',
+                                ? 'রোগী সংরক্ষিত প্রেসক্রিপশনের লেখা পড়তে পারবেন।'
+                                : 'লেখাটি শুধু স্টাফরা দেখতে পারবেন।',
                           ),
                         ),
                         const SizedBox(height: 24),

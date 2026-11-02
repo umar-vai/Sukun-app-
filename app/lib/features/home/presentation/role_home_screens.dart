@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/patients/domain/patient.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/home/presentation/public_welcome_screen.dart';
@@ -30,40 +34,6 @@ class MemberHomeScreen extends StatelessWidget {
   );
 }
 
-class _UtilityCard extends StatelessWidget {
-  const _UtilityCard({
-    required this.icon,
-    required this.label,
-    required this.caption,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String caption;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => SukunSurface(
-    padding: const EdgeInsets.all(17),
-    onTap: onTap,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SukunIconBadge(icon: icon),
-        const SizedBox(height: 16),
-        Text(label, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 3),
-        Text(
-          caption,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: SukunColors.muted),
-        ),
-      ],
-    ),
-  );
-}
-
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key, this.displayName});
 
@@ -72,201 +42,380 @@ class AdminHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final theme = Theme.of(context);
+    final tools = <_AdminTool>[
+      _AdminTool(
+        Icons.people_alt_outlined,
+        'সকল ব্যবহারকারী',
+        () => context.go('/admin/users'),
+      ),
+      _AdminTool(
+        Icons.assignment_ind_outlined,
+        'ব্যবহারকারীর রুটিন ও অগ্রগতি',
+        () => context.go('/admin/user-routines'),
+      ),
+      _AdminTool(
+        Icons.checklist_outlined,
+        'প্রস্তুত রুটিন',
+        () => context.go('/admin/routine-templates'),
+      ),
+      _AdminTool(
+        Icons.edit_note_outlined,
+        copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
+        () => context.go('/admin/content'),
+      ),
+      _AdminTool(
+        Icons.campaign_outlined,
+        'সবার জন্য নোটিশ',
+        () => context.go('/admin/announcements'),
+      ),
+      _AdminTool(
+        Icons.menu_book_outlined,
+        'সবার লাইব্রেরি',
+        () => context.push('/resources'),
+      ),
+      _AdminTool(
+        Icons.schedule_rounded,
+        'নামাজের সময়',
+        () => context.push('/prayer-times'),
+      ),
+      _AdminTool(Icons.explore_rounded, 'কিবলা', () => context.push('/qibla')),
+    ];
     return AdminScaffold(
       title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
       selectedIndex: 0,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-        children: [
-          SukunPageIntro(
-            eyebrow: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
-            title: displayName == null
-                ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
-                : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
-            subtitle:
-                copy?.adminWelcomeSubtitle ??
-                'রোগীর পরিকল্পনা ও উপকরণ এক জায়গা থেকে পরিচালনা করুন.',
-            trailing: const SukunIconBadge(
-              icon: Icons.admin_panel_settings_outlined,
-              size: 54,
-            ),
-          ),
-          const SizedBox(height: 24),
-          SukunSurface(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
-                  style: Theme.of(context).textTheme.titleMedium,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+            children: [
+              Text(
+                copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  copy?.adminQuickActionsHelp ??
-                      'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
-                  style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                displayName == null
+                    ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
+                    : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+              ),
+              const SizedBox(height: 18),
+              const _AdminStats(),
+              const SizedBox(height: 18),
+              SukunSurface(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FilledButton.icon(
-                      onPressed: () => context.go('/admin/patients/new'),
-                      icon: const Icon(Icons.person_add_alt_1_outlined),
-                      label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/users'),
-                      icon: const Icon(Icons.people_alt_outlined),
-                      label: const Text('সকল ব্যবহারকারী'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/patients'),
-                      icon: const Icon(Icons.search_rounded),
-                      label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/routine-templates'),
-                      icon: const Icon(Icons.checklist_outlined),
-                      label: const Text('প্রস্তুত রুটিন'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/user-routines'),
-                      icon: const Icon(Icons.assignment_ind_outlined),
-                      label: const Text('ব্যবহারকারীর রুটিন ও অগ্রগতি'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/admin/content'),
-                      icon: const Icon(Icons.library_books_outlined),
-                      label: Text(
-                        copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
+                    Text(
+                      copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      copy?.adminQuickActionsHelp ??
+                          'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: SukunColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final primary = FilledButton.icon(
+                          onPressed: () => context.go('/admin/patients/new'),
+                          icon: const Icon(Icons.person_add_alt_1_outlined),
+                          label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
+                        );
+                        final secondary = OutlinedButton.icon(
+                          onPressed: () => context.go('/admin/patients'),
+                          icon: const Icon(Icons.search_rounded),
+                          label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
+                        );
+                        if (constraints.maxWidth < 440) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              primary,
+                              const SizedBox(height: 10),
+                              secondary,
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            Expanded(child: primary),
+                            const SizedBox(width: 10),
+                            Expanded(child: secondary),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth >= 720
+                            ? 4
+                            : constraints.maxWidth >= 460
+                            ? 3
+                            : 2;
+                        return GridView.count(
+                          crossAxisCount: columns,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: columns == 2 ? 2.35 : 2.6,
+                          children: [
+                            for (final tool in tools) _AdminToolTile(tool),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SukunSectionHeader(
-            title: 'রোগী ও অগ্রগতি',
-            action: TextButton(
-              onPressed: () => context.go('/admin/users'),
-              child: const Text('সকল ব্যবহারকারী'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _DashboardAction(
-            icon: Icons.people_alt_outlined,
-            title: 'রোগীর পরিকল্পনা ও অগ্রগতি',
-            description:
-                'নির্বাচিত রোগীর প্রোফাইলে যান। সেখানে পরিকল্পনা তৈরি ও '
-                'অগ্রগতি দেখার অনুমোদিত টুলস পাবেন।',
-            actionLabel: 'রোগী বাছুন',
-            onTap: () => context.go('/admin/patients'),
-          ),
-          const SizedBox(height: 18),
-          SukunSectionHeader(
-            title: 'একই উপকরণ, সবার জন্য',
-            action: TextButton(
-              onPressed: () => context.push('/resources'),
-              child: const Text('সবার লাইব্রেরি'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth >= 720
-                  ? (constraints.maxWidth - 12) / 2
-                  : constraints.maxWidth;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: _DashboardAction(
-                      icon: Icons.menu_book_outlined,
-                      title: 'পাবলিক উপকরণ লাইব্রেরি',
-                      description:
-                          'সাধারণ ইউজার ও রোগী যেভাবে কুরআন, হাদিস, '
-                          'দোয়া ও রুকইয়াহ দেখেন, সেই একই তালিকা দেখুন।',
-                      actionLabel: 'লাইব্রেরি খুলুন',
-                      onTap: () => context.push('/resources'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _DashboardAction(
-                      icon: Icons.edit_note_outlined,
-                      title: 'উপকরণ পরিচালনা',
-                      description:
-                          'অ্যাডমিনের আলাদা Draft, Review, '
-                          'Publish ও Content Editor।',
-                      actionLabel: 'কনটেন্ট পরিচালনা',
-                      onTap: () => context.go('/admin/content'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _DashboardAction(
-                      icon: Icons.playlist_add_check_rounded,
-                      title: 'রুটিন টেমপ্লেট',
-                      description:
-                          'প্রকাশযোগ্য রুটিন প্রস্তুত ও পরিচালনা করুন। '
-                          'ব্যক্তিগত রুটিন স্বয়ংক্রিয়ভাবে বদলাবে না।',
-                      actionLabel: 'রুটিন দেখুন',
-                      onTap: () => context.go('/admin/routine-templates'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _DashboardAction(
-                      icon: Icons.campaign_outlined,
-                      title: 'সবার জন্য নোটিশ',
-                      description:
-                          'নোটিশ, ছবি ও অনুমোদিত লিংক '
-                          'যোগ করে প্রকাশ করুন।',
-                      actionLabel: 'নোটিশ পরিচালনা',
-                      onTap: () => context.go('/admin/announcements'),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 28),
-          SukunSectionHeader(
-            title: 'প্রয়োজনীয় টুলস',
-
-            action: TextButton(
-              onPressed: () => context.go('/resources'),
-              child: const Text('রিসোর্স'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _UtilityCard(
-                  icon: Icons.schedule_rounded,
-                  label: 'নামাজের সময়',
-                  caption: 'দৈনিক সময়সূচি',
-                  onTap: () => context.push('/prayer-times'),
+              ),
+              const SizedBox(height: 26),
+              SukunSectionHeader(
+                title: 'সাম্প্রতিক রোগী',
+                subtitle: 'সর্বশেষ যোগ করা রোগীদের প্রোফাইল',
+                action: TextButton(
+                  onPressed: () => context.go('/admin/patients'),
+                  child: const Text('সব রোগী'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 10),
+              const _RecentPatients(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminTool {
+  const _AdminTool(this.icon, this.label, this.onTap);
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _AdminToolTile extends StatelessWidget {
+  const _AdminToolTile(this.tool);
+
+  final _AdminTool tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: tool.onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              SukunIconBadge(
+                icon: tool.icon,
+                size: 36,
+                backgroundColor: theme.colorScheme.surface,
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: _UtilityCard(
-                  icon: Icons.explore_rounded,
-                  label: 'কিবলা',
-                  caption: 'দিকনির্দেশনা',
-                  onTap: () => context.push('/qibla'),
+                child: Text(
+                  tool.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatValue {
+  const _StatValue(this.icon, this.label, this.value, this.tone);
+
+  final IconData icon;
+  final String label;
+  final int? value;
+  final SukunStatusTone tone;
+}
+
+/// Live counts read through the admin's own RLS-verified session.
+/// Shows a dash instead of guessing when the backend is unavailable.
+class _AdminStats extends StatefulWidget {
+  const _AdminStats();
+
+  @override
+  State<_AdminStats> createState() => _AdminStatsState();
+}
+
+class _AdminStatsState extends State<_AdminStats> {
+  late final Future<List<int?>> _counts = _load();
+
+  Future<int?> _count(
+    PostgrestFilterBuilder<PostgrestList> Function(SupabaseClient c) query,
+  ) async {
+    try {
+      final response = await query(Supabase.instance.client).count();
+      return response.count;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<int?>> _load() async {
+    if (!AppEnvironment.isSupabaseConfigured) return [null, null, null, null];
+    return Future.wait([
+      _count((c) => c.from('patients').select('id').eq('status', 'active')),
+      _count((c) => c.from('care_plans').select('id').eq('status', 'active')),
+      _count(
+        (c) => c
+            .from('plan_actions')
+            .select('id')
+            .eq('review_status', 'needs_review'),
+      ),
+      _count(
+        (c) => c.from('content_items').select('id').eq('status', 'review'),
+      ),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<int?>>(
+    future: _counts,
+    builder: (context, snapshot) {
+      final values = snapshot.data ?? const [null, null, null, null];
+      final loading = snapshot.connectionState == ConnectionState.waiting;
+      final stats = [
+        _StatValue(
+          Icons.people_alt_outlined,
+          'সক্রিয় রোগী',
+          values[0],
+          SukunStatusTone.brand,
+        ),
+        _StatValue(
+          Icons.event_note_outlined,
+          'চালু পরিকল্পনা',
+          values[1],
+          SukunStatusTone.success,
+        ),
+        _StatValue(
+          Icons.rate_review_outlined,
+          'রিভিউ বাকি কাজ',
+          values[2],
+          SukunStatusTone.warning,
+        ),
+        _StatValue(
+          Icons.library_books_outlined,
+          'রিভিউতে উপকরণ',
+          values[3],
+          SukunStatusTone.neutral,
+        ),
+      ];
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 560 ? 4 : 2;
+          return GridView.count(
+            crossAxisCount: columns,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: columns == 4 ? 1.75 : 1.85,
+            children: [
+              for (final stat in stats) _StatTile(stat: stat, loading: loading),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({required this.stat, required this.loading});
+
+  final _StatValue stat;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (foreground, background) = switch (stat.tone) {
+      SukunStatusTone.success => (SukunColors.success, SukunColors.successSoft),
+      SukunStatusTone.warning => (
+        const Color(0xFF8A5A00),
+        SukunColors.warningSoft,
+      ),
+      SukunStatusTone.danger => (SukunColors.error, SukunColors.errorSoft),
+      SukunStatusTone.neutral => (
+        SukunColors.navySoft,
+        theme.colorScheme.surfaceContainerLow,
+      ),
+      SukunStatusTone.brand => (
+        theme.colorScheme.secondary,
+        theme.colorScheme.primaryContainer,
+      ),
+    };
+    final value = stat.value;
+    return SukunSurface(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SukunIconBadge(
+                icon: stat.icon,
+                size: 32,
+                color: foreground,
+                backgroundColor: background,
+              ),
+              const Spacer(),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            loading ? '…' : (value == null ? '—' : banglaDigits(value)),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            stat.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: SukunColors.muted,
+            ),
           ),
         ],
       ),
@@ -274,51 +423,114 @@ class AdminHomeScreen extends StatelessWidget {
   }
 }
 
-class _DashboardAction extends StatelessWidget {
-  const _DashboardAction({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.actionLabel,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-  final String actionLabel;
-  final VoidCallback onTap;
+class _RecentPatients extends StatefulWidget {
+  const _RecentPatients();
 
   @override
-  Widget build(BuildContext context) => SukunSurface(
-    onTap: onTap,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SukunIconBadge(icon: icon, size: 54),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  State<_RecentPatients> createState() => _RecentPatientsState();
+}
+
+class _RecentPatientsState extends State<_RecentPatients> {
+  late final Future<List<Patient>?> _patients = _load();
+
+  Future<List<Patient>?> _load() async {
+    if (!AppEnvironment.isSupabaseConfigured) return null;
+    try {
+      final rows = await Supabase.instance.client.rpc(
+        'admin_search_patients',
+        params: {'p_query': '', 'p_limit': 4, 'p_offset': 0},
+      );
+      return (rows as List<dynamic>)
+          .map((row) => Patient.fromJson(Map<String, dynamic>.from(row as Map)))
+          .take(4)
+          .toList(growable: false);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<Patient>?>(
+    future: _patients,
+    builder: (context, snapshot) {
+      final theme = Theme.of(context);
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const SukunSurface(
+          child: SizedBox(
+            height: 56,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+          ),
+        );
+      }
+      final patients = snapshot.data;
+      if (patients == null || patients.isEmpty) {
+        return SukunSurface(
+          onTap: () => context.go('/admin/patients'),
+          child: Row(
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 5),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: SukunColors.muted),
+              const SukunIconBadge(icon: Icons.person_search_outlined),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  patients == null
+                      ? 'রোগীর তালিকা খুলে প্রোফাইল দেখুন।'
+                      : 'এখনো কোনো রোগী যোগ করা হয়নি।',
+                  style: theme.textTheme.bodyMedium,
+                ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                actionLabel,
-                style: Theme.of(context).textTheme.labelLarge
-                    ?.copyWith(color: SukunColors.deepTide),
-              ),
+              const Icon(Icons.chevron_right_rounded),
             ],
           ),
+        );
+      }
+      return SukunSurface(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          children: [
+            for (var i = 0; i < patients.length; i++) ...[
+              if (i > 0) const Divider(indent: 72, endIndent: 16),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 2,
+                ),
+                onTap: () => context.go('/admin/patients/${patients[i].id}'),
+                leading: CircleAvatar(
+                  radius: 21,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  foregroundColor: theme.colorScheme.secondary,
+                  child: Text(
+                    patients[i].fullName.characters.first,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                title: Text(
+                  patients[i].fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  patients[i].patientCode,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SukunColors.muted,
+                  ),
+                ),
+                trailing: SukunStatusPill(
+                  label: patients[i].status == PatientStatus.active
+                      ? 'চালু'
+                      : 'নিষ্ক্রিয়',
+                  tone: patients[i].status == PatientStatus.active
+                      ? SukunStatusTone.success
+                      : SukunStatusTone.neutral,
+                ),
+              ),
+            ],
+          ],
         ),
-        const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
-      ],
-    ),
+      );
+    },
   );
 }

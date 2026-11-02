@@ -62,7 +62,10 @@ class _PreviewSwitcherState extends State<_PreviewSwitcher> {
     try {
       if (auth.currentSession != null) await auth.signOut();
       if (account != null) {
-        await auth.signInWithPassword(email: account.email, password: 'preview');
+        await auth.signInWithPassword(
+          email: account.email,
+          password: 'preview',
+        );
       }
     } finally {
       if (mounted) {
@@ -78,7 +81,8 @@ class _PreviewSwitcherState extends State<_PreviewSwitcher> {
   Widget build(BuildContext context) {
     final theme = SukunTheme.light();
     final scheme = theme.colorScheme;
-    final textStyle = theme.textTheme.labelLarge ?? const TextStyle(fontSize: 14);
+    final textStyle =
+        theme.textTheme.labelLarge ?? const TextStyle(fontSize: 14);
     Widget option(String label, PreviewAccount? account) {
       final selected = _currentLabel() == (account?.label ?? 'অতিথি');
       return InkWell(
@@ -133,7 +137,10 @@ class _PreviewSwitcherState extends State<_PreviewSwitcher> {
                 InkWell(
                   onTap: PreviewBackend.resetSampleData,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -152,11 +159,18 @@ class _PreviewSwitcherState extends State<_PreviewSwitcher> {
               InkWell(
                 onTap: () => setState(() => _open = !_open),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.visibility_outlined, size: 18, color: scheme.primary),
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 18,
+                        color: scheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         _busy ? 'অপেক্ষা করুন…' : 'প্রিভিউ: ${_currentLabel()}',

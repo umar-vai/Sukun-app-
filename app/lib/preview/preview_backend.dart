@@ -13,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:web/web.dart' as web;
 import 'package:sukun_life/preview/preview_seed_data.g.dart';
 
-typedef _Row = Map<String, dynamic>;
+typedef PreviewRow = Map<String, dynamic>;
 
 class PreviewAccount {
   const PreviewAccount(this.userId, this.email, this.label);
@@ -128,9 +128,9 @@ class PreviewBackend {
 
   static final PreviewBackend instance = PreviewBackend._();
 
-  final Map<String, List<_Row>> tables = {};
+  final Map<String, List<PreviewRow>> tables = {};
   final List<_ForeignKey> _fks = [];
-  final Map<String, List<_Row>> _columns = {};
+  final Map<String, List<PreviewRow>> _columns = {};
   final Random _random = Random(7);
 
   static bool debug = const bool.fromEnvironment('PREVIEW_DEBUG');
@@ -141,7 +141,7 @@ class PreviewBackend {
 
   // ---------------------------------------------------------------- helpers
 
-  List<_Row> table(String name) => tables.putIfAbsent(name, () => []);
+  List<PreviewRow> table(String name) => tables.putIfAbsent(name, () => []);
 
   static String uuid() {
     final r = Random();
@@ -157,7 +157,7 @@ class PreviewBackend {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  _Row? _byId(String tableName, Object? id) {
+  PreviewRow? _byId(String tableName, Object? id) {
     if (id == null) return null;
     for (final row in table(tableName)) {
       if (row['id'] == id) return row;
@@ -177,11 +177,22 @@ class PreviewBackend {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final offset = now.timeZoneOffset.inMinutes;
-    final statuses = ['completed', 'completed', 'completed', 'skipped', 'missed'];
-    for (final plan in table('care_plans').where((p) => p['status'] == 'active')) {
+    final statuses = [
+      'completed',
+      'completed',
+      'completed',
+      'skipped',
+      'missed',
+    ];
+    for (final plan in table(
+      'care_plans',
+    ).where((p) => p['status'] == 'active')) {
       final actions = table('plan_actions')
-          .where((a) =>
-              a['care_plan_id'] == plan['id'] && a['review_status'] == 'approved')
+          .where(
+            (a) =>
+                a['care_plan_id'] == plan['id'] &&
+                a['review_status'] == 'approved',
+          )
           .toList();
       for (var back = 6; back >= 1; back--) {
         final day = today.subtract(Duration(days: back));
@@ -215,25 +226,31 @@ class PreviewBackend {
           'owner_user_id': action['owner_user_id'],
           'local_date': dateOnly(day),
           'outcome': _random.nextInt(5) == 0 ? 'skipped' : 'done',
-          'occurred_at': day.add(const Duration(hours: 9)).toUtc().toIso8601String(),
+          'occurred_at': day
+              .add(const Duration(hours: 9))
+              .toUtc()
+              .toIso8601String(),
         });
       }
     }
   }
 
-  String? _scheduledAt(DateTime day, _Row action) {
+  String? _scheduledAt(DateTime day, PreviewRow action) {
     final time = action['exact_time'] as String?;
     if (time == null) return null;
     final parts = time.split(':');
-    return DateTime(day.year, day.month, day.day, int.parse(parts[0]),
-            int.parse(parts[1]))
-        .toUtc()
-        .toIso8601String();
+    return DateTime(
+      day.year,
+      day.month,
+      day.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    ).toUtc().toIso8601String();
   }
 
-  _Row _withDefaults(String tableName, _Row input, String? userId) {
+  PreviewRow _withDefaults(String tableName, PreviewRow input, String? userId) {
     final row = <String, dynamic>{};
-    for (final column in _columns[tableName] ?? const <_Row>[]) {
+    for (final column in _columns[tableName] ?? const <PreviewRow>[]) {
       final name = column['name'] as String;
       final def = column['default'] as String?;
       Object? value;
@@ -262,7 +279,7 @@ class PreviewBackend {
     return row;
   }
 
-  _Row _insert(String tableName, _Row input, String? userId) {
+  PreviewRow _insert(String tableName, PreviewRow input, String? userId) {
     final row = _withDefaults(tableName, input, userId);
     table(tableName).add(row);
     return row;
@@ -272,12 +289,13 @@ class PreviewBackend {
 
   String? _currentUser;
 
-  bool _isAdmin(String? userId) => table('user_roles')
-      .any((r) => r['user_id'] == userId && r['role'] == 'super_admin');
+  bool _isAdmin(String? userId) =>
+      table('user_roles')
+          .any((r) => r['user_id'] == userId && r['role'] == 'super_admin');
 
   /// Rough stand-in for the database RLS policies, so each demo role only
   /// sees what the real backend would let it see.
-  bool _visible(String tableName, _Row row) {
+  bool _visible(String tableName, PreviewRow row) {
     final userId = _currentUser;
     if (_isAdmin(userId)) return true;
     final patientId = _patientIdForUser(userId);
@@ -295,7 +313,8 @@ class PreviewBackend {
         final visibility = row['visibility'];
         return visibility == 'public' ||
             (patientId != null &&
-                (visibility == 'patient_only' || visibility == 'assigned_only'));
+                (visibility == 'patient_only' ||
+                    visibility == 'assigned_only'));
       case 'content_categories':
         return row['is_active'] == true;
       case 'patients':
@@ -305,7 +324,8 @@ class PreviewBackend {
       case 'care_plans':
         return patientId != null && ownPlan(row['id']);
       case 'plan_actions':
-        return ownPlan(row['care_plan_id']) && row['review_status'] == 'approved';
+        return ownPlan(row['care_plan_id']) &&
+            row['review_status'] == 'approved';
       case 'plan_action_resources':
       case 'plan_action_quran_surahs':
         final action = _byId('plan_actions', row['plan_action_id']);
@@ -328,13 +348,15 @@ class PreviewBackend {
       case 'content_collections':
         return true;
       default:
-        if (row.containsKey('owner_user_id')) return row['owner_user_id'] == userId;
+        if (row.containsKey('owner_user_id')) {
+          return row['owner_user_id'] == userId;
+        }
         if (row.containsKey('user_id')) return row['user_id'] == userId;
         return false;
     }
   }
 
-  List<_Row> visibleRows(String tableName) =>
+  List<PreviewRow> visibleRows(String tableName) =>
       table(tableName).where((r) => _visible(tableName, r)).toList();
 
   // --------------------------------------------------------------- dispatch
@@ -376,7 +398,9 @@ class PreviewBackend {
       }
       return _json(404, {'message': 'Not available in preview'});
     } on _Problem catch (problem) {
-      _log('${request.method} ${request.url} -> ${problem.status} ${problem.message}');
+      _log(
+        '${request.method} ${request.url} -> ${problem.status} ${problem.message}',
+      );
       return _json(problem.status, {
         'message': problem.message,
         'code': problem.code,
@@ -385,7 +409,10 @@ class PreviewBackend {
       });
     } on Object catch (error, stack) {
       _log('${request.method} ${request.url} -> CRASH $error\n$stack');
-      return _json(500, {'message': 'Preview backend error: $error', 'code': 'PREVIEW'});
+      return _json(500, {
+        'message': 'Preview backend error: $error',
+        'code': 'PREVIEW',
+      });
     }
   }
 
@@ -430,35 +457,31 @@ class PreviewBackend {
     return null;
   }
 
-  _Row _user(PreviewAccount account) => {
-        'id': account.userId,
-        'aud': 'authenticated',
-        'role': 'authenticated',
-        'email': account.email,
-        'email_confirmed_at': '2026-01-01T00:00:00Z',
-        'phone': '',
-        'app_metadata': {'provider': 'email', 'providers': ['email']},
-        'user_metadata': <String, dynamic>{},
-        'identities': <dynamic>[],
-        'created_at': '2026-01-01T00:00:00Z',
-        'updated_at': nowIso(),
-      };
+  PreviewRow _user(PreviewAccount account) => {
+    'id': account.userId,
+    'aud': 'authenticated',
+    'role': 'authenticated',
+    'email': account.email,
+    'email_confirmed_at': '2026-01-01T00:00:00Z',
+    'phone': '',
+    'app_metadata': {
+      'provider': 'email',
+      'providers': ['email'],
+    },
+    'user_metadata': <String, dynamic>{},
+    'identities': <dynamic>[],
+    'created_at': '2026-01-01T00:00:00Z',
+    'updated_at': nowIso(),
+  };
 
-  _Row _session(PreviewAccount account) {
+  PreviewRow _session(PreviewAccount account) {
     final exp = DateTime.now().add(const Duration(hours: 12));
     final expSeconds = exp.millisecondsSinceEpoch ~/ 1000;
     String b64(Object v) =>
         base64Url.encode(utf8.encode(jsonEncode(v))).replaceAll('=', '');
-    final token = '${b64({'alg': 'HS256', 'typ': 'JWT'})}.'
-        '${b64({
-          'sub': account.userId,
-          'email': account.email,
-          'role': 'authenticated',
-          'aud': 'authenticated',
-          'exp': expSeconds,
-          'iat': expSeconds - 43200,
-          'session_id': 'preview',
-        })}.preview';
+    final token =
+        '${b64({'alg': 'HS256', 'typ': 'JWT'})}.'
+        '${b64({'sub': account.userId, 'email': account.email, 'role': 'authenticated', 'aud': 'authenticated', 'exp': expSeconds, 'iat': expSeconds - 43200, 'session_id': 'preview'})}.preview';
     return {
       'access_token': token,
       'token_type': 'bearer',
@@ -469,7 +492,11 @@ class PreviewBackend {
     };
   }
 
-  http.StreamedResponse _auth(http.BaseRequest request, String path, String body) {
+  http.StreamedResponse _auth(
+    http.BaseRequest request,
+    String path,
+    String body,
+  ) {
     final params = body.isEmpty
         ? <String, dynamic>{}
         : Map<String, dynamic>.from(jsonDecode(body) as Map);
@@ -477,7 +504,9 @@ class PreviewBackend {
       final grant = request.url.queryParameters['grant_type'];
       PreviewAccount? account;
       if (grant == 'password') {
-        account = _account(email: (params['email'] as String?)?.trim().toLowerCase());
+        account = _account(
+          email: (params['email'] as String?)?.trim().toLowerCase(),
+        );
       } else if (grant == 'refresh_token') {
         final token = params['refresh_token'] as String? ?? '';
         account = _account(userId: token.replaceFirst('preview-refresh-', ''));
@@ -505,22 +534,31 @@ class PreviewBackend {
   // ------------------------------------------------------------- functions
 
   http.StreamedResponse _function(String name, Object? params, String? userId) {
-    final body = params is Map ? Map<String, dynamic>.from(params) : <String, dynamic>{};
+    final body = params is Map
+        ? Map<String, dynamic>.from(params)
+        : <String, dynamic>{};
     switch (name) {
       case 'patient-sign-in':
-        final identifier = (body['identifier'] as String? ?? '').trim().toUpperCase();
+        final identifier = (body['identifier'] as String? ?? '')
+            .trim()
+            .toUpperCase();
         final patient = table('patients')
-            .where((p) => p['patient_code'] == identifier && p['user_id'] != null)
+            .where(
+              (p) => p['patient_code'] == identifier && p['user_id'] != null,
+            )
             .firstOrNull;
         if (patient == null) {
-          return _json(400, {'message': 'Patient ID or password is incorrect.'});
+          return _json(400, {
+            'message': 'Patient ID or password is incorrect.',
+          });
         }
         final account = _account(userId: patient['user_id'] as String);
-        return _json(200, {'refresh_token': 'preview-refresh-${account!.userId}'});
+        return _json(200, {
+          'refresh_token': 'preview-refresh-${account!.userId}',
+        });
       case 'admin-create-patient':
         final patient = _insert('patients', {
-          'patient_code':
-              'SL-${1000 + table('patients').length + 1}',
+          'patient_code': 'SL-${1000 + table('patients').length + 1}',
           'full_name': body['full_name'] ?? body['fullName'] ?? 'নতুন রোগী',
           'phone': body['phone'],
           'created_by': userId,
@@ -534,7 +572,8 @@ class PreviewBackend {
       case 'prescription-to-actions':
       case 'prescription-document-to-actions':
         return _json(503, {
-          'message': 'প্রিভিউতে AI চালু নেই। আসল অ্যাপে এখানে AI প্রস্তাব আসবে।',
+          'message':
+              'প্রিভিউতে AI চালু নেই। আসল অ্যাপে এখানে AI প্রস্তাব আসবে।',
         });
       case 'quran-content':
         return _json(503, {
@@ -550,10 +589,13 @@ class PreviewBackend {
   Object? _rpc(String fn, Map<String, dynamic> p, String? userId) {
     switch (fn) {
       case 'ensure_patient_tasks':
-        return _ensureTasks(userId, p['p_local_date'] as String,
-            p['p_timezone_offset_minutes'] as int? ?? 360);
+        return _ensureTasks(
+          userId,
+          p['p_local_date'] as String,
+          p['p_timezone_offset_minutes'] as int? ?? 360,
+        );
       case 'ensure_patient_reminder_tasks':
-        return <_Row>[];
+        return <PreviewRow>[];
       case 'record_task_completion':
         final task = _byId('task_instances', p['p_task_id']);
         if (task == null) throw _Problem(404, 'Task not found');
@@ -561,20 +603,25 @@ class PreviewBackend {
         task
           ..['status'] = status
           ..['completed_at'] = status == 'completed' ? p['p_occurred_at'] : null
-          ..['snoozed_until'] = status == 'snoozed' ? p['p_snoozed_until'] : null
+          ..['snoozed_until'] = status == 'snoozed'
+              ? p['p_snoozed_until']
+              : null
           ..['skip_reason'] = status == 'skipped' ? p['p_skip_reason'] : null
           ..['updated_at'] = nowIso();
         return task;
       case 'admin_search_patients':
         final q = (p['p_query'] as String? ?? '').toLowerCase();
-        final rows = table('patients').where((row) {
-          if (q.isEmpty) return true;
-          return '${row['full_name']} ${row['patient_code']} ${row['phone']}'
-              .toLowerCase()
-              .contains(q);
-        }).toList()
-          ..sort((a, b) =>
-              (b['created_at'] as String).compareTo(a['created_at'] as String));
+        final rows =
+            table('patients').where((row) {
+              if (q.isEmpty) return true;
+              return '${row['full_name']} ${row['patient_code']} ${row['phone']}'
+                  .toLowerCase()
+                  .contains(q);
+            }).toList()..sort(
+              (a, b) => (b['created_at'] as String).compareTo(
+                a['created_at'] as String,
+              ),
+            );
         return rows;
       case 'create_prescription':
         return _insert('prescriptions', {
@@ -599,9 +646,9 @@ class PreviewBackend {
         }, userId);
         final copyFrom = p['p_copy_from_plan_id'];
         if (copyFrom != null) {
-          for (final action in table('plan_actions')
-              .where((a) => a['care_plan_id'] == copyFrom)
-              .toList()) {
+          for (final action in table(
+            'plan_actions',
+          ).where((a) => a['care_plan_id'] == copyFrom).toList()) {
             _insert('plan_actions', {
               ...action,
               'id': uuid(),
@@ -645,13 +692,19 @@ class PreviewBackend {
         for (var i = 0; i < ids.length; i++) {
           _byId('plan_actions', ids[i])?['sort_order'] = i;
         }
-        return _embedActions(table('plan_actions')
-            .where((a) => a['care_plan_id'] == p['p_care_plan_id'])
-            .toList()
-          ..sort((a, b) => (a['sort_order'] as int).compareTo(b['sort_order'] as int)));
+        return _embedActions(
+          table('plan_actions')
+              .where((a) => a['care_plan_id'] == p['p_care_plan_id'])
+              .toList()
+            ..sort(
+              (a, b) =>
+                  (a['sort_order'] as int).compareTo(b['sort_order'] as int),
+            ),
+        );
       case 'replace_draft_action_resources':
         final actionId = p['p_action_id'];
-        table('plan_action_resources').removeWhere((r) => r['plan_action_id'] == actionId);
+        table('plan_action_resources')
+            .removeWhere((r) => r['plan_action_id'] == actionId);
         final ids = List<String>.from(p['p_resource_ids'] as List? ?? const []);
         for (var i = 0; i < ids.length; i++) {
           _insert('plan_action_resources', {
@@ -664,7 +717,8 @@ class PreviewBackend {
         return ids.length;
       case 'replace_draft_action_quran_surahs':
         final actionId = p['p_action_id'];
-        table('plan_action_quran_surahs').removeWhere((r) => r['plan_action_id'] == actionId);
+        table('plan_action_quran_surahs')
+            .removeWhere((r) => r['plan_action_id'] == actionId);
         final surahs = p['p_surahs'] as List? ?? const [];
         for (var i = 0; i < surahs.length; i++) {
           final s = Map<String, dynamic>.from(surahs[i] as Map);
@@ -680,7 +734,11 @@ class PreviewBackend {
       case 'mark_patient_notification_opened':
         return true;
       case 'admin_get_user_routine_progress':
-        return {'days': p['p_days'] ?? 7, 'actions': <dynamic>[], 'progress': <dynamic>[]};
+        return {
+          'days': p['p_days'] ?? 7,
+          'actions': <dynamic>[],
+          'progress': <dynamic>[],
+        };
       case 'adopt_published_routine_template':
       case 'admin_create_user_routine':
         return uuid();
@@ -689,7 +747,11 @@ class PreviewBackend {
     }
   }
 
-  _Row _savePlanAction(Map<String, dynamic> p, String? userId, {required bool ai}) {
+  PreviewRow _savePlanAction(
+    Map<String, dynamic> p,
+    String? userId, {
+    required bool ai,
+  }) {
     final values = <String, dynamic>{
       'care_plan_id': p['p_care_plan_id'],
       'type': p['p_type'],
@@ -705,7 +767,7 @@ class PreviewBackend {
       'review_status': p['p_review_status'] ?? (ai ? 'approved' : 'draft'),
       'reminder_enabled': p['p_reminder_enabled'] ?? false,
     };
-    _Row action;
+    PreviewRow action;
     final existing = _byId('plan_actions', p['p_action_id']);
     if (existing != null) {
       existing
@@ -723,7 +785,8 @@ class PreviewBackend {
     }
     final contentId = p['p_content_item_id'];
     if (contentId != null) {
-      table('plan_action_resources').removeWhere((r) => r['plan_action_id'] == action['id']);
+      table('plan_action_resources')
+          .removeWhere((r) => r['plan_action_id'] == action['id']);
       _insert('plan_action_resources', {
         'plan_action_id': action['id'],
         'content_item_id': contentId,
@@ -734,13 +797,13 @@ class PreviewBackend {
     return _embedActions([action]).first;
   }
 
-  List<_Row> _embedActions(List<_Row> actions) => _select(
-        'plan_actions',
-        actions,
-        '*,plan_action_resources(sort_order,usage_note,content_items(*)),plan_action_quran_surahs(*)',
-      );
+  List<PreviewRow> _embedActions(List<PreviewRow> actions) => _select(
+    'plan_actions',
+    actions,
+    '*,plan_action_resources(sort_order,usage_note,content_items(*)),plan_action_quran_surahs(*)',
+  );
 
-  List<_Row> _ensureTasks(String? userId, String localDate, int offset) {
+  List<PreviewRow> _ensureTasks(String? userId, String localDate, int offset) {
     final patientId = _patientIdForUser(userId);
     if (patientId == null) return [];
     final plan = table('care_plans')
@@ -748,19 +811,26 @@ class PreviewBackend {
         .firstOrNull;
     if (plan == null) return [];
     final date = DateTime.parse(localDate);
-    final created = <_Row>[];
-    for (final action in table('plan_actions').where((a) =>
-        a['care_plan_id'] == plan['id'] && a['review_status'] == 'approved')) {
-      final exists = table('task_instances').any((t) =>
-          t['plan_action_id'] == action['id'] && t['occurrence_date'] == localDate);
+    final created = <PreviewRow>[];
+    for (final action in table('plan_actions').where(
+      (a) =>
+          a['care_plan_id'] == plan['id'] && a['review_status'] == 'approved',
+    )) {
+      final exists = table('task_instances').any(
+        (t) =>
+            t['plan_action_id'] == action['id'] &&
+            t['occurrence_date'] == localDate,
+      );
       if (exists) continue;
-      created.add(_insert('task_instances', {
-        'plan_action_id': action['id'],
-        'patient_id': patientId,
-        'scheduled_at': _scheduledAt(date, action),
-        'occurrence_date': localDate,
-        'timezone_offset_minutes': offset,
-      }, userId));
+      created.add(
+        _insert('task_instances', {
+          'plan_action_id': action['id'],
+          'patient_id': patientId,
+          'scheduled_at': _scheduledAt(date, action),
+          'occurrence_date': localDate,
+          'timezone_offset_minutes': offset,
+        }, userId),
+      );
     }
     return created;
   }
@@ -777,8 +847,14 @@ class PreviewBackend {
     final select = query['select']?.first ?? '*';
     final filters = <MapEntry<String, String>>[];
     for (final entry in query.entries) {
-      if (const {'select', 'order', 'limit', 'offset', 'on_conflict', 'columns'}
-          .contains(entry.key)) {
+      if (const {
+        'select',
+        'order',
+        'limit',
+        'offset',
+        'on_conflict',
+        'columns',
+      }.contains(entry.key)) {
         continue;
       }
       if (entry.key.endsWith('.order') ||
@@ -794,7 +870,7 @@ class PreviewBackend {
     final accept = request.headers['Accept'] ?? request.headers['accept'] ?? '';
     final wantsObject = accept.contains('vnd.pgrst.object');
     final rows = visibleRows(tableName);
-    List<_Row> result;
+    List<PreviewRow> result;
     var total = 0;
 
     switch (request.method) {
@@ -823,9 +899,10 @@ class PreviewBackend {
         final decoded = jsonDecode(body.isEmpty ? '[]' : body);
         final inputs = decoded is List ? decoded : [decoded];
         final conflict = query['on_conflict']?.first;
-        final upsert = prefer.contains('resolution=merge-duplicates') ||
+        final upsert =
+            prefer.contains('resolution=merge-duplicates') ||
             prefer.contains('resolution=ignore-duplicates');
-        final written = <_Row>[];
+        final written = <PreviewRow>[];
         for (final input in inputs) {
           final map = Map<String, dynamic>.from(input as Map);
           if (upsert) {
@@ -862,12 +939,13 @@ class PreviewBackend {
     }
 
     final headers = <String, String>{
-      'content-range':
-          result.isEmpty ? '*/$total' : '0-${result.length - 1}/$total',
+      'content-range': result.isEmpty
+          ? '*/$total'
+          : '0-${result.length - 1}/$total',
     };
     if (request.method == 'HEAD') return _json(200, null, headers: headers);
-    final returnsBody = request.method == 'GET' ||
-        prefer.contains('return=representation');
+    final returnsBody =
+        request.method == 'GET' || prefer.contains('return=representation');
     if (!returnsBody) return _json(201, null, headers: headers);
     if (wantsObject) {
       if (result.length != 1) {
@@ -883,7 +961,7 @@ class PreviewBackend {
     return _json(200, result, headers: headers);
   }
 
-  bool _matchesTop(_Row row, List<MapEntry<String, String>> filters) {
+  bool _matchesTop(PreviewRow row, List<MapEntry<String, String>> filters) {
     for (final f in filters) {
       if (f.key.contains('.') && f.key != 'or' && f.key != 'and') continue;
       if (!_matchFilter(row, f.key, f.value)) return false;
@@ -891,7 +969,7 @@ class PreviewBackend {
     return true;
   }
 
-  bool _matchFilter(_Row row, String key, String expression) {
+  bool _matchFilter(PreviewRow row, String key, String expression) {
     if (key == 'or' || key == 'and') {
       final inner = expression.substring(1, expression.length - 1);
       final parts = _splitTop(inner);
@@ -958,9 +1036,13 @@ class PreviewBackend {
           _ => value != null,
         };
       case 'cs':
-        outcome = value is List &&
-            _splitTop(raw.substring(1, raw.length - 1))
-                .every((v) => value.map((e) => e.toString()).contains(v.replaceAll('"', '')));
+        outcome =
+            value is List &&
+            _splitTop(raw.substring(1, raw.length - 1)).every(
+              (v) => value
+                  .map((e) => e.toString())
+                  .contains(v.replaceAll('"', '')),
+            );
       default:
         outcome = true;
     }
@@ -979,7 +1061,7 @@ class PreviewBackend {
     return value.toString().compareTo(raw);
   }
 
-  void _sort(List<_Row> rows, String ordering) {
+  void _sort(List<PreviewRow> rows, String ordering) {
     final terms = ordering.split(',').map((t) => t.split('.')).toList();
     rows.sort((a, b) {
       for (final term in terms) {
@@ -1031,15 +1113,15 @@ class PreviewBackend {
 
   /// Projects rows through a PostgREST select string, resolving embeds via
   /// the real foreign keys exported from the migrations.
-  List<_Row> _select(
+  List<PreviewRow> _select(
     String tableName,
-    List<_Row> rows,
+    List<PreviewRow> rows,
     String select, {
     List<MapEntry<String, String>> filters = const [],
     String prefix = '',
   }) {
     final items = _splitTop(select.replaceAll(RegExp(r'\s+'), ''));
-    final out = <_Row>[];
+    final out = <PreviewRow>[];
     for (final row in rows) {
       final projected = <String, dynamic>{};
       var drop = false;
@@ -1084,12 +1166,17 @@ class PreviewBackend {
         final target = bang.first;
         final hints = bang.skip(1).toSet();
         final inner_ = hints.contains('inner');
-        final hint = hints.where((h) => h != 'inner' && h != 'left').firstOrNull;
+        final hint = hints
+            .where((h) => h != 'inner' && h != 'left')
+            .firstOrNull;
         final key = alias ?? target;
         final path = prefix.isEmpty ? key : '$prefix.$key';
         final embedFilters = filters
-            .where((f) => f.key.startsWith('$path.') &&
-                !f.key.substring(path.length + 1).contains('.'))
+            .where(
+              (f) =>
+                  f.key.startsWith('$path.') &&
+                  !f.key.substring(path.length + 1).contains('.'),
+            )
             .map((f) => MapEntry(f.key.substring(path.length + 1), f.value))
             .toList();
         final resolved = _resolveEmbed(tableName, row, target, hint);
@@ -1101,12 +1188,17 @@ class PreviewBackend {
         final (embedTable, related, single) = resolved;
         final filtered = related
             .where((r) => _visible(embedTable, r))
-            .where((r) => embedFilters.every((f) => _matchFilter(r, f.key, f.value)))
+            .where(
+              (r) => embedFilters.every((f) => _matchFilter(r, f.key, f.value)),
+            )
             .toList();
-        final nested = _select(embedTable, filtered, inner,
-                filters: filters, prefix: path)
-            .where((r) => !r.containsKey('__drop'))
-            .toList();
+        final nested = _select(
+          embedTable,
+          filtered,
+          inner,
+          filters: filters,
+          prefix: path,
+        ).where((r) => !r.containsKey('__drop')).toList();
         if (single) {
           projected[key] = nested.firstOrNull;
           if (inner_ && nested.isEmpty) drop = true;
@@ -1125,9 +1217,9 @@ class PreviewBackend {
     return out;
   }
 
-  (String, List<_Row>, bool)? _resolveEmbed(
+  (String, List<PreviewRow>, bool)? _resolveEmbed(
     String tableName,
-    _Row row,
+    PreviewRow row,
     String target,
     String? hint,
   ) {

@@ -99,7 +99,28 @@ class SukunSurface extends StatelessWidget {
         night ? theme.colorScheme.surfaceContainerLow : SukunColors.successSoft,
     };
     final dark = tone == SukunSurfaceTone.blue || tone == SukunSurfaceTone.navy;
-    final paddedContent = Padding(padding: padding, child: child);
+    // Dark surfaces re-theme their text and icons: Material resets the
+    // default text style, and theme text styles carry explicit Night Navy,
+    // so a plain DefaultTextStyle alone would leave text invisible on navy.
+    final themedChild = dark
+        ? Theme(
+            data: theme.copyWith(
+              textTheme: theme.textTheme.apply(
+                bodyColor: Colors.white,
+                displayColor: Colors.white,
+              ),
+              iconTheme: theme.iconTheme.copyWith(color: Colors.white),
+            ),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(color: Colors.white),
+              child: IconTheme.merge(
+                data: const IconThemeData(color: Colors.white),
+                child: child,
+              ),
+            ),
+          )
+        : child;
+    final paddedContent = Padding(padding: padding, child: themedChild);
     final content = onTap == null
         ? Material(
             color: Colors.transparent,
@@ -113,27 +134,19 @@ class SukunSurface extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(radius),
         border: showBorder && !dark && !night
-            ? Border.all(color: SukunColors.border.withValues(alpha: 0.78))
+            ? Border.all(color: SukunColors.border.withValues(alpha: 0.6))
             : null,
         boxShadow: !night && tone == SukunSurfaceTone.white
             ? [
                 BoxShadow(
-                  color: SukunColors.nightNavy.withValues(alpha: 0.065),
-                  blurRadius: 24,
-                  offset: const Offset(0, 9),
+                  color: SukunColors.nightNavy.withValues(alpha: 0.055),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
                 ),
               ]
             : null,
       ),
-      child: dark
-          ? DefaultTextStyle.merge(
-              style: const TextStyle(color: Colors.white),
-              child: IconTheme.merge(
-                data: const IconThemeData(color: Colors.white),
-                child: content,
-              ),
-            )
-          : content,
+      child: content,
     );
   }
 }
@@ -770,24 +783,31 @@ class _SukunNavItem extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              selected ? destination.selectedIcon : destination.icon,
-              size: 22,
-              color: selected
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: selected ? 54 : 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: selected
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                selected ? destination.selectedIcon : destination.icon,
+                size: 22,
+                color: selected
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 3),
             FittedBox(
