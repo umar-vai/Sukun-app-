@@ -45,7 +45,7 @@ final class AdhanPrayerCalculationService implements PrayerCalculationService {
         ? elapsedPrayers.last
         : PrayerTimeEntry(
             id: 'isha',
-            label: 'Isha',
+            label: 'ইশা',
             time: tz.TZDateTime.from(times.ishaBefore, timezone),
           );
     final next = entries
@@ -74,33 +74,33 @@ final class AdhanPrayerCalculationService implements PrayerCalculationService {
   List<PrayerTimeEntry> _entries(PrayerTimes times, tz.Location timezone) => [
     PrayerTimeEntry(
       id: 'fajr',
-      label: 'Fajr',
+      label: 'ফজর',
       time: tz.TZDateTime.from(times.fajr, timezone),
     ),
     PrayerTimeEntry(
       id: 'sunrise',
-      label: 'Sunrise',
+      label: 'সূর্যোদয়',
       time: tz.TZDateTime.from(times.sunrise, timezone),
       isPrayer: false,
     ),
     PrayerTimeEntry(
       id: 'dhuhr',
-      label: 'Dhuhr',
+      label: 'যোহর',
       time: tz.TZDateTime.from(times.dhuhr, timezone),
     ),
     PrayerTimeEntry(
       id: 'asr',
-      label: 'Asr',
+      label: 'আসর',
       time: tz.TZDateTime.from(times.asr, timezone),
     ),
     PrayerTimeEntry(
       id: 'maghrib',
-      label: 'Maghrib',
+      label: 'মাগরিব',
       time: tz.TZDateTime.from(times.maghrib, timezone),
     ),
     PrayerTimeEntry(
       id: 'isha',
-      label: 'Isha',
+      label: 'ইশা',
       time: tz.TZDateTime.from(times.isha, timezone),
     ),
   ];

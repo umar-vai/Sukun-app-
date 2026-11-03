@@ -90,12 +90,11 @@ abstract final class SukunTheme {
       cardTheme: CardThemeData(
         color: SukunColors.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 0.6,
-        shadowColor: SukunColors.nightNavy.withValues(alpha: 0.10),
+        elevation: 2,
+        shadowColor: SukunColors.deepTide.withValues(alpha: 0.10),
         margin: EdgeInsets.zero,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-          side: BorderSide(color: Color(0x110D2B45)),
+          borderRadius: BorderRadius.all(Radius.circular(22)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(

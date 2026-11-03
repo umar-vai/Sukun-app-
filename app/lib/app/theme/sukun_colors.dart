@@ -7,7 +7,7 @@ abstract final class SukunColors {
   static const mist = Color(0xFFE8F5FC);
   static const saffron = Color(0xFFF2C45A);
 
-  static const canvas = Color(0xFFF7FBFD);
+  static const canvas = Color(0xFFF3F8FB);
   static const paleBlue = Color(0xFFF1F9FD);
   static const softBlue = Color(0xFFDDF2FB);
   static const border = Color(0xFFD9E8EF);

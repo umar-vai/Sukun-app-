@@ -295,7 +295,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                       'আসসালামু আলাইকুম${widget.displayName == null ? '' : ', ${widget.displayName}'}',
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 if (requestedTask != null &&
                     requestedTask.action.linkedResources.length +
                             verifiedQuranLinksForAction(requestedTask.action)

@@ -133,15 +133,30 @@ class SukunSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        border: showBorder && !dark && !night
-            ? Border.all(color: SukunColors.border.withValues(alpha: 0.6))
+        border: showBorder && !dark && !night && tone != SukunSurfaceTone.white
+            ? Border.all(color: Colors.white.withValues(alpha: 0.7))
             : null,
         boxShadow: !night && tone == SukunSurfaceTone.white
             ? [
                 BoxShadow(
-                  color: SukunColors.nightNavy.withValues(alpha: 0.055),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
+                  color: SukunColors.deepTide.withValues(alpha: 0.07),
+                  blurRadius: 28,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: SukunColors.nightNavy.withValues(alpha: 0.035),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ]
+            : dark && !night
+            ? [
+                BoxShadow(
+                  color: SukunColors.nightNavy.withValues(alpha: 0.22),
+                  blurRadius: 26,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 14),
                 ),
               ]
             : null,
@@ -171,6 +186,8 @@ class _SurfaceInk extends StatelessWidget {
   );
 }
 
+/// Signature page header: a calm Mist panel with soft light shapes.
+/// Used at the top of most screens so every page opens the same way.
 class SukunPageIntro extends StatelessWidget {
   const SukunPageIntro({
     super.key,
@@ -187,40 +204,120 @@ class SukunPageIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (eyebrow != null) ...[
-                Text(
-                  eyebrow!.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: SukunColors.deepTide,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.15,
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+    final panel = night
+        ? theme.colorScheme.surfaceContainerLow
+        : SukunColors.mist;
+    final shape = night
+        ? Colors.white.withValues(alpha: 0.04)
+        : Colors.white.withValues(alpha: 0.6);
+    final titleColor = night ? Colors.white : SukunColors.nightNavy;
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -46,
+            top: -58,
+            child: _Blob(size: 170, color: shape),
+          ),
+          Positioned(
+            right: 64,
+            bottom: -70,
+            child: _Blob(size: 120, color: shape),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (eyebrow != null) ...[
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: SukunColors.saffron,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Flexible(
+                              child: Text(
+                                eyebrow!.toUpperCase(),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: night
+                                      ? theme.colorScheme.secondary
+                                      : SukunColors.deepTide,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          subtitle!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: night ? Colors.white70 : SukunColors.muted,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 7),
+                if (trailing != null) ...[
+                  const SizedBox(width: 14),
+                  IconTheme.merge(
+                    data: const IconThemeData(color: SukunColors.deepTide),
+                    child: trailing!,
+                  ),
+                ],
               ],
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              if (subtitle != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  subtitle!,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: SukunColors.muted),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-        if (trailing != null) ...[const SizedBox(width: 14), trailing!],
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _Blob extends StatelessWidget {
+  const _Blob({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
 }
 
 class SukunSectionHeader extends StatelessWidget {
@@ -243,7 +340,11 @@ class SukunSectionHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.1),
+            ),
             if (subtitle != null) ...[
               const SizedBox(height: 3),
               Text(
@@ -719,17 +820,8 @@ class SukunBottomNavigation extends StatelessWidget {
   final Widget? leadingAction;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      boxShadow: [
-        BoxShadow(
-          color: SukunColors.nightNavy.withValues(alpha: 0.05),
-          blurRadius: 20,
-          offset: const Offset(0, -6),
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => ColoredBox(
+    color: Theme.of(context).scaffoldBackgroundColor,
     child: SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
@@ -738,10 +830,17 @@ class SukunBottomNavigation extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: Theme.of(context).brightness == Brightness.dark
+              ? null
+              : [
+                  BoxShadow(
+                    color: SukunColors.deepTide.withValues(alpha: 0.12),
+                    blurRadius: 30,
+                    spreadRadius: -6,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
         ),
         child: Row(
           children: [
@@ -826,6 +925,93 @@ class _SukunNavItem extends StatelessWidget {
           ],
         ),
       ),
+    ),
+  );
+}
+
+/// Signature Deep Tide hero for primary dashboards. An optional [overlap]
+/// card floats half over the hero's lower edge.
+class SukunHeroHeader extends StatelessWidget {
+  const SukunHeroHeader({super.key, required this.greeting, this.overlap});
+
+  final Widget greeting;
+  final Widget? overlap;
+
+  @override
+  Widget build(BuildContext context) {
+    const hero = SukunColors.deepTide;
+    final card = overlap;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: hero,
+            borderRadius: card == null
+                ? const BorderRadius.vertical(bottom: Radius.circular(32))
+                : null,
+          ),
+          child: Stack(
+            children: [
+              const Positioned(
+                right: -60,
+                top: -110,
+                child: _HeroCircle(size: 190),
+              ),
+              const Positioned(
+                left: -70,
+                top: -40,
+                child: _HeroCircle(size: 120),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(18, 8, 18, card == null ? 26 : 20),
+                child: greeting,
+              ),
+            ],
+          ),
+        ),
+        if (card != null)
+          Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 64,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: hero,
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(32),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: card,
+              ),
+            ],
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _HeroCircle extends StatelessWidget {
+  const _HeroCircle({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: 0.07),
     ),
   );
 }

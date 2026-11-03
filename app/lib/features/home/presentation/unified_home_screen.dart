@@ -169,106 +169,124 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
+            padding: const EdgeInsets.only(bottom: 30),
             children: [
-              _HomeGreeting(displayName: widget.displayName),
-              if (_upcoming != null) ...[
-                const SizedBox(height: 18),
-                _UnifiedNextTasks(
-                  future: _upcoming!,
-                  isPatient: widget.isPatient,
+              SukunHeroHeader(
+                greeting: _HomeGreeting(
+                  displayName: widget.displayName,
+                  onDark: true,
                 ),
-              ],
-              const SizedBox(height: 14),
-              _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
-              if (_showFortyDayChallenge) ...[
-                const SizedBox(height: 12),
-                SukunSurface(
-                  key: const Key('home-forty-day-challenge'),
-                  tone: SukunSurfaceTone.soft,
-                  onTap: () => context.push('/challenge/40-day'),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.event_available_outlined, size: 30),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                overlap: _upcoming == null
+                    ? null
+                    : _UnifiedNextTasks(
+                        future: _upcoming!,
+                        isPatient: widget.isPatient,
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 14),
+                    _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
+                    if (_showFortyDayChallenge) ...[
+                      const SizedBox(height: 12),
+                      SukunSurface(
+                        key: const Key('home-forty-day-challenge'),
+                        tone: SukunSurfaceTone.soft,
+                        onTap: () => context.push('/challenge/40-day'),
+                        child: const Row(
                           children: [
-                            Text(
-                              '৪০ দিনের বিনামূল্যের চ্যালেঞ্জ',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                            Icon(Icons.event_available_outlined, size: 30),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '৪০ দিনের বিনামূল্যের চ্যালেঞ্জ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text('৫টি ধাপ • নিজের অগ্রগতি সংরক্ষণ করুন'),
+                                ],
+                              ),
                             ),
-                            SizedBox(height: 4),
-                            Text('৫টি ধাপ • নিজের অগ্রগতি সংরক্ষণ করুন'),
+                            Icon(Icons.chevron_right),
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right),
                     ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 26),
-              SukunSectionHeader(
-                title: 'পাঠ ও অডিও',
-                subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
-                action: TextButton(
-                  onPressed: () => context.push(
-                    widget.isPatient ? '/patient/resources' : '/resources',
-                  ),
-                  child: const Text('সব দেখুন'),
-                ),
-              ),
-              const SizedBox(height: 10),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth < 340
-                      ? 3
-                      : constraints.maxWidth < 620
-                      ? 4
-                      : 8;
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisExtent: 98,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
+                    const SizedBox(height: 26),
+                    SukunSectionHeader(
+                      title: 'পাঠ ও অডিও',
+                      subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
+                      action: TextButton(
+                        onPressed: () => context.push(
+                          widget.isPatient
+                              ? '/patient/resources'
+                              : '/resources',
+                        ),
+                        child: const Text('সব দেখুন'),
+                      ),
                     ),
-                    itemCount: resourceSections.length,
-                    itemBuilder: (context, index) {
-                      final item = resourceSections[index];
-                      return _HomeResourceTile(
-                        key: Key('home-resource-${item.slug}'),
-                        icon: item.icon,
-                        label: item.titleBn,
-                        onTap: () => context.push('/resources/${item.slug}'),
-                      );
-                    },
-                  );
-                },
-              ),
-              if (!widget.isPatient && !widget.isSignedInMember) ...[
-                const SizedBox(height: 18),
-                SukunSurface(
-                  tone: SukunSurfaceTone.soft,
-                  onTap: () => context.push('/login'),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.health_and_safety_outlined),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth < 340
+                            ? 3
+                            : constraints.maxWidth < 620
+                            ? 4
+                            : 8;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                mainAxisExtent: 98,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
+                          itemCount: resourceSections.length,
+                          itemBuilder: (context, index) {
+                            final item = resourceSections[index];
+                            return _HomeResourceTile(
+                              key: Key('home-resource-${item.slug}'),
+                              icon: item.icon,
+                              label: item.titleBn,
+                              onTap: () =>
+                                  context.push('/resources/${item.slug}'),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    if (!widget.isPatient && !widget.isSignedInMember) ...[
+                      const SizedBox(height: 18),
+                      SukunSurface(
+                        tone: SukunSurfaceTone.soft,
+                        onTap: () => context.push('/login'),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.health_and_safety_outlined),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
+                              ),
+                            ),
+                            Icon(Icons.chevron_right),
+                          ],
                         ),
                       ),
-                      Icon(Icons.chevron_right),
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -277,9 +295,19 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const SukunLifeLogo(height: 36),
+        backgroundColor: SukunColors.deepTide,
+        foregroundColor: Colors.white,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const SukunLifeLogo(height: 30),
+        ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
             onPressed: _signingOut
                 ? null
                 : widget.isSignedInMember || widget.isPatient
@@ -907,13 +935,17 @@ class _HomeTasksData {
 }
 
 class _HomeGreeting extends StatelessWidget {
-  const _HomeGreeting({required this.displayName});
+  const _HomeGreeting({required this.displayName, this.onDark = false});
 
   final String? displayName;
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strong = onDark ? Colors.white : SukunColors.nightNavy;
+    final soft = onDark ? Colors.white70 : SukunColors.muted;
+    final accent = onDark ? SukunColors.saffron : theme.colorScheme.secondary;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -924,7 +956,7 @@ class _HomeGreeting extends StatelessWidget {
               Text(
                 banglaWeekdayDate(DateTime.now()),
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.secondary,
+                  color: accent,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.2,
                 ),
@@ -936,14 +968,13 @@ class _HomeGreeting extends StatelessWidget {
                     : 'আসসালামু আলাইকুম, $displayName',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: SukunColors.muted,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: soft),
               ),
               const SizedBox(height: 2),
               Text(
                 'আপনার প্রতিদিনের সুকুন',
                 style: theme.textTheme.headlineSmall?.copyWith(
+                  color: strong,
                   fontWeight: FontWeight.w700,
                   height: 1.25,
                 ),
@@ -953,10 +984,16 @@ class _HomeGreeting extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Material(
-          color: theme.colorScheme.surface,
+          color: onDark
+              ? Colors.white.withValues(alpha: 0.14)
+              : theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: theme.colorScheme.outlineVariant),
+            side: BorderSide(
+              color: onDark
+                  ? Colors.white.withValues(alpha: 0.22)
+                  : theme.colorScheme.outlineVariant,
+            ),
           ),
           child: InkWell(
             key: const Key('universal-announcements-shortcut'),
@@ -973,7 +1010,9 @@ class _HomeGreeting extends StatelessWidget {
                       Icon(
                         Icons.notifications_none_rounded,
                         size: 22,
-                        color: theme.colorScheme.secondary,
+                        color: onDark
+                            ? Colors.white
+                            : theme.colorScheme.secondary,
                       ),
                       Positioned(
                         right: 1,
@@ -985,7 +1024,9 @@ class _HomeGreeting extends StatelessWidget {
                             color: SukunColors.saffron,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: theme.colorScheme.surface,
+                              color: onDark
+                                  ? SukunColors.deepTide
+                                  : theme.colorScheme.surface,
                               width: 1.5,
                             ),
                           ),
@@ -997,7 +1038,9 @@ class _HomeGreeting extends StatelessWidget {
                   Text(
                     'নোটিশ',
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.secondary,
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

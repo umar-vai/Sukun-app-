@@ -84,119 +84,149 @@ class AdminHomeScreen extends StatelessWidget {
     return AdminScaffold(
       title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
       selectedIndex: 0,
+      heroAppBar: true,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+            padding: const EdgeInsets.only(bottom: 40),
             children: [
-              Text(
-                copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                displayName == null
-                    ? (copy?.adminWelcome ?? 'আপনার কাজের জায়গায় স্বাগতম')
-                    : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 18),
-              const _AdminStats(),
-              const SizedBox(height: 18),
-              SukunSurface(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              SukunHeroHeader(
+                greeting: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      banglaWeekdayDate(DateTime.now()),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: SukunColors.saffron,
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      displayName == null
+                          ? (copy?.adminWelcome ??
+                                'আপনার কাজের জায়গায় স্বাগতম')
+                          : '${copy?.adminWelcome ?? 'স্বাগতম'}, $displayName',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      copy?.adminQuickActionsHelp ??
-                          'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: SukunColors.muted,
+                      'রোগী, পরিকল্পনা ও উপকরণ এক জায়গা থেকে পরিচালনা করুন।',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white70,
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final primary = FilledButton.icon(
-                          onPressed: () => context.go('/admin/patients/new'),
-                          icon: const Icon(Icons.person_add_alt_1_outlined),
-                          label: Text(copy?.addPatient ?? 'নতুন রোগী যোগ করুন'),
-                        );
-                        final secondary = OutlinedButton.icon(
-                          onPressed: () => context.go('/admin/patients'),
-                          icon: const Icon(Icons.search_rounded),
-                          label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
-                        );
-                        if (constraints.maxWidth < 440) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              primary,
-                              const SizedBox(height: 10),
-                              secondary,
-                            ],
-                          );
-                        }
-                        return Row(
-                          children: [
-                            Expanded(child: primary),
-                            const SizedBox(width: 10),
-                            Expanded(child: secondary),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns = constraints.maxWidth >= 720
-                            ? 4
-                            : constraints.maxWidth >= 460
-                            ? 3
-                            : 2;
-                        return GridView.count(
-                          crossAxisCount: columns,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: columns == 2 ? 2.35 : 2.6,
-                          children: [
-                            for (final tool in tools) _AdminToolTile(tool),
-                          ],
-                        );
-                      },
                     ),
                   ],
                 ),
+                overlap: const _AdminStats(),
               ),
-              const SizedBox(height: 26),
-              SukunSectionHeader(
-                title: 'সাম্প্রতিক রোগী',
-                subtitle: 'সর্বশেষ যোগ করা রোগীদের প্রোফাইল',
-                action: TextButton(
-                  onPressed: () => context.go('/admin/patients'),
-                  child: const Text('সব রোগী'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SukunSurface(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            copy?.adminQuickActions ?? 'দ্রুত কাজ শুরু করুন',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            copy?.adminQuickActionsHelp ??
+                                'যে কাজটি করতে চান, সরাসরি সেখানে যান।',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: SukunColors.muted,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final primary = FilledButton.icon(
+                                onPressed: () =>
+                                    context.go('/admin/patients/new'),
+                                icon: const Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                ),
+                                label: Text(
+                                  copy?.addPatient ?? 'নতুন রোগী যোগ করুন',
+                                ),
+                              );
+                              final secondary = OutlinedButton.icon(
+                                onPressed: () => context.go('/admin/patients'),
+                                icon: const Icon(Icons.search_rounded),
+                                label: Text(copy?.findPatient ?? 'রোগী খুঁজুন'),
+                              );
+                              if (constraints.maxWidth < 440) {
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    primary,
+                                    const SizedBox(height: 10),
+                                    secondary,
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  Expanded(child: primary),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: secondary),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final columns = constraints.maxWidth >= 720
+                                  ? 4
+                                  : constraints.maxWidth >= 460
+                                  ? 3
+                                  : 2;
+                              return GridView.count(
+                                crossAxisCount: columns,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: columns == 2 ? 2.35 : 2.6,
+                                children: [
+                                  for (final tool in tools)
+                                    _AdminToolTile(tool),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    SukunSectionHeader(
+                      title: 'সাম্প্রতিক রোগী',
+                      subtitle: 'সর্বশেষ যোগ করা রোগীদের প্রোফাইল',
+                      action: TextButton(
+                        onPressed: () => context.go('/admin/patients'),
+                        child: const Text('সব রোগী'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const _RecentPatients(),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              const _RecentPatients(),
             ],
           ),
         ),
