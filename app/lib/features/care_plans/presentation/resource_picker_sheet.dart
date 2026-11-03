@@ -410,8 +410,12 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
                 children: [
-                  _ClearResourceTile(selected: selected == null),
-                  const SizedBox(height: 16),
+                  if (!(widget.onPickCanonicalQuran != null &&
+                      (currentSection.slug == 'quran' ||
+                          currentSection.slug == 'all'))) ...[
+                    _ClearResourceTile(selected: selected == null),
+                    const SizedBox(height: 16),
+                  ],
                   if (widget.onPickCanonicalQuran != null &&
                       (currentSection.slug == 'quran' ||
                           currentSection.slug == 'all')) ...[
@@ -442,6 +446,8 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                           'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
                       trailing: const Icon(Icons.chevron_right_rounded),
                     ),
+                    const SizedBox(height: 16),
+                    _ClearResourceTile(selected: selected == null),
                     const SizedBox(height: 16),
                   ],
                   if (currentSection.slug == 'quran' &&
