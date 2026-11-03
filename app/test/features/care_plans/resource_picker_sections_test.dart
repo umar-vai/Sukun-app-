@@ -164,8 +164,14 @@ void main() {
         );
         await tester.tap(find.text('Open routine picker'));
         await tester.pumpAndSettle();
-        expect(find.byKey(const Key('routine-quran-ayah-entry')), findsOneWidget);
-        expect(find.byKey(const Key('routine-quran-surah-entry')), findsOneWidget);
+        expect(
+          find.byKey(const Key('routine-quran-ayah-entry')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('routine-quran-surah-entry')),
+          findsOneWidget,
+        );
         final key = wholeSurah
             ? const Key('routine-quran-surah-entry')
             : const Key('routine-quran-ayah-entry');
