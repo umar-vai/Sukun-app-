@@ -4,6 +4,7 @@ import 'package:sukun_life/features/care_plans/domain/content_resource_option.da
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
+import 'package:sukun_life/features/personal_routines/presentation/routine_quran_reference_picker.dart';
 import 'package:sukun_life/features/resources/presentation/canonical_quran_ayah_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -445,10 +446,29 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
       context: context,
       resources: options,
       selectedId: '',
+      onPickCanonicalQuran: (pickerContext, wholeSurah) =>
+          pickRoutineQuranReference(
+            pickerContext,
+            wholeSurah,
+            selectedReferences: action.resources
+                .where((ref) => ref['provider'] == 'quran')
+                .map((ref) => ref['external_resource_ref']!)
+                .toSet(),
+          ),
     );
     if (!mounted || id == null || id.isEmpty) return;
+    if (action.resources.any(
+      (ref) =>
+          ref['content_item_id'] == id || ref['external_resource_ref'] == id,
+    )) {
+      return;
+    }
     setState(() {
-      action.resources.add({'provider': 'cms', 'content_item_id': id});
+      action.resources.add(
+        id.startsWith('quran:')
+            ? {'provider': 'quran', 'external_resource_ref': id}
+            : {'provider': 'cms', 'content_item_id': id},
+      );
     });
   }
 
@@ -567,7 +587,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
                 OutlinedButton.icon(
                   onPressed: () => _addCms(_actions[index]),
                   icon: const Icon(Icons.library_books_outlined),
-                  label: const Text('উপকরণ'),
+                  label: const Text('উপকরণ / আয়াত'),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => _addSurah(_actions[index]),

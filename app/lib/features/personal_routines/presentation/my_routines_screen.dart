@@ -17,6 +17,7 @@ import 'package:sukun_life/features/personal_routines/domain/personal_routine_re
 import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
+import 'package:sukun_life/features/personal_routines/presentation/routine_quran_reference_picker.dart';
 import 'package:sukun_life/features/resources/presentation/canonical_quran_ayah_picker.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -336,22 +337,40 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                   )
                                   .toList(growable: false),
                               selectedId: '',
+                              onPickCanonicalQuran:
+                                  (pickerContext, wholeSurah) =>
+                                      pickRoutineQuranReference(
+                                        pickerContext,
+                                        wholeSurah,
+                                        selectedReferences: selected
+                                            .where(
+                                              (item) =>
+                                                  item.provider == 'quran',
+                                            )
+                                            .map((item) => item.key)
+                                            .toSet(),
+                                      ),
                             );
-                            if (id != null &&
-                                id.isNotEmpty &&
+                            if (id == null || id.isEmpty || !ctx.mounted) {
+                              return;
+                            }
+                            final selection = id.startsWith('quran:')
+                                ? PersonalActionResourceSelection.fromLinks([
+                                    {
+                                      'provider': 'quran',
+                                      'external_resource_ref': id,
+                                    },
+                                  ]).firstOrNull
+                                : PersonalActionResourceSelection.cms(id);
+                            if (selection != null &&
                                 !selected.any(
-                                  (item) => item.contentItemId == id,
-                                ) &&
-                                ctx.mounted) {
-                              update(
-                                () => selected.add(
-                                  PersonalActionResourceSelection.cms(id),
-                                ),
-                              );
+                                  (item) => item.key == selection.key,
+                                )) {
+                              update(() => selected.add(selection));
                             }
                           },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('লাইব্রেরি থেকে রিসোর্স বাছুন'),
+                    label: const Text('লাইব্রেরি, সূরা বা আয়াত বাছুন'),
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(

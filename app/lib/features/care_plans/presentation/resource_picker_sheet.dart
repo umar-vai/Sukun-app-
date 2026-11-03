@@ -8,18 +8,29 @@ import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_picker_sections.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
+/// A routine may supply the verified Quran picker without changing clinical
+/// CMS selection behavior. A canonical reference has the form quran:N or quran:N:A.
+typedef PickCanonicalQuranReference = Future<String?> Function(
+  BuildContext context,
+  bool wholeSurah,
+);
+
 Future<String?> showResourcePickerSheet({
   required BuildContext context,
   required List<ContentResourceOption> resources,
   required String selectedId,
+  PickCanonicalQuranReference? onPickCanonicalQuran,
 }) {
   return showModalBottomSheet<String>(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) =>
-        _ResourcePickerSheet(resources: resources, selectedId: selectedId),
+    builder: (context) => _ResourcePickerSheet(
+      resources: resources,
+      selectedId: selectedId,
+      onPickCanonicalQuran: onPickCanonicalQuran,
+    ),
   );
 }
 
@@ -141,10 +152,12 @@ class _ResourcePickerSheet extends StatefulWidget {
   const _ResourcePickerSheet({
     required this.resources,
     required this.selectedId,
+    this.onPickCanonicalQuran,
   });
 
   final List<ContentResourceOption> resources;
   final String selectedId;
+  final PickCanonicalQuranReference? onPickCanonicalQuran;
 
   @override
   State<_ResourcePickerSheet> createState() => _ResourcePickerSheetState();
@@ -155,6 +168,39 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   final _sectionController = PageController(viewportFraction: .72);
   int _sectionIndex = 0;
   DateTime? _lastWheelChange;
+  bool _choosingCanonical = false;
+
+  Future<void> _pickCanonical(bool wholeSurah) async {
+    final picker = widget.onPickCanonicalQuran;
+    if (picker == null || _choosingCanonical) return;
+    setState(() => _choosingCanonical = true);
+    try {
+      final reference = await picker(context, wholeSurah);
+      if (!mounted || reference == null) return;
+      final parts = reference.split(':');
+      final surah = parts.length >= 2 ? int.tryParse(parts[1]) : null;
+      final ayah = parts.length == 3 ? int.tryParse(parts[2]) : null;
+      if ((parts.length != 2 && parts.length != 3) ||
+          parts.first != 'quran' ||
+          surah == null ||
+          surah < 1 ||
+          surah > 114 ||
+          (parts.length == 3 && (ayah == null || ayah < 1 || ayah > 286))) {
+        throw const FormatException('Invalid Quran reference');
+      }
+      Navigator.pop(context, reference);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('কুরআনের আয়াত নির্বাচন করা যায়নি। আবার চেষ্টা করুন।'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _choosingCanonical = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -364,16 +410,58 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
                 children: [
-                  _ClearResourceTile(selected: selected == null),
-                  const SizedBox(height: 16),
+                  if (!(widget.onPickCanonicalQuran != null &&
+                      (currentSection.slug == 'quran' ||
+                          currentSection.slug == 'all'))) ...[
+                    _ClearResourceTile(selected: selected == null),
+                    const SizedBox(height: 16),
+                  ],
+                  if (widget.onPickCanonicalQuran != null &&
+                      (currentSection.slug == 'quran' ||
+                          currentSection.slug == 'all')) ...[
+                    const _CategoryHeader(
+                      label: 'কুরআনের ১১৪ সূরা ও সব আয়াত',
+                      count: 114,
+                    ),
+                    const SizedBox(height: 8),
+                    _PickerCard(
+                      key: const Key('routine-quran-ayah-entry'),
+                      selected: false,
+                      enabled: !_choosingCanonical,
+                      onTap: () => _pickCanonical(false),
+                      icon: Icons.format_list_numbered_rounded,
+                      title: '১১৪ সূরা থেকে নির্দিষ্ট আয়াত বাছুন',
+                      subtitle: 'সূরা খুলে আরবি আয়াত ও উপলব্ধ বাংলা অর্থ দেখে রুটিনে যুক্ত করুন',
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                    const SizedBox(height: 10),
+                    _PickerCard(
+                      key: const Key('routine-quran-surah-entry'),
+                      selected: false,
+                      enabled: !_choosingCanonical,
+                      onTap: () => _pickCanonical(true),
+                      icon: Icons.menu_book_rounded,
+                      title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
+                      subtitle:
+                          'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                    const SizedBox(height: 16),
+                    _ClearResourceTile(selected: selected == null),
+                    const SizedBox(height: 16),
+                  ],
                   if (currentSection.slug == 'quran' &&
+                      widget.onPickCanonicalQuran == null &&
                       !widget.resources.any(
                         (item) => item.canonicalSurahNumber != null,
                       )) ...[
                     const _EmptyQuranResources(),
                     const SizedBox(height: 12),
                   ],
-                  if (visible.isEmpty)
+                  if (visible.isEmpty &&
+                      (widget.onPickCanonicalQuran == null ||
+                          (currentSection.slug != 'quran' &&
+                              currentSection.slug != 'all')))
                     const _EmptyResources()
                   else
                     for (final entry in grouped.entries) ...[
@@ -643,6 +731,7 @@ class _ResourceTile extends StatelessWidget {
 
 class _PickerCard extends StatelessWidget {
   const _PickerCard({
+    super.key,
     required this.selected,
     required this.enabled,
     required this.onTap,

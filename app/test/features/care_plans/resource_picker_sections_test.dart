@@ -130,6 +130,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final wholeSurah in [false, true]) {
+    testWidgets(
+      'routine resource picker returns a canonical ${wholeSurah ? 'surah' : 'ayah'} reference',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        String? result;
+        bool? requestedWholeSurah;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () async {
+                    result = await showResourcePickerSheet(
+                      context: context,
+                      resources: const [_dua],
+                      selectedId: '',
+                      onPickCanonicalQuran: (context, full) async {
+                        requestedWholeSurah = full;
+                        return full ? 'quran:114' : 'quran:2:255';
+                      },
+                    );
+                  },
+                  child: const Text('Open routine picker'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open routine picker'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('routine-quran-ayah-entry')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('routine-quran-surah-entry')),
+          findsOneWidget,
+        );
+        final key = wholeSurah
+            ? const Key('routine-quran-surah-entry')
+            : const Key('routine-quran-ayah-entry');
+        await tester.ensureVisible(find.byKey(key));
+        await tester.tap(find.byKey(key));
+        await tester.pumpAndSettle();
+        expect(requestedWholeSurah, wholeSurah);
+        expect(result, wholeSurah ? 'quran:114' : 'quran:2:255');
+        expect(find.text('Open routine picker'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('fixed light resource picker stays readable in dark theme', (
     tester,
   ) async {
