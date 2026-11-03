@@ -175,7 +175,34 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     try {
       final reference = await picker(context, wholeSurah);
       if (!mounted || reference == null) return;
-      if (!RegExp(r'^quran:(?:[1-9]|[1-9][0-9]|1[01][0-9]|11[0-4])(?::[1-9][0-9]{0,2})? {
+      final parts = reference.split(':');
+      final surah = parts.length >= 2 ? int.tryParse(parts[1]) : null;
+      final ayah = parts.length == 3 ? int.tryParse(parts[2]) : null;
+      if ((parts.length != 2 && parts.length != 3) ||
+          parts.first != 'quran' ||
+          surah == null ||
+          surah < 1 ||
+          surah > 114 ||
+          (parts.length == 3 &&
+              (ayah == null || ayah < 1 || ayah > 286))) {
+        throw const FormatException('Invalid Quran reference');
+      }
+      Navigator.pop(context, reference);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('কুরআনের আয়াত নির্বাচন করা যায়নি। আবার চেষ্টা করুন।'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _choosingCanonical = false);
+    }
+  }
+
+  @override
+  void dispose() {
     _searchController.dispose();
     _sectionController.dispose();
     super.dispose();
