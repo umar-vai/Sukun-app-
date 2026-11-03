@@ -10,8 +10,10 @@ import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 /// A routine may supply the verified Quran picker without changing clinical
 /// CMS selection behavior. A canonical reference has the form quran:N or quran:N:A.
-typedef PickCanonicalQuranReference =
-    Future<String?> Function(BuildContext context, bool wholeSurah);
+typedef PickCanonicalQuranReference = Future<String?> Function(
+  BuildContext context,
+  bool wholeSurah,
+);
 
 Future<String?> showResourcePickerSheet({
   required BuildContext context,
@@ -183,8 +185,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
           surah == null ||
           surah < 1 ||
           surah > 114 ||
-          (parts.length == 3 &&
-              (ayah == null || ayah < 1 || ayah > 286))) {
+          (parts.length == 3 && (ayah == null || ayah < 1 || ayah > 286))) {
         throw const FormatException('Invalid Quran reference');
       }
       Navigator.pop(context, reference);
@@ -437,7 +438,8 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                       onTap: () => _pickCanonical(true),
                       icon: Icons.menu_book_rounded,
                       title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
-                      subtitle: 'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
+                      subtitle:
+                          'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
                       trailing: const Icon(Icons.chevron_right_rounded),
                     ),
                     const SizedBox(height: 16),
