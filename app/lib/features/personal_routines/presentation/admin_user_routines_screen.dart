@@ -459,8 +459,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
     if (!mounted || id == null || id.isEmpty) return;
     if (action.resources.any(
       (ref) =>
-          ref['content_item_id'] == id ||
-          ref['external_resource_ref'] == id,
+          ref['content_item_id'] == id || ref['external_resource_ref'] == id,
     )) {
       return;
     }
