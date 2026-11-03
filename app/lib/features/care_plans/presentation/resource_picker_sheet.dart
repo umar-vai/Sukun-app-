@@ -424,7 +424,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                     const SizedBox(height: 12),
                   ],
                   if (visible.isEmpty &&
-                      widget.onPickCanonicalQuran == null)
+                      (widget.onPickCanonicalQuran == null ||
+                          (currentSection.slug != 'quran' &&
+                              currentSection.slug != 'all')))
                     const _EmptyResources()
                   else
                     for (final entry in grouped.entries) ...[
