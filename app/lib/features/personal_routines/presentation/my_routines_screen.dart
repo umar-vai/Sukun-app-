@@ -337,15 +337,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                   )
                                   .toList(growable: false),
                               selectedId: '',
-                              onPickCanonicalQuran: (pickerContext, wholeSurah) =>
-                                  pickRoutineQuranReference(
-                                    pickerContext,
-                                    wholeSurah,
-                                    selectedReferences: selected
-                                        .where((item) => item.provider == 'quran')
-                                        .map((item) => item.key)
-                                        .toSet(),
-                                  ),
+                              onPickCanonicalQuran:
+                                  (pickerContext, wholeSurah) =>
+                                      pickRoutineQuranReference(
+                                        pickerContext,
+                                        wholeSurah,
+                                        selectedReferences: selected
+                                            .where(
+                                              (item) =>
+                                                  item.provider == 'quran',
+                                            )
+                                            .map((item) => item.key)
+                                            .toSet(),
+                                      ),
                             );
                             if (id == null || id.isEmpty || !ctx.mounted) {
                               return;
