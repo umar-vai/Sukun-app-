@@ -30,9 +30,10 @@ String? universalNoticeIdFromLocalPayload(String? payload) {
   return _validId(payload.substring('universal_notice:'.length));
 }
 
-String personalActionRoute(String actionId) =>
-    Uri(pathSegments: ['', 'my-routines', 'action', actionId],
-        queryParameters: {'fromReminder': '1'}).toString();
+String personalActionRoute(String actionId) => Uri(
+  pathSegments: ['', 'my-routines', 'action', actionId],
+  queryParameters: {'fromReminder': '1'},
+).toString();
 
 final class NotificationTapRelay {
   final StreamController<String> _opened = StreamController<String>.broadcast();
