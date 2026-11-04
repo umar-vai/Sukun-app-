@@ -38,12 +38,24 @@ void main() {
               {'id': 'r2', 'is_active': false},
             ],
             actions: const [
-              {'id': 'a1', 'routine_id': 'r1', 'is_active': true,
-                'title': 'আয়াতুল কুরসি'},
-              {'id': 'a2', 'routine_id': 'r1', 'is_active': true,
-                'title': 'পানি পান'},
-              {'id': 'a3', 'routine_id': 'r2', 'is_active': true,
-                'title': 'পজ করা কাজ'},
+              {
+                'id': 'a1',
+                'routine_id': 'r1',
+                'is_active': true,
+                'title': 'আয়াতুল কুরসি',
+              },
+              {
+                'id': 'a2',
+                'routine_id': 'r1',
+                'is_active': true,
+                'title': 'পানি পান',
+              },
+              {
+                'id': 'a3',
+                'routine_id': 'r2',
+                'is_active': true,
+                'title': 'পজ করা কাজ',
+              },
             ],
             outcomes: const {'a1': 'done'},
             onToggleDone: (id, alreadyDone) => marked.add('$id:$alreadyDone'),
@@ -54,7 +66,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('আজকের রুটিন'), findsOneWidget);
-    expect(find.byKey(const Key('today-routine-progress-ring')), findsOneWidget);
+    expect(
+      find.byKey(const Key('today-routine-progress-ring')),
+      findsOneWidget,
+    );
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('১ টি সম্পন্ন'), findsNothing);
     expect(find.text('1 টি সম্পন্ন'), findsOneWidget);
