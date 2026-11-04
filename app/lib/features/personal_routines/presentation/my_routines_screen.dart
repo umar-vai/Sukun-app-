@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
+import 'package:sukun_life/features/personal_routines/presentation/today_routine_panel.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
@@ -670,7 +671,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             tabs: [
               Tab(text: 'আমার রুটিন'),
               Tab(text: 'নির্ধারিত'),
-              Tab(text: 'অগ্রগতি'),
+              Tab(text: 'আজকের রুটিন'),
             ],
           ),
           Expanded(
@@ -874,7 +875,57 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   },
                 ),
                 _assignedPlanTab(),
-                const UnifiedProgressScreen(embedded: true),
+                FutureBuilder<_RoutinePageData>(
+                  future: _data,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: OutlinedButton(
+                          onPressed: _refresh,
+                          child: const Text('আজকের রুটিন আনা যায়নি · আবার চেষ্টা'),
+                        ),
+                      );
+                    }
+                    final data = snapshot.data;
+                    if (data == null) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return TodayRoutinePanel(
+                      routines: data.routines,
+                      actions: data.actions,
+                      outcomes: data.outcomes,
+                      busy: _working,
+                      onToggleDone: (actionId, currentlyDone) {
+                        _mutate(() => currentlyDone
+                            ? _repository.clearOutcome(
+                                actionId: actionId,
+                                localDate: DateTime.now(),
+                              )
+                            : _repository.recordOutcome(
+                                actionId: actionId,
+                                localDate: DateTime.now(),
+                                outcome: 'done',
+                              ));
+                      },
+                      onOpen: (id) => context.push(
+                        '/my-routines/action/${Uri.encodeComponent(id)}',
+                      ),
+                      onOpenPatientToday:
+                          ref.watch(appSessionProvider).value?.isPatient == true
+                          ? () => context.push('/patient/today')
+                          : null,
+                      onOpenHistory: () => showModalBottomSheet<void>(
+                        context: context,
+                        useSafeArea: true,
+                        isScrollControlled: true,
+                        builder: (context) => const FractionallySizedBox(
+                          heightFactor: .86,
+                          child: UnifiedProgressScreen(embedded: true),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
