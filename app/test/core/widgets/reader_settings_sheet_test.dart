@@ -36,6 +36,20 @@ void main() {
     );
 
     expect(find.byKey(const Key('reader-settings-gear')), findsOneWidget);
+    final gear = tester.widget<IconButton>(
+      find.byKey(const Key('reader-settings-gear')),
+    );
+    expect((gear.icon as Icon).icon, Icons.settings_rounded);
+    expect(gear.iconSize, 24);
+    expect(
+      gear.style?.backgroundColor?.resolve({}),
+      const Color(0xFF0A70A8),
+    );
+    expect(gear.style?.foregroundColor?.resolve({}), Colors.white);
+    expect(
+      tester.getSize(find.byKey(const Key('reader-settings-gear'))),
+      const Size(48, 48),
+    );
     await tester.tap(find.byKey(const Key('reader-settings-gear')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('reader-settings-panel')), findsOneWidget);
@@ -69,18 +83,14 @@ void main() {
     );
 
     await tester.scrollUntilVisible(
-      find.byKey(const Key('reader-source-credits')),
-      220,
-    );
-    expect(find.text('Al Quran Cloud'), findsNothing);
-    await tester.tap(find.byKey(const Key('reader-source-credits')));
-    await tester.pumpAndSettle();
-    expect(find.text('Al Quran Cloud'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
       find.byKey(const Key('reader-reset-preferences')),
       220,
     );
+    // Provider metadata is retained in source records, never displayed as
+    // an unwanted extra dropdown inside the reading settings sheet.
+    expect(find.byKey(const Key('reader-source-credits')), findsNothing);
+    expect(find.text('উৎস ও স্বত্বের তথ্য'), findsNothing);
+    expect(find.text('Al Quran Cloud'), findsNothing);
     await tester.tap(find.byKey(const Key('reader-reset-preferences')));
     await tester.pumpAndSettle();
     expect(
@@ -91,6 +101,36 @@ void main() {
       AppDisplaySettings.instance.value.arabicFont,
       ArabicReaderFont.amiriQuran,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('settings gear contrast survives light and dark AppBars', (
+    tester,
+  ) async {
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: Scaffold(
+            appBar: AppBar(actions: const [ReaderSettingsAction()]),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final gear = tester.widget<IconButton>(
+        find.byKey(const Key('reader-settings-gear')),
+      );
+      expect(gear.style?.foregroundColor?.resolve({}), Colors.white);
+      expect(
+        gear.style?.backgroundColor?.resolve({}),
+        const Color(0xFF0A70A8),
+      );
+      expect(gear.style?.side?.resolve({})?.width, 1.5);
+      expect(
+        tester.getSize(find.byKey(const Key('reader-settings-gear'))),
+        const Size(48, 48),
+      );
+    }
     expect(tester.takeException(), isNull);
   });
 
