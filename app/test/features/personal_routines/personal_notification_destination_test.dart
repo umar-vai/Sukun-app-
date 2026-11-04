@@ -35,12 +35,21 @@ void main() {
     expect(personalNotificationDestination(const []), '/my-routines?tab=today');
     expect(
       personalNotificationDestination([
-        {'provider': 'cms', 'content_item_id': resourceId,
-          'content_items': {'id': resourceId, 'status': 'draft',
-            'visibility': 'public'}},
+        {
+          'provider': 'cms',
+          'content_item_id': resourceId,
+          'content_items': {
+            'id': resourceId,
+            'status': 'draft',
+            'visibility': 'public',
+          },
+        },
         {'provider': 'quran', 'external_resource_ref': 'quran:999'},
-        {'provider': 'cms', 'content_item_id': 'https://attacker.example',
-          'content_items': {'status': 'published', 'visibility': 'public'}},
+        {
+          'provider': 'cms',
+          'content_item_id': 'https://attacker.example',
+          'content_items': {'status': 'published', 'visibility': 'public'},
+        },
       ]),
       '/my-routines?tab=today',
     );
