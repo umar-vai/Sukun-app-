@@ -626,7 +626,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
               a.title.text.trim().isEmpty ||
               a.title.text.trim().length > 160 ||
               a.notes.text.trim().length > 3000 ||
-              RegExp(r'\\{(দিন|বার|মিনিট)\\}').hasMatch(a.notes.text) ||
+              RegExp(r'\{(দিন|বার|মিনিট)\}').hasMatch(a.notes.text) ||
               (a.needsLinkedResource && a.resources.isEmpty),
         )) {
       ScaffoldMessenger.of(context).showSnackBar(
