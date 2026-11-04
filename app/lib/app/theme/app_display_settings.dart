@@ -74,10 +74,10 @@ class AppDisplaySettings extends ValueNotifier<AppDisplayPreferences> {
         bengaliScale: validBengaliScale(prefs.getDouble(bengaliKey)),
         arabicScale: validArabicScale(prefs.getDouble(arabicKey)),
         arabicFont: parseArabicFont(prefs.getString(arabicFontKey)),
-        showQuranBanglaTranslation:
-            prefs.getBool(quranTranslationKey) ?? true,
-        readerLineSpacing:
-            validReaderLineSpacing(prefs.getDouble(readerLineSpacingKey)),
+        showQuranBanglaTranslation: prefs.getBool(quranTranslationKey) ?? true,
+        readerLineSpacing: validReaderLineSpacing(
+          prefs.getDouble(readerLineSpacingKey),
+        ),
       );
     } catch (_) {
       // A blocked local storage provider never stops the app from opening.
@@ -129,15 +129,11 @@ class AppDisplaySettings extends ValueNotifier<AppDisplayPreferences> {
   }
 
   void previewReaderLineSpacing(double spacing) {
-    value = value.copyWith(
-      readerLineSpacing: validReaderLineSpacing(spacing),
-    );
+    value = value.copyWith(readerLineSpacing: validReaderLineSpacing(spacing));
   }
 
   Future<void> setReaderLineSpacing(double spacing) async {
-    value = value.copyWith(
-      readerLineSpacing: validReaderLineSpacing(spacing),
-    );
+    value = value.copyWith(readerLineSpacing: validReaderLineSpacing(spacing));
     await _persist(readerLineSpacingKey, value.readerLineSpacing);
   }
 
