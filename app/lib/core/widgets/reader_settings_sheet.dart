@@ -22,15 +22,27 @@ class ReaderSettingsAction extends StatelessWidget {
   final List<String> sourceLines;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    key: const Key('reader-settings-gear'),
-    tooltip: 'পাঠের সেটিংস',
-    icon: const Icon(Icons.settings_outlined),
-    onPressed: () => showReaderSettingsSheet(
-      context,
-      showTranslationSwitch: showTranslationSwitch,
-      pdfDocument: pdfDocument,
-      sourceLines: sourceLines,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: IconButton(
+      key: const Key('reader-settings-gear'),
+      tooltip: 'পাঠের সেটিংস',
+      icon: const Icon(Icons.settings_rounded),
+      iconSize: 24,
+      style: IconButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0A70A8),
+        side: const BorderSide(color: Color(0xFF8EDCFA), width: 1.5),
+        shape: const CircleBorder(),
+        fixedSize: const Size(48, 48),
+        padding: EdgeInsets.zero,
+      ),
+      onPressed: () => showReaderSettingsSheet(
+        context,
+        showTranslationSwitch: showTranslationSwitch,
+        pdfDocument: pdfDocument,
+        sourceLines: sourceLines,
+      ),
     ),
   );
 }
@@ -225,24 +237,6 @@ Future<void> showReaderSettingsSheet(
                       const Text(
                         'PDF-এর ভেতরের ফন্ট ও অনুবাদ এখানে বদলানো যায় না। '
                         'বড় করে পড়তে PDF-এর জুম বাটন ব্যবহার করুন।',
-                      ),
-                    ],
-                    if (sourceLines.isNotEmpty) ...[
-                      const Divider(height: 28),
-                      ExpansionTile(
-                        key: const Key('reader-source-credits'),
-                        tilePadding: EdgeInsets.zero,
-                        title: const Text('উৎস ও স্বত্বের তথ্য'),
-                        children: [
-                          for (final line in sourceLines)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(line),
-                              ),
-                            ),
-                        ],
                       ),
                     ],
                     const SizedBox(height: 16),
