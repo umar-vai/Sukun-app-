@@ -168,7 +168,7 @@ final class PersonalRoutineRepository {
     final row = await client
         .from('personal_routine_actions')
         .select(
-          'id,routine_id,title,notification_title,content_item_id,resource_provider,is_active',
+          'id,routine_id,title,notification_title,notes,content_item_id,resource_provider,is_active',
         )
         .eq('id', actionId)
         .maybeSingle();
