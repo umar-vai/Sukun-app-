@@ -20,7 +20,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           appBar: AppBar(
             title: Text('Quran'),
@@ -89,7 +89,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           appBar: AppBar(
             actions: [ReaderSettingsAction(pdfDocument: true)],
