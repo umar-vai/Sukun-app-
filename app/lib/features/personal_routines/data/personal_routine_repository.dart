@@ -239,6 +239,21 @@ final class PersonalRoutineRepository {
     }, onConflict: 'action_id,local_date');
   }
 
+  /// Undo a personal check-in without manufacturing a skipped event.
+  /// Ownership remains enforced by Supabase RLS, not by the UI.
+  Future<void> clearOutcome({
+    required String actionId,
+    required DateTime localDate,
+  }) async {
+    final day = DateFormat('yyyy-MM-dd').format(localDate);
+    await client
+        .from('personal_routine_progress')
+        .delete()
+        .eq('owner_user_id', ownerId)
+        .eq('action_id', actionId)
+        .eq('local_date', day);
+  }
+
   /// Read only this signed-in owner's check-ins; both Member and Patient use it.
   /// These events are not a clinical adherence or diagnosis metric.
   Future<List<Map<String, dynamic>>> listProgress({int days = 7}) async {

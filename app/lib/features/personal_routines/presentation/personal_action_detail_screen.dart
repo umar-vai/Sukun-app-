@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
@@ -5,13 +7,19 @@ import 'package:sukun_life/features/media_library/presentation/audio_library_act
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/personal_routines/domain/personal_notification_destination.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Same action detail screen for members and patients' *self-owned* routines.
 /// Supabase RLS independently protects action and linked-resource ownership.
 class PersonalActionDetailScreen extends StatefulWidget {
-  const PersonalActionDetailScreen({super.key, required this.actionId});
+  const PersonalActionDetailScreen({
+    super.key,
+    required this.actionId,
+    this.fromReminder = false,
+  });
   final String actionId;
+  final bool fromReminder;
 
   @override
   State<PersonalActionDetailScreen> createState() =>
@@ -30,6 +38,22 @@ class _PersonalActionDetailScreenState
   void initState() {
     super.initState();
     _load = _read();
+    if (widget.fromReminder) unawaited(_openReminderDestination());
+  }
+
+  Future<void> _openReminderDestination() async {
+    try {
+      final data = await _load;
+      if (!mounted || data.action == null) return;
+      // Read/RLS authorizes the target before navigation. No URL from a
+      // notification is ever followed directly.
+      final route = personalNotificationDestination(data.references);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go(route);
+      });
+    } catch (_) {
+      // A failed owner-scoped read remains on the ordinary error/retry screen.
+    }
   }
 
   Future<_PersonalActionDetail> _read() async {

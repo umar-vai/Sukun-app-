@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
+import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_picker_sections.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
@@ -20,6 +21,7 @@ Future<String?> showResourcePickerSheet({
   required List<ContentResourceOption> resources,
   required String selectedId,
   PickCanonicalQuranReference? onPickCanonicalQuran,
+  bool includeOfficialTemplates = false,
 }) {
   return showModalBottomSheet<String>(
     context: context,
@@ -30,6 +32,7 @@ Future<String?> showResourcePickerSheet({
       resources: resources,
       selectedId: selectedId,
       onPickCanonicalQuran: onPickCanonicalQuran,
+      includeOfficialTemplates: includeOfficialTemplates,
     ),
   );
 }
@@ -41,12 +44,14 @@ class ResourcePickerField extends StatelessWidget {
     required this.selectedId,
     required this.enabled,
     required this.onChanged,
+    this.onOfficialTemplateSelected,
   });
 
   final List<ContentResourceOption> resources;
   final String selectedId;
   final bool enabled;
   final ValueChanged<String> onChanged;
+  final ValueChanged<OfficialPrescriptionTemplate>? onOfficialTemplateSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +75,20 @@ class ResourcePickerField extends StatelessWidget {
                   context: context,
                   resources: resources,
                   selectedId: selectedId,
+                  includeOfficialTemplates: onOfficialTemplateSelected != null,
                 );
-                if (result != null) onChanged(result);
+                if (result != null) {
+                  if (result.startsWith('official-template:')) {
+                    final template = findOfficialTemplate(
+                      result.substring('official-template:'.length),
+                    );
+                    if (template != null) {
+                      onOfficialTemplateSelected?.call(template);
+                    }
+                  } else {
+                    onChanged(result);
+                  }
+                }
               },
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 180),
@@ -153,11 +170,13 @@ class _ResourcePickerSheet extends StatefulWidget {
     required this.resources,
     required this.selectedId,
     this.onPickCanonicalQuran,
+    this.includeOfficialTemplates = false,
   });
 
   final List<ContentResourceOption> resources;
   final String selectedId;
   final PickCanonicalQuranReference? onPickCanonicalQuran;
+  final bool includeOfficialTemplates;
 
   @override
   State<_ResourcePickerSheet> createState() => _ResourcePickerSheetState();
@@ -242,6 +261,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     final grouped = currentSection.isOther
         ? <String, List<ContentResourceOption>>{currentSection.label: visible}
         : _groupByCategory(visible);
+    final query = _searchController.text.trim().toLowerCase();
     final selected = widget.resources
         .where((resource) => resource.id == widget.selectedId)
         .firstOrNull;
@@ -410,75 +430,146 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
                 children: [
-                  if (!(widget.onPickCanonicalQuran != null &&
-                      (currentSection.slug == 'quran' ||
-                          currentSection.slug == 'all'))) ...[
-                    _ClearResourceTile(selected: selected == null),
-                    const SizedBox(height: 16),
-                  ],
-                  if (widget.onPickCanonicalQuran != null &&
-                      (currentSection.slug == 'quran' ||
-                          currentSection.slug == 'all')) ...[
-                    const _CategoryHeader(
-                      label: 'কুরআনের ১১৪ সূরা ও সব আয়াত',
-                      count: 114,
+                  if (currentSection.slug == 'official') ...[
+                    const Card(
+                      color: SukunColors.mist,
+                      child: Padding(
+                        padding: EdgeInsets.all(14),
+                        child: Text(
+                          'সুকুন লাইফ অফিসিয়াল টেমপ্লেট · শুধুমাত্র Admin Draft। '
+                          'নির্দেশনা, দিন, সংখ্যা ও সংশ্লিষ্ট প্রকাশিত উপকরণ '
+                          'মূল প্রেসক্রিপশন থেকে যাচাই করে রোগীর জন্য অনুমোদন দিন।',
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    _PickerCard(
-                      key: const Key('routine-quran-ayah-entry'),
-                      selected: false,
-                      enabled: !_choosingCanonical,
-                      onTap: () => _pickCanonical(false),
-                      icon: Icons.format_list_numbered_rounded,
-                      title: '১১৪ সূরা থেকে নির্দিষ্ট আয়াত বাছুন',
-                      subtitle: 'সূরা খুলে আরবি আয়াত ও উপলব্ধ বাংলা অর্থ দেখে রুটিনে যুক্ত করুন',
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                    ),
-                    const SizedBox(height: 10),
-                    _PickerCard(
-                      key: const Key('routine-quran-surah-entry'),
-                      selected: false,
-                      enabled: !_choosingCanonical,
-                      onTap: () => _pickCanonical(true),
-                      icon: Icons.menu_book_rounded,
-                      title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
-                      subtitle:
-                          'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                    ),
-                    const SizedBox(height: 16),
-                    _ClearResourceTile(selected: selected == null),
-                    const SizedBox(height: 16),
-                  ],
-                  if (currentSection.slug == 'quran' &&
-                      widget.onPickCanonicalQuran == null &&
-                      !widget.resources.any(
-                        (item) => item.canonicalSurahNumber != null,
-                      )) ...[
-                    const _EmptyQuranResources(),
                     const SizedBox(height: 12),
-                  ],
-                  if (visible.isEmpty &&
-                      (widget.onPickCanonicalQuran == null ||
-                          (currentSection.slug != 'quran' &&
-                              currentSection.slug != 'all')))
-                    const _EmptyResources()
-                  else
-                    for (final entry in grouped.entries) ...[
-                      _CategoryHeader(
-                        label: entry.key,
-                        count: entry.value.length,
+                    for (final group in officialTemplateCategories) ...[
+                      if (officialPrescriptionTemplates.any(
+                        (entry) =>
+                            entry.category == group.id &&
+                            (query.isEmpty ||
+                                entry.title.toLowerCase().contains(query) ||
+                                entry.instruction.toLowerCase().contains(
+                                  query,
+                                )),
+                      )) ...[
+                        _CategoryHeader(
+                          label: group.title,
+                          count: officialPrescriptionTemplates
+                              .where(
+                                (entry) =>
+                                    entry.category == group.id &&
+                                    (query.isEmpty ||
+                                        entry.title.toLowerCase().contains(
+                                          query,
+                                        ) ||
+                                        entry.instruction
+                                            .toLowerCase()
+                                            .contains(query)),
+                              )
+                              .length,
+                        ),
+                        const SizedBox(height: 8),
+                        for (final template
+                            in officialPrescriptionTemplates.where(
+                              (entry) =>
+                                  entry.category == group.id &&
+                                  (query.isEmpty ||
+                                      entry.title.toLowerCase().contains(
+                                        query,
+                                      ) ||
+                                      entry.instruction.toLowerCase().contains(
+                                        query,
+                                      )),
+                            )) ...[
+                          _PickerCard(
+                            key: Key('official-template-${template.id}'),
+                            selected: false,
+                            enabled: true,
+                            onTap: () => Navigator.pop(
+                              context,
+                              'official-template:${template.id}',
+                            ),
+                            icon: Icons.assignment_turned_in_outlined,
+                            title: template.title,
+                            subtitle: template.instruction,
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ],
+                    ],
+                  ] else ...[
+                    if (!(widget.onPickCanonicalQuran != null &&
+                        (currentSection.slug == 'quran' ||
+                            currentSection.slug == 'all'))) ...[
+                      _ClearResourceTile(selected: selected == null),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.onPickCanonicalQuran != null &&
+                        (currentSection.slug == 'quran' ||
+                            currentSection.slug == 'all')) ...[
+                      const _CategoryHeader(
+                        label: 'কুরআনের ১১৪ সূরা ও সব আয়াত',
+                        count: 114,
                       ),
                       const SizedBox(height: 8),
-                      for (final resource in entry.value) ...[
-                        _ResourceTile(
-                          resource: resource,
-                          selected: resource.id == widget.selectedId,
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                      const SizedBox(height: 8),
+                      _PickerCard(
+                        key: const Key('routine-quran-ayah-entry'),
+                        selected: false,
+                        enabled: !_choosingCanonical,
+                        onTap: () => _pickCanonical(false),
+                        icon: Icons.format_list_numbered_rounded,
+                        title: '১১৪ সূরা থেকে নির্দিষ্ট আয়াত বাছুন',
+                        subtitle: 'সূরা খুলে আরবি আয়াত ও উপলব্ধ বাংলা অর্থ দেখে রুটিনে যুক্ত করুন',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                      ),
+                      const SizedBox(height: 10),
+                      _PickerCard(
+                        key: const Key('routine-quran-surah-entry'),
+                        selected: false,
+                        enabled: !_choosingCanonical,
+                        onTap: () => _pickCanonical(true),
+                        icon: Icons.menu_book_rounded,
+                        title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
+                        subtitle:
+                            'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                      ),
+                      const SizedBox(height: 16),
+                      _ClearResourceTile(selected: selected == null),
+                      const SizedBox(height: 16),
                     ],
+                    if (currentSection.slug == 'quran' &&
+                        widget.onPickCanonicalQuran == null &&
+                        !widget.resources.any(
+                          (item) => item.canonicalSurahNumber != null,
+                        )) ...[
+                      const _EmptyQuranResources(),
+                      const SizedBox(height: 12),
+                    ],
+                    if (visible.isEmpty &&
+                        (widget.onPickCanonicalQuran == null ||
+                            (currentSection.slug != 'quran' &&
+                                currentSection.slug != 'all')))
+                      const _EmptyResources()
+                    else
+                      for (final entry in grouped.entries) ...[
+                        _CategoryHeader(
+                          label: entry.key,
+                          count: entry.value.length,
+                        ),
+                        const SizedBox(height: 8),
+                        for (final resource in entry.value) ...[
+                          _ResourceTile(
+                            resource: resource,
+                            selected: resource.id == widget.selectedId,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        const SizedBox(height: 8),
+                      ],
+                  ],
                 ],
               ),
             ),
@@ -518,6 +609,13 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
 
   List<_PickerSection> _sections(List<ContentResourceOption> resources) {
     final sections = <_PickerSection>[
+      if (widget.includeOfficialTemplates)
+        const _PickerSection(
+          slug: 'official',
+          label: 'Sukun Life Official Templates',
+          icon: Icons.verified_outlined,
+          count: 51,
+        ),
       _PickerSection(
         slug: 'all',
         label: 'সব উপকরণ',
