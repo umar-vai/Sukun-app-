@@ -407,8 +407,8 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
 
 class _ComposerAction {
   _ComposerAction()
-      : title = TextEditingController(),
-        notes = TextEditingController();
+    : title = TextEditingController(),
+      notes = TextEditingController();
   final TextEditingController title;
   final TextEditingController notes;
   String? officialTemplateId;
@@ -519,7 +519,9 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
                     key: Key('admin-routine-template-${entry.key}'),
                     controller: entry.value,
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: '${entry.key} সংখ্যা'),
+                    decoration: InputDecoration(
+                      labelText: '${entry.key} সংখ্যা',
+                    ),
                   ),
                 if (template.requiresLinkedResource)
                   const Padding(
@@ -630,7 +632,9 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
               (a.needsLinkedResource && a.resources.isEmpty),
         )) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('করণীয়, নির্দেশনা ও বাধ্যতামূলক উপকরণ যাচাই করুন।')),
+        const SnackBar(
+          content: Text('করণীয়, নির্দেশনা ও বাধ্যতামূলক উপকরণ যাচাই করুন।'),
+        ),
       );
       return;
     }
