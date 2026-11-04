@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -54,17 +55,34 @@ Future<void> showReaderSettingsSheet(
   bool showTranslationSwitch = false,
   bool pdfDocument = false,
   List<String> sourceLines = const [],
-}) => showModalBottomSheet<void>(
+}) => showGeneralDialog<void>(
   context: context,
-  useSafeArea: true,
-  isScrollControlled: true,
-  showDragHandle: true,
-  builder: (context) => FractionallySizedBox(
-    heightFactor: 0.85,
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 660),
-        child: ValueListenableBuilder<AppDisplayPreferences>(
+  barrierDismissible: true,
+  barrierLabel: 'পাঠের সেটিংস বন্ধ করুন',
+  barrierColor: Colors.black54,
+  transitionDuration: const Duration(milliseconds: 280),
+  transitionBuilder: (context, animation, secondaryAnimation, child) =>
+      SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: child,
+      ),
+  pageBuilder: (context, animation, secondaryAnimation) => Align(
+    alignment: Alignment.centerRight,
+    child: SizedBox(
+      key: const Key('reader-settings-side-panel'),
+      width: math.min(480.0, MediaQuery.sizeOf(context).width * 0.92),
+      height: double.infinity,
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        elevation: 16,
+        child: SafeArea(
+          left: false,
+          child: ValueListenableBuilder<AppDisplayPreferences>(
           valueListenable: AppDisplaySettings.instance,
           builder: (context, settings, _) =>
               ValueListenableBuilder<BengaliFontChoice>(
@@ -73,9 +91,21 @@ Future<void> showReaderSettingsSheet(
                   key: const Key('reader-settings-panel'),
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                   children: [
-                    Text(
-                      'পাঠের সেটিংস',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'পাঠের সেটিংস',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('reader-settings-close'),
+                          tooltip: 'সেটিংস বন্ধ করুন',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -255,6 +285,7 @@ Future<void> showReaderSettingsSheet(
       ),
     ),
   ),
+),
 );
 
 /// Unified typography for authenticated/guest Arabic reading surfaces.
