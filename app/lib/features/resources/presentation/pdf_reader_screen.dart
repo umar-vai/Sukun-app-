@@ -7,6 +7,7 @@ import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/bengali_pdf_font_resolver.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 /// The external host retains the file; only the PDF pages are rendered here.
@@ -96,6 +97,7 @@ class _PdfReaderScreenState extends ConsumerState<PdfReaderScreen> {
       appBar: AppBar(
         title: const Text('পিডিএফ পড়ুন'),
         actions: [
+          const ReaderSettingsAction(pdfDocument: true),
           IconButton(
             tooltip: 'আবার লোড করুন',
             onPressed: uri == null ? null : _retry,
