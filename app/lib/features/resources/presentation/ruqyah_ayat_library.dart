@@ -804,171 +804,176 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
       valueListenable: AppDisplaySettings.instance,
       builder: (context, readingSettings, _) => Card(
         child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.displayTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.displayTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  IconButton(
+                    key: Key('ruqyah-ayah-audio-${item.slug}'),
+                    tooltip: item.citation == null
+                        ? 'এই পাঠের আলাদা আয়াতের অডিও যাচাই হয়নি'
+                        : 'শুধু শুরুর আয়াতের তিলাওয়াত শুনুন',
+                    onPressed: item.citation == null || _loadingAudio
+                        ? null
+                        : () => _playStartAyah(item),
+                    icon: _loadingAudio && _playingSlug == item.slug
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            _playingSlug == item.slug && _audioPlayer.playing
+                                ? Icons.pause_circle_outline
+                                : Icons.play_circle_outline,
+                          ),
+                  ),
+                  IconButton(
+                    tooltip: 'ফেভারিট',
+                    icon: Icon(
+                      _favorites.contains(item.slug)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                    ),
+                    onPressed: () => _toggleFavorite(item.slug),
+                  ),
+                  IconButton(
+                    tooltip: 'কপি',
+                    icon: const Icon(Icons.copy_outlined),
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: item.arabic));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('আরবি পাঠ কপি হয়েছে')),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const Divider(),
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: SelectableText(
+                  item.arabic,
+                  textAlign: TextAlign.right,
+                  // Amiri Quran retains the vowel marks and improves the
+                  // breathing room around dense Quranic glyph combinations.
+                  // Only the Arabic reader uses this font; Bangla brand stays.
+                  style: readerArabicStyle(
+                    readingSettings,
+                    fontSize:
+                        (MediaQuery.sizeOf(context).width < 500 ? 27 : 31) *
+                        readingSettings.arabicScale,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                IconButton(
-                  key: Key('ruqyah-ayah-audio-${item.slug}'),
-                  tooltip: item.citation == null
-                      ? 'এই পাঠের আলাদা আয়াতের অডিও যাচাই হয়নি'
-                      : 'শুধু শুরুর আয়াতের তিলাওয়াত শুনুন',
-                  onPressed: item.citation == null || _loadingAudio
-                      ? null
-                      : () => _playStartAyah(item),
-                  icon: _loadingAudio && _playingSlug == item.slug
-                      ? const SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(
-                          _playingSlug == item.slug && _audioPlayer.playing
-                              ? Icons.pause_circle_outline
-                              : Icons.play_circle_outline,
-                        ),
+              ),
+              const SizedBox(height: 12),
+              if (item.citation != null) ...[
+                Text(
+                  item.citation!,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                IconButton(
-                  tooltip: 'ফেভারিট',
-                  icon: Icon(
-                    _favorites.contains(item.slug)
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                  ),
-                  onPressed: () => _toggleFavorite(item.slug),
-                ),
-                IconButton(
-                  tooltip: 'কপি',
-                  icon: const Icon(Icons.copy_outlined),
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: item.arabic));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('আরবি পাঠ কপি হয়েছে')),
-                      );
-                    }
-                  },
+                const SizedBox(height: 4),
+                Text(
+                  'শুধু শুরুর আয়াতের তিলাওয়াত',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-            ),
-            const Divider(),
-            Directionality(
-              textDirection: TextDirection.rtl,
-              child: SelectableText(
-                item.arabic,
-                textAlign: TextAlign.right,
-                // Amiri Quran retains the vowel marks and improves the
-                // breathing room around dense Quranic glyph combinations.
-                // Only the Arabic reader uses this font; Bangla brand stays.
-                style: readerArabicStyle(
-                  readingSettings,
-                  fontSize: (MediaQuery.sizeOf(context).width < 500 ? 27 : 31) *
-                      readingSettings.arabicScale,
-                  color: Theme.of(context).colorScheme.onSurface,
+              const Divider(),
+              if (readingSettings.showQuranBanglaTranslation)
+                TextButton.icon(
+                  icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+                  label: Text(
+                    expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel,
+                  ),
+                  onPressed: () => setState(() {
+                    if (!_expandedMeanings.add(item.slug)) {
+                      _expandedMeanings.remove(item.slug);
+                    }
+                  }),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (item.citation != null) ...[
-              Text(
-                item.citation!,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'শুধু শুরুর আয়াতের তিলাওয়াত',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-            const Divider(),
-            if (readingSettings.showQuranBanglaTranslation)
-              TextButton.icon(
-              icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              label: Text(
-                expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel,
-              ),
-              onPressed: () => setState(() {
-                if (!_expandedMeanings.add(item.slug)) {
-                  _expandedMeanings.remove(item.slug);
-                }
-              }),
-            ),
-            if (expanded && readingSettings.showQuranBanglaTranslation)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: meaning.isNotEmpty
-                    ? Text(
-                        meaning,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          height: 1.7 * readingSettings.readerLineSpacing,
-                        ),
-                      )
-                    : item.citation == null
-                    ? const Text(
-                        'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
-                      )
-                    : FutureBuilder<_FirstAyahBangla?>(
-                        future: _banglaRequests.putIfAbsent(
-                          item.slug,
-                          () => _fetchFirstAyahBangla(item),
-                        ),
-                        builder: (context, snapshot) {
-                          final result = snapshot.data;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (snapshot.connectionState !=
-                                  ConnectionState.done)
-                                const LinearProgressIndicator()
-                              else if (result == null) ...[
-                                const Text(
-                                  'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
-                                ),
+              if (expanded && readingSettings.showQuranBanglaTranslation)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: meaning.isNotEmpty
+                      ? Text(
+                          meaning,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                height: 1.7 * readingSettings.readerLineSpacing,
+                              ),
+                        )
+                      : item.citation == null
+                      ? const Text(
+                          'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
+                        )
+                      : FutureBuilder<_FirstAyahBangla?>(
+                          future: _banglaRequests.putIfAbsent(
+                            item.slug,
+                            () => _fetchFirstAyahBangla(item),
+                          ),
+                          builder: (context, snapshot) {
+                            final result = snapshot.data;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (snapshot.connectionState !=
+                                    ConnectionState.done)
+                                  const LinearProgressIndicator()
+                                else if (result == null) ...[
+                                  const Text(
+                                    'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () => setState(() {
+                                      _banglaRequests.remove(item.slug);
+                                    }),
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('আবার চেষ্টা করুন'),
+                                  ),
+                                ] else if (result.translation.isEmpty) ...[
+                                  const Text(
+                                    'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
+                                  ),
+                                ] else ...[
+                                  SelectableText(
+                                    result.translation,
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          height:
+                                              1.7 *
+                                              readingSettings.readerLineSpacing,
+                                        ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
                                 TextButton.icon(
-                                  onPressed: () => setState(() {
-                                    _banglaRequests.remove(item.slug);
-                                  }),
-                                  icon: const Icon(Icons.refresh),
-                                  label: const Text('আবার চেষ্টা করুন'),
-                                ),
-                              ] else if (result.translation.isEmpty) ...[
-                                const Text(
-                                  'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
-                                ),
-                              ] else ...[
-                                SelectableText(
-                                  result.translation,
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    height: 1.7 * readingSettings.readerLineSpacing,
+                                  onPressed: () => context.push(
+                                    '/resources/quran/${item.surahNumber}',
+                                  ),
+                                  icon: const Icon(Icons.menu_book_outlined),
+                                  label: const Text(
+                                    'সম্পূর্ণ সূরা বাংলা অর্থসহ পড়ুন',
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 8),
-                              TextButton.icon(
-                                onPressed: () => context.push(
-                                  '/resources/quran/${item.surahNumber}',
-                                ),
-                                icon: const Icon(Icons.menu_book_outlined),
-                                label: const Text(
-                                  'সম্পূর্ণ সূরা বাংলা অর্থসহ পড়ুন',
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-              ),
-          ],
+                            );
+                          },
+                        ),
+                ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
