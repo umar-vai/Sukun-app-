@@ -325,14 +325,14 @@ class _Section extends StatelessWidget {
             Directionality(
               textDirection: TextDirection.ltr,
               child: ValueListenableBuilder<AppDisplayPreferences>(
-                 valueListenable: AppDisplaySettings.instance,
-                 builder: (context, reading, _) => SelectableText(
-                   value!,
-                   style: base?.copyWith(
-                     height: 1.75 * reading.readerLineSpacing,
-                   ),
-                 ),
-               ),
+                valueListenable: AppDisplaySettings.instance,
+                builder: (context, reading, _) => SelectableText(
+                  value!,
+                  style: base?.copyWith(
+                    height: 1.75 * reading.readerLineSpacing,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
