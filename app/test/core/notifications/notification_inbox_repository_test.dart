@@ -13,7 +13,7 @@ void main() {
 
     expect(message.opened, isFalse);
     expect(message.titleBn, 'নির্ধারিত কাজের কথা মনে করিয়ে দেওয়া');
-    expect(message.safeTargetRoute, '/patient/home');
+    expect(message.safeTargetRoute, '/patient/today');
     expect(message.asOpened().opened, isTrue);
   });
 
