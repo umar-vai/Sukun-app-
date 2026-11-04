@@ -194,6 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/my-routines/action/:actionId',
             builder: (context, state) => PersonalActionDetailScreen(
               actionId: state.pathParameters['actionId']!,
+              fromReminder: state.uri.queryParameters['fromReminder'] == '1',
             ),
           ),
           GoRoute(
