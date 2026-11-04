@@ -1,8 +1,7 @@
--- Add reviewed instructions to the existing Super Admin-only delegated
--- personal-routine RPC, preserving its 3-argument signature and all RLS.
--- Older clients continue submitting title/resources without notes.
--- This does NOT allow admin access to clinical plans or owner check-ins.
--- Created routines remain inactive until their owners explicitly opt in.
+-- Backward-compatible SECURITY DEFINER update; no new grants or RLS policies.
+-- Only Super Admins may delegate, and delegated routines start inactive.
+-- Reviewed notes are bounded; unresolved placeholders and unlinked audio
+-- templates are rejected on the server, even for modified clients.
 create or replace function public.admin_create_user_routine(
   p_target_user_id uuid,
   p_title text,
@@ -58,14 +57,19 @@ begin
     v_step_template_id := nullif(btrim(coalesce(v_step->>'official_template_id','')), '');
     if jsonb_typeof(v_step) <> 'object'
        or char_length(v_step_title) not between 1 and 160
-       or (v_step ? 'notes' and jsonb_typeof(v_step->'notes') not in ('string', 'null'))
-       or (v_step ? 'official_template_id' and jsonb_typeof(v_step->'official_template_id') not in ('string', 'null'))
+       or (v_step ? 'notes'
+           and jsonb_typeof(v_step->'notes') not in ('string','null'))
+       or (v_step ? 'official_template_id'
+           and jsonb_typeof(v_step->'official_template_id') not in ('string','null'))
        or char_length(coalesce(v_step_notes,'')) > 3000
-       or (position('{দিন}' in v_step_notes) > 0 or position('{বার}' in v_step_notes) > 0 or position('{মিনিট}' in v_step_notes) > 0)
-       or (v_step_template_id is not null and v_step_template_id !~ '^[a-z][0-9]{2}$')
+       or position('{দিন}' in v_step_notes) > 0
+       or position('{বার}' in v_step_notes) > 0
+       or position('{মিনিট}' in v_step_notes) > 0
+       or (v_step_template_id is not null
+           and v_step_template_id !~ '^[a-z][0-9]{2}$')
        or jsonb_typeof(v_step->'resources') <> 'array'
-       or (v_step_template_id ~ '^u[0-9]{2}$' and
-           jsonb_array_length(v_step->'resources') = 0)
+       or (v_step_template_id ~ '^u[0-9]{2}$'
+           and jsonb_array_length(v_step->'resources') = 0)
        or jsonb_array_length(v_step->'resources') > 16
     then
       raise exception 'Invalid action or resource count'
@@ -76,95 +80,6 @@ begin
       schedule_kind,resource_provider,is_active
     ) values (
       v_routine,p_target_user_id,v_step_title,v_step_title,v_step_notes,
-      'manual','manual',true
-    ) returning id into v_action;
-
-    v_count := v_count + 1;
-    v_index := 0;
-    v_seen := array[]::text[];
-    for v_resource in
-      select value from jsonb_array_elements(v_step->'resources')
-    loop
-      v_provider := v_resource->>'provider';
-      v_cms_id := null;
-      v_reference := null;
-      if v_provider = 'cms' then
-        if (v_resource->>'content_item_id') is null then
-          raise exception 'Missing CMS identifier' using errcode = '22023';
-        end if;
-        v_cms_id := (v_resource->>'content_item_id')::uuid;
-        if not exists (
-          select 1 from public.content_items c
-          where c.id = v_cms_id and c.status = 'published'
-            and c.visibility = 'public'
-            and (c.type <> 'quran' or c.verification_status = 'verified')
-        ) then
-          raise exception 'Only public verified or approved content is linkable'
-            using errcode = '42501';
-        end if;
-        v_reference := 'cms:' || v_cms_id::text;
-      elsif v_provider = 'quran' then
-        v_reference := v_resource->>'external_resource_ref';
-        if v_reference is null
-          or v_reference !~ '^quran:[0-9]{1,3}(:[0-9]{1,3})?$'
-          or split_part(v_reference,':',2)::integer not between 1 and 114
-          or (split_part(v_reference,':',3) <> ''
-              and split_part(v_reference,':',3)::integer not between 1 and 286)
-        then
-          raise exception 'Invalid canonical Quran reference'
-            using errcode = '22023';
-        end if;
-      else
-        raise exception 'Unsupported resource kind' using errcode = '22023';
-      end if;
-      if v_reference = any(v_seen) then
-        raise exception 'Duplicate action resource' using errcode = '22023';
-      end if;
-      v_seen := array_append(v_seen,v_reference);
-
-      insert into public.personal_routine_action_resources(
-        action_id,owner_user_id,provider,content_item_id,
-        external_resource_ref,sort_order
-      ) values (
-        v_action,p_target_user_id,v_provider,v_cms_id,
-        case when v_provider = 'cms' then null else v_reference end,
-        v_index
-      );
-      v_index := v_index + 1;
-    end loop;
-  end loop;
-
-  insert into public.admin_audit_logs(
-    actor_user_id,action,entity_type,entity_id,metadata
-  ) values (
-    v_actor,'personal_routine.delegated_draft_created',
-    'personal_routine',v_routine,
-    jsonb_build_object(
-      'target_user_id',p_target_user_id,'action_count',v_count,
-      'owner_opt_in_required',true
-    )
-  );
-  return v_routine;
-end;
-$$;
-
-revoke all on function public.admin_create_user_routine(uuid,text,jsonb)
-  from public,anon;
-grant execute on function public.admin_create_user_routine(uuid,text,jsonb)
-  to authenticated;
-
-)
-       or jsonb_typeof(v_step->'resources') <> 'array'
-       or jsonb_array_length(v_step->'resources') > 16
-    then
-      raise exception 'Invalid action or resource count'
-        using errcode = '22023';
-    end if;
-    insert into public.personal_routine_actions(
-      routine_id,owner_user_id,title,notification_title,
-      schedule_kind,resource_provider,is_active
-    ) values (
-      v_routine,p_target_user_id,v_step_title,v_step_title,
       'manual','manual',true
     ) returning id into v_action;
 
