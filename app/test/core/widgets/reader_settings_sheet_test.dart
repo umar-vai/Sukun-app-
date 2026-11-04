@@ -41,10 +41,7 @@ void main() {
     );
     expect((gear.icon as Icon).icon, Icons.settings_rounded);
     expect(gear.iconSize, 24);
-    expect(
-      gear.style?.backgroundColor?.resolve({}),
-      const Color(0xFF0A70A8),
-    );
+    expect(gear.style?.backgroundColor?.resolve({}), const Color(0xFF0A70A8));
     expect(gear.style?.foregroundColor?.resolve({}), Colors.white);
     expect(
       tester.getSize(find.byKey(const Key('reader-settings-gear'))),
@@ -121,10 +118,7 @@ void main() {
         find.byKey(const Key('reader-settings-gear')),
       );
       expect(gear.style?.foregroundColor?.resolve({}), Colors.white);
-      expect(
-        gear.style?.backgroundColor?.resolve({}),
-        const Color(0xFF0A70A8),
-      );
+      expect(gear.style?.backgroundColor?.resolve({}), const Color(0xFF0A70A8));
       expect(gear.style?.side?.resolve({})?.width, 1.5);
       expect(
         tester.getSize(find.byKey(const Key('reader-settings-gear'))),
