@@ -50,6 +50,13 @@ void main() {
     await tester.tap(find.byKey(const Key('reader-settings-gear')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('reader-settings-panel')), findsOneWidget);
+    expect(find.byKey(const Key('reader-settings-side-panel')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(
+      tester.getTopRight(find.byKey(const Key('reader-settings-side-panel'))).dx,
+      closeTo(390, 1),
+    );
+    expect(find.byKey(const Key('reader-settings-close')), findsOneWidget);
     expect(find.text('পাঠের সেটিংস'), findsOneWidget);
     expect(find.byKey(const Key('reader-bangla-translation')), findsOneWidget);
     expect(find.byKey(const Key('reader-theme-dark')), findsOneWidget);
@@ -98,6 +105,39 @@ void main() {
       AppDisplaySettings.instance.value.arabicFont,
       ArabicReaderFont.amiriQuran,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reading settings slides from the right on desktop and closes', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(actions: const [ReaderSettingsAction()]),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('reader-settings-gear')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 70));
+    final panel = find.byKey(const Key('reader-settings-side-panel'));
+    final xDuringSlide = tester.getTopLeft(panel).dx;
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(tester.getSize(panel).width, 480);
+    expect(tester.getTopRight(panel).dx, closeTo(1280, 1));
+    expect(xDuringSlide, greaterThan(tester.getTopLeft(panel).dx));
+    expect(find.byKey(const Key('reader-source-credits')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('reader-settings-close')));
+    await tester.pumpAndSettle();
+    expect(panel, findsNothing);
     expect(tester.takeException(), isNull);
   });
 
