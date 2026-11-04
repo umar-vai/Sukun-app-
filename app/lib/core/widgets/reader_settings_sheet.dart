@@ -327,7 +327,7 @@ class _ScaleSetting extends StatelessWidget {
         style: Theme.of(context).textTheme.titleSmall,
       ),
       Slider(
-        value: value.clamp(min, max),
+        value: value.clamp(min, max).toDouble(),
         min: min,
         max: max,
         divisions: divisions,
