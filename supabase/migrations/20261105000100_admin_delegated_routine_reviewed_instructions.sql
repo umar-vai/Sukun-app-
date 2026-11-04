@@ -64,6 +64,8 @@ begin
        or (position('{দিন}' in v_step_notes) > 0 or position('{বার}' in v_step_notes) > 0 or position('{মিনিট}' in v_step_notes) > 0)
        or (v_step_template_id is not null and v_step_template_id !~ '^[a-z][0-9]{2}$')
        or jsonb_typeof(v_step->'resources') <> 'array'
+       or (v_step_template_id ~ '^u[0-9]{2}$' and
+           jsonb_array_length(v_step->'resources') = 0)
        or jsonb_array_length(v_step->'resources') > 16
     then
       raise exception 'Invalid action or resource count'
