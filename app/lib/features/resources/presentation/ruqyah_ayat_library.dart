@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
+import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -694,7 +695,10 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     final hasAudio = widget.data.sectionAudio.containsKey(section.audioSlug);
     final showSidebar = MediaQuery.sizeOf(context).width >= 900;
     return Scaffold(
-      appBar: AppBar(title: const Text('রুকইয়াহ আয়াত')),
+      appBar: AppBar(
+        title: const Text('রুকইয়াহ আয়াত'),
+        actions: const [ReaderSettingsAction(showTranslationSwitch: true)],
+      ),
       body: Row(
         children: [
           if (showSidebar)
@@ -796,8 +800,10 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
     final closedMeaningLabel = meaning.isEmpty && item.citation != null
         ? 'শুরুর আয়াতের অর্থ দেখুন'
         : 'বাংলা অর্থ দেখুন';
-    return Card(
-      child: Padding(
+    return ValueListenableBuilder<AppDisplayPreferences>(
+      valueListenable: AppDisplaySettings.instance,
+      builder: (context, readingSettings, _) => Card(
+        child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -861,9 +867,10 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                 // Amiri Quran retains the vowel marks and improves the
                 // breathing room around dense Quranic glyph combinations.
                 // Only the Arabic reader uses this font; Bangla brand stays.
-                style: GoogleFonts.amiriQuran(
-                  fontSize: MediaQuery.sizeOf(context).width < 500 ? 27 : 31,
-                  height: 2.15,
+                style: readerArabicStyle(
+                  readingSettings,
+                  fontSize: (MediaQuery.sizeOf(context).width < 500 ? 27 : 31) *
+                      readingSettings.arabicScale,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -881,7 +888,8 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
               ),
             ],
             const Divider(),
-            TextButton.icon(
+            if (readingSettings.showQuranBanglaTranslation)
+              TextButton.icon(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
               label: Text(
                 expanded ? 'বাংলা অর্থ বন্ধ করুন' : closedMeaningLabel,
@@ -892,11 +900,16 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                 }
               }),
             ),
-            if (expanded)
+            if (expanded && readingSettings.showQuranBanglaTranslation)
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: meaning.isNotEmpty
-                    ? Text(meaning)
+                    ? Text(
+                        meaning,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.7 * readingSettings.readerLineSpacing,
+                        ),
+                      )
                     : item.citation == null
                     ? const Text(
                         'এই পাঠের যাচাইকৃত বাংলা অর্থ এখনো যুক্ত হয়নি।',
@@ -930,7 +943,12 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                                   'এই অংশের বাংলা অর্থ এখন পাওয়া যাচ্ছে না।',
                                 ),
                               ] else ...[
-                                SelectableText(result.translation),
+                                SelectableText(
+                                  result.translation,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    height: 1.7 * readingSettings.readerLineSpacing,
+                                  ),
+                                ),
                               ],
                               const SizedBox(height: 8),
                               TextButton.icon(
@@ -950,6 +968,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
