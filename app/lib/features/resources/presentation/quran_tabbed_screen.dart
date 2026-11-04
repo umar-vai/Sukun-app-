@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/media/audio_playback_controller.dart';
@@ -618,13 +618,17 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         if (_arabicTitle.isNotEmpty)
-                          Text(
-                            _arabicTitle,
-                            textDirection: TextDirection.rtl,
-                            style: GoogleFonts.amiriQuran(
-                              fontSize: 27,
-                              height: 1.7,
-                              color: Theme.of(context).colorScheme.onSurface,
+                          ValueListenableBuilder<AppDisplayPreferences>(
+                            valueListenable: AppDisplaySettings.instance,
+                            builder: (context, settings, _) => Text(
+                              _arabicTitle,
+                              textDirection: TextDirection.rtl,
+                              style: readerArabicStyle(
+                                settings,
+                                fontSize: 27 * settings.arabicScale,
+                                defaultHeight: 1.7,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ),
                       ],
@@ -775,15 +779,19 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                       ? Padding(
                           key: const Key('quran-bangla-translation'),
                           padding: const EdgeInsets.only(top: 14),
-                          child: Text(
-                            _plainText(bangla.first['text']),
-                            style: SukunTypography.banglaBody(
-                              textStyle: TextStyle(
-                                fontSize: quranBengaliTranslationFontSize(
-                                  settings.bengaliScale,
+                          child: ValueListenableBuilder<BengaliFontChoice>(
+                            valueListenable: BengaliFontSettings.instance,
+                            builder: (context, font, _) => Text(
+                              _plainText(bangla.first['text']),
+                              style: SukunTypography.previewBengaliFont(
+                                font,
+                                textStyle: TextStyle(
+                                  fontSize: quranBengaliTranslationFontSize(
+                                    settings.bengaliScale,
+                                  ),
+                                  height: 1.7 * settings.readerLineSpacing,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
-                                height: 1.7 * settings.readerLineSpacing,
-                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
