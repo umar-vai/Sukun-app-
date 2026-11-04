@@ -63,9 +63,7 @@ void main() {
       ArabicReaderFont.notoNaskhArabic,
     );
 
-    await tester.ensureVisible(
-      find.byKey(const Key('reader-source-credits')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('reader-source-credits')));
     expect(find.text('Al Quran Cloud'), findsNothing);
     await tester.tap(find.byKey(const Key('reader-source-credits')));
     await tester.pumpAndSettle();
@@ -80,8 +78,10 @@ void main() {
       AppDisplaySettings.instance.value.showQuranBanglaTranslation,
       isTrue,
     );
-    expect(AppDisplaySettings.instance.value.arabicFont,
-        ArabicReaderFont.amiriQuran);
+    expect(
+      AppDisplaySettings.instance.value.arabicFont,
+      ArabicReaderFont.amiriQuran,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -91,9 +91,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          appBar: AppBar(
-            actions: [ReaderSettingsAction(pdfDocument: true)],
-          ),
+          appBar: AppBar(actions: [ReaderSettingsAction(pdfDocument: true)]),
         ),
       ),
     );
