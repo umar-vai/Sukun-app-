@@ -7,6 +7,8 @@ import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/media/external_resource_launcher.dart';
 import 'package:sukun_life/core/media/resource_media.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
@@ -160,6 +162,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           appBar: AppBar(
             title: const Text('ইসলামিক উপকরণ'),
             actions: [
+              ReaderSettingsAction(
+                showTranslationSwitch: resource.type == 'quran',
+              ),
               if (resolveResourceMedia(resource.linkedResource)?.kind ==
                   ResourceMediaKind.pdf)
                 OfflineDownloadAction(resourceId: resource.id, iconOnly: true),
@@ -213,7 +218,14 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               ),
               if (resource.arabicText?.trim().isNotEmpty != true)
                 _Section(label: 'উচ্চারণ', value: resource.transliteration),
-              _Section(label: 'অনুবাদ', value: resource.translation),
+              ValueListenableBuilder<AppDisplayPreferences>(
+                valueListenable: AppDisplaySettings.instance,
+                builder: (context, reading, _) =>
+                    resource.type == 'quran' &&
+                        !reading.showQuranBanglaTranslation
+                    ? const SizedBox.shrink()
+                    : _Section(label: 'অনুবাদ', value: resource.translation),
+              ),
               if (isBlogResourceSlug(resource.slug)) ...[
                 if (resource.thumbnailUrl?.startsWith('https://') == true)
                   Padding(
@@ -312,7 +324,15 @@ class _Section extends StatelessWidget {
             const SizedBox(height: 10),
             Directionality(
               textDirection: TextDirection.ltr,
-              child: SelectableText(value!, style: base),
+              child: ValueListenableBuilder<AppDisplayPreferences>(
+                 valueListenable: AppDisplaySettings.instance,
+                 builder: (context, reading, _) => SelectableText(
+                   value!,
+                   style: base?.copyWith(
+                     height: 1.75 * reading.readerLineSpacing,
+                   ),
+                 ),
+               ),
             ),
           ],
         ),
