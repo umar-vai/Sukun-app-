@@ -9,6 +9,7 @@ import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:uuid/uuid.dart';
@@ -172,6 +173,104 @@ class _PlanActionEditorScreenState
     }
   }
 
+  /// Official paper transcription presets prefill drafts, never approved care.
+  Future<void> _applyOfficialTemplate(
+    OfficialPrescriptionTemplate template,
+  ) async {
+    final controllers = <String, TextEditingController>{
+      for (final key in template.requiredVariables)
+        key: TextEditingController(),
+    };
+    Map<String, int>? values;
+    try {
+      values = await showDialog<Map<String, int>>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text(template.title),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'শুধু অ্যাডমিন খসড়া। মূল প্রেসক্রিপশন দেখে যাচাই করুন। '
+                  'স্বয়ংক্রিয়ভাবে অনুমোদিত বা রোগীর কাছে প্রকাশিত হবে না।',
+                ),
+                const SizedBox(height: 12),
+                Text(template.instruction),
+                const SizedBox(height: 10),
+                for (final entry in controllers.entries)
+                  TextField(
+                    key: Key('official-template-variable-${entry.key}'),
+                    controller: entry.value,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: '${entry.key} কত?',
+                      hintText: 'মূল প্রেসক্রিপশনে লেখা সংখ্যা',
+                    ),
+                  ),
+                if (template.requiresLinkedResource) ...[
+                  const SizedBox(height: 10),
+                  const Text(
+                    'এই পাঠ/অডিওর জন্য আলাদাভাবে প্রকাশিত যাচাইকৃত '
+                    'রিসোর্স বাছতে হবে। শুধু টেমপ্লেট দিয়ে অডিও যুক্ত হয় না।',
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog),
+              child: const Text('বাতিল'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final filled = <String, int>{};
+                for (final entry in controllers.entries) {
+                  final parsed = int.tryParse(entry.value.text.trim());
+                  if (parsed == null || parsed < 1 || parsed > 365) {
+                    ScaffoldMessenger.of(dialog).showSnackBar(
+                      const SnackBar(
+                        content: Text('প্রেসক্রিপশন অনুযায়ী সঠিক সংখ্যা লিখুন।'),
+                      ),
+                    );
+                    return;
+                  }
+                  filled[entry.key] = parsed;
+                }
+                Navigator.pop(dialog, filled);
+              },
+              child: const Text('খসড়ায় ব্যবহার করুন'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      // Dialog owns its editing window; callbacks never retain these values.
+      for (final controller in controllers.values) {
+        controller.dispose();
+      }
+    }
+    if (!mounted || values == null) return;
+    setState(() {
+      _typeController.text = template.actionType;
+      _titleController.text = template.title;
+      _instructionController.text = template.render(values!);
+      _reviewStatus = ActionReviewStatus.needsReview;
+      _reminderEnabled = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          template.requiresLinkedResource
+              ? 'খসড়া বসেছে। প্রকাশিত সঠিক অডিও/সূরা লিংক করে যাচাই করুন।'
+              : 'অফিসিয়াল টেমপ্লেটের খসড়া বসেছে। অনুমোদনের আগে যাচাই করুন।',
+        ),
+      ),
+    );
+  }
+
   void _moveResource(String id, int offset) {
     final ids = _contentItemIds.toList();
     final index = ids.indexOf(id);
@@ -194,6 +293,9 @@ class _PlanActionEditorScreenState
           resources: resources,
           selectedId: _selectedResourceId,
           enabled: true,
+          onOfficialTemplateSelected: (template) {
+            _applyOfficialTemplate(template);
+          },
           onChanged: (id) {
             final resource = resources
                 .where((item) => item.id == id && item.isLinkable)
