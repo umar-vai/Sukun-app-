@@ -4,18 +4,14 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 /// Patient/member's own active actions, using owner-filtered repository rows.
 /// An outcome of "skipped" never counts as completed.
 class TodayRoutineSummary {
-  const TodayRoutineSummary({
-    required this.actions,
-    required this.outcomes,
-  });
+  const TodayRoutineSummary({required this.actions, required this.outcomes});
 
   final List<Map<String, dynamic>> actions;
   final Map<String, String> outcomes;
 
   int get total => actions.length;
-  int get completed => actions
-      .where((action) => outcomes[action['id']] == 'done')
-      .length;
+  int get completed =>
+      actions.where((action) => outcomes[action['id']] == 'done').length;
   int get remaining => total - completed;
   double get fraction => total == 0 ? 0 : completed / total;
 }
@@ -48,10 +44,13 @@ class TodayRoutinePanel extends StatelessWidget {
       for (final routine in routines)
         if (routine['is_active'] == true) routine['id'],
     };
-    final activeActions = actions.where((action) =>
-      action['is_active'] == true &&
-      activeIds.contains(action['routine_id']),
-    ).toList(growable: false);
+    final activeActions = actions
+        .where(
+          (action) =>
+              action['is_active'] == true &&
+              activeIds.contains(action['routine_id']),
+        )
+        .toList(growable: false);
     final summary = TodayRoutineSummary(
       actions: activeActions,
       outcomes: outcomes,
@@ -173,7 +172,13 @@ class TodayRoutinePanel extends StatelessWidget {
                     ],
                   );
                   return narrow
-                      ? Column(children: [ring, const SizedBox(height: 20), counters])
+                      ? Column(
+                          children: [
+                            ring,
+                            const SizedBox(height: 20),
+                            counters,
+                          ],
+                        )
                       : Row(
                           children: [
                             ring,
@@ -224,7 +229,9 @@ class TodayRoutinePanel extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.assignment_turned_in_outlined),
               title: const Text('সুকুন লাইফের নির্ধারিত আমল'),
-              subtitle: const Text('আপনার অনুমোদিত চিকিৎসা-পরিকল্পনার আজকের কাজ'),
+              subtitle: const Text(
+                'আপনার অনুমোদিত চিকিৎসা-পরিকল্পনার আজকের কাজ',
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: onOpenPatientToday,
             ),
@@ -266,9 +273,7 @@ class _TodayActionTile extends StatelessWidget {
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(18),
-      side: BorderSide(
-        color: done ? const Color(0xFF8EDCFA) : Colors.black12,
-      ),
+      side: BorderSide(color: done ? const Color(0xFF8EDCFA) : Colors.black12),
     ),
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
