@@ -60,9 +60,8 @@ class BlogArticleBody extends StatelessWidget {
             valueListenable: AppDisplaySettings.instance,
             builder: (context, reading, _) => SelectableText(
               line,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                height: 1.75 * reading.readerLineSpacing,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(height: 1.75 * reading.readerLineSpacing),
             ),
           ),
         );
