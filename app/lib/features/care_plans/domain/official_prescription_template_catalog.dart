@@ -19,8 +19,9 @@ final class OfficialPrescriptionTemplate {
 
   /// Nothing is silently inferred: every variable needs a reviewer value.
   static const variables = ['দিন', 'বার', 'মিনিট'];
-  List<String> get requiredVariables =>
-      variables.where((variable) => instruction.contains('{$variable}')).toList();
+  List<String> get requiredVariables => variables
+      .where((variable) => instruction.contains('{$variable}'))
+      .toList();
 
   String render(Map<String, int> values) {
     var result = instruction;
@@ -51,11 +52,31 @@ final class OfficialTemplateCategory {
 }
 
 const officialTemplateCategories = <OfficialTemplateCategory>[
-  OfficialTemplateCategory(id: "amal", title: "আমল", subtitle: "ঈমানি আমল ও তিলাওয়াতের খসড়া"),
-  OfficialTemplateCategory(id: "supplement", title: "সাপ্লিমেন্ট", subtitle: "রুকইয়াহ পড়া পানি/তেল/মধু/আতর প্রস্তুত ও ব্যবহারের খসড়া"),
-  OfficialTemplateCategory(id: "bath", title: "গোসল", subtitle: "দিনভিত্তিক গোসলের ধাপ ও অডিও-নির্দেশনা"),
-  OfficialTemplateCategory(id: "audio", title: "অডিও", subtitle: "যাচাইকৃত অডিও লিংক করার খসড়া"),
-  OfficialTemplateCategory(id: "special", title: "বিশেষ আমল", subtitle: "পরিবার/বিশেষ প্রয়োজনে আলাদা খসড়া"),
+  OfficialTemplateCategory(
+    id: "amal",
+    title: "আমল",
+    subtitle: "ঈমানি আমল ও তিলাওয়াতের খসড়া",
+  ),
+  OfficialTemplateCategory(
+    id: "supplement",
+    title: "সাপ্লিমেন্ট",
+    subtitle: "রুকইয়াহ পড়া পানি/তেল/মধু/আতর প্রস্তুত ও ব্যবহারের খসড়া",
+  ),
+  OfficialTemplateCategory(
+    id: "bath",
+    title: "গোসল",
+    subtitle: "দিনভিত্তিক গোসলের ধাপ ও অডিও-নির্দেশনা",
+  ),
+  OfficialTemplateCategory(
+    id: "audio",
+    title: "অডিও",
+    subtitle: "যাচাইকৃত অডিও লিংক করার খসড়া",
+  ),
+  OfficialTemplateCategory(
+    id: "special",
+    title: "বিশেষ আমল",
+    subtitle: "পরিবার/বিশেষ প্রয়োজনে আলাদা খসড়া",
+  ),
 ];
 
 const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
@@ -133,7 +154,8 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "a11",
     category: "amal",
     title: "সন্ধ্যা ও ঘুমের শেষ দোয়া",
-    instruction: "সকাল, সন্ধ্যা ও ঘুমের পূর্বে নির্ধারিত শেষ দোয়া {বার} বার পড়বেন।",
+    instruction:
+        "সকাল, সন্ধ্যা ও ঘুমের পূর্বে নির্ধারিত শেষ দোয়া {বার} বার পড়বেন।",
     actionType: "amal",
   ),
   OfficialPrescriptionTemplate(
@@ -210,7 +232,8 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "b01",
     category: "bath",
     title: "বদনজরের গোসল",
-    instruction: "{দিন} দিন নজর/বদনজরের গোসল করবেন। সময় ও পদ্ধতি অ্যাডমিন যাচাই করবেন।",
+    instruction:
+        "{দিন} দিন নজর/বদনজরের গোসল করবেন। সময় ও পদ্ধতি অ্যাডমিন যাচাই করবেন।",
     actionType: "bath",
   ),
   OfficialPrescriptionTemplate(
@@ -224,7 +247,8 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "b03",
     category: "bath",
     title: "ডিটক্স গোসল",
-    instruction: "{দিন} দিন ডিটক্স গোসল করবেন। গোসলের পদ্ধতি ও উপযোগিতা যাচাই করুন।",
+    instruction:
+        "{দিন} দিন ডিটক্স গোসল করবেন। গোসলের পদ্ধতি ও উপযোগিতা যাচাই করুন।",
     actionType: "bath",
   ),
   OfficialPrescriptionTemplate(
@@ -287,7 +311,8 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "u03",
     category: "audio",
     title: "কিতাল অডিও",
-    instruction: "অনুমোদিত কিতাল অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+    instruction:
+        "অনুমোদিত কিতাল অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
@@ -301,14 +326,16 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "u05",
     category: "audio",
     title: "খুরুজ অডিও",
-    instruction: "অনুমোদিত খুরুজ অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+    instruction:
+        "অনুমোদিত খুরুজ অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
     id: "u06",
     category: "audio",
     title: "বদনজর Evil Eye অডিও",
-    instruction: "অনুমোদিত বদনজরের অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+    instruction:
+        "অনুমোদিত বদনজরের অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
@@ -322,21 +349,24 @@ const officialPrescriptionTemplates = <OfficialPrescriptionTemplate>[
     id: "u08",
     category: "audio",
     title: "আট সূরার রুকইয়াহ",
-    instruction: "নির্ধারিত আট সূরার রুকইয়াহ শুনবেন; প্রকাশিত রেকর্ডিং নির্বাচন করুন।",
+    instruction:
+        "নির্ধারিত আট সূরার রুকইয়াহ শুনবেন; প্রকাশিত রেকর্ডিং নির্বাচন করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
     id: "u09",
     category: "audio",
     title: "তিন কুল রুকইয়াহ",
-    instruction: "প্রকাশিত তিন কুলের রুকইয়াহ অডিও শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
+    instruction:
+        "প্রকাশিত তিন কুলের রুকইয়াহ অডিও শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
     id: "u10",
     category: "audio",
     title: "আয়াতুল কুরসির রুকইয়াহ",
-    instruction: "প্রকাশিত আয়াতুল কুরসির রুকইয়াহ শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
+    instruction:
+        "প্রকাশিত আয়াতুল কুরসির রুকইয়াহ শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
     actionType: "audio",
   ),
   OfficialPrescriptionTemplate(
