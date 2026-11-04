@@ -3,10 +3,13 @@ import 'package:sukun_life/features/care_plans/domain/official_prescription_temp
 
 void main() {
   test('official catalog has all five photo-derived admin categories', () {
-    expect(
-      officialTemplateCategories.map((category) => category.title),
-      ['আমল', 'সাপ্লিমেন্ট', 'গোসল', 'অডিও', 'বিশেষ আমল'],
-    );
+    expect(officialTemplateCategories.map((category) => category.title), [
+      'আমল',
+      'সাপ্লিমেন্ট',
+      'গোসল',
+      'অডিও',
+      'বিশেষ আমল',
+    ]);
     expect(officialPrescriptionTemplates, hasLength(51));
     expect(
       officialPrescriptionTemplates.map((item) => item.id).toSet(),
@@ -37,10 +40,7 @@ void main() {
     final audio = findOfficialTemplate('u07')!;
     expect(audio.requiresLinkedResource, isTrue);
     expect(audio.requiredVariables, ['মিনিট']);
-    expect(
-      audio.render({'মিনিট': 30}),
-      contains('30 মিনিট'),
-    );
+    expect(audio.render({'মিনিট': 30}), contains('30 মিনিট'));
     expect(findOfficialTemplate('missing'), isNull);
   });
 }
