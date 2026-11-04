@@ -63,12 +63,10 @@ Future<void> showReaderSettingsSheet(
   transitionDuration: const Duration(milliseconds: 280),
   transitionBuilder: (context, animation, secondaryAnimation, child) =>
       SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        ),
+        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+            .animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
         child: child,
       ),
   pageBuilder: (context, animation, secondaryAnimation) => Align(
@@ -83,209 +81,212 @@ Future<void> showReaderSettingsSheet(
         child: SafeArea(
           left: false,
           child: ValueListenableBuilder<AppDisplayPreferences>(
-          valueListenable: AppDisplaySettings.instance,
-          builder: (context, settings, _) =>
-              ValueListenableBuilder<BengaliFontChoice>(
-                valueListenable: BengaliFontSettings.instance,
-                builder: (context, bengaliFont, _) => ListView(
-                  key: const Key('reader-settings-panel'),
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'পাঠের সেটিংস',
-                            style: Theme.of(context).textTheme.headlineSmall,
+            valueListenable: AppDisplaySettings.instance,
+            builder: (context, settings, _) =>
+                ValueListenableBuilder<BengaliFontChoice>(
+                  valueListenable: BengaliFontSettings.instance,
+                  builder: (context, bengaliFont, _) => ListView(
+                    key: const Key('reader-settings-panel'),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'পাঠের সেটিংস',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          key: const Key('reader-settings-close'),
-                          tooltip: 'সেটিংস বন্ধ করুন',
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'আপনার পছন্দ এই ডিভাইসে সংরক্ষিত থাকবে।',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (showTranslationSwitch) ...[
-                      const SizedBox(height: 10),
-                      SwitchListTile.adaptive(
-                        key: const Key('reader-bangla-translation'),
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('বাংলা অনুবাদ দেখান'),
-                        subtitle: const Text('আরবি পাঠ সবসময় দৃশ্যমান থাকবে'),
-                        value: settings.showQuranBanglaTranslation,
-                        onChanged: (enabled) => unawaited(
-                          AppDisplaySettings.instance
-                              .setShowQuranBanglaTranslation(enabled),
-                        ),
+                          IconButton(
+                            key: const Key('reader-settings-close'),
+                            tooltip: 'সেটিংস বন্ধ করুন',
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
                       ),
-                    ],
-                    const SizedBox(height: 16),
-                    const _SectionTitle('দেখার ধরন'),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        for (final (mode, label) in [
-                          (ThemeMode.system, 'ডিভাইস অনুযায়ী'),
-                          (ThemeMode.light, 'লাইট'),
-                          (ThemeMode.dark, 'ডার্ক'),
-                        ])
-                          ChoiceChip(
-                            key: Key('reader-theme-${mode.name}'),
-                            label: Text(label),
-                            selected: settings.themeMode == mode,
-                            onSelected: (_) => unawaited(
-                              AppDisplaySettings.instance.setThemeMode(mode),
-                            ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'আপনার পছন্দ এই ডিভাইসে সংরক্ষিত থাকবে।',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (showTranslationSwitch) ...[
+                        const SizedBox(height: 10),
+                        SwitchListTile.adaptive(
+                          key: const Key('reader-bangla-translation'),
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('বাংলা অনুবাদ দেখান'),
+                          subtitle: const Text('আরবি পাঠ সবসময় দৃশ্যমান থাকবে'),
+                          value: settings.showQuranBanglaTranslation,
+                          onChanged: (enabled) => unawaited(
+                            AppDisplaySettings.instance
+                                .setShowQuranBanglaTranslation(enabled),
                           ),
+                        ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    const _SectionTitle('রঙের থিম'),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        for (final palette in SukunAccentPalette.values)
-                          ChoiceChip(
-                            key: Key('reader-palette-${palette.name}'),
-                            label: Text(palette.label),
-                            avatar: CircleAvatar(
-                              radius: 9,
-                              backgroundColor: palette.previewColor,
-                            ),
-                            selected: settings.accentPalette == palette,
-                            onSelected: (_) => unawaited(
-                              AppDisplaySettings.instance.setAccentPalette(
-                                palette,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const Divider(height: 28),
-                    const _SectionTitle('বাংলা ফন্ট'),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        for (final font in BengaliFontChoice.values)
-                          if (font.isAvailable)
+                      const SizedBox(height: 16),
+                      const _SectionTitle('দেখার ধরন'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          for (final (mode, label) in [
+                            (ThemeMode.system, 'ডিভাইস অনুযায়ী'),
+                            (ThemeMode.light, 'লাইট'),
+                            (ThemeMode.dark, 'ডার্ক'),
+                          ])
                             ChoiceChip(
-                              key: Key('reader-bengali-font-${font.name}'),
-                              label: Text(font.label),
-                              selected: bengaliFont == font,
+                              key: Key('reader-theme-${mode.name}'),
+                              label: Text(label),
+                              selected: settings.themeMode == mode,
                               onSelected: (_) => unawaited(
-                                BengaliFontSettings.instance.select(font),
+                                AppDisplaySettings.instance.setThemeMode(mode),
                               ),
                             ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _ScaleSetting(
-                      title: 'বাংলা লেখার আকার',
-                      key: const Key('reader-bengali-size'),
-                      value: settings.bengaliScale,
-                      min: 0.85,
-                      max: 1.4,
-                      divisions: 11,
-                      onPreview:
-                          AppDisplaySettings.instance.previewBengaliScale,
-                      onSave: AppDisplaySettings.instance.setBengaliScale,
-                    ),
-                    Text(
-                      'সুকুন লাইফ — সহজে পড়ুন',
-                      style: SukunTypography.previewBengaliFont(
-                        bengaliFont,
-                        textStyle: TextStyle(
-                          fontSize: 16 * settings.bengaliScale,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        ],
                       ),
-                    ),
-                    const Divider(height: 28),
-                    const _SectionTitle('আরবি ফন্ট'),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        for (final font in ArabicReaderFont.values)
-                          ChoiceChip(
-                            key: Key('reader-arabic-font-${font.name}'),
-                            label: Text(font.label),
-                            selected: settings.arabicFont == font,
-                            onSelected: (_) => unawaited(
-                              AppDisplaySettings.instance.setArabicFont(font),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _ScaleSetting(
-                      title: 'আরবি লেখার আকার',
-                      key: const Key('reader-arabic-size'),
-                      value: settings.arabicScale,
-                      min: 0.85,
-                      max: 1.6,
-                      divisions: 15,
-                      onPreview: AppDisplaySettings.instance.previewArabicScale,
-                      onSave: AppDisplaySettings.instance.setArabicScale,
-                    ),
-                    Directionality(
-                      textDirection: TextDirection.rtl,
-                      child: Text(
-                        'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                        textAlign: TextAlign.center,
-                        style: readerArabicStyle(
-                          settings,
-                          fontSize: 25 * settings.arabicScale,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _ScaleSetting(
-                      title: 'লাইনের ফাঁক',
-                      key: const Key('reader-line-spacing'),
-                      value: settings.readerLineSpacing,
-                      min: 0.9,
-                      max: 1.4,
-                      divisions: 10,
-                      onPreview:
-                          AppDisplaySettings.instance.previewReaderLineSpacing,
-                      onSave: AppDisplaySettings.instance.setReaderLineSpacing,
-                    ),
-                    if (pdfDocument) ...[
                       const SizedBox(height: 12),
-                      const Text(
-                        'PDF-এর ভেতরের ফন্ট ও অনুবাদ এখানে বদলানো যায় না। '
-                        'বড় করে পড়তে PDF-এর জুম বাটন ব্যবহার করুন।',
+                      const _SectionTitle('রঙের থিম'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          for (final palette in SukunAccentPalette.values)
+                            ChoiceChip(
+                              key: Key('reader-palette-${palette.name}'),
+                              label: Text(palette.label),
+                              avatar: CircleAvatar(
+                                radius: 9,
+                                backgroundColor: palette.previewColor,
+                              ),
+                              selected: settings.accentPalette == palette,
+                              onSelected: (_) => unawaited(
+                                AppDisplaySettings.instance.setAccentPalette(
+                                  palette,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const Divider(height: 28),
+                      const _SectionTitle('বাংলা ফন্ট'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          for (final font in BengaliFontChoice.values)
+                            if (font.isAvailable)
+                              ChoiceChip(
+                                key: Key('reader-bengali-font-${font.name}'),
+                                label: Text(font.label),
+                                selected: bengaliFont == font,
+                                onSelected: (_) => unawaited(
+                                  BengaliFontSettings.instance.select(font),
+                                ),
+                              ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _ScaleSetting(
+                        title: 'বাংলা লেখার আকার',
+                        key: const Key('reader-bengali-size'),
+                        value: settings.bengaliScale,
+                        min: 0.85,
+                        max: 1.4,
+                        divisions: 11,
+                        onPreview:
+                            AppDisplaySettings.instance.previewBengaliScale,
+                        onSave: AppDisplaySettings.instance.setBengaliScale,
+                      ),
+                      Text(
+                        'সুকুন লাইফ — সহজে পড়ুন',
+                        style: SukunTypography.previewBengaliFont(
+                          bengaliFont,
+                          textStyle: TextStyle(
+                            fontSize: 16 * settings.bengaliScale,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 28),
+                      const _SectionTitle('আরবি ফন্ট'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          for (final font in ArabicReaderFont.values)
+                            ChoiceChip(
+                              key: Key('reader-arabic-font-${font.name}'),
+                              label: Text(font.label),
+                              selected: settings.arabicFont == font,
+                              onSelected: (_) => unawaited(
+                                AppDisplaySettings.instance.setArabicFont(font),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _ScaleSetting(
+                        title: 'আরবি লেখার আকার',
+                        key: const Key('reader-arabic-size'),
+                        value: settings.arabicScale,
+                        min: 0.85,
+                        max: 1.6,
+                        divisions: 15,
+                        onPreview:
+                            AppDisplaySettings.instance.previewArabicScale,
+                        onSave: AppDisplaySettings.instance.setArabicScale,
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: Text(
+                          'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                          textAlign: TextAlign.center,
+                          style: readerArabicStyle(
+                            settings,
+                            fontSize: 25 * settings.arabicScale,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _ScaleSetting(
+                        title: 'লাইনের ফাঁক',
+                        key: const Key('reader-line-spacing'),
+                        value: settings.readerLineSpacing,
+                        min: 0.9,
+                        max: 1.4,
+                        divisions: 10,
+                        onPreview: AppDisplaySettings
+                            .instance
+                            .previewReaderLineSpacing,
+                        onSave:
+                            AppDisplaySettings.instance.setReaderLineSpacing,
+                      ),
+                      if (pdfDocument) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'PDF-এর ভেতরের ফন্ট ও অনুবাদ এখানে বদলানো যায় না। '
+                          'বড় করে পড়তে PDF-এর জুম বাটন ব্যবহার করুন।',
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        key: const Key('reader-reset-preferences'),
+                        onPressed: () => unawaited(
+                          AppDisplaySettings.instance.resetReaderPreferences(),
+                        ),
+                        icon: const Icon(Icons.restart_alt_rounded),
+                        label: const Text('পড়ার সেটিংস রিসেট করুন'),
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      key: const Key('reader-reset-preferences'),
-                      onPressed: () => unawaited(
-                        AppDisplaySettings.instance.resetReaderPreferences(),
-                      ),
-                      icon: const Icon(Icons.restart_alt_rounded),
-                      label: const Text('পড়ার সেটিংস রিসেট করুন'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+          ),
         ),
       ),
     ),
   ),
-),
 );
 
 /// Unified typography for authenticated/guest Arabic reading surfaces.
