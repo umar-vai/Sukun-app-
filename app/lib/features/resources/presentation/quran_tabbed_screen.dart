@@ -592,8 +592,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
               'কুরআন পাঠ: ${_provider ?? 'Quran Content API'}',
               if (_translationEdition != null)
                 'বাংলা অনুবাদ: $_translationEdition',
-              if (_recitationEdition != null)
-                'তিলাওয়াত: $_recitationEdition',
+              if (_recitationEdition != null) 'তিলাওয়াত: $_recitationEdition',
               'সকল অনুবাদ ও তিলাওয়াতের স্বত্ব সংশ্লিষ্ট প্রকাশক ও কারির।',
               'তিলাওয়াত অনলাইনে শুনুন। অফলাইন সংরক্ষণ এখন উপলব্ধ নয়।',
             ],
@@ -790,7 +789,9 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                                     settings.bengaliScale,
                                   ),
                                   height: 1.7 * settings.readerLineSpacing,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
                                 ),
                               ),
                             ),
