@@ -3,9 +3,7 @@
 ///
 /// If no verified/public playable or readable resource is linked, open the
 /// user's own Today Routine checklist instead of an empty detail screen.
-String personalNotificationDestination(
-  List<Map<String, dynamic>> references,
-) {
+String personalNotificationDestination(List<Map<String, dynamic>> references) {
   for (final reference in references) {
     final provider = reference['provider'];
     if (provider == 'cms') {
@@ -13,9 +11,10 @@ String personalNotificationDestination(
       if (raw is! Map) continue;
       final cms = Map<String, dynamic>.from(raw);
       final id = reference['content_item_id'];
-      if (id is! String || !RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-      ).hasMatch(id)) {
+      if (id is! String ||
+          !RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          ).hasMatch(id)) {
         continue;
       }
       if (cms['id'] != id ||
@@ -33,9 +32,10 @@ String personalNotificationDestination(
       if (parts.first != 'quran') continue;
       final surah = int.tryParse(parts[1]);
       final ayah = parts.length == 3 ? int.tryParse(parts[2]) : null;
-      if (surah == null || surah < 1 || surah > 114 ||
-          (parts.length == 3 &&
-              (ayah == null || ayah < 1 || ayah > 286))) {
+      if (surah == null ||
+          surah < 1 ||
+          surah > 114 ||
+          (parts.length == 3 && (ayah == null || ayah < 1 || ayah > 286))) {
         continue;
       }
       return '/resources/quran/$surah${ayah == null ? '' : '?ayah=$ayah'}';
