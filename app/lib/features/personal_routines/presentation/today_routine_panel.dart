@@ -29,6 +29,7 @@ class TodayRoutinePanel extends StatelessWidget {
     required this.onToggleDone,
     required this.onOpen,
     this.onOpenPatientToday,
+    this.onOpenHistory,
     this.busy = false,
   });
 
@@ -38,6 +39,7 @@ class TodayRoutinePanel extends StatelessWidget {
   final void Function(String actionId, bool currentlyDone) onToggleDone;
   final ValueChanged<String> onOpen;
   final VoidCallback? onOpenPatientToday;
+  final VoidCallback? onOpenHistory;
   final bool busy;
 
   @override
@@ -226,6 +228,12 @@ class TodayRoutinePanel extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: onOpenPatientToday,
             ),
+          ),
+        if (onOpenHistory != null)
+          TextButton.icon(
+            onPressed: onOpenHistory,
+            icon: const Icon(Icons.history_rounded),
+            label: const Text('আগের দিনের অগ্রগতি দেখুন'),
           ),
         const SizedBox(height: 10),
         Text(
