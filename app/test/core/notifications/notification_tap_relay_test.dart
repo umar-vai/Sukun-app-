@@ -52,7 +52,7 @@ void main() {
     relay.accept('personal_action:$uuid');
     expect(relay.takePendingPersonalAction(), uuid);
     expect(relay.takePendingPersonalAction(), isNull);
-    expect(personalActionRoute(uuid), '/my-routines/action/$uuid');
+    expect(personalActionRoute(uuid), '/my-routines/action/$uuid?fromReminder=1');
     expect(relay.takePending(), isNull);
     relay.dispose();
   });
