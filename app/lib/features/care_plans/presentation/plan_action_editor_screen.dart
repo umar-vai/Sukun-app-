@@ -232,7 +232,9 @@ class _PlanActionEditorScreenState
                   if (parsed == null || parsed < 1 || parsed > 365) {
                     ScaffoldMessenger.of(dialog).showSnackBar(
                       const SnackBar(
-                        content: Text('প্রেসক্রিপশন অনুযায়ী সঠিক সংখ্যা লিখুন।'),
+                        content: Text(
+                          'প্রেসক্রিপশন অনুযায়ী সঠিক সংখ্যা লিখুন।',
+                        ),
                       ),
                     );
                     return;
