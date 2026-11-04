@@ -42,8 +42,6 @@ void main() {
     expect(find.text('পাঠের সেটিংস'), findsOneWidget);
     expect(find.byKey(const Key('reader-bangla-translation')), findsOneWidget);
     expect(find.byKey(const Key('reader-theme-dark')), findsOneWidget);
-    expect(find.byKey(const Key('reader-bengali-size')), findsOneWidget);
-
     await tester.tap(find.byKey(const Key('reader-bangla-translation')));
     await tester.pumpAndSettle();
     expect(
@@ -51,8 +49,15 @@ void main() {
       isFalse,
     );
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('reader-bengali-size')),
+      220,
+    );
+    expect(find.byKey(const Key('reader-bengali-size')), findsOneWidget);
+
+    await tester.scrollUntilVisible(
       find.byKey(const Key('reader-arabic-font-notoNaskhArabic')),
+      220,
     );
     await tester.tap(
       find.byKey(const Key('reader-arabic-font-notoNaskhArabic')),
@@ -63,14 +68,18 @@ void main() {
       ArabicReaderFont.notoNaskhArabic,
     );
 
-    await tester.ensureVisible(find.byKey(const Key('reader-source-credits')));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('reader-source-credits')),
+      220,
+    );
     expect(find.text('Al Quran Cloud'), findsNothing);
     await tester.tap(find.byKey(const Key('reader-source-credits')));
     await tester.pumpAndSettle();
     expect(find.text('Al Quran Cloud'), findsOneWidget);
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.byKey(const Key('reader-reset-preferences')),
+      220,
     );
     await tester.tap(find.byKey(const Key('reader-reset-preferences')));
     await tester.pumpAndSettle();
@@ -98,6 +107,10 @@ void main() {
     await tester.tap(find.byKey(const Key('reader-settings-gear')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('reader-bangla-translation')), findsNothing);
+    await tester.scrollUntilVisible(
+      find.textContaining('PDF-এর ভেতরের ফন্ট'),
+      220,
+    );
     expect(find.textContaining('PDF-এর ভেতরের ফন্ট'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
