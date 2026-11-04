@@ -47,6 +47,50 @@ void main() {
     },
   );
 
+  test(
+    'reader Arabic font, line spacing and Quran Bangla toggle persist',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final settings = AppDisplaySettings.instance;
+      await settings.setArabicFont(ArabicReaderFont.notoNaskhArabic);
+      await settings.setShowQuranBanglaTranslation(false);
+      await settings.setReaderLineSpacing(1.25);
+      final stored = await SharedPreferences.getInstance();
+      expect(
+        stored.getString(AppDisplaySettings.arabicFontKey),
+        'notoNaskhArabic',
+      );
+      expect(stored.getBool(AppDisplaySettings.quranTranslationKey), isFalse);
+      expect(stored.getDouble(AppDisplaySettings.readerLineSpacingKey), 1.25);
+      await settings.load();
+      expect(settings.value.arabicFont, ArabicReaderFont.notoNaskhArabic);
+      expect(settings.value.showQuranBanglaTranslation, isFalse);
+      expect(settings.value.readerLineSpacing, 1.25);
+      await settings.resetReaderPreferences();
+      expect(settings.value.showQuranBanglaTranslation, isTrue);
+      expect(settings.value.arabicFont, ArabicReaderFont.amiriQuran);
+    },
+  );
+
+  test('unrecognized reader font and spacing use safe defaults', () async {
+    SharedPreferences.setMockInitialValues({
+      AppDisplaySettings.arabicFontKey: 'unsupported',
+      AppDisplaySettings.quranTranslationKey: false,
+      AppDisplaySettings.readerLineSpacingKey: 14.0,
+    });
+    await AppDisplaySettings.instance.load();
+    expect(
+      AppDisplaySettings.instance.value.arabicFont,
+      ArabicReaderFont.amiriQuran,
+    );
+    expect(AppDisplaySettings.instance.value.readerLineSpacing, 1.0);
+    expect(
+      AppDisplaySettings.instance.value.showQuranBanglaTranslation,
+      isFalse,
+    );
+    await AppDisplaySettings.instance.resetReaderPreferences();
+  });
+
   test('accent theme choice persists and unknown values fail safe', () async {
     SharedPreferences.setMockInitialValues({});
     final settings = AppDisplaySettings.instance;

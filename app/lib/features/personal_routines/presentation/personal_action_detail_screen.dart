@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:go_router/go_router.dart';
@@ -89,7 +90,10 @@ class _PersonalActionDetailScreenState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('আমার করণীয়')),
+    appBar: AppBar(
+      title: const Text('আমার করণীয়'),
+      actions: const [ReaderSettingsAction()],
+    ),
     body: FutureBuilder<_PersonalActionDetail>(
       future: _load,
       builder: (context, snapshot) {

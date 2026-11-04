@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/app_display_settings.dart';
+import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 
@@ -47,13 +49,18 @@ class AyahReadingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Directionality(
-            textDirection: TextDirection.rtl,
-            child: SelectableText(
-              arabicText,
-              textAlign: TextAlign.right,
-              style: SukunTypography.canonicalReligiousText(
-                textStyle: Theme.of(context).textTheme.headlineSmall,
+          ValueListenableBuilder<AppDisplayPreferences>(
+            valueListenable: AppDisplaySettings.instance,
+            builder: (context, reading, _) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: SelectableText(
+                arabicText,
+                textAlign: TextAlign.right,
+                style: readerArabicStyle(
+                  reading,
+                  fontSize: 26 * reading.arabicScale,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ),
