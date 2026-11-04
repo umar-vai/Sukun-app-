@@ -659,7 +659,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       length: 3,
       initialIndex: widget.resourceId != null
           ? 0
-          : widget.initialTab == 'progress'
+          : (widget.initialTab == 'progress' || widget.initialTab == 'today')
           ? 2
           : widget.initialTab == 'assigned'
           ? 1
