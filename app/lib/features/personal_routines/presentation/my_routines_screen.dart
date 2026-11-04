@@ -882,7 +882,9 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       return Center(
                         child: OutlinedButton(
                           onPressed: _refresh,
-                          child: const Text('আজকের রুটিন আনা যায়নি · আবার চেষ্টা'),
+                          child: const Text(
+                            'আজকের রুটিন আনা যায়নি · আবার চেষ্টা',
+                          ),
                         ),
                       );
                     }
@@ -896,16 +898,18 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       outcomes: data.outcomes,
                       busy: _working,
                       onToggleDone: (actionId, currentlyDone) {
-                        _mutate(() => currentlyDone
-                            ? _repository.clearOutcome(
-                                actionId: actionId,
-                                localDate: DateTime.now(),
-                              )
-                            : _repository.recordOutcome(
-                                actionId: actionId,
-                                localDate: DateTime.now(),
-                                outcome: 'done',
-                              ));
+                        _mutate(
+                          () => currentlyDone
+                              ? _repository.clearOutcome(
+                                  actionId: actionId,
+                                  localDate: DateTime.now(),
+                                )
+                              : _repository.recordOutcome(
+                                  actionId: actionId,
+                                  localDate: DateTime.now(),
+                                  outcome: 'done',
+                                ),
+                        );
                       },
                       onOpen: (id) => context.push(
                         '/my-routines/action/${Uri.encodeComponent(id)}',
