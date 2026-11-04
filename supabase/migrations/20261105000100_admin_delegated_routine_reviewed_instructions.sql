@@ -61,8 +61,9 @@ begin
        or (v_step ? 'notes' and jsonb_typeof(v_step->'notes') not in ('string', 'null'))
        or (v_step ? 'official_template_id' and jsonb_typeof(v_step->'official_template_id') not in ('string', 'null'))
        or char_length(coalesce(v_step_notes,'')) > 3000
-       or v_step_notes ~ '\\{(দিন|বার|মিনিট)\\}'
-       or (v_step_template_id is not null and v_step_template_id !~ '^[a-z][0-9]{2}
+       or (position('{দিন}' in v_step_notes) > 0 or position('{বার}' in v_step_notes) > 0 or position('{মিনিট}' in v_step_notes) > 0)
+       or (v_step_template_id is not null and v_step_template_id !~ '^[a-z][0-9]{2}$')
+       or jsonb_typeof(v_step->'resources') <> 'array'
        or jsonb_array_length(v_step->'resources') > 16
     then
       raise exception 'Invalid action or resource count'
@@ -138,11 +139,7 @@ begin
     'personal_routine',v_routine,
     jsonb_build_object(
       'target_user_id',p_target_user_id,'action_count',v_count,
-      'owner_opt_in_required',true,
-      'official_template_count', (
-        select count(*) from jsonb_array_elements(p_actions) item
-        where item ? 'official_template_id'
-      )
+      'owner_opt_in_required',true
     )
   );
   return v_routine;
