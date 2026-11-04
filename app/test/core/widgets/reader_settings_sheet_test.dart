@@ -53,7 +53,9 @@ void main() {
     expect(find.byKey(const Key('reader-settings-side-panel')), findsOneWidget);
     expect(find.byType(BottomSheet), findsNothing);
     expect(
-      tester.getTopRight(find.byKey(const Key('reader-settings-side-panel'))).dx,
+      tester
+          .getTopRight(find.byKey(const Key('reader-settings-side-panel')))
+          .dx,
       closeTo(390, 1),
     );
     expect(find.byKey(const Key('reader-settings-close')), findsOneWidget);
@@ -116,9 +118,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          appBar: AppBar(actions: const [ReaderSettingsAction()]),
-        ),
+        home: Scaffold(appBar: AppBar(actions: const [ReaderSettingsAction()])),
       ),
     );
 
