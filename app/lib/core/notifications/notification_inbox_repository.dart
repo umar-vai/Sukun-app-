@@ -41,7 +41,7 @@ class PatientInboxMessage {
   };
 
   String get safeTargetRoute =>
-      type == 'plan_updated' ? '/patient/plan' : '/patient/home';
+      type == 'plan_updated' ? '/patient/plan' : '/patient/today';
 }
 
 abstract interface class NotificationInboxRepository {
