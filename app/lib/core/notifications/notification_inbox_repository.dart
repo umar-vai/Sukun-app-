@@ -40,8 +40,7 @@ class PatientInboxMessage {
     _ => 'বিস্তারিত জানতে আপনার আজকের কাজগুলো দেখুন।',
   };
 
-  String get safeTargetRoute =>
-      switch (type) {
+  String get safeTargetRoute => switch (type) {
     'plan_updated' => '/patient/plan',
     'care_reminder' => '/patient/today',
     _ => '/patient/home',
