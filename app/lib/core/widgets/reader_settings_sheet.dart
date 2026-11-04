@@ -121,8 +121,9 @@ Future<void> showReaderSettingsSheet(
                             ),
                             selected: settings.accentPalette == palette,
                             onSelected: (_) => unawaited(
-                              AppDisplaySettings.instance
-                                  .setAccentPalette(palette),
+                              AppDisplaySettings.instance.setAccentPalette(
+                                palette,
+                              ),
                             ),
                           ),
                       ],
@@ -153,7 +154,8 @@ Future<void> showReaderSettingsSheet(
                       min: 0.85,
                       max: 1.4,
                       divisions: 11,
-                      onPreview: AppDisplaySettings.instance.previewBengaliScale,
+                      onPreview:
+                          AppDisplaySettings.instance.previewBengaliScale,
                       onSave: AppDisplaySettings.instance.setBengaliScale,
                     ),
                     Text(
@@ -216,8 +218,7 @@ Future<void> showReaderSettingsSheet(
                       divisions: 10,
                       onPreview:
                           AppDisplaySettings.instance.previewReaderLineSpacing,
-                      onSave:
-                          AppDisplaySettings.instance.setReaderLineSpacing,
+                      onSave: AppDisplaySettings.instance.setReaderLineSpacing,
                     ),
                     if (pdfDocument) ...[
                       const SizedBox(height: 12),
