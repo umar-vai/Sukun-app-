@@ -151,6 +151,19 @@ class _PersonalActionDetailScreenState
               action['notification_title'] as String? ?? '',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
+            if ((action['notes'] as String? ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SelectableText(
+                    action['notes'] as String,
+                    key: const Key('personal-action-reviewed-instructions'),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 18),
             Text(
               'সংযুক্ত রিসোর্স',

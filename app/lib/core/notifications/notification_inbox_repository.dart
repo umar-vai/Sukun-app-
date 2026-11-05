@@ -40,8 +40,11 @@ class PatientInboxMessage {
     _ => 'বিস্তারিত জানতে আপনার আজকের কাজগুলো দেখুন।',
   };
 
-  String get safeTargetRoute =>
-      type == 'plan_updated' ? '/patient/plan' : '/patient/home';
+  String get safeTargetRoute => switch (type) {
+    'plan_updated' => '/patient/plan',
+    'care_reminder' => '/patient/today',
+    _ => '/patient/home',
+  };
 }
 
 abstract interface class NotificationInboxRepository {

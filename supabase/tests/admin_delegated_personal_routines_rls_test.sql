@@ -2,7 +2,7 @@
 -- never editable JWT user_metadata, and owner RLS stays intact.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(17);
 
 insert into auth.users(id,email,raw_user_meta_data) values
 ('f0000000-0000-4000-8000-000000002611','admin-delegator@sukun.test','{}'),
@@ -50,7 +50,7 @@ select lives_ok($$
   select public.admin_create_user_routine(
     'f0000000-0000-4000-8000-000000002612',
     'Synthetic admin suggested routine',
-    '[{"title":"Read Al-Fatiha","resources":[
+    '[{"title":"Read Al-Fatiha","notes":"Approved synthetic daily instruction", "official_template_id":"a01", "resources":[
       {"provider":"quran","external_resource_ref":"quran:1:7"}
     ]}]')
 $$,'super admin may create an inactive, owner-visible routine');
@@ -62,6 +62,27 @@ select throws_ok($$
       {"provider":"quran","external_resource_ref":"quran:115:9"}
     ]}]')
 $$,'22023','Invalid canonical Quran reference','invalid Quran IDs rejected');
+select throws_ok($$
+  select public.admin_create_user_routine(
+    'f0000000-0000-4000-8000-000000002612',
+    'Unresolved text',
+    '[{"title":"Bath","notes":"দিন {দিন} বার","official_template_id":"b01","resources":[]}]')
+$$,'22023','Invalid action or resource count',
+  'server rejects unfilled prescription day placeholders');
+select throws_ok($$
+  select public.admin_create_user_routine(
+    'f0000000-0000-4000-8000-000000002612',
+    'Unlinked audio',
+    '[{"title":"Audio","notes":"Listen", "official_template_id":"u07","resources":[]}]')
+$$,'22023','Invalid action or resource count',
+  'audio template cannot be delegated without a published resource');
+select throws_ok($$
+  select public.admin_create_user_routine(
+    'f0000000-0000-4000-8000-000000002612',
+    'Untrusted notes type',
+    '[{"title":"Bad","notes":{"payload":"unsafe"},"resources":[]}]')
+$$,'22023','Invalid action or resource count',
+  'notes must be string, not an object');
 select is((select count(*) from public.personal_routines),0::bigint,
   'admin still cannot SELECT another owner routine directly under RLS');
 select lives_ok($$
@@ -85,6 +106,12 @@ select is((select count(*) from public.personal_routines),
   1::bigint,'target owner sees delegated draft');
 select is((select count(*) from public.personal_routines where is_active),
   0::bigint,'delegated routine remains inactive until owner opts in');
+select is(
+  (select notes from public.personal_routine_actions
+   where title='Read Al-Fatiha' and owner_user_id=
+    'f0000000-0000-4000-8000-000000002612' limit 1),
+  'Approved synthetic daily instruction'::text,
+  'delegated instructions are visible only to the target owner');
 
 select * from finish();
 rollback;
