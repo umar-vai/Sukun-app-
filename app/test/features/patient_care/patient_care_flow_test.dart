@@ -36,6 +36,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Morning action'), findsOneWidget);
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'করেছি').first,
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'করেছি').first);
     await tester.pumpAndSettle();
 

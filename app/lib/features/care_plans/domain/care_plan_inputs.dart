@@ -1,4 +1,5 @@
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 
 class CreateCarePlanInput {
   const CreateCarePlanInput({
@@ -45,6 +46,9 @@ class SavePlanActionInput {
     this.aiConfidence,
     this.aiAmbiguities = const [],
     this.humanEdited = false,
+    this.officialTemplateId,
+    this.resourceIds,
+    this.quranSurahs = const [],
   });
 
   final String carePlanId;
@@ -70,6 +74,11 @@ class SavePlanActionInput {
   final double? aiConfidence;
   final List<String> aiAmbiguities;
   final bool humanEdited;
+  final String? officialTemplateId;
+
+  /// Non-null requests an atomic action and resource save from the studio.
+  final List<String>? resourceIds;
+  final List<ContentResourceOption> quranSurahs;
 
   bool get isAiSuggestion =>
       aiRequestId != null && sourceEvidence?.trim().isNotEmpty == true;

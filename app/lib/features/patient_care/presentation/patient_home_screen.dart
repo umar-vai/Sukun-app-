@@ -11,6 +11,8 @@ import 'package:sukun_life/features/patient_care/data/patient_care_providers.dar
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
+import 'package:sukun_life/features/care_plans/domain/prescription_sections.dart';
 import 'package:sukun_life/features/patient_care/domain/verified_quran_link_resolver.dart';
 import 'package:sukun_life/features/patient_care/presentation/linked_resource_buttons.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
@@ -246,32 +248,17 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
           final requestedTask = day.tasks
               .where((task) => task.id == widget.openTaskId)
               .firstOrNull;
-          if (requestedTask != null &&
-              requestedTask.action.linkedResources.length +
-                      verifiedQuranLinksForAction(requestedTask.action)
-                          .length ==
-                  1 &&
-              !_notificationTaskOpened) {
+          final reminderResource = requestedTask == null
+              ? null
+              : resourceForPatientReminder(requestedTask, day.activePlan);
+          if (reminderResource != null && !_notificationTaskOpened) {
             _notificationTaskOpened = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                if (requestedTask.action.linkedResources.length == 1) {
-                  _openResource(requestedTask.action.linkedResources.single);
-                } else {
-                  _openQuran(
-                    verifiedQuranLinksForAction(requestedTask.action).single,
-                  );
-                }
-              }
+              if (mounted) _openResource(reminderResource);
             });
           }
-          final highlightedTaskId =
-              requestedTask != null &&
-                  requestedTask.action.linkedResources.length +
-                          verifiedQuranLinksForAction(requestedTask.action)
-                              .length >
-                      1
-              ? requestedTask.id
+          final highlightedTaskId = reminderResource == null
+              ? requestedTask?.id
               : null;
           final remainingTasks = day.remainingTasks
               .where((task) => task.id != highlightedTaskId)
@@ -295,11 +282,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),
-                if (requestedTask != null &&
-                    requestedTask.action.linkedResources.length +
-                            verifiedQuranLinksForAction(requestedTask.action)
-                                .length >
-                        1) ...[
+                if (requestedTask != null && highlightedTaskId != null) ...[
                   SukunSectionHeader(
                     title: 'নোটিফিকেশনের আমল',
                     subtitle: requestedTask.action.title,
@@ -373,7 +356,19 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                         child: Text('আজ আপনার জন্য কোনো কাজ নির্ধারিত নেই।'),
                       )
                     else
-                      for (final task in remainingTasks) ...[
+                      for (final (index, task) in remainingTasks.indexed) ...[
+                        if (index == 0 ||
+                            prescriptionCategory(
+                                  remainingTasks[index - 1].action,
+                                ) !=
+                                prescriptionCategory(task.action))
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              prescriptionCategory(task.action),
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
                         _TaskCard(
                           task: task,
                           busy: _updatingTaskId == task.id,
@@ -395,6 +390,28 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       ),
     );
   }
+}
+
+LinkedResource? resourceForPatientReminder(
+  PatientTask task,
+  CarePlan? activePlan,
+) {
+  if (activePlan == null ||
+      activePlan.status != CarePlanStatus.active ||
+      task.action.carePlanId != activePlan.id ||
+      task.patientId != activePlan.patientId ||
+      task.action.reviewStatus != ActionReviewStatus.approved ||
+      !task.status.canUpdate) {
+    return null;
+  }
+  final resources = task.action.linkedResources;
+  if (resources.length != 1) return null;
+  final resource = resources.single;
+  if (!const {'audio', 'quran', 'dua', 'hadith'}.contains(resource.type) ||
+      (resource.type == 'audio' && !resource.canOpen)) {
+    return null;
+  }
+  return resource;
 }
 
 class _DayProgress extends StatelessWidget {
@@ -426,16 +443,31 @@ class _DayProgress extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: day.completionRatio,
-            color: SukunColors.saffron,
-            backgroundColor: Colors.white24,
-            borderRadius: BorderRadius.circular(99),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${day.tasks.length}টির মধ্যে ${day.completedCount}টি করেছেন',
-            style: const TextStyle(color: Colors.white70),
+          Row(
+            children: [
+              SizedBox.square(
+                dimension: 62,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(end: day.completionRatio),
+                  duration: const Duration(milliseconds: 350),
+                  builder: (context, value, child) => CircularProgressIndicator(
+                    value: value,
+                    color: SukunColors.saffron,
+                    backgroundColor: Colors.white24,
+                    strokeWidth: 5,
+                    semanticsLabel: 'আজকের কাজের অগ্রগতি',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'আজ নির্ধারিত ${day.tasks.length}টি\n'
+                  'সম্পন্ন ${day.completedCount}টি · বাকি ${day.tasks.length - day.completedCount}টি',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ],
           ),
         ],
       ),

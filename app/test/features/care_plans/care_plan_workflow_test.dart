@@ -12,6 +12,38 @@ import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_sc
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 
 void main() {
+  for (final size in const [Size(360, 640), Size(430, 932), Size(1440, 900)]) {
+    testWidgets('bulk studio fits ${size.width} x ${size.height}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            carePlansRepositoryProvider.overrideWithValue(
+              _FakeCarePlansRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: RepaintBoundary(
+              key: Key('studio-visual'),
+              child: CarePlanBuilderScreen(
+                patientId: 'patient-1',
+                planId: 'plan-1',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('রোগীর পরিকল্পনা সাজান'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   group('care-plan domain', () {
     test('serializes daily and selected-day frequency rules', () {
       expect(const ActionFrequency.daily(interval: 2).toJson(), {
