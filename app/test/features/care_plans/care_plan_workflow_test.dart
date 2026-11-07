@@ -246,13 +246,6 @@ void main() {
             planId: state.pathParameters['planId']!,
             openNewAction: state.uri.queryParameters['addAction'] == '1',
           ),
-          routes: [
-            GoRoute(
-              path: 'actions/new',
-              builder: (context, state) =>
-                  const Scaffold(body: Text('New action editor')),
-            ),
-          ],
         ),
       ],
     );
@@ -269,7 +262,67 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('New action editor'), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('নতুন করণীয়'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact Studio edits a selected row in place', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _FakeCarePlansRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(
+          home: CarePlanBuilderScreen(patientId: 'patient-1', planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সব করণীয় বাছুন'));
+    await tester.pumpAndSettle();
+    final row = find.text('Unreviewed internal action');
+    await tester.scrollUntilVisible(
+      row,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await Scrollable.ensureVisible(tester.element(row), alignment: .5);
+    await tester.pumpAndSettle();
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    expect(dialog, findsOneWidget);
+    expect(find.byType(CarePlanBuilderScreen), findsOneWidget);
+    final title = find.widgetWithText(TextFormField, 'রোগী যে শিরোনাম দেখবেন');
+    await tester.enterText(title, 'Updated in the popup');
+    final count = find.widgetWithText(TextFormField, 'কতবার (ঐচ্ছিক)');
+    await tester.ensureVisible(count);
+    await tester.enterText(count, '4');
+    await tester.tap(find.text('করণীয় সংরক্ষণ করুন'));
+    await tester.pumpAndSettle();
+
+    expect(repository.saved?.actionId, 'action-2');
+    expect(repository.saved?.title, 'Updated in the popup');
+    expect(repository.saved?.countTarget, 4);
+    expect(dialog, findsNothing);
+    expect(find.text('Updated in the popup'), findsOneWidget);
+    expect(
+      tester
+          .widget<Checkbox>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Checkbox &&
+                  widget.semanticLabel == 'Updated in the popup নির্বাচন',
+            ),
+          )
+          .value,
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -313,6 +366,8 @@ void main() {
 }
 
 class _FakeCarePlansRepository implements CarePlansRepository {
+  SavePlanActionInput? saved;
+
   @override
   Future<void> replaceActionQuranSurahs({
     required String actionId,
@@ -375,7 +430,21 @@ class _FakeCarePlansRepository implements CarePlansRepository {
   @override
   Future<List<PlanAction>> getActions(String planId) async => [
     approvedAction,
-    unreviewedAction,
+    if (saved case final input? when input.actionId == unreviewedAction.id)
+      PlanAction(
+        id: unreviewedAction.id,
+        carePlanId: plan.id,
+        type: input.type,
+        title: input.title,
+        frequency: input.frequency,
+        startDate: input.startDate,
+        sortOrder: unreviewedAction.sortOrder,
+        reviewStatus: input.reviewStatus,
+        reminderEnabled: input.reminderEnabled,
+        countTarget: input.countTarget,
+      )
+    else
+      unreviewedAction,
   ];
 
   @override
@@ -390,8 +459,7 @@ class _FakeCarePlansRepository implements CarePlansRepository {
       throw UnimplementedError();
 
   @override
-  Future<List<ContentResourceOption>> getAvailableResources() =>
-      throw UnimplementedError();
+  Future<List<ContentResourceOption>> getAvailableResources() async => [];
 
   @override
   Future<List<CarePlan>> getPatientPlans(String patientId) =>
@@ -413,8 +481,10 @@ class _FakeCarePlansRepository implements CarePlansRepository {
   ) => throw UnimplementedError();
 
   @override
-  Future<PlanAction> saveAction(SavePlanActionInput input) =>
-      throw UnimplementedError();
+  Future<PlanAction> saveAction(SavePlanActionInput input) async {
+    saved = input;
+    return (await getActions(input.carePlanId)).last;
+  }
 }
 
 final class _LargeCarePlansRepository extends _FakeCarePlansRepository {

@@ -17,7 +17,7 @@ A proposed practitioner role should use server-owned patient assignments and sep
 3. Search, select individual templates, or select a whole category. Filtered-result selection has its own button.
 4. Import the combined selection once. The rows are immediately available for editing in the same private workspace, with reminders disabled.
 5. Select individual rows or select all. Apply recurrence, dates, explicit reminder time, or reminder settings to the selected rows, or remove the selection as a batch.
-6. Expand a row to inspect its instructions, dates, counts, duration, and resources. Use its editor for reviewed changes or to restore the template instruction.
+6. Open a row by its title or pencil button to edit the instruction, recurrence, reminder time, count, duration, dates, and resources in a scrollable dialog. Saving returns to the same list and preserves its selection. Expand a row to inspect details without opening the editor.
 7. Use the row menu for intentional duplication, copying its schedule to other selected rows, or creating consecutive stages and multiple daily sessions.
 8. Save imports any pending template selections. Action edits and batch changes save directly to the same plan.
 9. Press **রোগীর জন্য চালু করুন** once the saved actions and schedules are ready. The explicit click approves and publishes the saved snapshot in one operation. The private patient preview is available during preparation.

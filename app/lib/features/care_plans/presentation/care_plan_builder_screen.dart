@@ -14,6 +14,7 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/prescription_sections.dart';
 import 'package:sukun_life/features/care_plans/presentation/batch_prescription_schedule.dart';
 import 'package:sukun_life/features/care_plans/presentation/official_template_bulk_picker.dart';
+import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_pdf_preview.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_schedule_expansion.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
@@ -292,10 +293,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     });
   }
 
-  Future<void> _openAction([PlanAction? action]) async {
-    final suffix = action == null ? 'new' : action.id;
-    final changed = await context.push<bool>(
-      '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/$suffix',
+  Future<void> _openAction([String? actionId]) async {
+    if (_working) return;
+    final changed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PlanActionEditorScreen(
+        planId: widget.planId,
+        actionId: actionId,
+        asDialog: true,
+      ),
     );
     if (mounted && changed == true) {
       _undoBatchId = null;
@@ -323,10 +330,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       newId = ids.single;
     }, successMessage: 'একটি আলাদা করণীয় যোগ হয়েছে।');
     if (!mounted || newId == null) return;
-    final changed = await context.push<bool>(
-      '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/$newId',
-    );
-    if (mounted && changed == true) _reload();
+    await _openAction(newId);
   }
 
   Future<void> _generateActions(CarePlan plan) async {
@@ -500,7 +504,8 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       body: FutureBuilder<_BuilderData>(
         future: _data,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const AppLoadingState(label: 'পরিকল্পনা আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
@@ -733,7 +738,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                                             copyPrescriptionSchedule(action),
                                             excludeActionId: action.id,
                                           ),
-                                    onEdit: () => _openAction(action),
+                                    onEdit: () => _openAction(action.id),
                                     onDuplicate: () => _duplicateAction(action),
                                     onExpandSchedule: () =>
                                         _expandSchedule(action),
@@ -1044,13 +1049,24 @@ class _ActionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    action.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                  InkWell(
+                    onTap: editable ? onEdit : null,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            action.title,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   ExpansionTile(
                     tilePadding: EdgeInsets.zero,

@@ -21,12 +21,14 @@ class PlanActionEditorScreen extends ConsumerStatefulWidget {
     this.actionId,
     this.copyActionId,
     this.initialResourceId,
+    this.asDialog = false,
   });
 
   final String planId;
   final String? actionId;
   final String? copyActionId;
   final String? initialResourceId;
+  final bool asDialog;
 
   @override
   ConsumerState<PlanActionEditorScreen> createState() =>
@@ -61,6 +63,7 @@ class _PlanActionEditorScreenState
   final Set<String> _contentItemIds = <String>{};
   bool _submitting = false;
   bool _showOptionalDetails = false;
+  String? _dialogError;
 
   @override
   void initState() {
@@ -76,6 +79,9 @@ class _PlanActionEditorScreenState
       repository.getActions(widget.planId),
       repository.getAvailableResources(),
     ]);
+    if (!mounted) {
+      throw const CarePlanWorkflowException('Action editor was closed.');
+    }
     final plan = results[0] as CarePlan?;
     if (plan == null) {
       throw const CarePlanWorkflowException('Care plan was not found.');
@@ -130,6 +136,7 @@ class _PlanActionEditorScreenState
     _exactTime = action.exactTime;
     _reminderEnabled = action.reminderEnabled;
     _showOptionalDetails =
+        widget.asDialog ||
         action.countTarget != null ||
         action.durationMinutes != null ||
         action.startDate != _plan?.startDate ||
@@ -431,12 +438,13 @@ class _PlanActionEditorScreenState
     final data = await _data;
     if (!mounted || _submitting) return;
     if (_frequencyType == ActionFrequencyType.weekly && _weekdays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one weekday.')),
-      );
+      _showSaveError('সপ্তাহের অন্তত একটি দিন বাছুন।');
       return;
     }
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _dialogError = null;
+    });
     try {
       final frequency = _frequencyType == ActionFrequencyType.daily
           ? ActionFrequency.daily(
@@ -495,22 +503,65 @@ class _PlanActionEditorScreenState
           quranSurahs: surahs,
         ),
       );
-      if (mounted) context.pop(true);
+      if (!mounted) return;
+      if (widget.asDialog) {
+        Navigator.of(context).pop(true);
+      } else {
+        context.pop(true);
+      }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
-      );
+      _showSaveError('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
+  void _showSaveError(String message) {
+    if (widget.asDialog) {
+      setState(() => _dialogError = message);
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Widget _saveButton() => FilledButton.icon(
+    onPressed: _submitting ? null : _submit,
+    icon: _submitting
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.save_outlined),
+    label: Text(_submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন'),
+  );
+
   @override
   Widget build(BuildContext context) {
     final editing = widget.actionId != null;
-    return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়')),
+    final title = editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়';
+    final editor = Scaffold(
+      primary: !widget.asDialog,
+      backgroundColor: widget.asDialog
+          ? Theme.of(context).colorScheme.surface
+          : null,
+      appBar: AppBar(
+        primary: !widget.asDialog,
+        automaticallyImplyLeading: !widget.asDialog,
+        title: Text(title),
+        actions: widget.asDialog
+            ? [
+                IconButton(
+                  tooltip: 'বন্ধ করুন',
+                  onPressed: _submitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ]
+            : null,
+      ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
@@ -526,7 +577,7 @@ class _PlanActionEditorScreenState
           final template = officialPrescriptionTemplates
               .where((item) => item.id == _officialTemplateId)
               .firstOrNull;
-          return SingleChildScrollView(
+          final form = SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Center(
               child: ConstrainedBox(
@@ -536,12 +587,14 @@ class _PlanActionEditorScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SukunPageIntro(
-                        eyebrow: 'রোগীর পরিকল্পনা',
-                        title: editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়',
-                        subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
-                      ),
-                      const SizedBox(height: 18),
+                      if (!widget.asDialog) ...[
+                        SukunPageIntro(
+                          eyebrow: 'রোগীর পরিকল্পনা',
+                          title: title,
+                          subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
+                        ),
+                        const SizedBox(height: 18),
+                      ],
                       if (template != null)
                         Align(
                           alignment: Alignment.centerLeft,
@@ -579,7 +632,7 @@ class _PlanActionEditorScreenState
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _instructionController,
-                        minLines: 3,
+                        minLines: widget.asDialog ? 2 : 3,
                         maxLines: 7,
                         decoration: const InputDecoration(
                           labelText: 'রোগীর জন্য নির্দেশনা (ঐচ্ছিক)',
@@ -766,28 +819,51 @@ class _PlanActionEditorScreenState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 22),
-                      FilledButton.icon(
-                        onPressed: _submitting ? null : _submit,
-                        icon: _submitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(
-                          _submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন',
-                        ),
-                      ),
+                      if (!widget.asDialog) ...[
+                        const SizedBox(height: 22),
+                        _saveButton(),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
           );
+          if (!widget.asDialog) return form;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: form),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_dialogError case final error?)
+                      Text(
+                        error,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    _saveButton(),
+                  ],
+                ),
+              ),
+            ],
+          );
         },
+      ),
+    );
+    if (!widget.asDialog) return editor;
+    return PopScope(
+      canPop: !_submitting,
+      child: Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(width: 720, height: 680, child: editor),
       ),
     );
   }
