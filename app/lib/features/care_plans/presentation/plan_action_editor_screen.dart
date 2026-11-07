@@ -55,7 +55,6 @@ class _PlanActionEditorScreenState
   DateTime? _exactTime;
   late DateTime _startDate;
   DateTime? _endDate;
-  ActionReviewStatus _reviewStatus = ActionReviewStatus.draft;
   bool _reminderEnabled = false;
   String _contentItemId = '';
   String _selectedResourceId = '';
@@ -97,7 +96,6 @@ class _PlanActionEditorScreenState
       _populate(action);
       if (widget.copyActionId != null) {
         // Duplicate creates a NEW draft. Never copy approvals or reminders.
-        _reviewStatus = ActionReviewStatus.draft;
         _reminderEnabled = false;
       }
     } else if (widget.initialResourceId != null) {
@@ -130,7 +128,6 @@ class _PlanActionEditorScreenState
     _weekdays = {...action.frequency.weekdays};
     _timeWindow = action.timeWindow ?? '';
     _exactTime = action.exactTime;
-    _reviewStatus = action.reviewStatus;
     _reminderEnabled = action.reminderEnabled;
     _showOptionalDetails =
         action.countTarget != null ||
@@ -195,7 +192,7 @@ class _PlanActionEditorScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'শুধু অ্যাডমিন খসড়া। মূল প্রেসক্রিপশন দেখে যাচাই করুন। '
+                  'মূল প্রেসক্রিপশন অনুযায়ী নির্দেশনা ও সময় ঠিক করুন। '
                   'স্বয়ংক্রিয়ভাবে অনুমোদিত বা রোগীর কাছে প্রকাশিত হবে না।',
                 ),
                 const SizedBox(height: 12),
@@ -245,7 +242,7 @@ class _PlanActionEditorScreenState
                 }
                 Navigator.pop(dialog, filled);
               },
-              child: const Text('খসড়ায় ব্যবহার করুন'),
+              child: const Text('করণীয়তে ব্যবহার করুন'),
             ),
           ],
         ),
@@ -262,15 +259,14 @@ class _PlanActionEditorScreenState
       _typeController.text = template.actionType;
       _titleController.text = template.title;
       _instructionController.text = template.render(values!);
-      _reviewStatus = ActionReviewStatus.needsReview;
       _reminderEnabled = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           template.requiresLinkedResource
-              ? 'খসড়া বসেছে। প্রকাশিত সঠিক অডিও/সূরা লিংক করে যাচাই করুন।'
-              : 'অফিসিয়াল টেমপ্লেটের খসড়া বসেছে। অনুমোদনের আগে যাচাই করুন।',
+              ? 'টেমপ্লেট যোগ হয়েছে। সংশ্লিষ্ট প্রকাশিত অডিও বা সূরা যুক্ত করুন।'
+              : 'অফিসিয়াল টেমপ্লেট যোগ হয়েছে। প্রয়োজন হলে সময় ও নির্দেশনা বদলান।',
         ),
       ),
     );
@@ -434,40 +430,6 @@ class _PlanActionEditorScreenState
     if (!_formKey.currentState!.validate() || _submitting) return;
     final data = await _data;
     if (!mounted || _submitting) return;
-    final template = officialPrescriptionTemplates
-        .where((item) => item.id == _officialTemplateId)
-        .firstOrNull;
-    if (template != null && _reviewStatus == ActionReviewStatus.approved) {
-      final instruction = _instructionController.text.trim();
-      final needsInstruction =
-          instruction.isEmpty ||
-          OfficialPrescriptionTemplate.variables.any(
-            (variable) => instruction.contains('{$variable}'),
-          );
-      final hasResource =
-          data.resources.any(
-            (resource) =>
-                _contentItemIds.contains(resource.id) &&
-                resource.isLinkable &&
-                (template.category != 'audio' || resource.type == 'audio'),
-          ) ||
-          _originalResources.any(
-            (resource) =>
-                _contentItemIds.contains(resource.id) &&
-                (template.category != 'audio' || resource.type == 'audio'),
-          );
-      if (needsInstruction ||
-          (template.requiresLinkedResource && !hasResource)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'অনুমোদনের আগে নির্দেশনা পূরণ করুন ও প্রয়োজনীয় যাচাইকৃত উপকরণ লিংক করুন।',
-            ),
-          ),
-        );
-        return;
-      }
-    }
     if (_frequencyType == ActionFrequencyType.weekly && _weekdays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Select at least one weekday.')),
@@ -521,7 +483,7 @@ class _PlanActionEditorScreenState
           exactTime: _exactTime,
           startDate: _startDate,
           endDate: _endDate,
-          reviewStatus: _reviewStatus,
+          reviewStatus: ActionReviewStatus.draft,
           reminderEnabled: _reminderEnabled,
           contentItemId: _contentItemId.isEmpty ? null : _contentItemId,
           resourceUsageNote: _usageNoteController.text,
@@ -805,49 +767,6 @@ class _PlanActionEditorScreenState
                         ],
                       ),
                       const SizedBox(height: 22),
-                      Text(
-                        '৩ · যাচাই করে সংরক্ষণ',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'অস্পষ্ট সংখ্যা, সময় বা নির্দেশনা অনুমান করবেন না। '
-                        'মানুষের যাচাই ছাড়া এই করণীয় রোগীর কাছে প্রকাশ করা যাবে না।',
-                      ),
-                      const SizedBox(height: 10),
-                      SukunChoiceField<ActionReviewStatus>(
-                        label: 'যাচাইয়ের অবস্থা',
-                        placeholder: 'অবস্থা বাছুন',
-                        value: _reviewStatus,
-                        options: [
-                          for (final status in const [
-                            ActionReviewStatus.draft,
-                            ActionReviewStatus.needsReview,
-                            ActionReviewStatus.approved,
-                          ])
-                            SukunChoiceOption(
-                              value: status,
-                              title: switch (status) {
-                                ActionReviewStatus.draft => 'খসড়া',
-                                ActionReviewStatus.needsReview => 'যাচাই বাকি',
-                                ActionReviewStatus.approved =>
-                                  'যাচাই করে অনুমোদিত',
-                                _ => status.label,
-                              },
-                              description: switch (status) {
-                                ActionReviewStatus.draft =>
-                                  'এখনো প্রস্তুত করা হচ্ছে।',
-                                ActionReviewStatus.needsReview =>
-                                  'নির্দেশনায় অস্পষ্ট বা অনুপস্থিত তথ্য আছে।',
-                                ActionReviewStatus.approved => 'মানুষ যাচাই করেছেন; পরিকল্পনা চালু করা যাবে।',
-                                _ => 'এই ধাপে প্রযোজ্য নয়।',
-                              },
-                            ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _reviewStatus = value),
-                      ),
-                      const SizedBox(height: 24),
                       FilledButton.icon(
                         onPressed: _submitting ? null : _submit,
                         icon: _submitting

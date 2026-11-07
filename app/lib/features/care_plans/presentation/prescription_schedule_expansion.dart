@@ -79,9 +79,7 @@ class _ExpansionState extends State<PrescriptionScheduleExpansionDialog> {
                     : 'প্রতি নির্দিষ্ট সময়ের জন্য আলাদা করণীয় তৈরি হবে।',
               ),
               const SizedBox(height: 8),
-              const Text(
-                'প্রতিটি করণীয় যাচাই করুন এবং প্রয়োজন হলে রিমাইন্ডার চালু করুন।',
-              ),
+              const Text('প্রয়োজন হলে করণীয়গুলোর রিমাইন্ডার চালু করুন।'),
             ],
           ),
         ),
@@ -100,7 +98,7 @@ class _ExpansionState extends State<PrescriptionScheduleExpansionDialog> {
                     times: stages ? null : values,
                   ));
                 },
-          child: const Text('খসড়ায় প্রয়োগ করুন'),
+          child: const Text('প্রয়োগ করুন'),
         ),
       ],
     );

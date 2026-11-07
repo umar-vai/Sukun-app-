@@ -128,6 +128,7 @@ class PlanAction {
     this.exactTime,
     this.endDate,
     this.officialTemplateId,
+    this.revision,
     this.resource,
     this.resources = const [],
   });
@@ -210,6 +211,7 @@ class PlanAction {
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: _parseDate(json['end_date'] as String?),
       officialTemplateId: json['official_template_id'] as String?,
+      revision: json['updated_at'] as String?,
       sortOrder: json['sort_order'] as int,
       reviewStatus: ActionReviewStatus.fromDatabase(
         json['review_status'] as String?,
@@ -233,6 +235,7 @@ class PlanAction {
   final DateTime startDate;
   final DateTime? endDate;
   final String? officialTemplateId;
+  final String? revision;
   final int sortOrder;
   final ActionReviewStatus reviewStatus;
   final bool reminderEnabled;

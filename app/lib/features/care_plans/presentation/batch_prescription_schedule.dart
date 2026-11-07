@@ -67,7 +67,7 @@ class _BatchPrescriptionScheduleState extends State<BatchPrescriptionSchedule> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'যে সেটিংগুলো বেছে নেবেন, শুধু সেগুলো বদলাবে। বদলানো করণীয় আবার যাচাই করতে হবে।',
+                'বাছাই করা করণীয়গুলোতে শুধু এখানে দেওয়া সেটিংগুলো বদলাবে।',
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField(
@@ -215,7 +215,7 @@ class _BatchPrescriptionScheduleState extends State<BatchPrescriptionSchedule> {
                   });
                 }
               : null,
-          child: const Text('খসড়ায় প্রয়োগ করুন'),
+          child: const Text('প্রয়োগ করুন'),
         ),
       ],
     );

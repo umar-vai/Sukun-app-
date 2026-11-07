@@ -68,7 +68,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       _undoBatchId = null;
       _selectedTemplates = {};
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$importedটি টেমপ্লেট খসড়ায় সংরক্ষণ হয়েছে।')),
+        SnackBar(content: Text('$importedটি টেমপ্লেট যোগ হয়েছে।')),
       );
       _reload();
       return true;
@@ -136,7 +136,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     }
     _reload();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('করণীয় ও সময়সূচি খসড়ায় সংরক্ষিত আছে।')),
+      const SnackBar(content: Text('করণীয় ও সময়সূচি সংরক্ষণ হয়েছে।')),
     );
   }
 
@@ -165,7 +165,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       _undoBatchId = requestId;
       _pendingRequests.remove(key);
       if (patch['remove'] == true) _selectedActions.removeAll(selected);
-    }, successMessage: 'নির্বাচিত করণীয়গুলোর খসড়া সংরক্ষণ হয়েছে।');
+    }, successMessage: 'নির্বাচিত করণীয়গুলো সংরক্ষণ হয়েছে।');
   }
 
   Future<void> _undoBatch() async {
@@ -203,7 +203,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
             times: expansion.times,
           );
       _pendingRequests.remove(key);
-    }, successMessage: 'সময়সূচির আলাদা করণীয়গুলো খসড়ায় সংরক্ষণ হয়েছে।');
+    }, successMessage: 'সময়সূচির আলাদা করণীয়গুলো সংরক্ষণ হয়েছে।');
   }
 
   Future<void> _scheduleBatch(_BuilderData data) async {
@@ -221,7 +221,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     final confirmed = await showSukunDecisionDialog(
       context: context,
       title: 'নির্বাচিত করণীয় বাদ দেবেন?',
-      message: '${_selectedIn(data).length}টি করণীয় খসড়া থেকে বাদ যাবে।',
+      message: '${_selectedIn(data).length}টি করণীয় পরিকল্পনা থেকে বাদ যাবে।',
       confirmLabel: 'বাদ দিন',
       icon: Icons.delete_outline,
     );
@@ -321,7 +321,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
           );
       _pendingRequests.remove(key);
       newId = ids.single;
-    }, successMessage: 'একটি আলাদা খসড়া তৈরি হয়েছে।');
+    }, successMessage: 'একটি আলাদা করণীয় যোগ হয়েছে।');
     if (!mounted || newId == null) return;
     final changed = await context.push<bool>(
       '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/$newId',
@@ -372,7 +372,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   Future<void> _reject(PlanAction action) async {
     final confirmed = await showSukunDecisionDialog(
       context: context,
-      title: 'খসড়া থেকে করণীয় বাদ দেবেন?',
+      title: 'পরিকল্পনা থেকে করণীয় বাদ দেবেন?',
       message:
           '“${action.title}” বাদ দেওয়া হিসেবে লেখা থাকবে; আগের তথ্য সংরক্ষিত থাকবে।',
       confirmLabel: 'বাদ দিন',
@@ -383,29 +383,43 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       await ref
           .read(carePlansRepositoryProvider)
           .rejectAction(action.id, const Uuid().v4());
-    }, successMessage: 'খসড়া থেকে করণীয়টি বাদ দেওয়া হয়েছে।');
+    }, successMessage: 'পরিকল্পনা থেকে করণীয়টি বাদ দেওয়া হয়েছে।');
   }
 
   Future<void> _publish(_BuilderData data) async {
-    final approved = data.actions
-        .where((action) => action.reviewStatus == ActionReviewStatus.approved)
-        .length;
-    final unresolved = data.actions.length - approved;
-    if (approved == 0 || unresolved > 0 || _working) return;
-    final confirmed = await showSukunDecisionDialog(
-      context: context,
-      title: 'রোগীর জন্য পরিকল্পনাটি চালু করবেন?',
-      message:
-          'এই পরিকল্পনার ${data.plan.version} নম্বর সংস্করণ রোগী দেখতে পাবেন। $approvedটি করণীয় অনুমোদিত হয়েছে।',
-      confirmLabel: 'চালু করুন',
-      cancelLabel: 'আরও সংশোধন করব',
-      icon: Icons.publish_outlined,
-    );
-    if (confirmed != true || _working) return;
+    if (data.actions.isEmpty || _working) return;
+    if (_selectedTemplates.isNotEmpty) {
+      _showMessage(
+        'বাছাই করা টেমপ্লেটগুলো আগে ইমপোর্ট করুন অথবা বাছাই বাতিল করুন।',
+      );
+      return;
+    }
+    for (final action in data.actions) {
+      final template = officialPrescriptionTemplates
+          .where((item) => item.id == action.officialTemplateId)
+          .firstOrNull;
+      if (template == null) continue;
+      final instruction = action.instruction ?? '';
+      if (instruction.trim().isEmpty ||
+          OfficialPrescriptionTemplate.variables.any(
+            (variable) => instruction.contains('{$variable}'),
+          )) {
+        _showMessage('“${action.title}” করণীয়ের নির্দেশনা পূরণ করুন।');
+        return;
+      }
+      if (template.requiresLinkedResource &&
+          !action.linkedResources.any(
+            (resource) =>
+                template.category != 'audio' || resource.type == 'audio',
+          )) {
+        _showMessage('“${action.title}” করণীয়ের উপকরণ যুক্ত করুন।');
+        return;
+      }
+    }
     await _runMutation(() async {
       await ref
-          .read(carePlansRepositoryProvider)
-          .publishPlan(widget.planId, const Uuid().v4());
+          .read(bulkPrescriptionRepositoryProvider)
+          .publish(widget.planId, data.actions, const Uuid().v4());
     }, successMessage: 'পরিকল্পনাটি রোগীর জন্য চালু হয়েছে।');
   }
 
@@ -461,11 +475,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   }
 
   void _showError(Object error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('কাজটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।'),
-      ),
+    _showMessage(
+      error is CarePlanWorkflowException
+          ? error.message
+          : 'কাজটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।',
     );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -489,12 +508,6 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
             builder: (context, constraints) {
               final wide = constraints.maxWidth >= 1100 && data.plan.isEditable;
               final selected = _selectedIn(data);
-              final unresolved = data.actions
-                  .where(
-                    (action) =>
-                        action.reviewStatus != ActionReviewStatus.approved,
-                  )
-                  .length;
               final batchControls = Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -505,14 +518,26 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       icon: const Icon(Icons.undo),
                       label: const Text('শেষ ব্যাচের পরিবর্তন ফেরান'),
                     ),
-                  OutlinedButton.icon(
-                    onPressed: _working ? null : _saveDraft,
-                    icon: const Icon(Icons.save_outlined),
-                    label: const Text('Save Draft'),
-                  ),
+                  if (wide)
+                    OutlinedButton.icon(
+                      onPressed: _working ? null : _saveDraft,
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('সংরক্ষণ করুন'),
+                    ),
                   SukunStatusPill(
                     label: '${selected.length} নির্বাচিত',
                     tone: SukunStatusTone.brand,
+                  ),
+                  TextButton(
+                    onPressed:
+                        _working || selected.length == data.actions.length
+                        ? null
+                        : () => setState(() {
+                            _selectedActions
+                              ..clear()
+                              ..addAll(data.actions.map((action) => action.id));
+                          }),
+                    child: const Text('সব করণীয় বাছুন'),
                   ),
                   OutlinedButton.icon(
                     onPressed: _working || selected.isEmpty
@@ -547,7 +572,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                             const SukunPageIntro(
                               eyebrow: 'রোগীর সেবার কাজ',
                               title: 'রোগীর করণীয় সাজান',
-                              subtitle: 'রোগীর কাছে পাঠানোর আগে প্রতিটি করণীয় যাচাই ও অনুমোদন করুন।',
+                              subtitle: 'করণীয় ও সময়সূচি সাজিয়ে রোগীর জন্য চালু করুন।',
                             ),
                           if (wide || !data.plan.isEditable)
                             const SizedBox(height: 20),
@@ -580,7 +605,6 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                               plan: data.plan,
                               working: _working,
                               actionCount: data.actions.length,
-                              unresolvedCount: unresolved,
                               onPreview: () => context.push(
                                 '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
                               ),
@@ -621,19 +645,19 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                                   ),
                                 TextButton(
                                   onPressed: _working ? null : _saveDraft,
-                                  child: const Text('Save Draft'),
+                                  child: const Text('সংরক্ষণ করুন'),
                                 ),
                               ],
                             ),
                           const SizedBox(height: 24),
                           if (data.plan.isEditable &&
                               !wide &&
-                              (selected.isNotEmpty || _undoBatchId != null))
+                              (data.actions.isNotEmpty || _undoBatchId != null))
                             batchControls,
                           SukunSectionHeader(
                             title: 'করণীয় কাজগুলো',
                             subtitle: data.plan.isEditable
-                                ? 'ক্রম বদলাতে ধরে টানুন · চালু করার আগে যাচাই করুন'
+                                ? 'ক্রম বদলাতে ধরে টানুন'
                                 : 'রোগীর জন্য চালু করা ক্রম',
                             action: SukunStatusPill(
                               label: '${data.actions.length}',
@@ -649,7 +673,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         hasScrollBody: false,
                         child: AppEmptyState(
                           title: 'এখনো কোনো করণীয় নেই',
-                          message: 'প্রেসক্রিপশনের স্পষ্ট নির্দেশনা অনুযায়ী করণীয় যোগ করুন। অস্পষ্ট তথ্য অনুমোদনের আগে যাচাই করুন।',
+                          message: 'অফিসিয়াল টেমপ্লেট বাছুন অথবা নিজে করণীয় যোগ করুন।',
                         ),
                       )
                     else
@@ -730,13 +754,6 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (unresolved > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: Text(
-                                  '$unresolvedটি করণীয় যাচাই ও অনুমোদন বাকি।',
-                                ),
-                              ),
                             Row(
                               children: [
                                 Expanded(
@@ -758,10 +775,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: FilledButton(
-                                    onPressed:
-                                        _working ||
-                                            unresolved > 0 ||
-                                            data.actions.isEmpty
+                                    onPressed: _working || data.actions.isEmpty
                                         ? null
                                         : () => _publish(data),
                                     child: const Text('রোগীর জন্য চালু করুন'),
@@ -800,12 +814,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         _PlanSummary(plan: data.plan),
                         const SizedBox(height: 16),
                         Text(
-                          'যাচাই ও রপ্তানি',
+                          'সময়সূচি ও রপ্তানি',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        Text(
-                          '${data.actions.where((action) => action.reviewStatus != ActionReviewStatus.approved).length}টি যাচাই বাকি',
-                        ),
+                        Text('${data.actions.length}টি করণীয়'),
                         const SizedBox(height: 8),
                         batchControls,
                         const SizedBox(height: 12),
@@ -875,12 +887,11 @@ class _PlanSummary extends StatelessWidget {
                   ],
                 ),
               ),
-              SukunStatusPill(
-                label: _planStatusLabel(plan.status),
-                tone: plan.isEditable
-                    ? SukunStatusTone.warning
-                    : SukunStatusTone.success,
-              ),
+              if (!plan.isEditable)
+                SukunStatusPill(
+                  label: _planStatusLabel(plan.status),
+                  tone: SukunStatusTone.success,
+                ),
             ],
           ),
           if (!compact) const SizedBox(height: 20),
@@ -893,7 +904,7 @@ class _PlanSummary extends StatelessWidget {
           if (plan.isEditable && !compact) ...[
             const SizedBox(height: 10),
             const Text(
-              'সব করণীয় যাচাই ও অনুমোদনের পর পরিকল্পনাটি চালু করা হলে রোগী দেখতে পাবেন।',
+              'পরিকল্পনাটি চালু করলে রোগী করণীয়গুলো দেখতে পাবেন।',
               style: TextStyle(color: Colors.white70),
             ),
           ],
@@ -908,7 +919,6 @@ class _PlanActions extends StatelessWidget {
     required this.plan,
     required this.working,
     required this.actionCount,
-    required this.unresolvedCount,
     required this.onPreview,
     required this.onGenerate,
     required this.onAdd,
@@ -920,7 +930,6 @@ class _PlanActions extends StatelessWidget {
   final CarePlan plan;
   final bool working;
   final int actionCount;
-  final int unresolvedCount;
   final VoidCallback onPreview;
   final VoidCallback onGenerate;
   final VoidCallback onAdd;
@@ -952,18 +961,11 @@ class _PlanActions extends StatelessWidget {
             label: const Text('নতুন করণীয় যোগ করুন'),
           ),
           FilledButton.tonalIcon(
-            onPressed: working || actionCount == 0 || unresolvedCount > 0
-                ? null
-                : onPublish,
+            onPressed: working || actionCount == 0 ? null : onPublish,
             icon: const Icon(Icons.publish_outlined),
             label: const Text('রোগীর জন্য চালু করুন'),
           ),
-          if (actionCount == 0 || unresolvedCount > 0)
-            Text(
-              actionCount == 0
-                  ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
-                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
-            ),
+          if (actionCount == 0) const Text('আগে অন্তত একটি করণীয় যোগ করুন।'),
         ] else ...[
           FilledButton.tonalIcon(
             onPressed: working ? null : onCreateVersion,
@@ -1036,22 +1038,9 @@ class _ActionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        action.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      SukunStatusPill(
-                        label: _reviewStatusLabel(action.reviewStatus),
-                        tone: action.reviewStatus == ActionReviewStatus.approved
-                            ? SukunStatusTone.success
-                            : SukunStatusTone.warning,
-                      ),
-                    ],
+                  Text(
+                    action.title,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -1109,7 +1098,7 @@ class _ActionCard extends StatelessWidget {
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'duplicate',
-                  child: Text('ডুপ্লিকেট করে নতুন খসড়া'),
+                  child: Text('করণীয় ডুপ্লিকেট করুন'),
                 ),
                 const PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
                 const PopupMenuItem(
@@ -1136,7 +1125,7 @@ String _timingLabel(PlanAction action) {
     final minute = action.exactTime!.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
-  return action.timeWindow ?? 'সময় নির্ধারিত নেই';
+  return prescriptionWindow(action.timeWindow) ?? 'সময় নির্ধারিত নেই';
 }
 
 String _formatDate(DateTime value) =>
@@ -1144,17 +1133,10 @@ String _formatDate(DateTime value) =>
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
 
 String _planStatusLabel(CarePlanStatus status) => switch (status) {
-  CarePlanStatus.draft => 'খসড়া',
+  CarePlanStatus.draft => 'চালু হয়নি',
   CarePlanStatus.active => 'চালু',
   CarePlanStatus.inactive => 'বন্ধ',
   CarePlanStatus.archived => 'সংরক্ষিত',
-};
-
-String _reviewStatusLabel(ActionReviewStatus status) => switch (status) {
-  ActionReviewStatus.draft => 'খসড়া',
-  ActionReviewStatus.needsReview => 'যাচাই বাকি',
-  ActionReviewStatus.approved => 'অনুমোদিত',
-  ActionReviewStatus.rejected => 'বাদ দেওয়া',
 };
 
 String _frequencyLabel(ActionFrequency frequency) {

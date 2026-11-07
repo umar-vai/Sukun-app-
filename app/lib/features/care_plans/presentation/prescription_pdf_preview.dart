@@ -62,7 +62,7 @@ List<PrescriptionPdfLine> prescriptionPdfLines({
     line(
       'তারিখ  ${prescriptionDate((plan.publishedAt ?? plan.createdAt).toLocal())}   |   সংস্করণ  ${plan.version}',
     ),
-    if (draft) line('খসড়া | যাচাই ও অনুমোদন বাকি', heading: true),
+    if (draft) line('প্রকাশের আগের কপি', heading: true),
     for (final section in sections.entries.where(
       (entry) => entry.value.isNotEmpty,
     )) ...[
@@ -170,7 +170,7 @@ Future<PrescriptionPdfDocument> renderPrescriptionPdf({
     );
     final status = layout(
       plan.publishedAt == null || plan.isEditable
-          ? 'DRAFT | খসড়া'
+          ? 'প্রকাশের আগের কপি'
           : 'অনুমোদিত প্রেসক্রিপশন',
       13,
       tide,
@@ -355,7 +355,7 @@ class _PrescriptionPdfPreviewState extends State<PrescriptionPdfPreview> {
         appBar: AppBar(
           title: Text(
             widget.plan.publishedAt == null
-                ? 'Draft Prescription PDF'
+                ? 'Unpublished Prescription PDF'
                 : 'Approved Prescription PDF',
           ),
           actions: [

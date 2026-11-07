@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sukun_life/features/care_plans/data/bulk_prescription_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
@@ -129,7 +130,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('patient preview hides every unapproved action', (tester) async {
+  testWidgets('private preview shows the saved actions before publishing', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -145,12 +148,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Approved patient action'), findsOneWidget);
-    expect(find.text('Unreviewed internal action'), findsNothing);
+    expect(find.text('Unreviewed internal action'), findsOneWidget);
     expect(find.text('Assigned recording'), findsOneWidget);
     expect(find.textContaining('Preview only'), findsOneWidget);
   });
 
-  testWidgets('publish is disabled when an action has not been approved', (
+  testWidgets('saved actions need no individual approval control', (
     tester,
   ) async {
     final repository = _FakeCarePlansRepository();
@@ -164,11 +167,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('1টি করণীয় যাচাই ও অনুমোদন বাকি।'), findsOneWidget);
+    expect(find.text('1টি করণীয় যাচাই ও অনুমোদন বাকি।'), findsNothing);
     final publishButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'রোগীর জন্য চালু করুন'),
     );
-    expect(publishButton.onPressed, isNull);
+    expect(publishButton.onPressed, isNotNull);
+    await tester.tap(find.text('সব করণীয় বাছুন'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 নির্বাচিত'), findsOneWidget);
   });
 
   testWidgets('new plan opens its first action without another tap', (
@@ -229,15 +235,19 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          carePlansRepositoryProvider.overrideWithValue(repository),
+          bulkPrescriptionRepositoryProvider.overrideWithValue(
+            _PublishingStudioRepository(repository),
+          ),
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(repository.published, isFalse);
     await tester.tap(find.text('রোগীর জন্য চালু করুন'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'চালু করুন'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -373,7 +383,8 @@ final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
   bool published = false;
 
   @override
-  Future<List<PlanAction>> getActions(String planId) async => [approvedAction];
+  Future<List<PlanAction>> getActions(String planId) async =>
+      published ? [approvedAction] : [approvedAction, unreviewedAction];
 
   @override
   Future<CarePlan?> getPlan(String planId) async => CarePlan(
@@ -386,10 +397,21 @@ final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
     createdAt: plan.createdAt,
     publishedAt: published ? DateTime(2026, 10, 3) : null,
   );
+}
+
+final class _PublishingStudioRepository extends BulkPrescriptionRepository {
+  const _PublishingStudioRepository(this.repository) : super(null);
+
+  final _PublishingCarePlansRepository repository;
 
   @override
-  Future<CarePlan> publishPlan(String planId, String requestId) async {
-    published = true;
-    return (await getPlan(planId))!;
+  Future<void> publish(
+    String planId,
+    List<PlanAction> actions,
+    String requestId,
+  ) async {
+    expect(planId, repository.plan.id);
+    expect(actions, [repository.approvedAction, repository.unreviewedAction]);
+    repository.published = true;
   }
 }

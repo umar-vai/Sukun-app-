@@ -209,7 +209,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                 eyebrow: 'রোগীর সেবা',
                 title: 'কী যোগ করবেন?',
                 subtitle:
-                    'মূল নির্দেশনা সংরক্ষণ করুন অথবা খসড়া পরিকল্পনা সাজান।',
+                    'মূল নির্দেশনা সংরক্ষণ করুন অথবা সেবা পরিকল্পনা সাজান।',
               ),
               const SizedBox(height: 18),
               SukunSurface(
@@ -483,7 +483,7 @@ class _CarePlanCard extends StatelessWidget {
           ),
           SukunStatusPill(
             label: switch (plan.status) {
-              CarePlanStatus.draft => 'খসড়া',
+              CarePlanStatus.draft => 'চালু হয়নি',
               CarePlanStatus.active => 'চালু',
               CarePlanStatus.inactive => 'নিষ্ক্রিয়',
               CarePlanStatus.archived => 'সংরক্ষিত',

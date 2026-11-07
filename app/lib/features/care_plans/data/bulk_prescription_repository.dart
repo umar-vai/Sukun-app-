@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final bulkPrescriptionRepositoryProvider = Provider<BulkPrescriptionRepository>(
@@ -12,6 +14,38 @@ final bulkPrescriptionRepositoryProvider = Provider<BulkPrescriptionRepository>(
 class BulkPrescriptionRepository {
   const BulkPrescriptionRepository(this._client);
   final SupabaseClient? _client;
+
+  Future<void> publish(
+    String planId,
+    List<PlanAction> actions,
+    String requestId,
+  ) async {
+    try {
+      await _client!.rpc<void>(
+        'publish_prescription_studio',
+        params: {
+          'p_plan_id': planId,
+          'p_actions': [
+            for (final action in actions)
+              {'id': action.id, 'revision': action.revision},
+          ],
+          'p_request_id': requestId,
+        },
+      );
+    } on PostgrestException catch (error) {
+      if (error.code == '40001') {
+        throw const CarePlanWorkflowException(
+          'করণীয়গুলো বদলেছে। পরিকল্পনাটি আবার খুলে চালু করুন।',
+        );
+      }
+      if (error.code == '22023') {
+        throw const CarePlanWorkflowException(
+          'করণীয়ের নির্দেশনা, সময়সূচি ও যুক্ত উপকরণ ঠিক করে আবার চালু করুন।',
+        );
+      }
+      rethrow;
+    }
+  }
 
   Future<String?> practitionerName(String userId) async {
     final profile = await _client!

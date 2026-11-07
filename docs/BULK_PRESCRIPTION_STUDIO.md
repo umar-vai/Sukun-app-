@@ -12,22 +12,22 @@ A proposed practitioner role should use server-owned patient assignments and sep
 
 ## Practitioner workflow
 
-1. Open a patient's plan or create a new draft.
+1. Open a patient's unpublished plan or prepare a new plan.
 2. Use the Official Templates panel on desktop, or the Official Templates sheet on a phone.
 3. Search, select individual templates, or select a whole category. Filtered-result selection has its own button.
-4. Import the combined selection once. Imported rows are saved as `needs_review`, with reminders disabled.
-5. Select action rows and apply recurrence, dates, explicit reminder time, or reminder settings. Batch changes affect selected rows and reset their review state.
+4. Import the combined selection once. The rows are immediately available for editing in the same private workspace, with reminders disabled.
+5. Select individual rows or select all. Apply recurrence, dates, explicit reminder time, or reminder settings to the selected rows, or remove the selection as a batch.
 6. Expand a row to inspect its instructions, dates, counts, duration, and resources. Use its editor for reviewed changes or to restore the template instruction.
 7. Use the row menu for intentional duplication, copying its schedule to other selected rows, or creating consecutive stages and multiple daily sessions.
-8. Save Draft imports any pending template selections into the private draft. Action edits and batch changes also save directly to that draft.
-9. Review actions, preview the patient view, and explicitly publish the existing plan version.
+8. Save imports any pending template selections. Action edits and batch changes save directly to the same plan.
+9. Press **রোগীর জন্য চালু করুন** once the saved actions and schedules are ready. The explicit click approves and publishes the saved snapshot in one operation. The private patient preview is available during preparation.
 10. Export Prescription PDF previews, downloads, or prints the same version. Historical published versions remain exportable from their plan builder.
 
 The original catalog remains the Flutter template source. Category totals are calculated from that catalog. The SQL migration contains the reviewed template-ID allowlist, without a second instruction catalog.
 
 ## Backend changes
 
-The additive migration is `20261107033304_bulk_prescription_studio.sql`.
+The additive migrations are `20261107033304_bulk_prescription_studio.sql` and `20261107155100_prescription_studio_publish.sql`.
 
 - `official_template_id` retains original category provenance.
 - `prescription_item_id` retains an item's lineage across copied plan versions.
@@ -37,6 +37,7 @@ The additive migration is `20261107033304_bulk_prescription_studio.sql`.
 - `undo_prescription_draft_batch` restores the last saved schedule/removal batch and rejects an undo after a later persisted edit.
 - `expand_prescription_action_schedule` creates explicit daily sessions or consecutive date-bounded stages. Retries return the original action IDs.
 - Publication validates official placeholders, required published resources, reminder times, and copied date ranges.
+- `publish_prescription_studio` verifies the database-backed Admin role and checks the complete saved action list against its row revisions. It approves and publishes that exact snapshot in one transaction. Validation failures roll back the entire operation. Older clients can still use their existing publication RPC.
 - Copied plan versions retain official provenance, lineage, resource ordering, and relative stage dates.
 
 These functions use `SECURITY INVOKER`, existing RLS, database role checks, and restricted execute grants. Draft operations do not create patient tasks or send notifications.
@@ -67,7 +68,7 @@ PDFs remain in the authorized app session and the practitioner's requested local
 
 ## Validation and release gates
 
-Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 31 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. Hosted CI passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for commit `82fec49b53808464d68a8470e1937e81fb8a10c8`. Final-head CI remains the release reference.
+Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 36 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. Hosted CI passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for the earlier studio revision. Final-head CI remains the release reference.
 
 Responsive widget checks cover 360 × 640, 430 × 932, and 1440 × 900. Browser tests and visual review are recorded separately from authenticated staging acceptance.
 

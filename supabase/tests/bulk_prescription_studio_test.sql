@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(36);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-000000006001', 'bulk-admin@sukun.test', '{}'),
@@ -124,19 +124,44 @@ select is((select count(*)::integer from public.plan_actions
 select throws_ok($$select public.import_official_plan_actions(
   current_setting('test.bulk_plan_id')::uuid, '[]', gen_random_uuid()
 )$$, '42501', 'Super Admin access is required.', 'patient cannot import');
+select throws_ok($$select public.publish_prescription_studio(
+  current_setting('test.bulk_plan_id')::uuid, '[]', gen_random_uuid()
+)$$, '42501', 'Super Admin access is required.', 'patient cannot publish a studio plan');
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000006001', true);
-update public.plan_actions set review_status = 'approved'
-  where care_plan_id = current_setting('test.bulk_plan_id')::uuid;
-select throws_ok($$select public.publish_care_plan(current_setting('test.bulk_plan_id')::uuid)$$,
+select throws_ok($$select public.publish_prescription_studio(
+  current_setting('test.bulk_plan_id')::uuid,
+  (select jsonb_agg(jsonb_build_object('id', id, 'revision', updated_at - interval '1 second'))
+    from public.plan_actions where care_plan_id = current_setting('test.bulk_plan_id')::uuid),
+  gen_random_uuid()
+)$$, '40001', 'The saved actions changed before publication.', 'a stale action snapshot cannot publish');
+select throws_ok($$select public.publish_prescription_studio(
+  current_setting('test.bulk_plan_id')::uuid,
+  (select jsonb_agg(jsonb_build_object('id', id, 'revision', updated_at))
+    from public.plan_actions where care_plan_id = current_setting('test.bulk_plan_id')::uuid),
+  gen_random_uuid()
+)$$,
   '22023', 'Official template instructions and resources require review.',
-  'an unresolved official placeholder blocks publication even if marked approved');
+  'an unresolved official placeholder blocks the final publish operation');
+select is((select count(*)::integer from public.plan_actions
+  where care_plan_id = current_setting('test.bulk_plan_id')::uuid and review_status = 'approved'),
+  0, 'failed publication rolls back every approval');
 update public.plan_actions set instruction = 'Synthetic reviewed bath'
   where care_plan_id = current_setting('test.bulk_plan_id')::uuid and official_template_id = 'b01';
 update public.plan_actions set exact_time = '08:30', reminder_enabled = true
   where care_plan_id = current_setting('test.bulk_plan_id')::uuid and official_template_id = 'a01';
-select lives_ok($$select public.publish_care_plan(current_setting('test.bulk_plan_id')::uuid)$$,
-  'reviewed plan can publish');
+select lives_ok($$select public.publish_prescription_studio(
+  current_setting('test.bulk_plan_id')::uuid,
+  (select jsonb_agg(jsonb_build_object('id', id, 'revision', updated_at))
+    from public.plan_actions where care_plan_id = current_setting('test.bulk_plan_id')::uuid),
+  '20000000-0000-4000-8000-000000006020'
+)$$, 'one final publication approves the saved actions');
+select is((select count(*)::integer from public.plan_actions
+  where care_plan_id = current_setting('test.bulk_plan_id')::uuid and review_status = 'approved'),
+  3, 'successful publication approves the complete snapshot');
+select is((select (public.publish_prescription_studio(
+  current_setting('test.bulk_plan_id')::uuid, '[{}]', '20000000-0000-4000-8000-000000006020'
+)).status::text), 'active', 'retrying the final publication preserves the published version');
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000006002', true);
 select is((select count(*)::integer from public.plan_actions
   where care_plan_id = current_setting('test.bulk_plan_id')::uuid),
