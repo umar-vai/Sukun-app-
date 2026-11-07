@@ -64,28 +64,24 @@ void main() {
     );
   });
 
-  testWidgets('generates private A4 PDF bytes from shaped Flutter text', (
-    tester,
-  ) async {
-    await tester.pump();
-    final bytes = await tester.runAsync(() async {
-      final loader = FontLoader('SukunLiAdorNoirrit')
-        ..addFont(
-          rootBundle.load(
-            'assets/fonts/li_ador_noirrit/Li Ador Noirrit Regular.ttf',
-          ),
-        );
-      await loader.load();
-      return renderPrescriptionPdf(
-        plan: plan,
-        patient: patient,
-        actions: actions,
+  test('generates private A4 PDF bytes from shaped Flutter text', () async {
+    final loader = FontLoader('SukunLiAdorNoirrit')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/li_ador_noirrit/Li Ador Noirrit Regular.ttf',
+        ),
       );
-    });
-    expect(bytes, isNotNull);
-    final pdf = latin1.decode(bytes!);
+    await loader.load();
+    final document = await renderPrescriptionPdf(
+      plan: plan,
+      patient: patient,
+      actions: actions,
+    );
+    final pdf = latin1.decode(document.bytes);
     expect(pdf, startsWith('%PDF-'));
     expect(pdf, contains('/MediaBox'));
     expect(pdf.contains('/Subtype/Image'), isTrue);
+    expect(document.pages, hasLength(1));
+    expect(document.pages.single.take(4), [137, 80, 78, 71]);
   }, timeout: const Timeout(Duration(minutes: 2)));
 }

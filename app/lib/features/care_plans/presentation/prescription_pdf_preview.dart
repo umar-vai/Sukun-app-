@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:pdfrx/pdfrx.dart';
 import 'package:printing/printing.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -20,6 +19,8 @@ typedef PrescriptionPdfLine = ({
   bool heading,
   double gap,
 });
+
+typedef PrescriptionPdfDocument = ({Uint8List bytes, List<Uint8List> pages});
 
 List<PrescriptionPdfLine> prescriptionPdfLines({
   required CarePlan plan,
@@ -98,7 +99,7 @@ List<PrescriptionPdfLine> prescriptionPdfLines({
 
 /// The Flutter text engine performs OpenType shaping and bidi layout. We
 /// render each page at 216 dpi so native and web exports preserve those glyphs.
-Future<Uint8List> renderPrescriptionPdf({
+Future<PrescriptionPdfDocument> renderPrescriptionPdf({
   required CarePlan plan,
   required Patient patient,
   required List<PlanAction> actions,
@@ -116,7 +117,7 @@ Future<Uint8List> renderPrescriptionPdf({
     title: 'Sukun Life Prescription',
     author: 'Sukun Life',
   );
-  final pageImages = <pw.MemoryImage>[];
+  final pageImages = <Uint8List>[];
   final logoData = await rootBundle.load('assets/brand/sukunlife_logo.png');
   final logo = await ui
       .instantiateImageCodec(logoData.buffer.asUint8List())
@@ -201,8 +202,7 @@ Future<Uint8List> renderPrescriptionPdf({
     try {
       final png = await image.toByteData(format: ui.ImageByteFormat.png);
       if (png == null) throw StateError('Unable to render prescription page.');
-      final pageImage = pw.MemoryImage(png.buffer.asUint8List());
-      pageImages.add(pageImage);
+      pageImages.add(png.buffer.asUint8List());
     } finally {
       image.dispose();
     }
@@ -257,7 +257,7 @@ Future<Uint8List> renderPrescriptionPdf({
           build: (_) => pw.Stack(
             children: [
               pw.Image(
-                pageImage,
+                pw.MemoryImage(pageImage),
                 width: page.width,
                 height: page.height,
                 fit: pw.BoxFit.fill,
@@ -278,7 +278,10 @@ Future<Uint8List> renderPrescriptionPdf({
         ),
       );
     }
-    return await document.save();
+    return (
+      bytes: await document.save(),
+      pages: List<Uint8List>.unmodifiable(pageImages),
+    );
   } finally {
     if (recorder.isRecording) recorder.endRecording().dispose();
     logo.dispose();
@@ -304,10 +307,10 @@ class PrescriptionPdfPreview extends StatefulWidget {
 }
 
 class _PrescriptionPdfPreviewState extends State<PrescriptionPdfPreview> {
-  late Future<Uint8List> _document = _generate();
+  late Future<PrescriptionPdfDocument> _document = _generate();
   bool _working = false;
 
-  Future<Uint8List> _generate() => renderPrescriptionPdf(
+  Future<PrescriptionPdfDocument> _generate() => renderPrescriptionPdf(
     plan: widget.plan,
     patient: widget.patient,
     actions: widget.actions,
@@ -343,10 +346,11 @@ class _PrescriptionPdfPreviewState extends State<PrescriptionPdfPreview> {
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<Uint8List>(
+  Widget build(BuildContext context) => FutureBuilder<PrescriptionPdfDocument>(
     future: _document,
     builder: (context, snapshot) {
-      final bytes = snapshot.data;
+      final document = snapshot.data;
+      final bytes = document?.bytes;
       return Scaffold(
         appBar: AppBar(
           title: Text(
@@ -376,14 +380,59 @@ class _PrescriptionPdfPreviewState extends State<PrescriptionPdfPreview> {
                 message: 'প্রেসক্রিপশনের PDF তৈরি করা যায়নি।',
                 onRetry: () => setState(() => _document = _generate()),
               )
-            : bytes == null
+            : document == null
             ? const AppLoadingState(label: 'PDF তৈরি হচ্ছে…')
-            : PdfViewer.data(
-                bytes,
-                sourceName:
-                    'prescription-${widget.plan.id}-${identityHashCode(bytes)}',
-              ),
+            : _PrescriptionPages(pages: document.pages),
       );
     },
+  );
+}
+
+class _PrescriptionPages extends StatelessWidget {
+  const _PrescriptionPages({required this.pages});
+
+  final List<Uint8List> pages;
+
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+    padding: const EdgeInsets.all(16),
+    itemCount: pages.length,
+    separatorBuilder: (_, _) => const SizedBox(height: 16),
+    itemBuilder: (context, index) => Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const page = PdfPageFormat.a4;
+            final scale = constraints.maxWidth / page.width;
+            final label = '${index + 1} / ${pages.length}';
+            return AspectRatio(
+              aspectRatio: page.width / page.height,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.memory(
+                    pages[index],
+                    fit: BoxFit.fill,
+                    semanticLabel: 'Prescription page $label',
+                  ),
+                  Positioned(
+                    bottom: 32 * scale,
+                    right: 40 * scale,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: const Color(0xff0d2b45),
+                        fontSize: 9 * scale,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    ),
   );
 }
