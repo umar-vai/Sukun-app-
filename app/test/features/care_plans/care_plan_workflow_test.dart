@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sukun_life/features/care_plans/data/bulk_prescription_repository.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:sukun_life/features/care_plans/data/bulk_prescription_repository.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -11,8 +15,60 @@ import 'package:sukun_life/features/care_plans/domain/content_resource_option.da
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  test(
+    'Studio sends the existing plan notice only after a successful publish',
+    () async {
+      final requests = <http.Request>[];
+      var rejectPublish = true;
+      final client = SupabaseClient(
+        'https://synthetic.supabase.test',
+        'synthetic-public-key',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/publish_prescription_studio') &&
+              rejectPublish) {
+            return http.Response(
+              '{"code":"40001","message":"The saved actions changed before publication."}',
+              409,
+              headers: {'Content-Type': 'application/json'},
+              request: request,
+            );
+          }
+          return http.Response(
+            '{"status":"active"}',
+            200,
+            headers: {'Content-Type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      final repository = BulkPrescriptionRepository(client);
+      final actions = [_FakeCarePlansRepository().unreviewedAction];
+      await expectLater(
+        repository.publish('synthetic-plan', actions, 'synthetic-request'),
+        throwsA(isA<CarePlanWorkflowException>()),
+      );
+      expect(requests, hasLength(1));
+
+      rejectPublish = false;
+      await repository.publish('synthetic-plan', actions, 'synthetic-request');
+      expect(requests.map((request) => request.url.path), [
+        '/rest/v1/rpc/publish_prescription_studio',
+        '/rest/v1/rpc/publish_prescription_studio',
+        '/functions/v1/send-notification',
+      ]);
+      expect(jsonDecode(requests.last.body), {
+        'type': 'plan_updated',
+        'care_plan_id': 'synthetic-plan',
+        'request_id': 'synthetic-request',
+      });
+    },
+  );
+
   for (final size in const [Size(360, 640), Size(430, 932), Size(1440, 900)]) {
     testWidgets('bulk studio fits ${size.width} x ${size.height}', (
       tester,

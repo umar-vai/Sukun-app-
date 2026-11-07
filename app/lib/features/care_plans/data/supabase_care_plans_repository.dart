@@ -292,18 +292,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
       'p_care_plan_id': planId,
       'p_request_id': requestId,
     });
-    try {
-      await _client.functions.invoke(
-        'send-notification',
-        body: {
-          'type': 'plan_updated',
-          'care_plan_id': planId,
-          'request_id': requestId,
-        },
-      );
-    } on Object {
-      // Publishing is authoritative; push delivery must never roll it back.
-    }
+    await notifyPatientOfPublishedPlan(_client, planId, requestId);
     return plan;
   }
 
@@ -338,6 +327,25 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
     } on PostgrestException catch (error) {
       throw CarePlanWorkflowException(error.message);
     }
+  }
+}
+
+Future<void> notifyPatientOfPublishedPlan(
+  SupabaseClient client,
+  String planId,
+  String requestId,
+) async {
+  try {
+    await client.functions.invoke(
+      'send-notification',
+      body: {
+        'type': 'plan_updated',
+        'care_plan_id': planId,
+        'request_id': requestId,
+      },
+    );
+  } on Object {
+    // Publishing is authoritative; push delivery must never roll it back.
   }
 }
 

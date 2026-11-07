@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/data/supabase_care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -20,8 +21,9 @@ class BulkPrescriptionRepository {
     List<PlanAction> actions,
     String requestId,
   ) async {
+    final client = _client!;
     try {
-      await _client!.rpc<void>(
+      await client.rpc(
         'publish_prescription_studio',
         params: {
           'p_plan_id': planId,
@@ -45,6 +47,7 @@ class BulkPrescriptionRepository {
       }
       rethrow;
     }
+    await notifyPatientOfPublishedPlan(client, planId, requestId);
   }
 
   Future<String?> practitionerName(String userId) async {

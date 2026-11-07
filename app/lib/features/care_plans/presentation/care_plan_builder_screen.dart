@@ -416,10 +416,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
         return;
       }
     }
+    final requestKey = 'publish:${data.plan.id}';
+    final requestId = _pendingRequests.putIfAbsent(
+      requestKey,
+      () => const Uuid().v4(),
+    );
     await _runMutation(() async {
       await ref
           .read(bulkPrescriptionRepositoryProvider)
-          .publish(widget.planId, data.actions, const Uuid().v4());
+          .publish(widget.planId, data.actions, requestId);
+      _pendingRequests.remove(requestKey);
     }, successMessage: 'পরিকল্পনাটি রোগীর জন্য চালু হয়েছে।');
   }
 
