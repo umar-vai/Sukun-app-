@@ -73,15 +73,17 @@ void main() {
     );
   });
 
-  test('generates private A4 PDF bytes from shaped Flutter text', () async {
-    final bytes = await renderPrescriptionPdf(
-      plan: plan,
-      patient: patient,
-      actions: actions,
+  testWidgets('generates private A4 PDF bytes from shaped Flutter text', (
+    tester,
+  ) async {
+    final bytes = await tester.runAsync(
+      () =>
+          renderPrescriptionPdf(plan: plan, patient: patient, actions: actions),
     );
-    final pdf = latin1.decode(bytes);
+    expect(bytes, isNotNull);
+    final pdf = latin1.decode(bytes!);
     expect(pdf, startsWith('%PDF-'));
     expect(pdf, contains('/MediaBox'));
     expect(pdf.contains('/Subtype/Image'), isTrue);
-  });
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }

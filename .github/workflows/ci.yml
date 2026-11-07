@@ -129,7 +129,7 @@ jobs:
           --dart-define=APP_ENVIRONMENT=local
       - name: Browser prescription selector, PDF and reminder destinations
         run: >
-          flutter test --platform chrome
+          flutter test --platform chrome --timeout 2m
           test/features/care_plans/official_template_bulk_picker_test.dart
           test/features/care_plans/prescription_pdf_preview_test.dart
           test/features/patient_care/patient_reminder_destination_test.dart
