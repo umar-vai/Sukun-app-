@@ -32,6 +32,8 @@ class CarePlan {
     this.endDate,
     this.publishedAt,
     this.archivedAt,
+    this.createdBy,
+    this.publishedBy,
   });
 
   factory CarePlan.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,8 @@ class CarePlan {
       publishedAt: _optionalDate(json['published_at']),
       createdAt: DateTime.parse(json['created_at'] as String),
       archivedAt: _optionalDate(json['archived_at']),
+      createdBy: json['created_by'] as String?,
+      publishedBy: json['published_by'] as String?,
     );
   }
 
@@ -61,6 +65,8 @@ class CarePlan {
   final DateTime? publishedAt;
   final DateTime createdAt;
   final DateTime? archivedAt;
+  final String? createdBy;
+  final String? publishedBy;
 
   bool get isEditable => status == CarePlanStatus.draft;
   bool get canArchive =>

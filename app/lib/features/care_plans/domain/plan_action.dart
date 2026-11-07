@@ -127,6 +127,7 @@ class PlanAction {
     this.timeWindow,
     this.exactTime,
     this.endDate,
+    this.officialTemplateId,
     this.resource,
     this.resources = const [],
   });
@@ -140,6 +141,8 @@ class PlanAction {
       if (item == null) continue;
       // Never expose unpublished/staff-only media through patient plan UI.
       if (item['status'] != 'published' ||
+          (const ['quran', 'hadith'].contains(item['type']) &&
+              item['verification_status'] != 'verified') ||
           !const [
             'public',
             'patient_only',
@@ -206,6 +209,7 @@ class PlanAction {
       exactTime: _parseTime(json['exact_time'] as String?),
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: _parseDate(json['end_date'] as String?),
+      officialTemplateId: json['official_template_id'] as String?,
       sortOrder: json['sort_order'] as int,
       reviewStatus: ActionReviewStatus.fromDatabase(
         json['review_status'] as String?,
@@ -228,6 +232,7 @@ class PlanAction {
   final DateTime? exactTime;
   final DateTime startDate;
   final DateTime? endDate;
+  final String? officialTemplateId;
   final int sortOrder;
   final ActionReviewStatus reviewStatus;
   final bool reminderEnabled;

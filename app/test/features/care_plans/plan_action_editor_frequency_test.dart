@@ -112,6 +112,8 @@ void main() {
     await _openEditor(tester, repo);
     await _save(tester);
     expect(repo.saved?.contentItemId, 'cms-1');
+    expect(repo.saved?.resourceIds, ['cms-1']);
+    expect(repo.saved?.quranSurahs.single.canonicalSurahNumber, 114);
   });
 }
 

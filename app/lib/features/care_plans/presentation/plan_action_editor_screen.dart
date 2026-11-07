@@ -44,11 +44,11 @@ class _PlanActionEditorScreenState
   final _dailyIntervalController = TextEditingController(text: '1');
   final _usageNoteController = TextEditingController();
   final _requestId = const Uuid().v4();
-  final _resourceLinkRequestId = const Uuid().v4();
-  final _quranLinkRequestId = const Uuid().v4();
 
   late Future<_EditorData> _data;
   CarePlan? _plan;
+  String? _officialTemplateId;
+  List<LinkedResource> _originalResources = const [];
   ActionFrequencyType _frequencyType = ActionFrequencyType.daily;
   Set<int> _weekdays = {1};
   String _timeWindow = '';
@@ -118,6 +118,8 @@ class _PlanActionEditorScreenState
   }
 
   void _populate(PlanAction action) {
+    _officialTemplateId = action.officialTemplateId;
+    _originalResources = action.linkedResources;
     _typeController.text = action.type;
     _titleController.text = action.title;
     _instructionController.text = action.instruction ?? '';
@@ -256,6 +258,7 @@ class _PlanActionEditorScreenState
     }
     if (!mounted || values == null) return;
     setState(() {
+      _officialTemplateId = template.id;
       _typeController.text = template.actionType;
       _titleController.text = template.title;
       _instructionController.text = template.render(values!);
@@ -429,6 +432,42 @@ class _PlanActionEditorScreenState
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _submitting) return;
+    final data = await _data;
+    if (!mounted || _submitting) return;
+    final template = officialPrescriptionTemplates
+        .where((item) => item.id == _officialTemplateId)
+        .firstOrNull;
+    if (template != null && _reviewStatus == ActionReviewStatus.approved) {
+      final instruction = _instructionController.text.trim();
+      final needsInstruction =
+          instruction.isEmpty ||
+          OfficialPrescriptionTemplate.variables.any(
+            (variable) => instruction.contains('{$variable}'),
+          );
+      final hasResource =
+          data.resources.any(
+            (resource) =>
+                _contentItemIds.contains(resource.id) &&
+                resource.isLinkable &&
+                (template.category != 'audio' || resource.type == 'audio'),
+          ) ||
+          _originalResources.any(
+            (resource) =>
+                _contentItemIds.contains(resource.id) &&
+                (template.category != 'audio' || resource.type == 'audio'),
+          );
+      if (needsInstruction ||
+          (template.requiresLinkedResource && !hasResource)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'অনুমোদনের আগে নির্দেশনা পূরণ করুন ও প্রয়োজনীয় যাচাইকৃত উপকরণ লিংক করুন।',
+            ),
+          ),
+        );
+        return;
+      }
+    }
     if (_frequencyType == ActionFrequencyType.weekly && _weekdays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Select at least one weekday.')),
@@ -443,7 +482,32 @@ class _PlanActionEditorScreenState
             )
           : ActionFrequency.weekly(_weekdays);
       final repository = ref.read(carePlansRepositoryProvider);
-      final saved = await repository.saveAction(
+      final surahs = <ContentResourceOption>[];
+      for (final id in _contentItemIds.where((id) => id.startsWith('quran:'))) {
+        final available = data.resources
+            .where((item) => item.id == id)
+            .firstOrNull;
+        if (available != null) {
+          surahs.add(available);
+          continue;
+        }
+        final existing = _originalResources
+            .where((item) => item.id == id)
+            .firstOrNull;
+        if (existing != null) {
+          surahs.add(
+            ContentResourceOption(
+              id: existing.id,
+              title: existing.title,
+              titleBn: existing.titleBn,
+              type: 'quran',
+              visibility: 'public',
+              status: 'published',
+            ),
+          );
+        }
+      }
+      await repository.saveAction(
         SavePlanActionInput(
           carePlanId: widget.planId,
           actionId: widget.actionId,
@@ -462,27 +526,12 @@ class _PlanActionEditorScreenState
           contentItemId: _contentItemId.isEmpty ? null : _contentItemId,
           resourceUsageNote: _usageNoteController.text,
           requestId: _requestId,
+          officialTemplateId: _officialTemplateId,
+          resourceIds: _contentItemIds
+              .where((id) => !id.startsWith('quran:'))
+              .toList(),
+          quranSurahs: surahs,
         ),
-      );
-      final cmsIds = _contentItemIds
-          .where((id) => !id.startsWith('quran:'))
-          .toList();
-      if (cmsIds.length > 1) {
-        await repository.replaceActionResources(
-          actionId: saved.id,
-          resourceIds: cmsIds,
-          requestId: _resourceLinkRequestId,
-        );
-      }
-      final availableResources = (await _data).resources;
-      await repository.replaceActionQuranSurahs(
-        actionId: saved.id,
-        surahs: [
-          for (final id in _contentItemIds)
-            if (id.startsWith('quran:'))
-              ...availableResources.where((item) => item.id == id),
-        ],
-        requestId: _quranLinkRequestId,
       );
       if (mounted) context.pop(true);
     } catch (error) {
@@ -512,6 +561,9 @@ class _PlanActionEditorScreenState
             );
           }
           final data = snapshot.data!;
+          final template = officialPrescriptionTemplates
+              .where((item) => item.id == _officialTemplateId)
+              .firstOrNull;
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Center(
@@ -528,6 +580,15 @@ class _PlanActionEditorScreenState
                         subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
                       ),
                       const SizedBox(height: 18),
+                      if (template != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            icon: const Icon(Icons.restore),
+                            label: const Text('টেমপ্লেটের নির্দেশনায় ফিরুন'),
+                            onPressed: () => _applyOfficialTemplate(template),
+                          ),
+                        ),
                       Text(
                         '১ · কী করবেন',
                         style: Theme.of(context).textTheme.titleMedium,

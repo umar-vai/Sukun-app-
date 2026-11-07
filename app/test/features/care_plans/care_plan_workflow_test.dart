@@ -12,6 +12,38 @@ import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_sc
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
 
 void main() {
+  for (final size in const [Size(360, 640), Size(430, 932), Size(1440, 900)]) {
+    testWidgets('bulk studio fits ${size.width} x ${size.height}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            carePlansRepositoryProvider.overrideWithValue(
+              _FakeCarePlansRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: RepaintBoundary(
+              key: Key('studio-visual'),
+              child: CarePlanBuilderScreen(
+                patientId: 'patient-1',
+                planId: 'plan-1',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('রোগীর পরিকল্পনা সাজান'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   group('care-plan domain', () {
     test('serializes daily and selected-day frequency rules', () {
       expect(const ActionFrequency.daily(interval: 2).toJson(), {
@@ -63,6 +95,38 @@ void main() {
       expect(validateOptionalPositiveInteger('0', 'Count'), isNotNull);
       expect(validateOptionalPositiveInteger('3', 'Count'), isNull);
     });
+  });
+
+  testWidgets('100 draft actions are lazily rendered and remain reachable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          carePlansRepositoryProvider.overrideWithValue(
+            _LargeCarePlansRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: CarePlanBuilderScreen(patientId: 'patient-1', planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ExpansionTile).evaluate().length, lessThan(100));
+    await tester.scrollUntilVisible(
+      find.text('Synthetic action 99'),
+      800,
+      maxScrolls: 60,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(find.text('Synthetic action 99'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('patient preview hides every unapproved action', (tester) async {
@@ -285,6 +349,24 @@ class _FakeCarePlansRepository implements CarePlansRepository {
   @override
   Future<PlanAction> saveAction(SavePlanActionInput input) =>
       throw UnimplementedError();
+}
+
+final class _LargeCarePlansRepository extends _FakeCarePlansRepository {
+  @override
+  Future<List<PlanAction>> getActions(String planId) async => [
+    for (var index = 0; index < 100; index++)
+      PlanAction(
+        id: 'synthetic-$index',
+        carePlanId: plan.id,
+        type: 'amal',
+        title: 'Synthetic action $index',
+        frequency: const ActionFrequency.daily(),
+        startDate: plan.startDate,
+        sortOrder: index,
+        reviewStatus: ActionReviewStatus.needsReview,
+        reminderEnabled: false,
+      ),
+  ];
 }
 
 final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
