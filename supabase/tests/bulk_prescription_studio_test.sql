@@ -77,13 +77,13 @@ select lives_ok($$select public.save_prescription_studio_action(
     'p_action_id', (select id from public.plan_actions
       where care_plan_id = current_setting('test.bulk_plan_id')::uuid and official_template_id = 'a01'),
     'p_type', 'amal', 'p_title', 'Synthetic reviewed action',
-    'p_instruction', 'Synthetic reviewed instruction',
+    'p_instruction', repeat('Synthetic reviewed instruction ', 1000),
     'p_frequency_rule', '{"type":"daily","interval":1}'::jsonb,
     'p_start_date', current_date, 'p_review_status', 'needs_review',
     'p_reminder_enabled', false,
     'p_request_id', '20000000-0000-4000-8000-000000006007'
   ), '{}'::uuid[], '[]', 'a01'
-)$$, 'the same draft saves successfully with valid resource choices');
+)$$, 'the same draft preserves a long legacy instruction with valid resource choices');
 select lives_ok($$select public.update_prescription_draft_actions(
   current_setting('test.bulk_plan_id')::uuid,
   array(select id from public.plan_actions
