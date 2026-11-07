@@ -67,7 +67,7 @@ PDFs remain in the authorized app session and the practitioner's requested local
 
 ## Validation and release gates
 
-Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 29 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. The first hosted CI run passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for commit `e85ffc168692d1e47f2af35b2f508dbf87eb905d`. Final-head CI remains the release reference.
+Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 31 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. The first hosted CI run passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for commit `e85ffc168692d1e47f2af35b2f508dbf87eb905d`. Final-head CI remains the release reference.
 
 Responsive widget checks cover 360 × 640, 430 × 932, and 1440 × 900. Browser tests and visual review are recorded separately from authenticated staging acceptance.
 

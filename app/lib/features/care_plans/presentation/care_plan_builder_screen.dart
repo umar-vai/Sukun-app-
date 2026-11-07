@@ -65,6 +65,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
           );
       _pendingRequests.remove(key);
       if (!mounted) return false;
+      _undoBatchId = null;
       _selectedTemplates = {};
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$importedটি টেমপ্লেট খসড়ায় সংরক্ষণ হয়েছে।')),
@@ -296,7 +297,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     final changed = await context.push<bool>(
       '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/$suffix',
     );
-    if (mounted && changed == true) _reload();
+    if (mounted && changed == true) {
+      _undoBatchId = null;
+      _reload();
+    }
   }
 
   Future<void> _duplicateAction(PlanAction action) async {
@@ -352,7 +356,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
             reordered.map((item) => item.id).toList(growable: false),
             const Uuid().v4(),
           );
-      if (mounted) _reload();
+      if (mounted) {
+        _undoBatchId = null;
+        _reload();
+      }
     } catch (error) {
       if (!mounted) return;
       _showError(error);
@@ -439,7 +446,9 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
   }) async {
     setState(() => _working = true);
     try {
+      final previousUndo = _undoBatchId;
       await mutation();
+      if (_undoBatchId == previousUndo) _undoBatchId = null;
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(successMessage)));

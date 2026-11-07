@@ -416,7 +416,15 @@ begin
   if previous_rows is null then
     raise exception 'The original batch was not found.' using errcode = 'P0002';
   end if;
-  if (select count(*) from public.plan_actions pa
+  if exists (
+    select 1 from public.admin_audit_logs later
+    where later.id > operation.id and (
+      later.entity_id = p_plan_id
+      or later.metadata ->> 'care_plan_id' = p_plan_id::text
+      or exists (select 1 from public.plan_actions pa
+        where pa.id = later.entity_id and pa.care_plan_id = p_plan_id)
+    )
+  ) or (select count(*) from public.plan_actions pa
     join jsonb_array_elements(previous_rows) item on pa.id = (item ->> 'id')::uuid
     where pa.care_plan_id = p_plan_id
       and pa.updated_at = (operation.metadata ->> 'changed_at')::timestamptz

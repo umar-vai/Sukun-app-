@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(31);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-000000006001', 'bulk-admin@sukun.test', '{}'),
@@ -173,5 +173,29 @@ select is((select count(*)::integer from public.plan_actions copy
     and copy.official_template_id = original.official_template_id
     and copy.start_date = original.start_date + 10
     and copy.review_status = 'needs_review'), 3, 'new draft retains lineage and relative schedules');
+do $$
+declare
+  plan_id uuid;
+begin
+  plan_id := (public.create_draft_care_plan(
+    '10000000-0000-4000-8000-000000006003', 'Synthetic Undo Conflict', current_date
+  )).id;
+  perform set_config('test.undo_plan', plan_id::text, true);
+  perform public.import_official_plan_actions(plan_id,
+    '[{"id":"a01","title":"Synthetic","instruction":"Synthetic"}]', gen_random_uuid());
+  perform public.update_prescription_draft_actions(plan_id,
+    array(select id from public.plan_actions where care_plan_id = plan_id),
+    '{"remove":true}', '20000000-0000-4000-8000-000000006009');
+  perform public.import_official_plan_actions(plan_id,
+    '[{"id":"a01","title":"Synthetic","instruction":"Synthetic"}]', gen_random_uuid());
+end;
+$$;
+select throws_ok($$select public.undo_prescription_draft_batch(
+  current_setting('test.undo_plan')::uuid, '20000000-0000-4000-8000-000000006009'
+)$$, '40001', 'The draft changed after this operation.',
+  'undo cannot revive a removed template after another import');
+select is((select count(*)::integer from public.plan_actions
+  where care_plan_id = current_setting('test.undo_plan')::uuid and review_status <> 'rejected'),
+  1, 'stale undo cannot accidentally duplicate a newly imported item');
 select * from finish();
 rollback;
