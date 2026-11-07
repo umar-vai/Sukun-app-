@@ -8,6 +8,8 @@ Patient-specific prescriptions continue to use `care_plans`, `plan_actions`, and
 
 The live role enum contains `patient`, `super_admin`, and `member`. Clinical studio access requires the database-backed Super Admin role. A future Raqi permission needs an explicitly reviewed patient assignment and clinical capability model.
 
+A proposed practitioner role should use server-owned patient assignments and separate draft, review, and publish capabilities granted by Super Admin. Each clinical RPC would verify both the capability and the patient's assignment derived from the stored plan. General membership would confer personal-routine capabilities only.
+
 ## Practitioner workflow
 
 1. Open a patient's plan or create a new draft.
@@ -39,6 +41,8 @@ The additive migration is `20261107033304_bulk_prescription_studio.sql`.
 
 These functions use `SECURITY INVOKER`, existing RLS, database role checks, and restricted execute grants. Draft operations do not create patient tasks or send notifications.
 
+The existing patient task/reminder generators retain their owner-verified `SECURITY DEFINER` contract and now enforce the parent plan's date bounds. This also covers older actions whose own end date is empty. Client reminder queries apply the same bounds and build future calendar dates without adding fixed 24-hour durations across daylight-saving transitions.
+
 Studio imports and schedule expansion support up to 100 active actions per draft, batches of up to 100 actions, and up to 12 explicitly configured stages or daily sessions. Template payloads are bounded to 256 KiB. Existing clinical action-save validation remains active.
 
 The delegated general-user composer retains its separate 12-action contract. It is a personal-routine flow and is outside the canonical patient prescription domain.
@@ -63,9 +67,11 @@ PDFs remain in the authorized app session and the practitioner's requested local
 
 ## Validation and release gates
 
-Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification uses a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. The full Supabase migration rebuild and pgTAP suite remain separate CI gates.
+Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 29 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. The first hosted CI run passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for commit `e85ffc168692d1e47f2af35b2f508dbf87eb905d`. Final-head CI remains the release reference.
 
 Responsive widget checks cover 360 × 640, 430 × 932, and 1440 × 900. Browser tests and visual review are recorded separately from authenticated staging acceptance.
+
+The 100-row widget regression verifies lazy rendering and access to the final action. Chrome regressions for selection, PDF generation, and safe reminder destinations are wired into the existing backend-free web build job. Local Windows Flutter 3.47.5 has a CanvasKit test-server path issue that returns 404 for its own renderer assets, so the Linux CI browser result is required.
 
 On 7 November 2026 the Supabase connector listed `Sukun Life Staging` (`qacklgqvxvjjzsimjoip`) but its SQL connection failed with Postgres authentication error `28P01`. An alternative connected account lacked permission. Production read-only schema checks succeeded. The new migration has not been deployed to either hosted project.
 

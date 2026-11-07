@@ -39,6 +39,7 @@ void main() {
     await tester.ensureVisible(
       find.widgetWithText(FilledButton, 'করেছি').first,
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'করেছি').first);
     await tester.pumpAndSettle();
 

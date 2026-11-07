@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(29);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-000000006001', 'bulk-admin@sukun.test', '{}'),
@@ -34,6 +34,12 @@ select is(public.import_official_plan_actions(
   '[{"id":"a01","title":"Synthetic action","instruction":"Synthetic instruction"}]',
   '20000000-0000-4000-8000-000000006002'
 ), 0, 'a new request cannot accidentally import an existing template');
+select throws_ok($$select public.import_official_plan_actions(
+  current_setting('test.bulk_plan_id')::uuid,
+  (select jsonb_agg(jsonb_build_object('id','a01','title','Synthetic','instruction','Synthetic'))
+    from generate_series(1, 101)),
+  gen_random_uuid()
+)$$, '22023', 'Choose between 1 and 100 templates.', 'oversized imports fail before mutation');
 select throws_ok($$select public.import_official_plan_actions(
   current_setting('test.bulk_plan_id')::uuid,
   '[{"id":"a03","title":"Synthetic third action","instruction":"Synthetic instruction"},{"id":"invalid"}]',

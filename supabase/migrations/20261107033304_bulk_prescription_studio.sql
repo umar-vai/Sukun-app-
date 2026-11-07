@@ -522,7 +522,9 @@ begin
 
     if slot = 1 and slot_count > 1 then
       update public.plan_actions set start_date = next_start, end_date = next_end,
-        exact_time = next_time, review_status = 'needs_review', reminder_enabled = false
+        exact_time = next_time,
+        time_window = case when p_times is null then source.time_window else null end,
+        review_status = 'needs_review', reminder_enabled = false
       where id = source.id returning id into next_id;
     else
       insert into public.plan_actions (
@@ -531,7 +533,8 @@ begin
         review_status, reminder_enabled, created_by
       ) values (
         p_plan_id, source.official_template_id, source.type, source.title, source.instruction,
-        source.count_target, source.duration_minutes, source.frequency_rule, source.time_window,
+        source.count_target, source.duration_minutes, source.frequency_rule,
+        case when p_times is null then source.time_window else null end,
         next_time, next_start, next_end, next_order, 'needs_review', false, actor
       ) returning id into next_id;
 

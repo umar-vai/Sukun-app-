@@ -480,6 +480,12 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
             builder: (context, constraints) {
               final wide = constraints.maxWidth >= 1100 && data.plan.isEditable;
               final selected = _selectedIn(data);
+              final unresolved = data.actions
+                  .where(
+                    (action) =>
+                        action.reviewStatus != ActionReviewStatus.approved,
+                  )
+                  .length;
               final batchControls = Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -528,13 +534,19 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                       sliver: SliverList.list(
                         children: [
-                          const SukunPageIntro(
-                            eyebrow: 'রোগীর সেবার কাজ',
-                            title: 'রোগীর করণীয় সাজান',
-                            subtitle: 'রোগীর কাছে পাঠানোর আগে প্রতিটি করণীয় যাচাই ও অনুমোদন করুন।',
-                          ),
-                          const SizedBox(height: 20),
-                          if (!wide) _PlanSummary(plan: data.plan),
+                          if (wide || !data.plan.isEditable)
+                            const SukunPageIntro(
+                              eyebrow: 'রোগীর সেবার কাজ',
+                              title: 'রোগীর করণীয় সাজান',
+                              subtitle: 'রোগীর কাছে পাঠানোর আগে প্রতিটি করণীয় যাচাই ও অনুমোদন করুন।',
+                            ),
+                          if (wide || !data.plan.isEditable)
+                            const SizedBox(height: 20),
+                          if (!wide)
+                            _PlanSummary(
+                              plan: data.plan,
+                              compact: data.plan.isEditable,
+                            ),
                           const SizedBox(height: 16),
                           if (data.plan.isEditable && !wide)
                             FilledButton.icon(
@@ -546,34 +558,69 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                                 'Official Templates (${_selectedTemplates.length})',
                               ),
                             ),
-                          if (!wide && data.actions.isNotEmpty)
+                          if (!wide &&
+                              !data.plan.isEditable &&
+                              data.actions.isNotEmpty)
                             OutlinedButton.icon(
                               onPressed: _working ? null : () => _export(data),
                               icon: const Icon(Icons.picture_as_pdf_outlined),
                               label: const Text('Export Prescription PDF'),
                             ),
-                          _PlanActions(
-                            plan: data.plan,
-                            working: _working,
-                            actionCount: data.actions.length,
-                            unresolvedCount: data.actions
-                                .where(
-                                  (action) =>
-                                      action.reviewStatus !=
-                                      ActionReviewStatus.approved,
-                                )
-                                .length,
-                            onPreview: () => context.push(
-                              '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
+                          if (wide || !data.plan.isEditable)
+                            _PlanActions(
+                              plan: data.plan,
+                              working: _working,
+                              actionCount: data.actions.length,
+                              unresolvedCount: unresolved,
+                              onPreview: () => context.push(
+                                '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
+                              ),
+                              onGenerate: () => _generateActions(data.plan),
+                              onAdd: () => _openAction(),
+                              onPublish: () => _publish(data),
+                              onArchive: () => _archive(data.plan),
+                              onCreateVersion: () => _createVersion(data.plan),
                             ),
-                            onGenerate: () => _generateActions(data.plan),
-                            onAdd: () => _openAction(),
-                            onPublish: () => _publish(data),
-                            onArchive: () => _archive(data.plan),
-                            onCreateVersion: () => _createVersion(data.plan),
-                          ),
+                          if (!wide && data.plan.isEditable)
+                            Wrap(
+                              spacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: _working
+                                      ? null
+                                      : () => _openAction(),
+                                  icon: const Icon(Icons.edit_note),
+                                  label: const Text('নিজে করণীয় লিখুন'),
+                                ),
+                                IconButton(
+                                  tooltip: 'রোগী যেমন দেখবেন',
+                                  onPressed: () => context.push(
+                                    '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
+                                  ),
+                                  icon: const Icon(Icons.visibility_outlined),
+                                ),
+                                if (data.plan.prescriptionId != null)
+                                  IconButton(
+                                    tooltip: 'প্রেসক্রিপশন থেকে করণীয় সাজান',
+                                    onPressed: _working
+                                        ? null
+                                        : () => _generateActions(data.plan),
+                                    icon: const Icon(
+                                      Icons.auto_awesome_outlined,
+                                    ),
+                                  ),
+                                TextButton(
+                                  onPressed: _working ? null : _saveDraft,
+                                  child: const Text('Save Draft'),
+                                ),
+                              ],
+                            ),
                           const SizedBox(height: 24),
-                          if (data.plan.isEditable && !wide) batchControls,
+                          if (data.plan.isEditable &&
+                              !wide &&
+                              (selected.isNotEmpty || _undoBatchId != null))
+                            batchControls,
                           SukunSectionHeader(
                             title: 'করণীয় কাজগুলো',
                             subtitle: data.plan.isEditable
@@ -662,6 +709,64 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                   ],
                 ),
               );
+              if (!wide && data.plan.isEditable) {
+                return Column(
+                  children: [
+                    Expanded(child: editor),
+                    Material(
+                      child: SafeArea(
+                        top: false,
+                        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (unresolved > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text(
+                                  '$unresolvedটি করণীয় যাচাই ও অনুমোদন বাকি।',
+                                ),
+                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _working || data.actions.isEmpty
+                                        ? null
+                                        : () => _export(data),
+                                    icon: const Icon(
+                                      Icons.picture_as_pdf_outlined,
+                                    ),
+                                    label: const Text(
+                                      'Export Prescription PDF',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 2,
+                                  child: FilledButton(
+                                    onPressed:
+                                        _working ||
+                                            unresolved > 0 ||
+                                            data.actions.isEmpty
+                                        ? null
+                                        : () => _publish(data),
+                                    child: const Text('রোগীর জন্য চালু করুন'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
               if (!wide) return editor;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -723,9 +828,10 @@ class _BuilderData {
 }
 
 class _PlanSummary extends StatelessWidget {
-  const _PlanSummary({required this.plan});
+  const _PlanSummary({required this.plan, this.compact = false});
 
   final CarePlan plan;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -768,13 +874,14 @@ class _PlanSummary extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            '${_formatDate(plan.startDate)} – '
-            '${plan.endDate == null ? 'শেষ তারিখ নির্ধারিত নয়' : _formatDate(plan.endDate!)}',
-            style: const TextStyle(color: Colors.white70),
-          ),
-          if (plan.isEditable) ...[
+          if (!compact) const SizedBox(height: 20),
+          if (!compact)
+            Text(
+              '${_formatDate(plan.startDate)} – '
+              '${plan.endDate == null ? 'শেষ তারিখ নির্ধারিত নয়' : _formatDate(plan.endDate!)}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+          if (plan.isEditable && !compact) ...[
             const SizedBox(height: 10),
             const Text(
               'সব করণীয় যাচাই ও অনুমোদনের পর পরিকল্পনাটি চালু করা হলে রোগী দেখতে পাবেন।',
@@ -893,6 +1000,7 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showDragHandle = MediaQuery.sizeOf(context).width >= 600;
     return SukunSurface(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -904,7 +1012,7 @@ class _ActionCard extends StatelessWidget {
               onChanged: onSelect,
               semanticLabel: '${action.title} নির্বাচন',
             ),
-          if (editable)
+          if (editable && showDragHandle)
             ReorderableDragStartListener(
               index: index,
               child: const Padding(
@@ -913,57 +1021,61 @@ class _ActionCard extends StatelessWidget {
               ),
             ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      action.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SukunStatusPill(
-                      label: _reviewStatusLabel(action.reviewStatus),
-                      tone: action.reviewStatus == ActionReviewStatus.approved
-                          ? SukunStatusTone.success
-                          : SukunStatusTone.warning,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
-                ),
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                  title: const Text('বিস্তারিত'),
-                  children: [
-                    if (action.instruction?.isNotEmpty == true)
-                      Text(action.instruction!),
-                    Text(
-                      '${prescriptionDate(action.startDate)} – '
-                      '${action.endDate == null ? 'শেষ তারিখ নেই' : prescriptionDate(action.endDate!)}',
-                    ),
-                    Text(
-                      action.reminderEnabled
-                          ? 'রিমাইন্ডার চালু'
-                          : 'রিমাইন্ডার বন্ধ',
-                    ),
-                    if (action.countTarget != null)
-                      Text('কতবার: ${action.countTarget}'),
-                    if (action.durationMinutes != null)
-                      Text('${action.durationMinutes} মিনিট'),
-                    for (final resource in action.linkedResources)
+            child: ReorderableDelayedDragStartListener(
+              index: index,
+              enabled: editable && !showDragHandle,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
                       Text(
-                        'সহায়ক উপকরণ: ${resource.titleBn ?? resource.title}',
+                        action.title,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                  ],
-                ),
-              ],
+                      SukunStatusPill(
+                        label: _reviewStatusLabel(action.reviewStatus),
+                        tone: action.reviewStatus == ActionReviewStatus.approved
+                            ? SukunStatusTone.success
+                            : SukunStatusTone.warning,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                  ),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                    title: const Text('বিস্তারিত'),
+                    children: [
+                      if (action.instruction?.isNotEmpty == true)
+                        Text(action.instruction!),
+                      Text(
+                        '${prescriptionDate(action.startDate)} – '
+                        '${action.endDate == null ? 'শেষ তারিখ নেই' : prescriptionDate(action.endDate!)}',
+                      ),
+                      Text(
+                        action.reminderEnabled
+                            ? 'রিমাইন্ডার চালু'
+                            : 'রিমাইন্ডার বন্ধ',
+                      ),
+                      if (action.countTarget != null)
+                        Text('কতবার: ${action.countTarget}'),
+                      if (action.durationMinutes != null)
+                        Text('${action.durationMinutes} মিনিট'),
+                      for (final resource in action.linkedResources)
+                        Text(
+                          'সহায়ক উপকরণ: ${resource.titleBn ?? resource.title}',
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           if (editable) ...[
