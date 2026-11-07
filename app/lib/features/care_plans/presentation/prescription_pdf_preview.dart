@@ -59,7 +59,7 @@ List<PrescriptionPdfLine> prescriptionPdfLines({
     if (practitioner != null && practitioner.isNotEmpty)
       line('প্রস্তুতকারী  $practitioner'),
     line(
-      'তারিখ  ${prescriptionDate(plan.publishedAt ?? plan.createdAt)}   |   সংস্করণ  ${plan.version}',
+      'তারিখ  ${prescriptionDate((plan.publishedAt ?? plan.createdAt).toLocal())}   |   সংস্করণ  ${plan.version}',
     ),
     if (draft) line('খসড়া | যাচাই ও অনুমোদন বাকি', heading: true),
     for (final section in sections.entries.where(
@@ -133,7 +133,8 @@ Future<Uint8List> renderPrescriptionPdf({
         text: TextSpan(
           text: text,
           style: TextStyle(
-            fontFamily: 'SukunLiAdorNoirrit',
+            fontFamily: 'Poppins_regular',
+            fontFamilyFallback: const ['SukunLiAdorNoirrit'],
             color: color,
             fontSize: size,
             height: 1.35,

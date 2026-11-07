@@ -61,7 +61,7 @@ Prayer-relative clinical scheduling remains outstanding. The personal-routine pr
 
 The renderer uses the maintained `pdf` and `printing` packages, the existing `pdfrx` preview, and File Picker downloads. Pages are A4 with the official unmodified logo, blue/navy text, original reviewed instructions, schedule details, patient identity, available practitioner identity, version, draft status, and page numbering.
 
-Flutter's text engine shapes the existing bundled Bengali font before each page is embedded at 216 dpi. This produces image-based prescription pages. Body text selection and text extraction are unavailable in this implementation. Canonical Arabic resource text is not copied into the export. Linked resources retain their existing references and current publication permissions.
+Flutter's text engine uses the app's Poppins family with the existing bundled Bengali fallback before each page is embedded at 216 dpi. The prescription timestamp is formatted in the viewer's device timezone. This produces image-based prescription pages. Body text selection and text extraction are unavailable in this implementation. Canonical Arabic resource text is not copied into the export. Linked resources retain their existing references and current publication permissions.
 
 PDFs remain in the authorized app session and the practitioner's requested local download/print output. They are not uploaded to a server bucket or included in the Pages bundle. Preview identity is distinct for each generated document.
 
@@ -70,6 +70,8 @@ PDFs remain in the authorized app session and the practitioner's requested local
 Synthetic-only Flutter and PostgreSQL tests accompany the feature. Local PostgreSQL verification passes 29 assertions in a disposable PGlite instance with the real baseline clinical migrations and RLS, plus assertion equivalents for the committed pgTAP test. The first hosted CI run passed a full Supabase migration rebuild, pgTAP/RLS suite, SQL lint, and Edge Function tests for commit `e85ffc168692d1e47f2af35b2f508dbf87eb905d`. Final-head CI remains the release reference.
 
 Responsive widget checks cover 360 × 640, 430 × 932, and 1440 × 900. Browser tests and visual review are recorded separately from authenticated staging acceptance.
+
+Local Flutter analysis passed, the full native-host test run passed 557 tests with 3 existing skips, and the actual `lib/main_web.dart` release build passed. Synthetic branded layout captures and the generated Bengali PDF page were inspected locally. Authenticated identities, browser download/printing interactions, native devices, large text and the full visual-state gate remain acceptance work.
 
 The 100-row widget regression verifies lazy rendering and access to the final action. Chrome regressions for selection, PDF generation, and safe reminder destinations are wired into the existing backend-free web build job. Local Windows Flutter 3.47.5 has a CanvasKit test-server path issue that returns 404 for its own renderer assets, so the Linux CI browser result is required.
 
