@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_pdf_preview.dart';
@@ -9,15 +9,6 @@ import 'package:sukun_life/features/patients/domain/patient.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(() async {
-    final loader = FontLoader('SukunLiAdorNoirrit')
-      ..addFont(
-        rootBundle.load(
-          'assets/fonts/li_ador_noirrit/Li Ador Noirrit Regular.ttf',
-        ),
-      );
-    await loader.load();
-  });
   final date = DateTime(2026, 11, 7);
   final patient = Patient(
     id: 'synthetic-patient',
@@ -76,10 +67,21 @@ void main() {
   testWidgets('generates private A4 PDF bytes from shaped Flutter text', (
     tester,
   ) async {
-    final bytes = await tester.runAsync(
-      () =>
-          renderPrescriptionPdf(plan: plan, patient: patient, actions: actions),
-    );
+    await tester.pump();
+    final bytes = await tester.runAsync(() async {
+      final loader = FontLoader('SukunLiAdorNoirrit')
+        ..addFont(
+          rootBundle.load(
+            'assets/fonts/li_ador_noirrit/Li Ador Noirrit Regular.ttf',
+          ),
+        );
+      await loader.load();
+      return renderPrescriptionPdf(
+        plan: plan,
+        patient: patient,
+        actions: actions,
+      );
+    });
     expect(bytes, isNotNull);
     final pdf = latin1.decode(bytes!);
     expect(pdf, startsWith('%PDF-'));
