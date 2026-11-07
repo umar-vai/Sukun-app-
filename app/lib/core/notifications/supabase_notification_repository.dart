@@ -13,7 +13,7 @@ final class SupabaseNotificationRepository implements NotificationRepository {
   }) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final end = today.add(Duration(days: horizonDays));
+    final end = DateTime(today.year, today.month, today.day + horizonDays);
     try {
       await _client.rpc(
         'ensure_patient_reminder_tasks',
@@ -25,19 +25,28 @@ final class SupabaseNotificationRepository implements NotificationRepository {
       );
       final plan = await _client
           .from('care_plans')
-          .select('id')
+          .select('id,start_date,end_date')
           .eq('status', 'active')
           .maybeSingle();
       if (plan == null) {
         return const ReminderTaskWindow(planId: null, tasks: []);
       }
       final planId = plan['id'] as String;
+      final planStart = DateTime.parse(plan['start_date'] as String);
+      final planEnd = plan['end_date'] == null
+          ? null
+          : DateTime.parse(plan['end_date'] as String);
+      final firstDay = planStart.isAfter(today) ? planStart : today;
+      final lastDay = planEnd != null && planEnd.isBefore(end) ? planEnd : end;
+      if (lastDay.isBefore(firstDay)) {
+        return ReminderTaskWindow(planId: planId, tasks: const []);
+      }
       final rows = await _client
           .from('task_instances')
           .select('*,plan_actions!inner(*)')
           .eq('plan_actions.care_plan_id', planId)
-          .gte('occurrence_date', _dateOnly(today))
-          .lte('occurrence_date', _dateOnly(end))
+          .gte('occurrence_date', _dateOnly(firstDay))
+          .lte('occurrence_date', _dateOnly(lastDay))
           .inFilter('status', ['pending', 'snoozed'])
           .order('scheduled_at');
       return ReminderTaskWindow(

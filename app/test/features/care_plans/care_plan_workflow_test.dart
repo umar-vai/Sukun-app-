@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:sukun_life/features/care_plans/data/bulk_prescription_repository.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -10,8 +15,92 @@ import 'package:sukun_life/features/care_plans/domain/content_resource_option.da
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_builder_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_plan_preview_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  test(
+    'Studio sends the existing plan notice only after a successful publish',
+    () async {
+      final requests = <http.Request>[];
+      var rejectPublish = true;
+      final client = SupabaseClient(
+        'https://synthetic.supabase.test',
+        'synthetic-public-key',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/publish_prescription_studio') &&
+              rejectPublish) {
+            return http.Response(
+              '{"code":"40001","message":"The saved actions changed before publication."}',
+              409,
+              headers: {'Content-Type': 'application/json'},
+              request: request,
+            );
+          }
+          return http.Response(
+            '{"status":"active"}',
+            200,
+            headers: {'Content-Type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      final repository = BulkPrescriptionRepository(client);
+      final actions = [_FakeCarePlansRepository().unreviewedAction];
+      await expectLater(
+        repository.publish('synthetic-plan', actions, 'synthetic-request'),
+        throwsA(isA<CarePlanWorkflowException>()),
+      );
+      expect(requests, hasLength(1));
+
+      rejectPublish = false;
+      await repository.publish('synthetic-plan', actions, 'synthetic-request');
+      expect(requests.map((request) => request.url.path), [
+        '/rest/v1/rpc/publish_prescription_studio',
+        '/rest/v1/rpc/publish_prescription_studio',
+        '/functions/v1/send-notification',
+      ]);
+      expect(jsonDecode(requests.last.body), {
+        'type': 'plan_updated',
+        'care_plan_id': 'synthetic-plan',
+        'request_id': 'synthetic-request',
+      });
+    },
+  );
+
+  for (final size in const [Size(360, 640), Size(430, 932), Size(1440, 900)]) {
+    testWidgets('bulk studio fits ${size.width} x ${size.height}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            carePlansRepositoryProvider.overrideWithValue(
+              _FakeCarePlansRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: RepaintBoundary(
+              key: Key('studio-visual'),
+              child: CarePlanBuilderScreen(
+                patientId: 'patient-1',
+                planId: 'plan-1',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('রোগীর পরিকল্পনা সাজান'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   group('care-plan domain', () {
     test('serializes daily and selected-day frequency rules', () {
       expect(const ActionFrequency.daily(interval: 2).toJson(), {
@@ -65,7 +154,41 @@ void main() {
     });
   });
 
-  testWidgets('patient preview hides every unapproved action', (tester) async {
+  testWidgets('100 draft actions are lazily rendered and remain reachable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          carePlansRepositoryProvider.overrideWithValue(
+            _LargeCarePlansRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: CarePlanBuilderScreen(patientId: 'patient-1', planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ExpansionTile).evaluate().length, lessThan(100));
+    await tester.scrollUntilVisible(
+      find.text('Synthetic action 99'),
+      800,
+      maxScrolls: 60,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(find.text('Synthetic action 99'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('private preview shows the saved actions before publishing', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -81,12 +204,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Approved patient action'), findsOneWidget);
-    expect(find.text('Unreviewed internal action'), findsNothing);
+    expect(find.text('Unreviewed internal action'), findsOneWidget);
     expect(find.text('Assigned recording'), findsOneWidget);
     expect(find.textContaining('Preview only'), findsOneWidget);
   });
 
-  testWidgets('publish is disabled when an action has not been approved', (
+  testWidgets('saved actions need no individual approval control', (
     tester,
   ) async {
     final repository = _FakeCarePlansRepository();
@@ -100,11 +223,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('1টি করণীয় যাচাই ও অনুমোদন বাকি।'), findsOneWidget);
+    expect(find.text('1টি করণীয় যাচাই ও অনুমোদন বাকি।'), findsNothing);
     final publishButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'রোগীর জন্য চালু করুন'),
     );
-    expect(publishButton.onPressed, isNull);
+    expect(publishButton.onPressed, isNotNull);
+    await tester.tap(find.text('সব করণীয় বাছুন'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 নির্বাচিত'), findsOneWidget);
   });
 
   testWidgets('new plan opens its first action without another tap', (
@@ -120,13 +246,6 @@ void main() {
             planId: state.pathParameters['planId']!,
             openNewAction: state.uri.queryParameters['addAction'] == '1',
           ),
-          routes: [
-            GoRoute(
-              path: 'actions/new',
-              builder: (context, state) =>
-                  const Scaffold(body: Text('New action editor')),
-            ),
-          ],
         ),
       ],
     );
@@ -143,7 +262,67 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('New action editor'), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('নতুন করণীয়'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact Studio edits a selected row in place', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _FakeCarePlansRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(
+          home: CarePlanBuilderScreen(patientId: 'patient-1', planId: 'plan-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সব করণীয় বাছুন'));
+    await tester.pumpAndSettle();
+    final row = find.text('Unreviewed internal action');
+    await tester.scrollUntilVisible(
+      row,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await Scrollable.ensureVisible(tester.element(row), alignment: .5);
+    await tester.pumpAndSettle();
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    expect(dialog, findsOneWidget);
+    expect(find.byType(CarePlanBuilderScreen), findsOneWidget);
+    final title = find.widgetWithText(TextFormField, 'রোগী যে শিরোনাম দেখবেন');
+    await tester.enterText(title, 'Updated in the popup');
+    final count = find.widgetWithText(TextFormField, 'কতবার (ঐচ্ছিক)');
+    await tester.ensureVisible(count);
+    await tester.enterText(count, '4');
+    await tester.tap(find.text('করণীয় সংরক্ষণ করুন'));
+    await tester.pumpAndSettle();
+
+    expect(repository.saved?.actionId, 'action-2');
+    expect(repository.saved?.title, 'Updated in the popup');
+    expect(repository.saved?.countTarget, 4);
+    expect(dialog, findsNothing);
+    expect(find.text('Updated in the popup'), findsOneWidget);
+    expect(
+      tester
+          .widget<Checkbox>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Checkbox &&
+                  widget.semanticLabel == 'Updated in the popup নির্বাচন',
+            ),
+          )
+          .value,
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -165,15 +344,19 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [carePlansRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          carePlansRepositoryProvider.overrideWithValue(repository),
+          bulkPrescriptionRepositoryProvider.overrideWithValue(
+            _PublishingStudioRepository(repository),
+          ),
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(repository.published, isFalse);
     await tester.tap(find.text('রোগীর জন্য চালু করুন'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'চালু করুন'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -183,6 +366,8 @@ void main() {
 }
 
 class _FakeCarePlansRepository implements CarePlansRepository {
+  SavePlanActionInput? saved;
+
   @override
   Future<void> replaceActionQuranSurahs({
     required String actionId,
@@ -245,7 +430,21 @@ class _FakeCarePlansRepository implements CarePlansRepository {
   @override
   Future<List<PlanAction>> getActions(String planId) async => [
     approvedAction,
-    unreviewedAction,
+    if (saved case final input? when input.actionId == unreviewedAction.id)
+      PlanAction(
+        id: unreviewedAction.id,
+        carePlanId: plan.id,
+        type: input.type,
+        title: input.title,
+        frequency: input.frequency,
+        startDate: input.startDate,
+        sortOrder: unreviewedAction.sortOrder,
+        reviewStatus: input.reviewStatus,
+        reminderEnabled: input.reminderEnabled,
+        countTarget: input.countTarget,
+      )
+    else
+      unreviewedAction,
   ];
 
   @override
@@ -260,8 +459,7 @@ class _FakeCarePlansRepository implements CarePlansRepository {
       throw UnimplementedError();
 
   @override
-  Future<List<ContentResourceOption>> getAvailableResources() =>
-      throw UnimplementedError();
+  Future<List<ContentResourceOption>> getAvailableResources() async => [];
 
   @override
   Future<List<CarePlan>> getPatientPlans(String patientId) =>
@@ -283,15 +481,36 @@ class _FakeCarePlansRepository implements CarePlansRepository {
   ) => throw UnimplementedError();
 
   @override
-  Future<PlanAction> saveAction(SavePlanActionInput input) =>
-      throw UnimplementedError();
+  Future<PlanAction> saveAction(SavePlanActionInput input) async {
+    saved = input;
+    return (await getActions(input.carePlanId)).last;
+  }
+}
+
+final class _LargeCarePlansRepository extends _FakeCarePlansRepository {
+  @override
+  Future<List<PlanAction>> getActions(String planId) async => [
+    for (var index = 0; index < 100; index++)
+      PlanAction(
+        id: 'synthetic-$index',
+        carePlanId: plan.id,
+        type: 'amal',
+        title: 'Synthetic action $index',
+        frequency: const ActionFrequency.daily(),
+        startDate: plan.startDate,
+        sortOrder: index,
+        reviewStatus: ActionReviewStatus.needsReview,
+        reminderEnabled: false,
+      ),
+  ];
 }
 
 final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
   bool published = false;
 
   @override
-  Future<List<PlanAction>> getActions(String planId) async => [approvedAction];
+  Future<List<PlanAction>> getActions(String planId) async =>
+      published ? [approvedAction] : [approvedAction, unreviewedAction];
 
   @override
   Future<CarePlan?> getPlan(String planId) async => CarePlan(
@@ -304,10 +523,21 @@ final class _PublishingCarePlansRepository extends _FakeCarePlansRepository {
     createdAt: plan.createdAt,
     publishedAt: published ? DateTime(2026, 10, 3) : null,
   );
+}
+
+final class _PublishingStudioRepository extends BulkPrescriptionRepository {
+  const _PublishingStudioRepository(this.repository) : super(null);
+
+  final _PublishingCarePlansRepository repository;
 
   @override
-  Future<CarePlan> publishPlan(String planId, String requestId) async {
-    published = true;
-    return (await getPlan(planId))!;
+  Future<void> publish(
+    String planId,
+    List<PlanAction> actions,
+    String requestId,
+  ) async {
+    expect(planId, repository.plan.id);
+    expect(actions, [repository.approvedAction, repository.unreviewedAction]);
+    repository.published = true;
   }
 }

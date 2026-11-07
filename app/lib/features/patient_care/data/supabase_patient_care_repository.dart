@@ -30,13 +30,19 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
       );
       final plan = await getActivePlan();
       if (plan == null) return const PatientDay(tasks: []);
+      if (localDate.isBefore(plan.startDate) ||
+          (plan.endDate != null && localDate.isAfter(plan.endDate!))) {
+        return PatientDay(activePlan: plan, tasks: const []);
+      }
       final response = await _client
           .from('task_instances')
           .select(
-            '*,plan_actions!inner(*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order))',
+            '*,plan_actions!inner(*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,verification_status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order))',
           )
           .eq('occurrence_date', _dateOnly(localDate))
           .eq('plan_actions.care_plan_id', plan.id)
+          .eq('plan_actions.review_status', 'approved')
+          .neq('status', 'cancelled')
           .order('scheduled_at', nullsFirst: false);
       final tasks = response.map(PatientTask.fromJson).toList();
       tasks.sort((left, right) {
@@ -74,7 +80,7 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
     final response = await _client
         .from('plan_actions')
         .select(
-          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order)',
+          '*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,verification_status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order)',
         )
         .eq('care_plan_id', planId)
         .eq('review_status', 'approved')

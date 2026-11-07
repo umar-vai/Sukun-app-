@@ -47,7 +47,7 @@ void main() {
     expect(repo.saved!.title, 'Updated instruction');
     expect(repo.saved!.frequency.type, ActionFrequencyType.daily);
     expect(repo.saved!.frequency.interval, 3);
-    expect(repo.saved!.reviewStatus, ActionReviewStatus.approved);
+    expect(repo.saved!.reviewStatus, ActionReviewStatus.draft);
   });
 
   testWidgets('admin can explicitly change the number of days', (tester) async {
@@ -112,6 +112,8 @@ void main() {
     await _openEditor(tester, repo);
     await _save(tester);
     expect(repo.saved?.contentItemId, 'cms-1');
+    expect(repo.saved?.resourceIds, ['cms-1']);
+    expect(repo.saved?.quranSurahs.single.canonicalSurahNumber, 114);
   });
 }
 

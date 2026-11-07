@@ -21,12 +21,14 @@ class PlanActionEditorScreen extends ConsumerStatefulWidget {
     this.actionId,
     this.copyActionId,
     this.initialResourceId,
+    this.asDialog = false,
   });
 
   final String planId;
   final String? actionId;
   final String? copyActionId;
   final String? initialResourceId;
+  final bool asDialog;
 
   @override
   ConsumerState<PlanActionEditorScreen> createState() =>
@@ -44,24 +46,24 @@ class _PlanActionEditorScreenState
   final _dailyIntervalController = TextEditingController(text: '1');
   final _usageNoteController = TextEditingController();
   final _requestId = const Uuid().v4();
-  final _resourceLinkRequestId = const Uuid().v4();
-  final _quranLinkRequestId = const Uuid().v4();
 
   late Future<_EditorData> _data;
   CarePlan? _plan;
+  String? _officialTemplateId;
+  List<LinkedResource> _originalResources = const [];
   ActionFrequencyType _frequencyType = ActionFrequencyType.daily;
   Set<int> _weekdays = {1};
   String _timeWindow = '';
   DateTime? _exactTime;
   late DateTime _startDate;
   DateTime? _endDate;
-  ActionReviewStatus _reviewStatus = ActionReviewStatus.draft;
   bool _reminderEnabled = false;
   String _contentItemId = '';
   String _selectedResourceId = '';
   final Set<String> _contentItemIds = <String>{};
   bool _submitting = false;
   bool _showOptionalDetails = false;
+  String? _dialogError;
 
   @override
   void initState() {
@@ -77,6 +79,9 @@ class _PlanActionEditorScreenState
       repository.getActions(widget.planId),
       repository.getAvailableResources(),
     ]);
+    if (!mounted) {
+      throw const CarePlanWorkflowException('Action editor was closed.');
+    }
     final plan = results[0] as CarePlan?;
     if (plan == null) {
       throw const CarePlanWorkflowException('Care plan was not found.');
@@ -97,7 +102,6 @@ class _PlanActionEditorScreenState
       _populate(action);
       if (widget.copyActionId != null) {
         // Duplicate creates a NEW draft. Never copy approvals or reminders.
-        _reviewStatus = ActionReviewStatus.draft;
         _reminderEnabled = false;
       }
     } else if (widget.initialResourceId != null) {
@@ -118,6 +122,8 @@ class _PlanActionEditorScreenState
   }
 
   void _populate(PlanAction action) {
+    _officialTemplateId = action.officialTemplateId;
+    _originalResources = action.linkedResources;
     _typeController.text = action.type;
     _titleController.text = action.title;
     _instructionController.text = action.instruction ?? '';
@@ -128,9 +134,9 @@ class _PlanActionEditorScreenState
     _weekdays = {...action.frequency.weekdays};
     _timeWindow = action.timeWindow ?? '';
     _exactTime = action.exactTime;
-    _reviewStatus = action.reviewStatus;
     _reminderEnabled = action.reminderEnabled;
     _showOptionalDetails =
+        widget.asDialog ||
         action.countTarget != null ||
         action.durationMinutes != null ||
         action.startDate != _plan?.startDate ||
@@ -193,7 +199,7 @@ class _PlanActionEditorScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'শুধু অ্যাডমিন খসড়া। মূল প্রেসক্রিপশন দেখে যাচাই করুন। '
+                  'মূল প্রেসক্রিপশন অনুযায়ী নির্দেশনা ও সময় ঠিক করুন। '
                   'স্বয়ংক্রিয়ভাবে অনুমোদিত বা রোগীর কাছে প্রকাশিত হবে না।',
                 ),
                 const SizedBox(height: 12),
@@ -243,7 +249,7 @@ class _PlanActionEditorScreenState
                 }
                 Navigator.pop(dialog, filled);
               },
-              child: const Text('খসড়ায় ব্যবহার করুন'),
+              child: const Text('করণীয়তে ব্যবহার করুন'),
             ),
           ],
         ),
@@ -256,18 +262,18 @@ class _PlanActionEditorScreenState
     }
     if (!mounted || values == null) return;
     setState(() {
+      _officialTemplateId = template.id;
       _typeController.text = template.actionType;
       _titleController.text = template.title;
       _instructionController.text = template.render(values!);
-      _reviewStatus = ActionReviewStatus.needsReview;
       _reminderEnabled = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           template.requiresLinkedResource
-              ? 'খসড়া বসেছে। প্রকাশিত সঠিক অডিও/সূরা লিংক করে যাচাই করুন।'
-              : 'অফিসিয়াল টেমপ্লেটের খসড়া বসেছে। অনুমোদনের আগে যাচাই করুন।',
+              ? 'টেমপ্লেট যোগ হয়েছে। সংশ্লিষ্ট প্রকাশিত অডিও বা সূরা যুক্ত করুন।'
+              : 'অফিসিয়াল টেমপ্লেট যোগ হয়েছে। প্রয়োজন হলে সময় ও নির্দেশনা বদলান।',
         ),
       ),
     );
@@ -429,13 +435,16 @@ class _PlanActionEditorScreenState
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _submitting) return;
+    final data = await _data;
+    if (!mounted || _submitting) return;
     if (_frequencyType == ActionFrequencyType.weekly && _weekdays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one weekday.')),
-      );
+      _showSaveError('সপ্তাহের অন্তত একটি দিন বাছুন।');
       return;
     }
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _dialogError = null;
+    });
     try {
       final frequency = _frequencyType == ActionFrequencyType.daily
           ? ActionFrequency.daily(
@@ -443,7 +452,32 @@ class _PlanActionEditorScreenState
             )
           : ActionFrequency.weekly(_weekdays);
       final repository = ref.read(carePlansRepositoryProvider);
-      final saved = await repository.saveAction(
+      final surahs = <ContentResourceOption>[];
+      for (final id in _contentItemIds.where((id) => id.startsWith('quran:'))) {
+        final available = data.resources
+            .where((item) => item.id == id)
+            .firstOrNull;
+        if (available != null) {
+          surahs.add(available);
+          continue;
+        }
+        final existing = _originalResources
+            .where((item) => item.id == id)
+            .firstOrNull;
+        if (existing != null) {
+          surahs.add(
+            ContentResourceOption(
+              id: existing.id,
+              title: existing.title,
+              titleBn: existing.titleBn,
+              type: 'quran',
+              visibility: 'public',
+              status: 'published',
+            ),
+          );
+        }
+      }
+      await repository.saveAction(
         SavePlanActionInput(
           carePlanId: widget.planId,
           actionId: widget.actionId,
@@ -457,49 +491,77 @@ class _PlanActionEditorScreenState
           exactTime: _exactTime,
           startDate: _startDate,
           endDate: _endDate,
-          reviewStatus: _reviewStatus,
+          reviewStatus: ActionReviewStatus.draft,
           reminderEnabled: _reminderEnabled,
           contentItemId: _contentItemId.isEmpty ? null : _contentItemId,
           resourceUsageNote: _usageNoteController.text,
           requestId: _requestId,
+          officialTemplateId: _officialTemplateId,
+          resourceIds: _contentItemIds
+              .where((id) => !id.startsWith('quran:'))
+              .toList(),
+          quranSurahs: surahs,
         ),
       );
-      final cmsIds = _contentItemIds
-          .where((id) => !id.startsWith('quran:'))
-          .toList();
-      if (cmsIds.length > 1) {
-        await repository.replaceActionResources(
-          actionId: saved.id,
-          resourceIds: cmsIds,
-          requestId: _resourceLinkRequestId,
-        );
+      if (!mounted) return;
+      if (widget.asDialog) {
+        Navigator.of(context).pop(true);
+      } else {
+        context.pop(true);
       }
-      final availableResources = (await _data).resources;
-      await repository.replaceActionQuranSurahs(
-        actionId: saved.id,
-        surahs: [
-          for (final id in _contentItemIds)
-            if (id.startsWith('quran:'))
-              ...availableResources.where((item) => item.id == id),
-        ],
-        requestId: _quranLinkRequestId,
-      );
-      if (mounted) context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।')),
-      );
+      _showSaveError('করণীয়টি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
+  void _showSaveError(String message) {
+    if (widget.asDialog) {
+      setState(() => _dialogError = message);
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Widget _saveButton() => FilledButton.icon(
+    onPressed: _submitting ? null : _submit,
+    icon: _submitting
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.save_outlined),
+    label: Text(_submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন'),
+  );
+
   @override
   Widget build(BuildContext context) {
     final editing = widget.actionId != null;
-    return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়')),
+    final title = editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়';
+    final editor = Scaffold(
+      primary: !widget.asDialog,
+      backgroundColor: widget.asDialog
+          ? Theme.of(context).colorScheme.surface
+          : null,
+      appBar: AppBar(
+        primary: !widget.asDialog,
+        automaticallyImplyLeading: !widget.asDialog,
+        title: Text(title),
+        actions: widget.asDialog
+            ? [
+                IconButton(
+                  tooltip: 'বন্ধ করুন',
+                  onPressed: _submitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ]
+            : null,
+      ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
@@ -512,7 +574,10 @@ class _PlanActionEditorScreenState
             );
           }
           final data = snapshot.data!;
-          return SingleChildScrollView(
+          final template = officialPrescriptionTemplates
+              .where((item) => item.id == _officialTemplateId)
+              .firstOrNull;
+          final form = SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Center(
               child: ConstrainedBox(
@@ -522,12 +587,23 @@ class _PlanActionEditorScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SukunPageIntro(
-                        eyebrow: 'রোগীর পরিকল্পনা',
-                        title: editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়',
-                        subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
-                      ),
-                      const SizedBox(height: 18),
+                      if (!widget.asDialog) ...[
+                        SukunPageIntro(
+                          eyebrow: 'রোগীর পরিকল্পনা',
+                          title: title,
+                          subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                      if (template != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            icon: const Icon(Icons.restore),
+                            label: const Text('টেমপ্লেটের নির্দেশনায় ফিরুন'),
+                            onPressed: () => _applyOfficialTemplate(template),
+                          ),
+                        ),
                       Text(
                         '১ · কী করবেন',
                         style: Theme.of(context).textTheme.titleMedium,
@@ -556,7 +632,7 @@ class _PlanActionEditorScreenState
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _instructionController,
-                        minLines: 3,
+                        minLines: widget.asDialog ? 2 : 3,
                         maxLines: 7,
                         decoration: const InputDecoration(
                           labelText: 'রোগীর জন্য নির্দেশনা (ঐচ্ছিক)',
@@ -743,71 +819,51 @@ class _PlanActionEditorScreenState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 22),
-                      Text(
-                        '৩ · যাচাই করে সংরক্ষণ',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'অস্পষ্ট সংখ্যা, সময় বা নির্দেশনা অনুমান করবেন না। '
-                        'মানুষের যাচাই ছাড়া এই করণীয় রোগীর কাছে প্রকাশ করা যাবে না।',
-                      ),
-                      const SizedBox(height: 10),
-                      SukunChoiceField<ActionReviewStatus>(
-                        label: 'যাচাইয়ের অবস্থা',
-                        placeholder: 'অবস্থা বাছুন',
-                        value: _reviewStatus,
-                        options: [
-                          for (final status in const [
-                            ActionReviewStatus.draft,
-                            ActionReviewStatus.needsReview,
-                            ActionReviewStatus.approved,
-                          ])
-                            SukunChoiceOption(
-                              value: status,
-                              title: switch (status) {
-                                ActionReviewStatus.draft => 'খসড়া',
-                                ActionReviewStatus.needsReview => 'যাচাই বাকি',
-                                ActionReviewStatus.approved =>
-                                  'যাচাই করে অনুমোদিত',
-                                _ => status.label,
-                              },
-                              description: switch (status) {
-                                ActionReviewStatus.draft =>
-                                  'এখনো প্রস্তুত করা হচ্ছে।',
-                                ActionReviewStatus.needsReview =>
-                                  'নির্দেশনায় অস্পষ্ট বা অনুপস্থিত তথ্য আছে।',
-                                ActionReviewStatus.approved => 'মানুষ যাচাই করেছেন; পরিকল্পনা চালু করা যাবে।',
-                                _ => 'এই ধাপে প্রযোজ্য নয়।',
-                              },
-                            ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _reviewStatus = value),
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: _submitting ? null : _submit,
-                        icon: _submitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(
-                          _submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন',
-                        ),
-                      ),
+                      if (!widget.asDialog) ...[
+                        const SizedBox(height: 22),
+                        _saveButton(),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
           );
+          if (!widget.asDialog) return form;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: form),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_dialogError case final error?)
+                      Text(
+                        error,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    _saveButton(),
+                  ],
+                ),
+              ),
+            ],
+          );
         },
+      ),
+    );
+    if (!widget.asDialog) return editor;
+    return PopScope(
+      canPop: !_submitting,
+      child: Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(width: 720, height: 680, child: editor),
       ),
     );
   }

@@ -43,7 +43,11 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
       throw const CarePlanWorkflowException('Care plan was not found.');
     }
     final actions = (results[1] as List<PlanAction>)
-        .where((action) => action.reviewStatus == ActionReviewStatus.approved)
+        .where(
+          (action) => plan.isEditable
+              ? action.reviewStatus != ActionReviewStatus.rejected
+              : action.reviewStatus == ActionReviewStatus.approved,
+        )
         .toList(growable: false);
     return (plan, actions);
   }
@@ -78,7 +82,7 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Preview only. The patient cannot see this draft until it is reviewed and published.',
+                          'Preview only. The patient sees these actions after you publish the plan.',
                         ),
                       ),
                     ],

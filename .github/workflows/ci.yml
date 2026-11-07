@@ -127,6 +127,18 @@ jobs:
           --target lib/main_web.dart
           --base-href /Sukun-app-/
           --dart-define=APP_ENVIRONMENT=local
+      - name: Browser prescription selector and reminder destinations
+        run: >
+          flutter test --platform chrome --timeout 2m
+          test/features/care_plans/official_template_bulk_picker_test.dart
+          test/features/patient_care/patient_reminder_destination_test.dart
+      - name: Verify PDF preview, A4 download and print handoff in Chrome
+        run: |
+          flutter build web --release --no-web-resources-cdn --base-href / \
+            --target test/features/care_plans/prescription_pdf_browser_app.dart \
+            --output build/prescription_pdf_browser
+          npm install --no-save --no-package-lock --prefix ../.github/scripts playwright-core@1.55.1
+          node ../.github/scripts/prescription_pdf_browser_smoke.cjs build/prescription_pdf_browser
 
   edge-functions:
     name: Backend / Edge Functions

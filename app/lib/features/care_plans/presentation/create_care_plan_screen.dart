@@ -132,9 +132,10 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                       SukunPageIntro(
                         eyebrow: 'রোগীর সেবা',
                         title: isNewVersion
-                            ? 'নতুন খসড়া সংস্করণ'
+                            ? 'নতুন সংস্করণ'
                             : 'সেবা পরিকল্পনা তৈরি করুন',
-                        subtitle: 'নাম ও মূল নির্দেশনা দিন। করণীয় পরের ধাপে যোগ ও যাচাই করবেন।',
+                        subtitle:
+                            'নাম ও মূল নির্দেশনা দিন। পরের ধাপে করণীয় সাজাবেন।',
                         trailing: const SukunIconBadge(
                           icon: Icons.assignment_add,
                           size: 54,
@@ -155,7 +156,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                               SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Actions and resource links will be copied into a new draft. Every copied action is marked “Needs review” and must be approved again before publishing.',
+                                  'বর্তমান করণীয় ও উপকরণের লিংক নতুন সংস্করণে কপি হবে। চালু করার আগে প্রয়োজনীয় পরিবর্তন করুন।',
                                 ),
                               ),
                             ],
@@ -191,8 +192,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                                 const SukunChoiceOption(
                                   value: '',
                                   title: 'প্রেসক্রিপশন যুক্ত নয়',
-                                  description:
-                                      'মূল নির্দেশনা ছাড়া খসড়া তৈরি করুন।',
+                                  description: 'মূল নির্দেশনা ছাড়াও করণীয় সাজাতে পারবেন।',
                                   icon: Icons.edit_note_rounded,
                                 ),
                                 for (final prescription in prescriptions)
@@ -256,10 +256,10 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                             : const Icon(Icons.add_task),
                         label: Text(
                           _submitting
-                              ? 'খসড়া তৈরি হচ্ছে…'
+                              ? 'পরিকল্পনা তৈরি হচ্ছে…'
                               : isNewVersion
-                              ? 'নতুন খসড়া সংস্করণ তৈরি করুন'
-                              : 'খসড়া তৈরি করে করণীয় যোগ করুন',
+                              ? 'নতুন সংস্করণ তৈরি করুন'
+                              : 'পরিকল্পনা তৈরি করে করণীয় যোগ করুন',
                         ),
                       ),
                     ],
