@@ -312,7 +312,9 @@ begin
   if actor is null or not (select private.is_super_admin()) then
     raise exception 'Super Admin access is required.' using errcode = '42501';
   end if;
-  if jsonb_typeof(p_action) is distinct from 'object' or pg_column_size(p_action) > 16384
+  -- Retain the existing single-action instruction contract for legacy records.
+  -- Bounded bulk imports remain separately limited to 256 KiB.
+  if jsonb_typeof(p_action) is distinct from 'object'
     or p_resource_ids is null or coalesce(cardinality(p_resource_ids), 0) > 16
     or jsonb_typeof(p_surahs) is distinct from 'array'
     or (p_template_id is not null and p_template_id !~
