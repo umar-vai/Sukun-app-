@@ -288,7 +288,7 @@ class _FortyDayChallengeScreenState
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 4),
-              const Text('বিস্তারিত পরিচিতি, সম্পূর্ণ বই ও সেলফ রুকইয়াহ ই-বুক'),
+              const Text('পরিচিতি, সম্পূর্ণ বই ও সেলফ রুকইয়াহ ই-বুক'),
               ...challengeGettingStartedLinks.map(_resourceTile),
               const SizedBox(height: 20),
               Text(
@@ -368,7 +368,7 @@ class _FortyDayChallengeScreenState
               OutlinedButton.icon(
                 onPressed: () => context.push('/resources/ruqyah'),
                 icon: const Icon(Icons.menu_book_outlined),
-                label: const Text('আরও রুকইয়াহ রিসোর্স দেখুন'),
+                label: const Text('আরও রুকইয়াহ পাঠ দেখুন'),
               ),
               const SizedBox(height: 8),
               const Text(
