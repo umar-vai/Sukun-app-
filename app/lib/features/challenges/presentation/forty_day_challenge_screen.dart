@@ -68,7 +68,9 @@ class _FortyDayChallengeScreenState
     }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('লিংকটি খোলা যাচ্ছে না। আবার চেষ্টা করুন।')),
+        const SnackBar(
+          content: Text('লিংকটি খোলা যাচ্ছে না। আবার চেষ্টা করুন।'),
+        ),
       );
     }
   }
@@ -281,19 +283,28 @@ class _FortyDayChallengeScreenState
                 ),
               ),
               const SizedBox(height: 20),
-              Text('শুরু করার আগে', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'শুরু করার আগে',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 4),
               const Text('বিস্তারিত পরিচিতি, সম্পূর্ণ বই ও সেলফ রুকইয়াহ ই-বুক'),
               ...challengeGettingStartedLinks.map(_resourceTile),
               const SizedBox(height: 20),
-              Text('৪০ দিনের ৫টি ধাপ', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                '৪০ দিনের ৫টি ধাপ',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
-              const Text('প্রতিটি ধাপের গাইড ও প্রয়োজনীয় অডিও খুলতে ট্যাপ করুন।'),
+              const Text(
+                'প্রতিটি ধাপের গাইড ও প্রয়োজনীয় অডিও খুলতে ট্যাপ করুন।',
+              ),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final columns = constraints.maxWidth >= 680 ? 2 : 1;
-                  final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+                  final width =
+                      (constraints.maxWidth - (columns - 1) * 12) / columns;
                   return Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -317,7 +328,9 @@ class _FortyDayChallengeScreenState
                                         child: Text(
                                           fortyDayStages[i].title,
                                           key: Key('challenge-stage-${i + 1}'),
-                                          style: Theme.of(context).textTheme.titleMedium,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
                                         ),
                                       ),
                                     ],
@@ -340,7 +353,10 @@ class _FortyDayChallengeScreenState
                 },
               ),
               const SizedBox(height: 20),
-              Text('সহায়তা ও পরবর্তী করণীয়', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'সহায়তা ও পরবর্তী করণীয়',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 6),
               const Text(
                 'লক্ষণ নিয়ে উদ্বেগ থাকলে সেলফ-অ্যাসেসমেন্ট দেখতে পারেন। '
