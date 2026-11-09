@@ -299,7 +299,6 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                     ListTile(
                       leading: const Icon(Icons.library_books_outlined),
                       title: Text(prefill.actionTitle),
-
                     ),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -323,7 +322,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                 ? selectedItem.ayahNumber == null
                                       ? 'সূরা ${selectedItem.surahNumber}'
                                       : 'সূরা ${selectedItem.surahNumber} · আয়াত ${selectedItem.ayahNumber}'
-                                : resource?.displayTitle ?? 'পাঠটি এখন পাওয়া যাচ্ছে না',
+                                : resource?.displayTitle ??
+                                      'পাঠটি এখন পাওয়া যাচ্ছে না',
                           ),
                           leading: Icon(
                             selectedItem.provider == 'quran'
