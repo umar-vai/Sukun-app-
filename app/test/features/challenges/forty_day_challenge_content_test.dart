@@ -2,19 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/features/challenges/domain/forty_day_challenge_content.dart';
 
 void main() {
-  test('five day groups have a guide and the opening group has both audios', () {
-    expect(challengeStageLinks.length, 5);
-    for (final links in challengeStageLinks) {
-      expect(links, isNotEmpty);
-      expect(links.any((link) => link.kind == ChallengeResourceKind.pdf), isTrue);
-    }
-    expect(
-      challengeStageLinks.first
-          .where((link) => link.kind == ChallengeResourceKind.audio)
-          .length,
-      2,
-    );
-  });
+  test(
+    'five day groups have a guide and the opening group has both audios',
+    () {
+      expect(challengeStageLinks.length, 5);
+      for (final links in challengeStageLinks) {
+        expect(links, isNotEmpty);
+        expect(
+          links.any((link) => link.kind == ChallengeResourceKind.pdf),
+          isTrue,
+        );
+      }
+      expect(
+        challengeStageLinks.first
+            .where((link) => link.kind == ChallengeResourceKind.audio)
+            .length,
+        2,
+      );
+    },
+  );
 
   test('published resource links are HTTPS and unique', () {
     final all = [
