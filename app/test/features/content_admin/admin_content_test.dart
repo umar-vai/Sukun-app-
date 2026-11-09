@@ -467,7 +467,7 @@ void main() {
     expect(find.text('সূরা *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('অনুমোদিত উৎস *'), findsOneWidget);
+    expect(find.text('অনুমোদিত তথ্যসূত্র *'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
     expect(find.text('অতিরিক্ত সেটিংস'), findsOneWidget);
@@ -503,7 +503,7 @@ void main() {
     );
 
     expect(find.text('প্রকাশ করুন'), findsNothing);
-    expect(find.text('উৎস অনুমোদন করুন'), findsNothing);
+    expect(find.text('মূল তথ্য যাচাই করুন'), findsNothing);
     await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
     await tester.pumpAndSettle();
     expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsOneWidget);
