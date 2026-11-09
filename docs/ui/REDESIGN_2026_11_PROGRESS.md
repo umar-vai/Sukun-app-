@@ -26,6 +26,8 @@ must stay reachable. When a shortcut moves, it is recorded below.
 | User home | `features/home/presentation/unified_home_screen.dart` | "Next amal" card moved to the top with Start and All buttons plus the next two items; 4-column resource grid; calmer notice button; no gradient on the prayer card |
 | Login | `features/auth/presentation/login_screen.dart` | Mist brand hero with the untouched official logo |
 | Admin tabs | `admin_scaffold.dart`, `role_navigation_shell.dart` | Navy active tab |
+| Patient list | `features/patients/presentation/patients_list_screen.dart` | Status filter pills with counts, initial avatars, real status pill (was always "চালু"), code and phone on one line, Users tab highlighted |
+| Patient detail | `features/patients/presentation/patient_detail_screen.dart` | Identity header, tabs (সারাংশ, পরিকল্পনা, নির্দেশনা), progress ring, bottom action bar |
 
 ## Feature-preservation checklist
 
@@ -56,6 +58,30 @@ must stay reachable. When a shortcut moves, it is recorded below.
 | 8 resource sections and "সব দেখুন" | 4-column grid, same keys and routes |
 | Guest login prompt, Login/Logout | Unchanged |
 
+### Patient list (`/admin/patients`)
+| Old entry point | Where it is now |
+|---|---|
+| Search by name, phone or code (submit, clear) | Same search field |
+| Pull to refresh, loading, error with retry, empty state | Unchanged |
+| Open patient (`/admin/patients/:id`) | Tap any row |
+| নতুন রোগী যোগ করুন (`/admin/patients/new`) and success snackbar | Same floating button |
+| Status pill | Now shows the real status (চালু, নিষ্ক্রিয়, সংরক্ষিত) |
+| New | Status filter pills. They only filter the rows the search already loaded |
+
+### Patient detail (`/admin/patients/:id`)
+| Old entry point | Where it is now |
+|---|---|
+| Name, patient code, phone, status | Header at the top |
+| 7-day progress (completed, skipped, remaining, retry on error) | সারাংশ tab, ring card |
+| Care plan list, version count, open a plan (`plans/:planId`) | পরিকল্পনা tab (all versions); active plans also on সারাংশ |
+| Empty plans with "সেবা পরিকল্পনা তৈরি করুন" | Same empty card on both tabs |
+| Prescription list with visibility, session date, saved date, full text | নির্দেশনা tab; latest one also on সারাংশ |
+| "সেবা পরিকল্পনা সাজান" from a prescription (`plans/new?prescriptionId=`) | Each prescription card |
+| "+" button menu: add prescription (`prescriptions/new`) or create plan (`plans/new`) | Replaced by two always-visible buttons in the bottom bar, same routes and success messages |
+| Pull to refresh, loading, error, not-found states | Unchanged |
+
+Tests: `test/features/patients/patient_detail_redesign_test.dart` (6 tests) proves each row above still works.
+
 ## Verification
 - `flutter analyze`: no issues.
 - `flutter test`: 547 passed, 3 skipped (same as before the change).
@@ -63,7 +89,7 @@ must stay reachable. When a shortcut moves, it is recorded below.
 
 ## Still to do (next passes)
 Rework these into the approved layout, using the same checklist approach:
-patient list and detail (tabs), prescription to plan wizard (3 steps), content
+prescription to plan wizard (3 steps), content
 library and notices, routine and progress, resources hub, Qur'an reader and
 audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
 real data queries, so they are not added yet (no invented numbers).

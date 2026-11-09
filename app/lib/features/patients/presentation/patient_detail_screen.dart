@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
@@ -9,6 +10,7 @@ import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
 import 'package:sukun_life/features/patients/domain/prescription.dart';
+import 'package:sukun_life/features/patients/presentation/patient_status_ui.dart';
 import 'package:sukun_life/features/progress/data/progress_providers.dart';
 import 'package:sukun_life/features/progress/domain/adherence_summary.dart';
 
@@ -24,6 +26,7 @@ class PatientDetailScreen extends ConsumerStatefulWidget {
 
 class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
   late Future<(Patient?, List<Prescription>, List<CarePlan>)> _details;
+  _DetailTab _tab = _DetailTab.summary;
 
   @override
   void initState() {
@@ -81,10 +84,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('রোগীর তথ্য')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateMenu(context),
-        tooltip: 'রোগীর সেবার তথ্য যোগ করুন',
-        child: const Icon(Icons.add),
+      // The two clinical actions are always one tap away instead of being
+      // hidden behind a "+" menu.
+      bottomNavigationBar: _PatientActionBar(
+        onAddPrescription: _addPrescription,
+        onCreatePlan: _createPlan,
       ),
       body: FutureBuilder<(Patient?, List<Prescription>, List<CarePlan>)>(
         future: _details,
@@ -101,148 +105,406 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
           final patient = snapshot.data?.$1;
           if (patient == null) {
             return const AppEmptyState(
-              title: 'রোগীকে পাওয়া যায়নি',
+              title: 'রোগীকে পাওয়া যায়নি',
               message: 'রোগীর তথ্য সংরক্ষণাগারে থাকতে পারে।',
             );
           }
           final prescriptions = snapshot.data!.$2;
           final plans = snapshot.data!.$3;
+          final activePlans = plans
+              .where((plan) => plan.status == CarePlanStatus.active)
+              .toList(growable: false);
+
+          Widget planCard(CarePlan plan) => _CarePlanCard(
+            plan: plan,
+            onTap: () async {
+              await context.push<void>(
+                '/admin/patients/${widget.patientId}/plans/${plan.id}',
+              );
+              if (mounted) _reload();
+            },
+          );
+
+          final tabContent = switch (_tab) {
+            _DetailTab.summary => <Widget>[
+              _PatientProgressCard(
+                key: ValueKey(_details),
+                patientId: patient.id,
+              ),
+              const SizedBox(height: SukunSpace.section),
+              SukunSectionHeader(
+                title: 'চালু পরিকল্পনা',
+                action: plans.isEmpty
+                    ? null
+                    : TextButton(
+                        onPressed: () =>
+                            setState(() => _tab = _DetailTab.plans),
+                        child: const Text('সব সংস্করণ'),
+                      ),
+              ),
+              const SizedBox(height: SukunSpace.md),
+              if (plans.isEmpty)
+                _EmptyPlans(onCreatePlan: _createPlan)
+              else if (activePlans.isEmpty)
+                const _SoftNote(
+                  text:
+                      'এখন কোনো পরিকল্পনা চালু নেই। "পরিকল্পনা" ট্যাবে খসড়া '
+                      'ও পুরনো সংস্করণ দেখুন।',
+                )
+              else
+                for (final plan in activePlans) ...[
+                  planCard(plan),
+                  const SizedBox(height: 10),
+                ],
+              const SizedBox(height: SukunSpace.section),
+              SukunSectionHeader(
+                title: 'সর্বশেষ মূল নির্দেশনা',
+                action: prescriptions.length > 1
+                    ? TextButton(
+                        onPressed: () =>
+                            setState(() => _tab = _DetailTab.prescriptions),
+                        child: Text('সব (${prescriptions.length})'),
+                      )
+                    : null,
+              ),
+              const SizedBox(height: SukunSpace.md),
+              if (prescriptions.isEmpty)
+                const _SoftNote(
+                  text:
+                      'এখনো মূল নির্দেশনা নেই। পরিকল্পনা সাজানোর আগে মূল '
+                      'নির্দেশনা যোগ করুন।',
+                )
+              else
+                _PrescriptionCard(
+                  prescription: prescriptions.first,
+                  onBuildPlan: () =>
+                      _createPlan(prescriptionId: prescriptions.first.id),
+                ),
+            ],
+            _DetailTab.plans => <Widget>[
+              SukunSectionHeader(
+                title: 'সেবা পরিকল্পনা',
+                subtitle: 'প্রতিটি সংস্করণের নির্দেশনা ও করণীয়।',
+                action: SukunStatusPill(label: '${plans.length}টি সংস্করণ'),
+              ),
+              const SizedBox(height: SukunSpace.md),
+              if (plans.isEmpty)
+                _EmptyPlans(onCreatePlan: _createPlan)
+              else
+                for (final plan in plans) ...[
+                  planCard(plan),
+                  const SizedBox(height: 10),
+                ],
+            ],
+            _DetailTab.prescriptions => <Widget>[
+              SukunSectionHeader(
+                title: 'মূল নির্দেশনা',
+                subtitle: 'মানুষের লেখা মূল প্রেসক্রিপশন বা নির্দেশনা।',
+                action: SukunStatusPill(label: '${prescriptions.length}'),
+              ),
+              const SizedBox(height: SukunSpace.md),
+              if (prescriptions.isEmpty)
+                const _SoftNote(
+                  text:
+                      'এখনো মূল নির্দেশনা নেই। পরিকল্পনা সাজানোর আগে মূল '
+                      'নির্দেশনা যোগ করুন।',
+                )
+              else
+                for (final prescription in prescriptions) ...[
+                  _PrescriptionCard(
+                    prescription: prescription,
+                    onBuildPlan: () =>
+                        _createPlan(prescriptionId: prescription.id),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+            ],
+          };
+
           return RefreshIndicator(
             onRefresh: () async => _reload(),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
-              children: [
-                const SukunPageIntro(
-                  eyebrow: 'রোগীর সেবা',
-                  title: 'রোগীর সারসংক্ষেপ',
-                  subtitle: 'সেবা পরিকল্পনা, মূল নির্দেশনা ও অগ্রগতি এক জায়গায় দেখুন।',
-                ),
-                const SizedBox(height: 18),
-                _PatientSummaryCard(patient: patient),
-                const SizedBox(height: 14),
-                _PatientProgressCard(
-                  key: ValueKey(_details),
-                  patientId: patient.id,
-                ),
-                const SizedBox(height: 24),
-                SukunSectionHeader(
-                  title: 'সেবা পরিকল্পনা',
-                  subtitle: 'প্রতিটি সংস্করণের নির্দেশনা ও করণীয়।',
-                  action: SukunStatusPill(label: '${plans.length}টি সংস্করণ'),
-                ),
-                const SizedBox(height: 12),
-                if (plans.isEmpty)
-                  SukunSurface(
-                    tone: SukunSurfaceTone.soft,
-                    showBorder: false,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'এখনো সেবা পরিকল্পনা নেই। আগে মূল নির্দেশনা সংরক্ষণ করুন অথবা নিজে পরিকল্পনা সাজান।',
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: _createPlan,
-                          icon: const Icon(Icons.add_task),
-                          label: const Text('সেবা পরিকল্পনা তৈরি করুন'),
-                        ),
-                      ],
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    SukunSpace.page,
+                    SukunSpace.xs,
+                    SukunSpace.page,
+                    SukunSpace.section,
+                  ),
+                  children: [
+                    _PatientHeader(patient: patient),
+                    const SizedBox(height: SukunSpace.page),
+                    _DetailTabs(
+                      selected: _tab,
+                      planCount: plans.length,
+                      prescriptionCount: prescriptions.length,
+                      onSelected: (tab) => setState(() => _tab = tab),
                     ),
-                  )
-                else
-                  for (final plan in plans) ...[
-                    _CarePlanCard(
-                      plan: plan,
-                      onTap: () async {
-                        await context.push<void>(
-                          '/admin/patients/${widget.patientId}/plans/${plan.id}',
-                        );
-                        if (mounted) _reload();
-                      },
-                    ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: SukunSpace.page),
+                    ...tabContent,
                   ],
-                const SizedBox(height: 24),
-                SukunSectionHeader(
-                  title: 'মূল নির্দেশনা',
-                  subtitle: 'মানুষের লেখা মূল প্রেসক্রিপশন বা নির্দেশনা।',
-                  action: SukunStatusPill(label: '${prescriptions.length}'),
                 ),
-                const SizedBox(height: 12),
-                if (prescriptions.isEmpty)
-                  const SukunSurface(
-                    tone: SukunSurfaceTone.soft,
-                    showBorder: false,
-                    child: Text(
-                      'এখনো মূল নির্দেশনা নেই। পরিকল্পনা সাজানোর আগে মূল নির্দেশনা যোগ করুন।',
-                    ),
-                  )
-                else
-                  for (final prescription in prescriptions) ...[
-                    _PrescriptionCard(
-                      prescription: prescription,
-                      onBuildPlan: () =>
-                          _createPlan(prescriptionId: prescription.id),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-              ],
+              ),
             ),
           );
         },
       ),
     );
   }
+}
 
-  Future<void> _showCreateMenu(BuildContext context) async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+enum _DetailTab { summary, plans, prescriptions }
+
+class _DetailTabs extends StatelessWidget {
+  const _DetailTabs({
+    required this.selected,
+    required this.planCount,
+    required this.prescriptionCount,
+    required this.onSelected,
+  });
+
+  final _DetailTab selected;
+  final int planCount;
+  final int prescriptionCount;
+  final ValueChanged<_DetailTab> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = {
+      _DetailTab.summary: 'সারাংশ',
+      _DetailTab.plans: 'পরিকল্পনা ($planCount)',
+      _DetailTab.prescriptions: 'নির্দেশনা ($prescriptionCount)',
+    };
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: SukunColors.mist,
+        borderRadius: BorderRadius.circular(SukunRadius.control + 2),
+      ),
+      child: Row(
+        children: [
+          for (final tab in _DetailTab.values)
+            Expanded(
+              child: Semantics(
+                selected: tab == selected,
+                button: true,
+                child: InkWell(
+                  key: Key('patient-detail-tab-${tab.name}'),
+                  borderRadius: BorderRadius.circular(SukunRadius.control - 2),
+                  onTap: () => onSelected(tab),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    constraints: const BoxConstraints(minHeight: 42),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: tab == selected ? Colors.white : null,
+                      borderRadius: BorderRadius.circular(
+                        SukunRadius.control - 2,
+                      ),
+                      boxShadow: tab == selected
+                          ? [
+                              BoxShadow(
+                                color: SukunColors.nightNavy.withValues(
+                                  alpha: 0.10,
+                                ),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        labels[tab]!,
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: tab == selected
+                              ? SukunColors.nightNavy
+                              : SukunColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PatientActionBar extends StatelessWidget {
+  const _PatientActionBar({
+    required this.onAddPrescription,
+    required this.onCreatePlan,
+  });
+
+  final VoidCallback onAddPrescription;
+  final VoidCallback onCreatePlan;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      boxShadow: [
+        BoxShadow(
+          color: SukunColors.nightNavy.withValues(alpha: 0.06),
+          blurRadius: 20,
+          offset: const Offset(0, -6),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        SukunSpace.md,
+        SukunSpace.page,
+        SukunSpace.md,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              key: const Key('patient-detail-add-prescription'),
+              onPressed: onAddPrescription,
+              icon: const Icon(Icons.note_add_outlined),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('মূল নির্দেশনা যোগ করুন'),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: FilledButton.icon(
+              key: const Key('patient-detail-create-plan'),
+              onPressed: onCreatePlan,
+              icon: const Icon(Icons.add_task),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('সেবা পরিকল্পনা তৈরি করুন'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _EmptyPlans extends StatelessWidget {
+  const _EmptyPlans({required this.onCreatePlan});
+
+  final VoidCallback onCreatePlan;
+
+  @override
+  Widget build(BuildContext context) => SukunSurface(
+    tone: SukunSurfaceTone.soft,
+    showBorder: false,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'এখনো সেবা পরিকল্পনা নেই। আগে মূল নির্দেশনা সংরক্ষণ করুন অথবা '
+          'নিজে পরিকল্পনা সাজান।',
+        ),
+        const SizedBox(height: SukunSpace.md),
+        OutlinedButton.icon(
+          onPressed: onCreatePlan,
+          icon: const Icon(Icons.add_task),
+          label: const Text('সেবা পরিকল্পনা তৈরি করুন'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SoftNote extends StatelessWidget {
+  const _SoftNote({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => SukunSurface(
+    tone: SukunSurfaceTone.soft,
+    showBorder: false,
+    padding: const EdgeInsets.all(SukunSpace.lg),
+    child: Text(text),
+  );
+}
+
+class _PatientHeader extends StatelessWidget {
+  const _PatientHeader({required this.patient});
+
+  final Patient patient;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        PatientInitialAvatar(name: patient.fullName, size: 60),
+        const SizedBox(width: SukunSpace.lg),
+        Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SukunPageIntro(
-                eyebrow: 'রোগীর সেবা',
-                title: 'কী যোগ করবেন?',
-                subtitle:
-                    'মূল নির্দেশনা সংরক্ষণ করুন অথবা খসড়া পরিকল্পনা সাজান।',
-              ),
-              const SizedBox(height: 18),
-              SukunSurface(
-                onTap: () => context.pop('prescription'),
-                child: const Row(
-                  children: [
-                    SukunIconBadge(icon: Icons.note_add_outlined),
-                    SizedBox(width: 14),
-                    Expanded(child: Text('মূল নির্দেশনা যোগ করুন')),
-                    Icon(Icons.arrow_forward_rounded),
-                  ],
+              Text(
+                patient.fullName,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 10),
-              SukunSurface(
-                onTap: () => context.pop('plan'),
-                child: const Row(
-                  children: [
-                    SukunIconBadge(icon: Icons.add_task),
-                    SizedBox(width: 14),
-                    Expanded(child: Text('সেবা পরিকল্পনা তৈরি করুন')),
-                    Icon(Icons.arrow_forward_rounded),
-                  ],
+              const SizedBox(height: 4),
+              Text(
+                patient.patientCode,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: SukunColors.deepTide,
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: SukunSpace.sm,
+                runSpacing: SukunSpace.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SukunStatusPill(
+                    label: 'অবস্থা: ${patientStatusLabel(patient.status)}',
+                    tone: patientStatusTone(patient.status),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 16,
+                        color: SukunColors.muted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        patient.phone ?? 'ফোন নম্বর নেই',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: SukunColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
-    if (!mounted) return;
-    if (choice == 'prescription') await _addPrescription();
-    if (choice == 'plan') await _createPlan();
   }
 }
 
@@ -294,108 +556,67 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
         }
         final progress = snapshot.data!;
         final percentage = (progress.completionRate * 100).round();
+        final textTheme = Theme.of(context).textTheme;
         return SukunSurface(
-          tone: SukunSurfaceTone.navy,
-          showBorder: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          key: const Key('patient-detail-progress'),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'গত ৭ দিন',
-                      style: Theme.of(context).textTheme.titleMedium,
+              SizedBox(
+                width: 72,
+                height: 72,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox.expand(
+                      child: CircularProgressIndicator(
+                        value: progress.completionRate,
+                        strokeWidth: 7,
+                        strokeCap: StrokeCap.round,
+                        backgroundColor: SukunColors.mist,
+                      ),
                     ),
-                  ),
-                  SukunStatusPill(
-                    label: '$percentage% সম্পন্ন',
-                    tone: SukunStatusTone.brand,
-                  ),
-                ],
+                    Text(
+                      '$percentage%',
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
-              LinearProgressIndicator(value: progress.completionRate),
-              const SizedBox(height: 10),
-              Text(
-                '${progress.completed}টি সম্পন্ন · ${progress.skipped}টি বাদ · ${progress.remaining}টি বাকি',
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _PatientSummaryCard extends StatelessWidget {
-  const _PatientSummaryCard({required this.patient});
-
-  final Patient patient;
-
-  @override
-  Widget build(BuildContext context) {
-    return SukunSurface(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const SukunIconBadge(
-                icon: Icons.person_outline_rounded,
-                size: 58,
-              ),
-              const SizedBox(width: 16),
+              const SizedBox(width: SukunSpace.lg + 2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      patient.fullName,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      'গত ৭ দিন',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(patient.patientCode),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$percentage% সম্পন্ন',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: SukunColors.deepTide,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: SukunSpace.sm),
+                    Text(
+                      '${progress.completed}টি সম্পন্ন · ${progress.skipped}টি বাদ · ${progress.remaining}টি বাকি',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: SukunColors.muted,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          const Divider(height: 32),
-          _DetailLine(
-            icon: Icons.phone_outlined,
-            label: patient.phone ?? 'ফোন নম্বর নেই',
-          ),
-          const SizedBox(height: 10),
-          _DetailLine(
-            icon: Icons.verified_user_outlined,
-            label:
-                'অবস্থা: ${switch (patient.status) {
-                  PatientStatus.active => 'চালু',
-                  PatientStatus.inactive => 'নিষ্ক্রিয়',
-                  PatientStatus.archived => 'সংরক্ষিত',
-                }}',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailLine extends StatelessWidget {
-  const _DetailLine({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: SukunColors.deepTide),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label)),
-      ],
+        );
+      },
     );
   }
 }
@@ -420,19 +641,37 @@ class _PrescriptionCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              SukunStatusPill(label: prescription.visibility.label),
+              SukunStatusPill(
+                label: switch (prescription.visibility) {
+                  PrescriptionVisibility.patient => 'রোগী দেখতে পারবেন',
+                  PrescriptionVisibility.staffOnly => 'শুধু স্টাফ',
+                },
+                icon:
+                    prescription.visibility == PrescriptionVisibility.staffOnly
+                    ? Icons.lock_outline_rounded
+                    : Icons.visibility_outlined,
+                tone:
+                    prescription.visibility == PrescriptionVisibility.staffOnly
+                    ? SukunStatusTone.neutral
+                    : SukunStatusTone.brand,
+              ),
               if (sessionDate != null)
                 SukunStatusPill(label: 'সেশন ${_formatDate(sessionDate)}'),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(prescription.rawText),
+          const SizedBox(height: SukunSpace.md),
+          Text(
+            prescription.rawText,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(height: 1.6),
+          ),
           const SizedBox(height: 12),
           Text(
             'সংরক্ষিত ${_formatDate(prescription.createdAt)}',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: SukunColors.muted),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: SukunSpace.md),
           OutlinedButton.icon(
             onPressed: onBuildPlan,
             icon: const Icon(Icons.add_task),
@@ -453,8 +692,8 @@ class _CarePlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SukunSurface(
-      radius: 20,
-      padding: const EdgeInsets.all(16),
+      radius: SukunRadius.tile + 2,
+      padding: const EdgeInsets.all(SukunSpace.lg),
       onTap: onTap,
       child: Row(
         children: [
