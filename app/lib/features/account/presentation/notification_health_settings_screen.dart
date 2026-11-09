@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/core/notifications/notification_coordinator.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
@@ -233,7 +234,8 @@ class _NotificationHealthSettingsScreenState
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(_notice!),
                   ),
-                Card(
+                SukunSurface(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
                       ListTile(
@@ -327,7 +329,8 @@ class _NotificationHealthSettingsScreenState
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                Card(
+                SukunSurface(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
                       SwitchListTile(

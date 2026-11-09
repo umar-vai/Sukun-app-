@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/features/patients/presentation/patient_status_ui.dart';
 import 'package:sukun_life/core/updates/android_update_panel.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,6 +36,18 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
     } finally {
       if (mounted) setState(() => _signingOut = false);
     }
+  }
+
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: 'লগআউট করবেন?',
+      message: 'আবার ব্যবহার করতে আপনার নম্বর বা ইমেইল দিয়ে লগইন করতে হবে।',
+      confirmLabel: 'লগআউট',
+      cancelLabel: 'থাকুন',
+      icon: Icons.logout_rounded,
+    );
+    if (confirmed) await _signOut();
   }
 
   @override
@@ -113,32 +128,12 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                 key: const Key('account-page-scroll'),
                 padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 32),
                 children: [
-                  const SukunPageIntro(
-                    eyebrow: 'আমার জায়গা',
-                    title: 'অ্যাকাউন্ট ও সেটিংস',
-                    subtitle: 'আপনার রুটিন, সংরক্ষিত উপকরণ ও পছন্দ এক জায়গায়।',
-                  ),
-                  const SizedBox(height: 20),
+                  // Profile: calm white card with the person's initial.
                   SukunSurface(
-                    tone: SukunSurfaceTone.navy,
-                    padding: const EdgeInsets.all(20),
+                    key: const Key('account-profile-card'),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.13),
-                            borderRadius: BorderRadius.circular(19),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.person_outline_rounded,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
+                        PatientInitialAvatar(name: name, size: 58),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -149,11 +144,10 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.titleLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 3),
                               Text(
                                 email == null || email.isEmpty
                                     ? 'লগইন করা অ্যাকাউন্ট'
@@ -161,31 +155,15 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.79),
+                                  color: SukunColors.muted,
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.13),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 11,
-                                    vertical: 5,
-                                  ),
-                                  child: Text(
-                                    isPatient
-                                        ? 'রোগী অ্যাকাউন্ট'
-                                        : 'সদস্য অ্যাকাউন্ট',
-                                    style: theme.textTheme.labelMedium
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ),
+                              const SizedBox(height: 8),
+                              SukunStatusPill(
+                                label: isPatient
+                                    ? 'রোগী অ্যাকাউন্ট'
+                                    : 'সদস্য অ্যাকাউন্ট',
+                                tone: SukunStatusTone.brand,
                               ),
                             ],
                           ),
@@ -193,7 +171,29 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  // Patients see their care first: it matters most to them.
+                  if (isPatient) ...[
+                    const SizedBox(height: SukunSpace.section),
+                    _AccountPanel(
+                      title: 'আমার যত্ন',
+                      subtitle: 'শুধু আপনার অনুমোদিত রোগী-সংক্রান্ত তথ্য',
+                      entries: [
+                        _AccountEntry(
+                          icon: Icons.assignment_outlined,
+                          title: 'আমার চিকিৎসা পরিকল্পনা',
+                          subtitle: 'অনুমোদিত কাজ ও সংযুক্ত উপকরণ',
+                          onTap: () => context.push('/patient/plan'),
+                        ),
+                        _AccountEntry(
+                          icon: Icons.health_and_safety_outlined,
+                          title: 'চিকিৎসা-সংক্রান্ত সেটিংস',
+                          subtitle: 'আপনার অনুমোদিত রিমাইন্ডার নিয়ন্ত্রণ',
+                          onTap: () => context.push('/patient/profile'),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: SukunSpace.section),
                   if (wide)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,33 +228,15 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                       entries: preferences,
                     ),
                   ],
-                  if (isPatient) ...[
-                    const SizedBox(height: 18),
-                    _AccountPanel(
-                      title: 'আমার যত্ন',
-                      subtitle: 'শুধু আপনার অনুমোদিত রোগী-সংক্রান্ত তথ্য',
-                      entries: [
-                        _AccountEntry(
-                          icon: Icons.assignment_outlined,
-                          title: 'আমার চিকিৎসা পরিকল্পনা',
-                          subtitle: 'অনুমোদিত কাজ ও সংযুক্ত উপকরণ',
-                          onTap: () => context.push('/patient/plan'),
-                        ),
-                        _AccountEntry(
-                          icon: Icons.health_and_safety_outlined,
-                          title: 'চিকিৎসা-সংক্রান্ত সেটিংস',
-                          subtitle: 'আপনার অনুমোদিত রিমাইন্ডার নিয়ন্ত্রণ',
-                          onTap: () => context.push('/patient/profile'),
-                        ),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 22),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       key: const Key('account-sign-out'),
-                      onPressed: _signingOut ? null : _signOut,
+                      onPressed: _signingOut ? null : _confirmSignOut,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: SukunColors.error,
+                      ),
                       icon: _signingOut
                           ? const SizedBox(
                               width: 18,
@@ -311,46 +293,50 @@ class _AccountPanel extends StatelessWidget {
   final List<_AccountEntry> entries;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SukunSurface(
-      padding: const EdgeInsets.fromLTRB(8, 18, 8, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(title, style: theme.textTheme.titleMedium),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 3, 12, 12),
-            child: Text(subtitle, style: theme.textTheme.bodySmall),
-          ),
-          for (var i = 0; i < entries.length; i++) ...[
-            if (i != 0) const Divider(height: 1, indent: 60),
-            ListTile(
-              key: entries[i].key,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 5,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SukunSectionHeader(title: title, subtitle: subtitle),
+      const SizedBox(height: SukunSpace.md),
+      SukunSurface(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          children: [
+            for (var i = 0; i < entries.length; i++) ...[
+              if (i != 0)
+                const Divider(height: 1, indent: 68, color: Color(0xFFEEF4F9)),
+              ListTile(
+                key: entries[i].key,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                leading: SukunIconBadge(icon: entries[i].icon, size: 42),
+                title: Text(
+                  entries[i].title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  entries[i].subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: SukunColors.muted),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: Color(0xFF8AA3B5),
+                ),
+                onTap: entries[i].onTap,
               ),
-              leading: SukunIconBadge(icon: entries[i].icon, size: 42),
-              title: Text(
-                entries[i].title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                entries[i].subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-              onTap: entries[i].onTap,
-            ),
+            ],
           ],
-        ],
+        ),
       ),
-    );
-  }
+    ],
+  );
 }

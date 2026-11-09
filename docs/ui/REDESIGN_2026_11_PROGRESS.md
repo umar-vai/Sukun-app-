@@ -144,13 +144,27 @@ Not changed on purpose: "আজকের আয়াত" (needs an approved dai
 
 Tests: `test/features/resources/quran_continue_reading_test.dart` (4 tests).
 
+### Account and settings (`/account`, `/settings/*`)
+| Old entry point | Where it is now |
+|---|---|
+| Navy profile card (name, email, patient/member label) | White profile card with the name's initial and a role pill |
+| Page intro "অ্যাকাউন্ট ও সেটিংস" | Removed as a duplicate of the AppBar title |
+| Patient "আমার যত্ন" (plan, clinical settings) | **Moved first** for patients, right after the profile |
+| "আমার কার্যক্রম" (playlist, routine, progress, notices) and "পছন্দ ও সেটিংস" (appearance, notifications, Android update) | Same entries, keys and routes; section titles above calm cards |
+| Sign out | Same button (key `account-sign-out`), red text. **New:** asks "লগআউট করবেন?" first |
+| Notification health settings | Same controls; plain cards replaced by Sukun cards |
+| Patient profile web permission message | Translated to Bangla |
+| Appearance and Bengali font settings | Already Bangla and on the theme; unchanged |
+
+Tests: `test/features/account/account_redesign_test.dart` (3 tests).
+
 ## Verification
 - `flutter analyze`: no issues.
-- `flutter test`: 576 passed, 3 skipped after the resources pass (547 before the redesign).
+- `flutter test`: 579 passed, 3 skipped after the account pass (547 before the redesign).
 - Web screenshots at 390x844 of admin home, member home, guest home and login.
 
 ## Still to do (next passes)
 Rework these into the approved layout, using the same checklist approach:
 content
-library and notices, audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
+library and notices, audio player. The admin "আজ যা দেখতে হবে" counts need
 real data queries, so they are not added yet (no invented numbers).
