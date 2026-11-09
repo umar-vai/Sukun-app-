@@ -14,11 +14,11 @@ void main() {
     }
     expect(all, {for (var day = 1; day <= 40; day++) day});
     expect(fortyDayStages.map((stage) => stage.title), [
-      'প্রস্তুতি',
-      'নজরের আমল',
-      'বরই পাতার আমল',
-      'আশফিয়া ডিটক্স',
-      'জাদুর ডিটক্স',
+      'প্রস্তুতি ও নিয়মিত আমল',
+      'বদনজর থেকে সুরক্ষা',
+      'জাদু থেকে সুরক্ষা',
+      'ডিটক্স গোসল',
+      'শেষ ১৪ দিনের আমল',
     ]);
   });
 
@@ -31,7 +31,7 @@ void main() {
     );
     expect(progress.dayAt(DateTime(2026, 10, 27)), 5);
     expect(progress.completedDays, {1, 3, 7});
-    expect(progress.stageAt(DateTime(2026, 11, 3)).title, 'নজরের আমল');
+    expect(progress.stageAt(DateTime(2026, 11, 3)).title, 'বদনজর থেকে সুরক্ষা');
     expect(progress.complete, isFalse);
   });
 

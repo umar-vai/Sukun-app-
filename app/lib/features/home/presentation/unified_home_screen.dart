@@ -19,10 +19,10 @@ import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
-/// The challenge remains in source but is hidden until an approved relaunch.
+/// The approved free challenge is visible again on the shared home screen.
 const bool _showFortyDayChallenge = bool.fromEnvironment(
   'SUKUN_SHOW_40_DAY_CHALLENGE',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 /// Shared public landing page. Personal care is loaded only for patient sessions.
@@ -256,11 +256,11 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '৪০ দিনের বিনামূল্যের চ্যালেঞ্জ',
+                              'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                             SizedBox(height: 4),
-                            Text('৫টি ধাপ • নিজের অগ্রগতি সংরক্ষণ করুন'),
+                            Text('ফ্রি গাইড, অডিও ও ধাপভিত্তিক অগ্রগতি'),
                           ],
                         ),
                       ),
