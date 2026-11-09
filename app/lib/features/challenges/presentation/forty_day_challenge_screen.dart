@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/challenges/data/forty_day_challenge_repository.dart';
+import 'package:sukun_life/features/challenges/domain/forty_day_challenge_content.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Free public campaign. Private progress belongs to the authenticated member
@@ -57,6 +59,37 @@ class _FortyDayChallengeScreenState
     }
   }
 
+  Future<void> _openResource(ChallengeResourceLink link) async {
+    final uri = Uri.parse(link.url);
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+    } catch (_) {
+      // Report a failed URL open without interrupting challenge tracking.
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('লিংকটি খোলা যাচ্ছে না। আবার চেষ্টা করুন।')),
+      );
+    }
+  }
+
+  Widget _resourceTile(ChallengeResourceLink link) {
+    final icon = switch (link.kind) {
+      ChallengeResourceKind.pdf => Icons.picture_as_pdf_outlined,
+      ChallengeResourceKind.audio => Icons.headphones_outlined,
+      ChallengeResourceKind.assessment => Icons.fact_check_outlined,
+      ChallengeResourceKind.community => Icons.groups_outlined,
+    };
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      title: Text(link.title),
+      trailing: const Icon(Icons.open_in_new, size: 18),
+      onTap: () => _openResource(link),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(appSessionProvider, (previous, next) {
@@ -80,11 +113,19 @@ class _FortyDayChallengeScreenState
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
             children: [
               Text(
-                'জাদু থেকে সুরক্ষার চ্যালেঞ্জ',
+                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text('বিনামূল্যে অংশ নিন। এটি চিকিৎসার বিকল্প নয়।'),
+              const Text(
+                'নিয়মিত আমল করার অভ্যাস গড়ে তুলুন, ধাপে ধাপে গাইড পড়ুন '
+                'এবং নিজের অগ্রগতি অনুসরণ করুন। চ্যালেঞ্জটি বিনামূল্যে।',
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'শিফা একমাত্র আল্লাহর পক্ষ থেকেই আসে। '
+                'এই চ্যালেঞ্জ চিকিৎসার বিকল্প বা রোগ নির্ণয়ের পদ্ধতি নয়।',
+              ),
               const SizedBox(height: 14),
               Card(
                 child: Padding(
@@ -239,36 +280,79 @@ class _FortyDayChallengeScreenState
                         ),
                 ),
               ),
-              const SizedBox(height: 18),
-              Text(
-                '৪০ দিনের ৫টি ধাপ',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 10),
-              for (var i = 0; i < fortyDayStages.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Card(
-                    child: ListTile(
-                      key: Key('challenge-stage-${i + 1}'),
-                      leading: CircleAvatar(child: Text('${i + 1}')),
-                      title: Text(fortyDayStages[i].title),
-                      subtitle: Text(
-                        'দিন ${fortyDayStages[i].firstDay}–'
-                        '${fortyDayStages[i].lastDay} • '
-                        '${fortyDayStages[i].description}',
-                      ),
-                      isThreeLine: true,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 20),
+              Text('শুরু করার আগে', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 4),
+              const Text('বিস্তারিত পরিচিতি, সম্পূর্ণ বই ও সেলফ রুকইয়াহ ই-বুক'),
+              ...challengeGettingStartedLinks.map(_resourceTile),
+              const SizedBox(height: 20),
+              Text('৪০ দিনের ৫টি ধাপ', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
-              const Text('বিস্তারিত আমল ও নির্দেশনা রিসোর্সে দেখুন।'),
+              const Text('প্রতিটি ধাপের গাইড ও প্রয়োজনীয় অডিও খুলতে ট্যাপ করুন।'),
               const SizedBox(height: 12),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 680 ? 2 : 1;
+                  final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      for (var i = 0; i < fortyDayStages.length; i++)
+                        SizedBox(
+                          width: width,
+                          child: Card(
+                            clipBehavior: Clip.antiAlias,
+                            margin: EdgeInsets.zero,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(child: Text('${i + 1}')),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          fortyDayStages[i].title,
+                                          key: Key('challenge-stage-${i + 1}'),
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'দিন ${fortyDayStages[i].firstDay}–'
+                                    '${fortyDayStages[i].lastDay} • '
+                                    '${fortyDayStages[i].description}',
+                                  ),
+                                  const Divider(height: 18),
+                                  ...challengeStageLinks[i].map(_resourceTile),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Text('সহায়তা ও পরবর্তী করণীয়', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 6),
+              const Text(
+                'লক্ষণ নিয়ে উদ্বেগ থাকলে সেলফ-অ্যাসেসমেন্ট দেখতে পারেন। '
+                'এটি জিন, জাদু, বদনজর বা কোনো চিকিৎসাগত সমস্যা নিশ্চিত করে না। '
+                'প্রয়োজনে উপযুক্ত চিকিৎসা পেশাজীবীর পরামর্শ নিন।',
+              ),
+              ...challengeSupportLinks.map(_resourceTile),
+              const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () => context.push('/resources/ruqyah'),
                 icon: const Icon(Icons.menu_book_outlined),
-                label: const Text('রুকইয়াহ রিসোর্স দেখুন'),
+                label: const Text('আরও রুকইয়াহ রিসোর্স দেখুন'),
               ),
               const SizedBox(height: 8),
               const Text(
