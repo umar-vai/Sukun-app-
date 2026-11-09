@@ -101,14 +101,40 @@ Shared pieces: `SukunStepper` (লিখুন → যাচাই → অনু
 
 Tests: `test/features/care_plans/plan_flow_redesign_test.dart` (approval keeps every field, restores resources, confirm/cancel, stepper) and two navigation tests in `ai_action_suggestion_test.dart`. Three older tests were updated to the Bangla copy with the same meaning.
 
+### Routine and progress (`/my-routines`, `/patient/today`)
+New shared parts: `features/personal_routines/presentation/routine_hub_parts.dart` (tab switch, routine card, Bangla schedule/outcome labels, delete confirmation).
+
+| Old entry point | Where it is now |
+|---|---|
+| Tabs আমার রুটিন / নির্ধারিত / আজকের রুটিন | **Changed:** আজ / আমার রুটিন / অগ্রগতি. Today opens first |
+| `?tab=today` | Today |
+| `?tab=progress` (and `/progress`) | **Fixed:** now opens the Progress tab (used to open Today) |
+| `?tab=assigned` | My Routines, scrolled to "প্রস্তুত রুটিন" |
+| `?resourceId=` (add from library) | My Routines with the library hint card, as before |
+| Reminder bell (enable/disable, permission messages) | AppBar, unchanged |
+| AppBar "+ নতুন রুটিন" | Removed as a duplicate; the in-page "নতুন রুটিন তৈরি করুন" button stays |
+| Pause/Resume, Delete routine | Routine card menu: থামান / আবার চালু করুন, মুছে ফেলুন. **New:** asks before deleting |
+| Action menu Done, Skip, Edit, Duplicate, Delete | Same choices in Bangla. **New:** asks before deleting |
+| Raw `schedule_kind` and outcome values | Bangla schedule text and a status pill (আজ সম্পন্ন / আজ বাদ / আজ বাকি) |
+| Add/edit action dialog (resources, surah, ayah, schedule, prayer offset, previews) | Same dialog. **New:** says what is missing instead of silently ignoring Save |
+| Ready-made routine templates and "রুটিনে যোগ করুন" | "প্রস্তুত রুটিন" section at the end of My Routines (key `routine-assigned-tab`) |
+| Patient links: approved plan (`/patient/plan`), today (`/patient/today`) | Plan link at the top of My Routines; today as the large navy card at the top of Today |
+| Today ring, counts, toggle done/undo, open detail | Same keys and texts in a calm white card |
+| "আগের দিনের অগ্রগতি দেখুন" (bottom sheet) | Same button, now switches to the Progress tab |
+| Progress 7/30 days, summary, per-day history, patient progress link, disclaimer | Progress tab: pills, ring summary, Bangla dates (was ISO), same data |
+| Action detail: resources, reader settings, reminder deep link, done, skip | Done and "আজ বাদ দিন" in a fixed bottom bar; Bangla copy |
+| `/patient/today` | **Fixed:** the bottom bar now highlights রুটিন (was হোম); greeting in Bangla |
+
+Tests: `test/features/personal_routines/routine_hub_redesign_test.dart` (12 tests).
+
 ## Verification
 - `flutter analyze`: no issues.
-- `flutter test`: 560 passed, 3 skipped after the prescription-to-plan pass (547 before the redesign).
+- `flutter test`: 572 passed, 3 skipped after the routine pass (547 before the redesign).
 - Web screenshots at 390x844 of admin home, member home, guest home and login.
 
 ## Still to do (next passes)
 Rework these into the approved layout, using the same checklist approach:
 content
-library and notices, routine and progress, resources hub, Qur'an reader and
+library and notices, resources hub, Qur'an reader and
 audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
 real data queries, so they are not added yet (no invented numbers).

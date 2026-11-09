@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -46,20 +50,12 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
       future: _history,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const AppLoadingState(label: 'অগ্রগতি আনা হচ্ছে…');
         }
         if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('হিস্ট্রি আনা যাচ্ছে না। আবার চেষ্টা করুন।'),
-                TextButton(
-                  onPressed: () => setState(_reload),
-                  child: const Text('আবার চেষ্টা করুন'),
-                ),
-              ],
-            ),
+          return AppErrorState(
+            message: 'হিস্ট্রি আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+            onRetry: () => setState(_reload),
           );
         }
         final records = snapshot.data ?? [];
@@ -74,6 +70,8 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
           byDay.putIfAbsent(date, () => []).add(record);
         }
         final dates = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+        final textTheme = Theme.of(context).textTheme;
+        final rate = total == 0 ? 0.0 : done / total;
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -84,122 +82,212 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
             await refreshed;
           },
           child: ListView(
+            key: const Key('routine-progress-list'),
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 36),
+            padding: const EdgeInsets.fromLTRB(
+              SukunSpace.page,
+              SukunSpace.xs,
+              SukunSpace.page,
+              36,
+            ),
             children: [
-              Text(
-                'আমার রুটিনের হিসাব',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'যে করণীয়গুলো Done বা Skip করেছেন, সেগুলোর ব্যক্তিগত ইতিহাস।',
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 10,
+              Row(
                 children: [
-                  ChoiceChip(
-                    label: const Text('৭ দিন'),
-                    selected: _days == 7,
-                    onSelected: (_) => _changeDays(7),
+                  Expanded(
+                    child: Text(
+                      'আমার রুটিনের হিসাব',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  ChoiceChip(
-                    label: const Text('৩০ দিন'),
+                  SukunFilterPill(
+                    key: const Key('progress-range-7'),
+                    label: '৭ দিন',
+                    selected: _days == 7,
+                    onTap: () => _changeDays(7),
+                  ),
+                  const SizedBox(width: SukunSpace.sm),
+                  SukunFilterPill(
+                    key: const Key('progress-range-30'),
+                    label: '৩০ দিন',
                     selected: _days == 30,
-                    onSelected: (_) => _changeDays(30),
+                    onTap: () => _changeDays(30),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'সম্পন্ন $done · বাদ দিয়েছেন $skipped',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      LinearProgressIndicator(
-                        value: total == 0 ? 0 : done / total,
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        total == 0
-                            ? 'এখনো কাজের রেকর্ড নেই'
-                            : 'চিহ্নিত $total টি কাজের মধ্যে $done টি সম্পন্ন',
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 4),
+              Text(
+                'যে করণীয়গুলো সম্পন্ন বা বাদ দিয়েছেন, সেগুলোর ব্যক্তিগত ইতিহাস।',
+                style: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
               ),
-              const SizedBox(height: 16),
-              if (records.isEmpty)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.event_note_outlined),
-                    title: const Text('এখনো কোনো হিস্ট্রি নেই'),
-                    subtitle: const Text(
-                      'রুটিনের করণীয় Done বা Skip করলে এখানে দেখা যাবে।',
+              const SizedBox(height: SukunSpace.lg),
+              SukunSurface(
+                key: const Key('routine-progress-summary'),
+                child: Row(
+                  children: [
+                    SizedBox.square(
+                      dimension: 84,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.expand(
+                            child: CircularProgressIndicator(
+                              value: rate,
+                              strokeWidth: 8,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: SukunColors.mist,
+                            ),
+                          ),
+                          Text(
+                            '${(rate * 100).round()}%',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/my-routines'),
-                  ),
-                )
-              else
-                for (final date in dates)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
+                    const SizedBox(width: SukunSpace.page),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            date,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 6),
-                          for (final record in byDay[date]!)
-                            ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              leading: Icon(
-                                record['outcome'] == 'done'
-                                    ? Icons.check_circle_outline
-                                    : Icons.remove_circle_outline,
-                              ),
-                              title: Text(record['title'].toString()),
-                              subtitle: Text(
-                                record['outcome'] == 'done'
-                                    ? 'সম্পন্ন'
-                                    : 'বাদ দিয়েছেন',
-                              ),
+                            'সম্পন্ন $done · বাদ দিয়েছেন $skipped',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            total == 0
+                                ? 'এখনো কাজের রেকর্ড নেই'
+                                : 'চিহ্নিত $total টি কাজের মধ্যে $done টি সম্পন্ন',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: SukunColors.muted,
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SukunSpace.section),
+              if (records.isEmpty)
+                SukunSurface(
+                  tone: SukunSurfaceTone.soft,
+                  showBorder: false,
+                  onTap: () => context.push('/my-routines'),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.event_note_outlined),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'এখনো কোনো হিস্ট্রি নেই',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'রুটিনের করণীয় সম্পন্ন বা বাদ দিলে এখানে দেখা যাবে।',
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right),
+                    ],
                   ),
+                )
+              else ...[
+                const SukunSectionHeader(title: 'দিন অনুযায়ী'),
+                const SizedBox(height: SukunSpace.md),
+                for (final date in dates) ...[
+                  SukunSurface(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          banglaDayLabel(date),
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        for (final record in byDay[date]!)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  record['outcome'] == 'done'
+                                      ? Icons.check_circle_rounded
+                                      : Icons.remove_circle_outline,
+                                  size: 20,
+                                  color: record['outcome'] == 'done'
+                                      ? SukunColors.sukunBlue
+                                      : SukunColors.muted,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(record['title'].toString()),
+                                ),
+                                Text(
+                                  record['outcome'] == 'done'
+                                      ? 'সম্পন্ন'
+                                      : 'বাদ দিয়েছেন',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: SukunColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
               if (isPatient) ...[
-                const SizedBox(height: 12),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.assignment_turned_in_outlined),
-                    title: const Text('নির্ধারিত পরিকল্পনার অগ্রগতি'),
-                    subtitle: const Text('সুকুন লাইফের অনুমোদিত করণীয়র হিসাব'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/patient/progress'),
+                const SizedBox(height: SukunSpace.sm),
+                SukunSurface(
+                  key: const Key('progress-patient-plan-link'),
+                  tone: SukunSurfaceTone.soft,
+                  showBorder: false,
+                  onTap: () => context.push('/patient/progress'),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.assignment_turned_in_outlined),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'নির্ধারিত পরিকল্পনার অগ্রগতি',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            SizedBox(height: 2),
+                            Text('সুকুন লাইফের অনুমোদিত করণীয়র হিসাব'),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right),
+                    ],
                   ),
                 ),
               ],
-              const SizedBox(height: 12),
-              const Text(
+              const SizedBox(height: SukunSpace.lg),
+              Text(
                 'এটি আপনার করা কাজের রেকর্ড, চিকিৎসার ফলাফল নয়। '
                 'নির্ধারিত সব কাজের তুলনায় সম্পন্ন হওয়ার হার এখানে দেখানো হয়নি।',
+                style: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
               ),
             ],
           ),
@@ -212,4 +300,33 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
       body: body,
     );
   }
+}
+
+/// "2026-11-09" → "সোম, ৯ নভেম্বর". Falls back to the raw value if it is
+/// not a date, so nothing is hidden.
+String banglaDayLabel(String isoDate) {
+  final date = DateTime.tryParse(isoDate);
+  if (date == null) return isoDate;
+  const weekdays = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'];
+  const months = [
+    'জানুয়ারি',
+    'ফেব্রুয়ারি',
+    'মার্চ',
+    'এপ্রিল',
+    'মে',
+    'জুন',
+    'জুলাই',
+    'আগস্ট',
+    'সেপ্টেম্বর',
+    'অক্টোবর',
+    'নভেম্বর',
+    'ডিসেম্বর',
+  ];
+  const digits = '০১২৩৪৫৬৭৮৯';
+  final day = date.day
+      .toString()
+      .split('')
+      .map((d) => digits[int.parse(d)])
+      .join();
+  return '${weekdays[date.weekday - 1]}, $day ${months[date.month - 1]}';
 }

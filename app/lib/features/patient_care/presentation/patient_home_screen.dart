@@ -227,7 +227,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   Widget build(BuildContext context) {
     return PatientScaffold(
       title: 'আজকের কাজ',
-      selectedIndex: 0,
+      // The patient's clinical today belongs to the Routine tab
+      // (PatientScaffold maps legacy index 3 to Routine).
+      selectedIndex: 3,
       body: FutureBuilder<PatientDay>(
         future: _day,
         builder: (context, snapshot) {
@@ -291,7 +293,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                 SukunPageIntro(
                   eyebrow: _longDate(DateTime.now()),
                   title:
-                      'Assalamu Alaikum${widget.displayName == null ? '' : ', ${widget.displayName}'}',
+                      'আসসালামু আলাইকুম${widget.displayName == null ? '' : ', ${widget.displayName}'}',
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),

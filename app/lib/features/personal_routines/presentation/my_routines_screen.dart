@@ -4,6 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/personal_routines/presentation/routine_hub_parts.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/features/progress/presentation/unified_progress_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/today_routine_panel.dart';
@@ -38,6 +43,11 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   late Future<List<Map<String, dynamic>>> _templates;
   bool _working = false;
   bool _reminderEnabled = false;
+  late RoutineHubTab _tab = routineHubInitialTab(
+    initialTab: widget.initialTab,
+    resourceId: widget.resourceId,
+  );
+  final _readyKey = GlobalKey();
 
   PersonalRoutineRepository get _repository =>
       PersonalRoutineRepository(Supabase.instance.client);
@@ -46,6 +56,27 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   void initState() {
     super.initState();
     _refresh();
+    if (widget.initialTab == 'assigned' && widget.resourceId == null) {
+      // Old links to the "assigned" tab scroll to ready-made routines.
+      _scrollToReadyRoutines();
+    }
+  }
+
+  Future<void> _scrollToReadyRoutines() async {
+    try {
+      await _data;
+    } catch (_) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _readyKey.currentContext;
+      if (target != null && target.mounted) {
+        Scrollable.ensureVisible(
+          target,
+          duration: const Duration(milliseconds: 300),
+        );
+      }
+    });
   }
 
   void _refresh() {
@@ -237,6 +268,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       return;
     }
 
+    String? formError;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -248,6 +280,21 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (formError != null)
+                    Container(
+                      key: const Key('routine-action-form-error'),
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: SukunColors.errorSoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        formError!,
+                        style: const TextStyle(color: SukunColors.error),
+                      ),
+                    ),
                   if (prefill != null)
                     ListTile(
                       leading: const Icon(Icons.library_books_outlined),
@@ -542,11 +589,20 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             ),
             FilledButton(
               onPressed: () {
-                if (title.text.trim().isEmpty ||
-                    reminder.text.trim().isEmpty ||
-                    (kind == 'fixed' && fixed == null) ||
-                    ((kind == 'fajr' || kind == 'maghrib') &&
-                        !settings.isComplete)) {
+                // Same rules as before, but say what is missing instead of
+                // silently ignoring the tap.
+                final String? problem = title.text.trim().isEmpty
+                    ? 'করণীয়ের নাম লিখুন।'
+                    : reminder.text.trim().isEmpty
+                    ? 'নোটিফিকেশনের শিরোনাম লিখুন।'
+                    : (kind == 'fixed' && fixed == null)
+                    ? 'নির্দিষ্ট সময় বেছে নিন।'
+                    : ((kind == 'fajr' || kind == 'maghrib') &&
+                          !settings.isComplete)
+                    ? 'আগে নামাজের সময়ের সেটিংসে শহর ও পদ্ধতি নির্বাচন করুন।'
+                    : null;
+                if (problem != null) {
+                  update(() => formError = problem);
                   return;
                 }
                 Navigator.pop(ctx, true);
@@ -632,6 +688,45 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     }
   }
 
+  Future<void> _deleteRoutine(Map<String, dynamic> routine) async {
+    final confirmed = await confirmRoutineDeletion(
+      context,
+      title: routine['title'].toString(),
+      isRoutine: true,
+    );
+    if (!confirmed) return;
+    await _mutate(() => _repository.deleteRoutine(routine['id'] as String));
+  }
+
+  Future<void> _onActionMenu(
+    Map<String, dynamic> routine,
+    Map<String, dynamic> action,
+    String value,
+  ) async {
+    switch (value) {
+      case 'edit':
+        await _editAction(routineId: routine['id'] as String, existing: action);
+      case 'duplicate':
+        await _mutate(() => _repository.duplicateAction(action));
+      case 'done' || 'skipped':
+        await _mutate(
+          () => _repository.recordOutcome(
+            actionId: action['id'] as String,
+            localDate: DateTime.now(),
+            outcome: value,
+          ),
+        );
+      case 'delete':
+        final confirmed = await confirmRoutineDeletion(
+          context,
+          title: action['title'].toString(),
+          isRoutine: false,
+        );
+        if (!confirmed) return;
+        await _mutate(() => _repository.deleteAction(action['id'] as String));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -648,357 +743,278 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                 : Icons.notifications_off_outlined,
           ),
         ),
-        IconButton(
-          onPressed: _working ? null : _createRoutine,
-          tooltip: 'নতুন রুটিন',
-          icon: const Icon(Icons.add_circle_outline),
-        ),
       ],
     ),
-    body: DefaultTabController(
-      length: 3,
-      initialIndex: widget.resourceId != null
-          ? 0
-          : (widget.initialTab == 'progress' || widget.initialTab == 'today')
-          ? 2
-          : widget.initialTab == 'assigned'
-          ? 1
-          : 0,
-      child: Column(
-        children: [
-          const TabBar(
-            key: Key('routine-hub-tabs'),
-            tabs: [
-              Tab(text: 'আমার রুটিন'),
-              Tab(text: 'নির্ধারিত'),
-              Tab(text: 'আজকের রুটিন'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                FutureBuilder<_RoutinePageData>(
-                  future: _data,
-                  builder: (context, snap) {
-                    if (!snap.hasData) {
-                      if (snap.hasError) {
-                        return Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।',
-                              ),
-                              OutlinedButton(
-                                onPressed: _refresh,
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final data = snap.data!;
-                    return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        if (widget.resourceId != null)
-                          const Card(
-                            child: ListTile(
-                              leading: Icon(Icons.library_books_outlined),
-                              title: Text('লাইব্রেরি থেকে রুটিনে যোগ করুন'),
-                              subtitle: Text('নিচের রুটিনের + করণীয় চাপুন।'),
-                            ),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: FilledButton.icon(
-                            onPressed: _working ? null : _createRoutine,
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('নতুন রুটিন তৈরি করুন'),
-                          ),
-                        ),
-                        if (data.routines.isEmpty)
-                          const ListTile(
-                            title: Text('এখনো রুটিন নেই'),
-                            subtitle: Text(
-                              'নতুন রুটিন তৈরি করে করণীয় যোগ করুন।',
-                            ),
-                          ),
-                        for (final routine in data.routines) ...[
-                          Card(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ListTile(
-                                  title: Text(routine['title'].toString()),
-                                  subtitle: Text(
-                                    routine['is_active'] == true
-                                        ? 'চালু আছে'
-                                        : 'Pause করা আছে',
-                                  ),
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (value) {
-                                      if (value == 'pause') {
-                                        _mutate(
-                                          () => _repository.setRoutineActive(
-                                            routine['id'] as String,
-                                            routine['is_active'] != true,
-                                          ),
-                                        );
-                                      } else if (value == 'delete') {
-                                        _mutate(
-                                          () => _repository.deleteRoutine(
-                                            routine['id'] as String,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                        value: 'pause',
-                                        child: Text(
-                                          routine['is_active'] == true
-                                              ? 'Pause'
-                                              : 'Resume',
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text('Delete'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                for (final action in data.actions.where(
-                                  (item) => item['routine_id'] == routine['id'],
-                                ))
-                                  ListTile(
-                                    onTap: () => context.push(
-                                      '/my-routines/action/${action['id']}',
-                                    ),
-                                    leading: const Icon(
-                                      Icons.check_circle_outline,
-                                    ),
-                                    title: Text(action['title'].toString()),
-                                    subtitle: Text(
-                                      "${action['schedule_kind']} · ${action['notification_title']}",
-                                    ),
-                                    trailing: PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        if (value == 'edit') {
-                                          _editAction(
-                                            routineId: routine['id'] as String,
-                                            existing: action,
-                                          );
-                                        } else if (value == 'duplicate') {
-                                          _mutate(
-                                            () => _repository.duplicateAction(
-                                              action,
-                                            ),
-                                          );
-                                        } else if (value == 'done' ||
-                                            value == 'skipped') {
-                                          _mutate(
-                                            () => _repository.recordOutcome(
-                                              actionId: action['id'] as String,
-                                              localDate: DateTime.now(),
-                                              outcome: value,
-                                            ),
-                                          );
-                                        } else if (value == 'delete') {
-                                          _mutate(
-                                            () => _repository.deleteAction(
-                                              action['id'] as String,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      itemBuilder: (_) => [
-                                        PopupMenuItem(
-                                          enabled: false,
-                                          child: Text(
-                                            "আজ: ${data.outcomes[action['id']] ?? 'বাকি আছে'}",
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'done',
-                                          child: Text('Done'),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'skipped',
-                                          child: Text('Skip'),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Text('Edit'),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'duplicate',
-                                          child: Text('Duplicate'),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  child: OutlinedButton.icon(
-                                    onPressed: _working
-                                        ? null
-                                        : () => _editAction(
-                                            routineId: routine['id'] as String,
-                                          ),
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('করণীয় যোগ করুন'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () => context.push('/resources'),
-                          icon: const Icon(Icons.library_books_outlined),
-                          label: const Text('রিসোর্স লাইব্রেরি খুলুন'),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                _assignedPlanTab(),
-                FutureBuilder<_RoutinePageData>(
-                  future: _data,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: OutlinedButton(
-                          onPressed: _refresh,
-                          child: const Text(
-                            'আজকের রুটিন আনা যায়নি · আবার চেষ্টা',
-                          ),
-                        ),
-                      );
-                    }
-                    final data = snapshot.data;
-                    if (data == null) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    return TodayRoutinePanel(
-                      routines: data.routines,
-                      actions: data.actions,
-                      outcomes: data.outcomes,
-                      busy: _working,
-                      onToggleDone: (actionId, currentlyDone) {
-                        _mutate(
-                          () => currentlyDone
-                              ? _repository.clearOutcome(
-                                  actionId: actionId,
-                                  localDate: DateTime.now(),
-                                )
-                              : _repository.recordOutcome(
-                                  actionId: actionId,
-                                  localDate: DateTime.now(),
-                                  outcome: 'done',
-                                ),
-                        );
-                      },
-                      onOpen: (id) => context.push(
-                        '/my-routines/action/${Uri.encodeComponent(id)}',
-                      ),
-                      onOpenPatientToday:
-                          ref.watch(appSessionProvider).value?.isPatient == true
-                          ? () => context.push('/patient/today')
-                          : null,
-                      onOpenHistory: () => showModalBottomSheet<void>(
-                        context: context,
-                        useSafeArea: true,
-                        isScrollControlled: true,
-                        builder: (context) => const FractionallySizedBox(
-                          heightFactor: .86,
-                          child: UnifiedProgressScreen(embedded: true),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+    body: Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 820),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SukunSpace.page,
+                SukunSpace.xs,
+                SukunSpace.page,
+                SukunSpace.md,
+              ),
+              child: RoutineHubTabs(
+                key: const Key('routine-hub-tabs'),
+                selected: _tab,
+                onSelected: (tab) => setState(() => _tab = tab),
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: switch (_tab) {
+                RoutineHubTab.today => _todayTab(),
+                RoutineHubTab.myRoutines => _myRoutinesTab(),
+                RoutineHubTab.progress => const UnifiedProgressScreen(
+                  embedded: true,
+                ),
+              },
+            ),
+          ],
+        ),
       ),
     ),
   );
 
-  Widget _assignedPlanTab() {
-    final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
-    return ListView(
-      key: const Key('routine-assigned-tab'),
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (isPatient) ...[
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.assignment_turned_in_outlined),
-              title: const Text('সেশন থেকে নির্ধারিত রুটিন'),
-              subtitle: const Text('আপনার অনুমোদিত পরিকল্পনা'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/patient/plan'),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.today_outlined),
-              title: const Text('আজকের নির্ধারিত আমল'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/patient/today'),
-            ),
-          ),
-        ],
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-          child: Text(
-            'প্রস্তুত রুটিন',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+  Widget _todayTab() => FutureBuilder<_RoutinePageData>(
+    future: _data,
+    builder: (context, snapshot) {
+      if (snapshot.hasError) {
+        return AppErrorState(
+          message: 'আজকের রুটিন আনা যায়নি। আবার চেষ্টা করুন।',
+          onRetry: _refresh,
+        );
+      }
+      final data = snapshot.data;
+      if (data == null) {
+        return const AppLoadingState(label: 'আজকের রুটিন আনা হচ্ছে…');
+      }
+      return TodayRoutinePanel(
+        routines: data.routines,
+        actions: data.actions,
+        outcomes: data.outcomes,
+        busy: _working,
+        onToggleDone: (actionId, currentlyDone) {
+          _mutate(
+            () => currentlyDone
+                ? _repository.clearOutcome(
+                    actionId: actionId,
+                    localDate: DateTime.now(),
+                  )
+                : _repository.recordOutcome(
+                    actionId: actionId,
+                    localDate: DateTime.now(),
+                    outcome: 'done',
+                  ),
+          );
+        },
+        onOpen: (id) =>
+            context.push('/my-routines/action/${Uri.encodeComponent(id)}'),
+        onOpenPatientToday:
+            ref.watch(appSessionProvider).value?.isPatient == true
+            ? () => context.push('/patient/today')
+            : null,
+        onOpenHistory: () => setState(() => _tab = RoutineHubTab.progress),
+      );
+    },
+  );
+
+  Widget _myRoutinesTab() => FutureBuilder<_RoutinePageData>(
+    future: _data,
+    builder: (context, snap) {
+      if (!snap.hasData) {
+        if (snap.hasError) {
+          return AppErrorState(
+            message: 'রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+            onRetry: _refresh,
+          );
+        }
+        return const AppLoadingState(label: 'রুটিন আনা হচ্ছে…');
+      }
+      final data = snap.data!;
+      final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
+      return ListView(
+        key: const Key('routine-mine-list'),
+        padding: const EdgeInsets.fromLTRB(
+          SukunSpace.page,
+          SukunSpace.xs,
+          SukunSpace.page,
+          SukunSpace.sectionLarge,
         ),
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: _templates,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return const ListTile(
-                title: Text('রুটিনগুলো এখন দেখানো যাচ্ছে না'),
-              );
-            }
-            final templates = snapshot.data ?? const [];
-            if (templates.isEmpty) {
-              return const ListTile(
-                title: Text('এখনো কোনো প্রস্তুত রুটিন নেই'),
-              );
-            }
-            return Column(
-              children: [
-                for (final template in templates)
-                  Card(
-                    key: Key('routine-template-${template['id']}'),
-                    child: ListTile(
-                      leading: const Icon(Icons.auto_awesome_outlined),
-                      title: Text(template['title'].toString()),
-                      subtitle: Text(
-                        '${(template['routine_template_steps'] as List?)?.length ?? 0}টি আমল',
+        children: [
+          if (widget.resourceId != null) ...[
+            const SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              child: Row(
+                children: [
+                  Icon(Icons.library_books_outlined),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'লাইব্রেরি থেকে রুটিনে যোগ করুন',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text('নিচের রুটিনের + করণীয় চাপুন।'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: SukunSpace.md),
+          ],
+          if (isPatient) ...[
+            SukunSurface(
+              key: const Key('routine-patient-plan-link'),
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              onTap: () => context.push('/patient/plan'),
+              child: const Row(
+                children: [
+                  Icon(Icons.assignment_turned_in_outlined),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'সেশন থেকে নির্ধারিত রুটিন',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text('আপনার অনুমোদিত পরিকল্পনা'),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+            const SizedBox(height: SukunSpace.md),
+          ],
+          FilledButton.icon(
+            onPressed: _working ? null : _createRoutine,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('নতুন রুটিন তৈরি করুন'),
+          ),
+          const SizedBox(height: SukunSpace.lg),
+          if (data.routines.isEmpty)
+            const SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'এখনো রুটিন নেই',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 2),
+                  Text('নতুন রুটিন তৈরি করে করণীয় যোগ করুন।'),
+                ],
+              ),
+            ),
+          for (final routine in data.routines) ...[
+            RoutineCard(
+              routine: routine,
+              actions: data.actions
+                  .where((item) => item['routine_id'] == routine['id'])
+                  .toList(growable: false),
+              outcomes: data.outcomes,
+              busy: _working,
+              onToggleActive: () => _mutate(
+                () => _repository.setRoutineActive(
+                  routine['id'] as String,
+                  routine['is_active'] != true,
+                ),
+              ),
+              onDeleteRoutine: () => _deleteRoutine(routine),
+              onOpenAction: (action) =>
+                  context.push('/my-routines/action/${action['id']}'),
+              onActionMenu: (action, value) =>
+                  _onActionMenu(routine, action, value),
+              onAddAction: () =>
+                  _editAction(routineId: routine['id'] as String),
+            ),
+            const SizedBox(height: SukunSpace.md),
+          ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => context.push('/resources'),
+              icon: const Icon(Icons.library_books_outlined),
+              label: const Text('রিসোর্স লাইব্রেরি খুলুন'),
+            ),
+          ),
+          const SizedBox(height: SukunSpace.section),
+          _readyRoutinesSection(),
+        ],
+      );
+    },
+  );
+
+  /// Published ready-made routines (the old "নির্ধারিত" tab). Kept under My
+  /// Routines; `?tab=assigned` scrolls here.
+  Widget _readyRoutinesSection() => Column(
+    key: _readyKey,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const SukunSectionHeader(
+        key: Key('routine-assigned-tab'),
+        title: 'প্রস্তুত রুটিন',
+        subtitle: 'এক চাপে নিজের রুটিনে যোগ করুন',
+      ),
+      const SizedBox(height: SukunSpace.md),
+      FutureBuilder<List<Map<String, dynamic>>>(
+        future: _templates,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Padding(
+              padding: EdgeInsets.all(SukunSpace.lg),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return const Text('রুটিনগুলো এখন দেখানো যাচ্ছে না');
+          }
+          final templates = snapshot.data ?? const [];
+          if (templates.isEmpty) {
+            return const Text('এখনো কোনো প্রস্তুত রুটিন নেই');
+          }
+          return Column(
+            children: [
+              for (final template in templates) ...[
+                SukunSurface(
+                  key: Key('routine-template-${template['id']}'),
+                  padding: const EdgeInsets.all(SukunSpace.lg),
+                  child: Row(
+                    children: [
+                      const SukunIconBadge(icon: Icons.auto_awesome_outlined),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              template['title'].toString(),
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              '${(template['routine_template_steps'] as List?)?.length ?? 0}টি আমল',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: SukunColors.muted),
+                            ),
+                          ],
+                        ),
                       ),
-                      trailing: TextButton(
+                      TextButton(
                         onPressed: _working
                             ? null
                             : () => _mutate(() async {
@@ -1009,15 +1025,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                               }),
                         child: const Text('রুটিনে যোগ করুন'),
                       ),
-                    ),
+                    ],
                   ),
+                ),
+                const SizedBox(height: 10),
               ],
-            );
-          },
-        ),
-      ],
-    );
-  }
+            ],
+          );
+        },
+      ),
+    ],
+  );
 }
 
 class _RoutinePageData {

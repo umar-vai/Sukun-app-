@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 
 /// Patient/member's own active actions, using owner-filtered repository rows.
 /// An outcome of "skipped" never counts as completed.
@@ -61,158 +63,178 @@ class TodayRoutinePanel extends StatelessWidget {
     return ListView(
       key: const Key('today-routine-list'),
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+      padding: const EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        SukunSpace.xs,
+        SukunSpace.page,
+        SukunSpace.sectionLarge,
+      ),
       children: [
-        Container(
-          key: const Key('today-routine-overview'),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0D2B45), Color(0xFF0A70A8)],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'আজকের রুটিন',
-                style: TextStyle(
+        // Patients: their approved care plan comes first, as one clear card
+        // that opens the dedicated clinical "today" page.
+        if (onOpenPatientToday != null) ...[
+          SukunSurface(
+            key: const Key('today-patient-plan-card'),
+            tone: SukunSurfaceTone.navy,
+            radius: SukunRadius.hero,
+            onTap: onOpenPatientToday,
+            child: Row(
+              children: [
+                const SukunIconBadge(
+                  icon: Icons.assignment_turned_in_outlined,
                   color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  backgroundColor: Color(0x3328B8EF),
                 ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'প্রতিটি আমল সম্পন্ন হলে এখানেই চিহ্নিত করুন',
-                style: TextStyle(color: Color(0xFFDAF4FF)),
-              ),
-              const SizedBox(height: 20),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final narrow = constraints.maxWidth < 310;
-                  final ring = SizedBox.square(
-                    dimension: 148,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: summary.fraction),
-                      duration: const Duration(milliseconds: 650),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, animated, _) => Semantics(
-                        label: 'আজকের রুটিন $percentage শতাংশ সম্পন্ন',
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox.expand(
-                              child: CircularProgressIndicator(
-                                key: const Key('today-routine-progress-ring'),
-                                value: animated,
-                                strokeWidth: 11,
-                                strokeCap: StrokeCap.round,
-                                backgroundColor: Colors.white24,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF8EDCFA),
-                                ),
-                              ),
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '$percentage%',
-                                  key: const Key('today-routine-percentage'),
-                                  style: const TextStyle(
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const Text(
-                                  'সম্পন্ন',
-                                  style: TextStyle(color: Color(0xFFDAF4FF)),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                  final counters = Column(
-                    crossAxisAlignment: narrow
-                        ? CrossAxisAlignment.center
-                        : CrossAxisAlignment.start,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${summary.completed} টি সম্পন্ন',
-                        key: const Key('today-routine-completed-count'),
-                        style: const TextStyle(
+                        'সুকুন লাইফের নির্ধারিত আমল',
+                        style: theme.textTheme.titleMedium?.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 9),
-                      Text(
-                        '${summary.remaining} টি বাকি',
-                        key: const Key('today-routine-remaining-count'),
-                        style: const TextStyle(
-                          color: Color(0xFFDAF4FF),
                           fontWeight: FontWeight.w600,
-                          fontSize: 17,
                         ),
                       ),
-                      const SizedBox(height: 9),
-                      Text(
-                        'মোট ${summary.total} টি সক্রিয় করণীয়',
-                        style: const TextStyle(color: Color(0xFFDAF4FF)),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'আপনার অনুমোদিত চিকিৎসা-পরিকল্পনার আজকের কাজ',
+                        style: TextStyle(color: Color(0xFFB9CCDB)),
                       ),
                     ],
-                  );
-                  return narrow
-                      ? Column(
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: Colors.white),
+              ],
+            ),
+          ),
+          const SizedBox(height: SukunSpace.lg),
+        ],
+        SukunSurface(
+          key: const Key('today-routine-overview'),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < 280;
+              final ring = SizedBox.square(
+                dimension: 104,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: summary.fraction),
+                  duration: const Duration(milliseconds: 650),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, animated, _) => Semantics(
+                    label: 'আজকের রুটিন $percentage শতাংশ সম্পন্ন',
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: CircularProgressIndicator(
+                            key: const Key('today-routine-progress-ring'),
+                            value: animated,
+                            strokeWidth: 9,
+                            strokeCap: StrokeCap.round,
+                            backgroundColor: SukunColors.mist,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              SukunColors.sukunBlue,
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            ring,
-                            const SizedBox(height: 20),
-                            counters,
+                            Text(
+                              '$percentage%',
+                              key: const Key('today-routine-percentage'),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'সম্পন্ন',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: SukunColors.muted,
+                              ),
+                            ),
                           ],
-                        )
-                      : Row(
-                          children: [
-                            ring,
-                            const SizedBox(width: 24),
-                            Expanded(child: counters),
-                          ],
-                        );
-                },
-              ),
-            ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+              final counters = Column(
+                crossAxisAlignment: narrow
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'আজকের রুটিন',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'প্রতিটি আমল সম্পন্ন হলে এখানেই চিহ্নিত করুন',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: SukunColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: SukunSpace.md),
+                  Text(
+                    '${summary.completed} টি সম্পন্ন',
+                    key: const Key('today-routine-completed-count'),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: SukunColors.deepTide,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${summary.remaining} টি বাকি',
+                    key: const Key('today-routine-remaining-count'),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Text(
+                    'মোট ${summary.total} টি সক্রিয় করণীয়',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: SukunColors.muted,
+                    ),
+                  ),
+                ],
+              );
+              return narrow
+                  ? Column(
+                      children: [
+                        ring,
+                        const SizedBox(height: SukunSpace.lg),
+                        counters,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        ring,
+                        const SizedBox(width: SukunSpace.page),
+                        Expanded(child: counters),
+                      ],
+                    );
+            },
           ),
         ),
-        const SizedBox(height: 18),
-        Text(
-          'আজকের করণীয়',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: SukunColors.nightNavy,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          summary.total == 0
+        const SizedBox(height: SukunSpace.section),
+        SukunSectionHeader(
+          title: 'আজকের করণীয়',
+          subtitle: summary.total == 0
               ? 'কোনো সক্রিয় রুটিন নেই। আমার রুটিন থেকে করণীয় যোগ করুন।'
               : 'যেগুলো বাকি আছে সেগুলো আগে দেখানো হচ্ছে।',
-          style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: SukunSpace.md),
         for (final action in [
           ...activeActions.where((a) => outcomes[a['id']] != 'done'),
           ...activeActions.where((a) => outcomes[a['id']] == 'done'),
         ])
           Padding(
-            padding: const EdgeInsets.only(bottom: 9),
+            padding: const EdgeInsets.only(bottom: 10),
             child: _TodayActionTile(
               action: action,
               done: outcomes[action['id']] == 'done',
@@ -224,28 +246,21 @@ class TodayRoutinePanel extends StatelessWidget {
               onOpen: () => onOpen(action['id'] as String),
             ),
           ),
-        if (onOpenPatientToday != null)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.assignment_turned_in_outlined),
-              title: const Text('সুকুন লাইফের নির্ধারিত আমল'),
-              subtitle: const Text(
-                'আপনার অনুমোদিত চিকিৎসা-পরিকল্পনার আজকের কাজ',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: onOpenPatientToday,
+        if (onOpenHistory != null) ...[
+          const SizedBox(height: SukunSpace.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onOpenHistory,
+              icon: const Icon(Icons.insights_outlined),
+              label: const Text('আগের দিনের অগ্রগতি দেখুন'),
             ),
           ),
-        if (onOpenHistory != null)
-          TextButton.icon(
-            onPressed: onOpenHistory,
-            icon: const Icon(Icons.history_rounded),
-            label: const Text('আগের দিনের অগ্রগতি দেখুন'),
-          ),
-        const SizedBox(height: 10),
+        ],
+        const SizedBox(height: SukunSpace.sm),
         Text(
           'এই অগ্রগতি শুধু নিজের সম্পন্ন করা রুটিনের হিসাব; চিকিৎসার ফলাফল নয়।',
-          style: theme.textTheme.bodySmall,
+          style: theme.textTheme.bodySmall?.copyWith(color: SukunColors.muted),
         ),
       ],
     );
@@ -268,13 +283,12 @@ class _TodayActionTile extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => SukunSurface(
     key: Key('today-action-${action['id']}'),
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(18),
-      side: BorderSide(color: done ? const Color(0xFF8EDCFA) : Colors.black12),
-    ),
+    radius: SukunRadius.tile + 2,
+    padding: EdgeInsets.zero,
+    tone: done ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
+    showBorder: false,
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Row(
@@ -309,7 +323,9 @@ class _TodayActionTile extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       done ? 'আজ সম্পন্ন' : 'বাকি · বিস্তারিত খুলুন',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: done ? SukunColors.deepTide : SukunColors.muted,
+                      ),
                     ),
                   ],
                 ),
