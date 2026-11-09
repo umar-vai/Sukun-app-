@@ -4,6 +4,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
+import 'package:sukun_life/features/resources/presentation/self_ruqyah_guide_index.dart';
 
 /// Each topic opens a dedicated route instead of expanding the same page.
 class RuqyahTopicBrowser extends StatelessWidget {
@@ -41,6 +42,12 @@ class RuqyahTopicBrowser extends StatelessWidget {
       );
     }
     final items = resourcesForRuqyahTopic(resources, topicSlug!);
+    if (topicSlug == 'ruqyah-self-guide') {
+      return SelfRuqyahGuideIndex(
+        resources: items,
+        onOpenResource: onOpenResource,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
