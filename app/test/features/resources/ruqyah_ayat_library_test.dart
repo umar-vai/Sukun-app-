@@ -5,7 +5,7 @@ import 'package:sukun_life/features/resources/presentation/ruqyah_ayat_library.d
 
 void main() {
   test('all 101 editorial Quran excerpts map exactly once', () {
-    final counts = List<int>.filled(8, 0);
+    final counts = List<int>.filled(14, 0);
     for (var id = 1; id <= 101; id++) {
       final section = ruqyahSectionForSlug(
         'srg2024-qur-${id.toString().padLeft(3, '0')}',
@@ -13,14 +13,14 @@ void main() {
       expect(section, isNotNull, reason: 'Missing editorial excerpt $id');
       counts[section!] += 1;
     }
-    expect(counts, [13, 47, 0, 10, 11, 6, 8, 6]);
+    expect(counts, [13, 6, 8, 10, 11, 6, 6, 8, 9, 7, 6, 4, 7, 0]);
   });
 
   test('23 Ruqyah/health/mercy Dua records remain in their own section', () {
     for (var id = 1; id <= 23; id++) {
       expect(
         ruqyahSectionForSlug('srg2024-dua-${id.toString().padLeft(3, '0')}'),
-        2,
+        13,
       );
     }
   });
@@ -30,13 +30,14 @@ void main() {
     expect(ruqyahSectionForSlug('srg2024-qur-102'), isNull);
     expect(ruqyahSectionForSlug('srg2024-col-001'), isNull);
     expect(ruqyahSectionForSlug('sukun-ruqyahbd-harq'), isNull);
-    expect(ruqyahSections, hasLength(8));
+    expect(ruqyahSections, hasLength(14));
+    expect(ruqyahSectionForSlug('srg2024-dua-024'), isNull);
   });
 
   test('section audio is described only as a full section recording', () {
-    expect(ruqyahSections[2].audioSlug, isNull);
-    expect(ruqyahSections[6].audioSlug, 'sukun-ruqyahbd-harq');
-    expect(ruqyahSections[7].audioSlug, 'sukun-ruqyahbd-shifa-sakina');
+    expect(ruqyahSections[13].audioSlug, isNull);
+    expect(ruqyahSections[2].audioSlug, 'sukun-ruqyahbd-harq');
+    expect(ruqyahSections[10].audioSlug, 'sukun-ruqyahbd-shifa-sakina');
   });
 
   test('editorial indexes are not passed off as canonical ayah numbers', () {
@@ -131,6 +132,9 @@ void main() {
   test('unverified editorial introductions cannot acquire guessed ayat', () {
     expect(ruqyahSectionForSlug('srg2024-qur-001'), 0);
     expect(ruqyahSectionForSlug('srg2024-qur-047'), 4);
+    expect(ruqyahSectionForSlug('srg2024-qur-020'), 2);
+    expect(ruqyahSectionForSlug('srg2024-qur-085'), 10);
+    expect(ruqyahSectionForSlug('srg2024-qur-095'), 12);
     expect(ruqyahCitation(surahNumber: null, ayahNumber: null), isNull);
   });
 }

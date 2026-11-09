@@ -13,6 +13,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
     required this.onOpenResource,
     required this.onOpenAyat,
     this.topicSlug,
+    this.guideChapterNumber,
+    this.guideGroupSlug,
     super.key,
   });
 
@@ -20,6 +22,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
   final ValueChanged<ContentResource> onOpenResource;
   final VoidCallback onOpenAyat;
   final String? topicSlug;
+  final int? guideChapterNumber;
+  final String? guideGroupSlug;
 
   static String titleFor(String? slug) {
     for (final topic in [...ruqyahMainTopics, ...ruqyahAudioTopics]) {
@@ -46,6 +50,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
       return SelfRuqyahGuideIndex(
         resources: items,
         onOpenResource: onOpenResource,
+        chapterNumber: guideChapterNumber,
+        groupSlug: guideGroupSlug,
       );
     }
     return Column(
@@ -153,7 +159,11 @@ class RuqyahTopicBrowser extends StatelessWidget {
                 ),
               ),
               Text(
-                '$count',
+                topic.slug == 'ruqyah-self-guide'
+                    ? '৪ অধ্যায়'
+                    : topic.slug == 'ruqyah-ayat'
+                    ? 'বিষয়সমূহ'
+                    : '$count',
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: scheme.onSurfaceVariant),
               ),

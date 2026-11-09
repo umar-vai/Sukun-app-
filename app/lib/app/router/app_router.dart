@@ -318,6 +318,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       kind: TaxonomyKind.ruqyah,
                       topicSlug: state.pathParameters['topicSlug'],
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'chapter/:chapterNumber',
+                        builder: (context, state) => TaxonomyBrowserScreen(
+                          kind: TaxonomyKind.ruqyah,
+                          topicSlug: state.pathParameters['topicSlug'],
+                          guideChapterNumber: int.tryParse(
+                            state.pathParameters['chapterNumber'] ?? '',
+                          ),
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: 'group/:groupSlug',
+                            builder: (context, state) => TaxonomyBrowserScreen(
+                              kind: TaxonomyKind.ruqyah,
+                              topicSlug: state.pathParameters['topicSlug'],
+                              guideChapterNumber: int.tryParse(
+                                state.pathParameters['chapterNumber'] ?? '',
+                              ),
+                              guideGroupSlug: state.pathParameters['groupSlug'],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
