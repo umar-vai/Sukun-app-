@@ -87,7 +87,7 @@ void main() {
         router.routeInformationProvider.value.uri.path,
         '/challenge/40-day',
       );
-      expect(find.text('জাদু থেকে সুরক্ষার চ্যালেঞ্জ'), findsOneWidget);
+      expect(find.text('রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ'), findsOneWidget);
       expect(find.byKey(const Key('challenge-login')), findsOneWidget);
       expect(find.text('৪০ দিনের ৫টি ধাপ'), findsOneWidget);
       expect(find.byKey(const Key('challenge-progress')), findsNothing);
