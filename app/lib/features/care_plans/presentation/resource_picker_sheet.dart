@@ -921,10 +921,8 @@ class _MetaBadge extends StatelessWidget {
     ),
     child: Text(
       label,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: SukunColors.muted,
-        fontWeight: FontWeight.w600,
-      ),
+      style: Theme.of(context).textTheme.labelSmall
+          ?.copyWith(color: SukunColors.muted, fontWeight: FontWeight.w600),
     ),
   );
 }
