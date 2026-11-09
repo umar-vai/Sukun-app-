@@ -263,10 +263,51 @@ List<BulkActionDraft> expandBulkItems(Iterable<BulkImportItem> items) => [
   for (final item in items) ...item.expand(),
 ];
 
+/// Most linked resources one reminder may carry (server limit).
+const bulkMaxResourcesPerItem = 16;
+
 /// Best published match for a template that must link audio or a surah, so
 /// the admin usually only confirms instead of searching. Returns null when
 /// nothing clearly matches; the admin then picks one.
 ContentResourceOption? suggestResourceForTemplate(
+  OfficialPrescriptionTemplate template,
+  List<ContentResourceOption> resources,
+) => suggestResourcesForTemplate(template, resources).firstOrNull;
+
+/// Every library item that clearly belongs to a template: the audio, the
+/// surah text and the matching Self Ruqyah guide section. Only resources the
+/// app can actually link are returned, in the curated order, without
+/// duplicates. The admin sees each one and can remove or add more.
+List<ContentResourceOption> suggestResourcesForTemplate(
+  OfficialPrescriptionTemplate template,
+  List<ContentResourceOption> resources,
+) {
+  final linkable = [
+    for (final resource in resources)
+      if (resource.isLinkable) resource,
+  ];
+  final byId = {for (final resource in linkable) resource.id: resource};
+  final bySlug = {
+    for (final resource in linkable)
+      if (resource.slug != null) resource.slug!: resource,
+  };
+  final result = <ContentResourceOption>[];
+  void add(ContentResourceOption? resource) {
+    if (resource == null || result.contains(resource)) return;
+    if (result.length < bulkMaxResourcesPerItem) result.add(resource);
+  }
+
+  for (final ref in officialTemplateResourceRefs[template.id] ?? const []) {
+    add(ref.startsWith('quran:') ? byId[ref] : bySlug[ref]);
+  }
+  if (result.isEmpty) {
+    // Older libraries without the curated slugs: fall back to a title match.
+    add(_suggestByKeyword(template, linkable));
+  }
+  return result;
+}
+
+ContentResourceOption? _suggestByKeyword(
   OfficialPrescriptionTemplate template,
   List<ContentResourceOption> resources,
 ) {
@@ -281,7 +322,6 @@ ContentResourceOption? suggestResourceForTemplate(
       continue;
     }
     for (final resource in resources) {
-      if (!resource.isLinkable) continue;
       if (template.category == 'audio' &&
           resource.type != 'audio' &&
           resource.canonicalSurahNumber == null) {
@@ -294,6 +334,99 @@ ContentResourceOption? suggestResourceForTemplate(
   }
   return null;
 }
+
+/// Curated links from each official template to published library items
+/// (owner request 2026-11-09). Entries are CMS slugs or canonical
+/// `quran:N` chapters; missing or unpublished ones are skipped silently.
+/// Only clear one-to-one matches are listed. Templates whose prescription
+/// names an unspecified dua, count or recitation (for example a04, a08-a11,
+/// u11, u13, x02, x04, x05, x08) are left for the admin to choose.
+const officialTemplateResourceRefs = <String, List<String>>{
+  // আমল
+  'a01': [
+    'srg2024-c04-t033',
+    'srg2024-aml-001',
+    'srg2024-aml-002',
+    'srg2024-dua-009',
+    'srg2024-dua-010',
+    'srg2024-dua-011',
+    'srg2024-dua-012',
+  ],
+  'a02': [
+    'srg2024-c04-t034',
+    'srg2024-aml-003',
+    'srg2024-aml-004',
+    'srg2024-aml-005',
+    'srg2024-aml-006',
+    'srg2024-aml-007',
+    'srg2024-dua-013',
+  ],
+  'a03': ['srg2024-c04-t036', 'srg2024-dua-022'],
+  'a05': [
+    'srg2024-aml-005',
+    'quran:113',
+    'quran:114',
+    'sukun-ruqyahbd-ayatul-kursi',
+    'sukun-ruqyahbd-three-kul',
+  ],
+  'a06': ['quran:2', 'sukun-ruqyahbd-baqara'],
+  'a07': ['sukun-ruqyahbd-baqara', 'quran:2'],
+  // সাপ্লিমেন্ট
+  's01': [
+    'srg2024-c03-t004',
+    'srg2024-sup-001',
+    'quran:1',
+    'srg2024-aml-005',
+    'quran:112',
+    'quran:113',
+    'quran:114',
+  ],
+  's02': [
+    'srg2024-c04-t015',
+    'srg2024-c04-t021',
+    'srg2024-c04-t013',
+    'srg2024-c04-t022',
+  ],
+  's03': ['srg2024-sup-001', 'srg2024-c03-t004'],
+  's04': ['srg2024-sup-001'],
+  's05': ['srg2024-sup-001', 'srg2024-c03-t027'],
+  's06': ['srg2024-sup-002', 'srg2024-c03-t005'],
+  's07': ['srg2024-sup-003', 'srg2024-c03-t006'],
+  's08': ['srg2024-sup-010', 'srg2024-c03-t013'],
+  's09': ['srg2024-sup-013', 'srg2024-c03-t016'],
+  's10': ['srg2024-c03-t003', 'srg2024-sup-001'],
+  // গোসল
+  'b01': ['srg2024-ghs-002', 'srg2024-c03-t028'],
+  'b02': ['srg2024-ghs-003', 'srg2024-c03-t029', 'srg2024-sup-007'],
+  'b03': ['srg2024-ghs-004', 'srg2024-c03-t030'],
+  'b04': ['srg2024-ghs-002', 'srg2024-c03-t028'],
+  'b05': ['srg2024-ghs-002', 'srg2024-ghs-003', 'srg2024-ghs-004'],
+  'b06': ['srg2024-ghs-003', 'srg2024-ghs-004', 'srg2024-ghs-002'],
+  'b07': ['sukun-ruqyahbd-evil-eye', 'srg2024-ghs-002'],
+  'b08': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-ghs-003'],
+  'b09': ['srg2024-c03-t027', 'srg2024-c03-t031'],
+  // অডিও
+  'u01': ['sukun-ruqyahbd-jinn', 'srg2024-c04-t012'],
+  'u02': ['sukun-ruqyahbd-harq', 'srg2024-c04-t013'],
+  'u03': ['srg2024-c04-t022'],
+  'u04': [
+    'sukun-ruqyahbd-shifa-sakina',
+    'srg2024-c04-t021',
+    'srg2024-c04-t026',
+  ],
+  'u05': ['srg2024-c04-t024'],
+  'u06': ['sukun-ruqyahbd-evil-eye', 'srg2024-c04-t014'],
+  'u07': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-c04-t015'],
+  'u08': ['sukun-ruqyahbd-eight-surah'],
+  'u09': ['sukun-ruqyahbd-three-kul', 'quran:112', 'quran:113', 'quran:114'],
+  'u10': ['sukun-ruqyahbd-ayatul-kursi', 'srg2024-aml-005'],
+  'u12': ['sukun-ruqyahbd-ajmy'],
+  // বিশেষ আমল
+  'x01': ['quran:60', 'quran:28', 'quran:25'],
+  'x03': ['srg2024-c02-t005', 'srg2024-c04-t008'],
+  'x06': ['srg2024-sup-001', 'srg2024-c03-t004'],
+  'x07': ['srg2024-sup-006', 'srg2024-c03-t009'],
+};
 
 const _templateKeywords = <String, List<String>>{
   'a05': ['আয়াতুল কুরসি', 'ayatul kursi'],

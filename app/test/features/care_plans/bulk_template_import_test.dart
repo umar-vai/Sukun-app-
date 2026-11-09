@@ -19,6 +19,32 @@ const _audio = ContentResourceOption(
   status: 'published',
 );
 
+ContentResourceOption _cms(String slug, String title, {String type = 'amal'}) =>
+    ContentResourceOption(
+      id: 'id-$slug',
+      slug: slug,
+      title: title,
+      type: type,
+      visibility: 'public',
+      status: 'published',
+    );
+
+ContentResourceOption _surah(int number, String title) => ContentResourceOption(
+  id: 'quran:$number',
+  title: title,
+  type: 'quran',
+  visibility: 'public',
+  status: 'published',
+);
+
+final _library = [
+  _cms('srg2024-aml-005', 'আয়াতুল কুরসি পড়া।'),
+  _cms('sukun-ruqyahbd-ayatul-kursi', 'আয়াতুল কুরসির রুকইয়াহ', type: 'audio'),
+  _cms('sukun-ruqyahbd-three-kul', 'তিনকুলের রুকইয়াহ', type: 'audio'),
+  _surah(113, 'Al-Falaq'),
+  _surah(114, 'An-Nas'),
+];
+
 void main() {
   group('defaults', () {
     test('every official template has at least one editable time', () {
@@ -84,6 +110,86 @@ void main() {
       expect(draft.toRoutineJson()['resources'], [
         {'provider': 'quran', 'external_resource_ref': 'quran:36'},
       ]);
+    });
+  });
+
+  group('linked content', () {
+    test('a template links every curated item, in order, once', () {
+      final template = findOfficialTemplate('a05')!;
+      final suggested = suggestResourcesForTemplate(template, [
+        ..._library,
+        _library.first,
+      ]);
+      expect(suggested.map((r) => r.id), [
+        'id-srg2024-aml-005',
+        'quran:113',
+        'quran:114',
+        'id-sukun-ruqyahbd-ayatul-kursi',
+        'id-sukun-ruqyahbd-three-kul',
+      ]);
+      expect(
+        suggestResourceForTemplate(template, _library)?.id,
+        'id-srg2024-aml-005',
+      );
+    });
+
+    test('unpublished or staff-only items are never suggested', () {
+      const hidden = ContentResourceOption(
+        id: 'id-hidden',
+        slug: 'sukun-ruqyahbd-baqara',
+        title: 'Baqarah',
+        type: 'audio',
+        visibility: 'staff_only',
+        status: 'published',
+      );
+      const draft = ContentResourceOption(
+        id: 'id-draft',
+        slug: 'sukun-ruqyahbd-baqara',
+        title: 'Baqarah',
+        type: 'audio',
+        visibility: 'public',
+        status: 'draft',
+      );
+      final suggested = suggestResourcesForTemplate(
+        findOfficialTemplate('a07')!,
+        [hidden, draft, _surah(2, 'Al-Baqarah')],
+      );
+      expect(suggested.map((r) => r.id), ['quran:2']);
+    });
+
+    test('templates without a clear match get nothing guessed', () {
+      expect(
+        suggestResourcesForTemplate(findOfficialTemplate('a08')!, _library),
+        isEmpty,
+      );
+    });
+
+    test('curated refs stay within the server limit', () {
+      for (final refs in officialTemplateResourceRefs.values) {
+        expect(refs.length, lessThanOrEqualTo(bulkMaxResourcesPerItem));
+        expect(refs.toSet(), hasLength(refs.length));
+      }
+      for (final id in officialTemplateResourceRefs.keys) {
+        expect(findOfficialTemplate(id), isNotNull, reason: id);
+      }
+    });
+
+    test('several resources on one reminder all reach every time', () {
+      final item = BulkImportItem.template(findOfficialTemplate('a05')!)
+        ..variables['বার'] = 3
+        ..resourceIds.addAll(
+          suggestResourcesForTemplate(
+            findOfficialTemplate('a05')!,
+            _library,
+          ).map((r) => r.id),
+        );
+      final drafts = item.expand();
+      expect(drafts, hasLength(2));
+      for (final draft in drafts) {
+        expect(draft.quranSurahNumbers, [113, 114]);
+        expect(draft.cmsResourceIds, hasLength(3));
+        expect(draft.toRoutineJson()['resources'], hasLength(5));
+      }
     });
   });
 
@@ -201,6 +307,48 @@ void main() {
     await tester.tap(find.byKey(const Key('bulk-import-confirm')));
     await tester.pumpAndSettle();
     expect(result!.map((i) => i.templateId), ['a01', 'a02']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('one reminder shows several linked items and can drop one', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showBulkTemplateImport(
+                context,
+                recipientLabel: 'রোগী: Test',
+                resources: Future.value(_library),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bulk-template-a05')));
+    await tester.pumpAndSettle();
+    expect(find.text('যুক্ত কন্টেন্ট (৫)'), findsOneWidget);
+    expect(find.byKey(const Key('bulk-linked-quran:113')), findsOneWidget);
+    expect(find.byKey(const Key('bulk-linked-quran:114')), findsOneWidget);
+    expect(find.text('আরও কন্টেন্ট যোগ'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('bulk-linked-quran:114')),
+        matching: find.byTooltip('কন্টেন্ট বাদ দিন'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('bulk-linked-quran:114')), findsNothing);
+    expect(find.text('যুক্ত কন্টেন্ট (৪)'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
