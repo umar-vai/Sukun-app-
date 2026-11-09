@@ -152,7 +152,7 @@ class _PersonalActionDetailScreenState
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return AppErrorState(
-            message: 'রিসোর্স আনা যায়নি। আবার চেষ্টা করুন।',
+            message: 'পাঠ আনা যায়নি। আবার চেষ্টা করুন।',
             onRetry: () => setState(() => _load = _read()),
           );
         }
@@ -217,7 +217,7 @@ class _PersonalActionDetailScreenState
               ),
             ],
             const SizedBox(height: SukunSpace.section),
-            const SukunSectionHeader(title: 'সংযুক্ত রিসোর্স'),
+            const SukunSectionHeader(title: 'সংযুক্ত পাঠ ও অডিও'),
             const SizedBox(height: SukunSpace.sm),
             if (data.references.isEmpty)
               const SukunSurface(
