@@ -908,22 +908,21 @@ class _PickerCard extends StatelessWidget {
 }
 
 class _MetaBadge extends StatelessWidget {
-  const _MetaBadge({required this.label, this.emphasized = false});
+  const _MetaBadge({required this.label});
 
   final String label;
-  final bool emphasized;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
-      color: emphasized ? SukunColors.mist : const Color(0xFFF1F5F7),
+      color: const Color(0xFFF1F5F7),
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(
       label,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: emphasized ? SukunColors.deepTide : SukunColors.muted,
+        color: SukunColors.muted,
         fontWeight: FontWeight.w600,
       ),
     ),
