@@ -173,7 +173,7 @@ class _PrivateResourceDraftImportDialogState
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  'ধর্মীয় উৎস যাচাই বাকি: '
+                  'ধর্মীয় তথ্যসূত্র যাচাই বাকি: '
                   '${batch.items.where((e) => e.needsCanonicalReview).length} · '
                   'অতিরিক্ত নির্দেশনা যাচাই: '
                   '${batch.items.where((e) => e.needsClinicalReview).length}',
