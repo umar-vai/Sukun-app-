@@ -340,6 +340,8 @@ void main() {
     expect(find.byKey(const Key('bulk-linked-quran:114')), findsOneWidget);
     expect(find.text('আরও কন্টেন্ট যোগ'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('bulk-linked-quran:114')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
         of: find.byKey(const Key('bulk-linked-quran:114')),
