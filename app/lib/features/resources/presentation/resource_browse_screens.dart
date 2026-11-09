@@ -15,6 +15,8 @@ import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/presentation/ruqyah_topic_browser.dart';
+import 'package:sukun_life/features/resources/presentation/ruqyah_ayat_library.dart';
+import 'package:sukun_life/features/resources/presentation/self_ruqyah_guide_index.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 
 class QuranBrowserScreen extends ConsumerWidget {
@@ -478,6 +480,8 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
     this.groupSlug,
     this.categorySlug,
     this.topicSlug,
+    this.guideChapterNumber,
+    this.guideGroupSlug,
     super.key,
   });
 
@@ -485,6 +489,8 @@ class TaxonomyBrowserScreen extends ConsumerStatefulWidget {
   final String? groupSlug;
   final String? categorySlug;
   final String? topicSlug;
+  final int? guideChapterNumber;
+  final String? guideGroupSlug;
 
   @override
   ConsumerState<TaxonomyBrowserScreen> createState() =>
@@ -501,6 +507,11 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
   }
 
   Future<List<ContentResource>> _loadResources() {
+    if (widget.kind == TaxonomyKind.ruqyah &&
+        widget.topicSlug == 'ruqyah-ayat') {
+      // The ayat library fetches its own approved excerpt collection.
+      return Future.value(const <ContentResource>[]);
+    }
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
     return ref
         .read(resourcesRepositoryProvider)
@@ -543,13 +554,25 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
     }
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
     final isIndex = isDua ? widget.groupSlug == null : widget.topicSlug == null;
+    final guideChapter = widget.guideChapterNumber;
     final pageTitle = isDua
         ? DuaAzkarBrowseSection.titleFor(widget.groupSlug, widget.categorySlug)
+        : widget.guideGroupSlug != null
+        ? selfRuqyahGroupBySlug(
+                guideChapter ?? 0,
+                widget.guideGroupSlug,
+              )?.title ?? 'বিষয় পাওয়া যায়নি'
+        : guideChapter != null && guideChapter >= 1 && guideChapter <= 4
+        ? selfRuqyahChapterTitles[guideChapter - 1]
         : RuqyahTopicBrowser.titleFor(widget.topicSlug);
     final parentPath = isDua
         ? widget.categorySlug != null
               ? '/resources/dua-azkar/${widget.groupSlug}'
               : '/resources/dua-azkar'
+        : widget.guideGroupSlug != null && guideChapter != null
+        ? '/resources/ruqyah/ruqyah-self-guide/chapter/$guideChapter'
+        : guideChapter != null
+        ? '/resources/ruqyah/ruqyah-self-guide'
         : '/resources/ruqyah';
     return Scaffold(
       appBar: AppBar(
@@ -567,7 +590,9 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               ),
         actions: const [AudioLibraryShortcut(compact: true)],
       ),
-      body: FutureBuilder<List<ContentResource>>(
+      body: !isDua && widget.topicSlug == 'ruqyah-ayat'
+          ? const RuqyahAyatLibrary()
+          : FutureBuilder<List<ContentResource>>(
         future: _resourcesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -610,6 +635,8 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
                 RuqyahTopicBrowser(
                   resources: resources,
                   topicSlug: widget.topicSlug,
+                  guideChapterNumber: guideChapter,
+                  guideGroupSlug: widget.guideGroupSlug,
                   onOpenResource: _openRuqyahItem,
                   onOpenAyat: () =>
                       context.push('/resources/quran/collections'),
