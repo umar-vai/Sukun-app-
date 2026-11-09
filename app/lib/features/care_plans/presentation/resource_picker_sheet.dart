@@ -881,13 +881,13 @@ class _PickerCard extends StatelessWidget {
                       ),
                       if (subtitle.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                                              Text(
-                                                subtitle,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context).textTheme.bodySmall
-                                                    ?.copyWith(color: SukunColors.muted),
-                                              ),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: SukunColors.muted),
+                        ),
                       ],
                       if (meta.isNotEmpty) ...[
                         const SizedBox(height: 9),
