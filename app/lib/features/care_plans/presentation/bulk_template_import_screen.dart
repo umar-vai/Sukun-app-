@@ -94,10 +94,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
 
   BulkImportItem _newTemplateItem(OfficialPrescriptionTemplate template) {
     final item = BulkImportItem.template(template);
-    if (template.requiresLinkedResource) {
-      final suggestion = suggestResourceForTemplate(template, _resources);
-      if (suggestion != null) item.resourceIds.add(suggestion.id);
-    }
+    // Pre-link every library item that belongs to this template (audio,
+    // surah, guide section). The admin can remove any or add more.
+    item.resourceIds.addAll(
+      suggestResourcesForTemplate(template, _resources).map((r) => r.id),
+    );
     return item;
   }
 
@@ -169,22 +170,25 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     });
   }
 
+  /// Adds one more linked resource; earlier links stay.
   Future<void> _pickResource(BulkImportItem item) async {
+    if (item.resourceIds.length >= bulkMaxResourcesPerItem) return;
     final id = await showResourcePickerSheet(
       context: context,
       resources: _resources,
-      selectedId: item.resourceIds.firstOrNull ?? '',
+      selectedId: '',
     );
     if (id == null || id.isEmpty || id.startsWith('official-template:')) {
       return;
     }
-    if (!mounted) return;
-    setState(() {
-      item.resourceIds
-        ..clear()
-        ..add(id);
-    });
+    if (!mounted || item.resourceIds.contains(id)) return;
+    setState(() => item.resourceIds.add(id));
   }
+
+  List<_LinkedResource> _linkedResources(BulkImportItem? item) => [
+    for (final id in item?.resourceIds ?? const <String>[])
+      _LinkedResource(id, _resourceById(id)),
+  ];
 
   ContentResourceOption? _resourceById(String id) {
     for (final resource in _resources) {
@@ -437,9 +441,9 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                     ? (days) => setState(() => item!.durationDays = days)
                     : null,
                 onPickResource: () => _pickResource(item!),
-                linkedResource: item?.resourceIds.firstOrNull == null
-                    ? null
-                    : _resourceById(item!.resourceIds.first),
+                onRemoveResource: (id) =>
+                    setState(() => item!.resourceIds.remove(id)),
+                linkedResources: _linkedResources(item),
                 needsResource: template.requiresLinkedResource,
               );
             },
@@ -527,7 +531,8 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                     ? (days) => setState(() => item!.durationDays = days)
                     : null,
                 onPickResource: null,
-                linkedResource: null,
+                onRemoveResource: null,
+                linkedResources: const [],
                 needsResource: false,
               );
             },
@@ -607,6 +612,31 @@ class _GroupHeader extends StatelessWidget {
   }
 }
 
+final class _LinkedResource {
+  const _LinkedResource(this.id, this.resource);
+
+  final String id;
+
+  /// Null while the library is still loading.
+  final ContentResourceOption? resource;
+
+  String get label {
+    final title = resource?.displayTitle;
+    if (title != null) return title;
+    final surah = id.startsWith('quran:') ? id.substring(6) : null;
+    return surah == null ? 'যুক্ত কন্টেন্ট' : 'সূরা ${toBanglaDigits(surah)}';
+  }
+
+  IconData get icon => switch (resource?.type) {
+    'audio' => Icons.headphones_rounded,
+    'video' => Icons.play_circle_outline_rounded,
+    'pdf' => Icons.picture_as_pdf_outlined,
+    'quran' => Icons.menu_book_rounded,
+    _ when id.startsWith('quran:') => Icons.menu_book_rounded,
+    _ => Icons.article_outlined,
+  };
+}
+
 class _BulkRow extends StatelessWidget {
   const _BulkRow({
     super.key,
@@ -619,7 +649,8 @@ class _BulkRow extends StatelessWidget {
     required this.onVariable,
     required this.onDuration,
     required this.onPickResource,
-    required this.linkedResource,
+    required this.onRemoveResource,
+    required this.linkedResources,
     required this.needsResource,
   });
 
@@ -632,7 +663,8 @@ class _BulkRow extends StatelessWidget {
   final void Function(String variable, int value) onVariable;
   final ValueChanged<int?>? onDuration;
   final VoidCallback? onPickResource;
-  final ContentResourceOption? linkedResource;
+  final ValueChanged<String>? onRemoveResource;
+  final List<_LinkedResource> linkedResources;
   final bool needsResource;
 
   @override
@@ -747,21 +779,63 @@ class _BulkRow extends StatelessWidget {
                       onSelected: onDuration!,
                       noneLabel: 'চলমান',
                     ),
-                  if (onPickResource != null && needsResource)
+                  if (onPickResource != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: OutlinedButton.icon(
-                        onPressed: onPickResource,
-                        icon: Icon(
-                          linkedResource == null
-                              ? Icons.link_rounded
-                              : Icons.headphones_rounded,
-                        ),
-                        label: Text(
-                          linkedResource?.displayTitle ??
-                              'অডিও বা সূরা যুক্ত করুন',
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            linkedResources.isEmpty
+                                ? 'কন্টেন্ট (অডিও, সূরা, দুআ, গাইড)'
+                                : 'যুক্ত কন্টেন্ট '
+                                      '(${toBanglaDigits('${linkedResources.length}')})',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: SukunColors.muted,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final linked in linkedResources)
+                                InputChip(
+                                  key: Key('bulk-linked-${linked.id}'),
+                                  avatar: Icon(linked.icon, size: 16),
+                                  label: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 220,
+                                    ),
+                                    child: Text(
+                                      linked.label,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  onDeleted: onRemoveResource == null
+                                      ? null
+                                      : () => onRemoveResource!(linked.id),
+                                  deleteButtonTooltipMessage:
+                                      'কন্টেন্ট বাদ দিন',
+                                ),
+                              if (linkedResources.length <
+                                  bulkMaxResourcesPerItem)
+                                ActionChip(
+                                  key: const Key('bulk-add-resource'),
+                                  avatar: const Icon(
+                                    Icons.add_link_rounded,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    linkedResources.isEmpty
+                                        ? 'কন্টেন্ট যোগ'
+                                        : 'আরও কন্টেন্ট যোগ',
+                                  ),
+                                  onPressed: onPickResource,
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   if (problem != null)

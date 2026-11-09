@@ -22,6 +22,23 @@ quick number chips for `{বার}/{দিন}/{মিনিট}`, an optional 
 duration (care plans only), and an audio/surah link for templates that need one
 (a published match is suggested automatically).
 
+## Several content items per reminder (2026-11-09)
+
+One reminder can carry several library items (up to 16, the server limit),
+for example "আয়াতুল কুরসি ও ফালাক–নাস" links the Ayatul Kursi text, Surah
+Falaq, Surah Nas and both ruqyah audios. Selecting a template pre-links every
+item listed for it in `officialTemplateResourceRefs`
+(`app/lib/features/care_plans/domain/bulk_template_import.dart`). Each item is
+a chip the admin can remove, and "আরও কন্টেন্ট যোগ" adds more from the library.
+
+- Links use stable CMS slugs or canonical `quran:N` chapters. A missing,
+  unpublished or staff-only item is skipped, never invented.
+- 40 of the 51 templates have curated links (checked against the Production
+  library on 2026-11-09). The rest (a04, a08, a09, a10, a11, u11, u13, x02,
+  x04, x05, x08) name a dua, recitation or count the paper prescription
+  decides, or have no matching library item yet, so the admin picks.
+- Every linked item is saved on each reminder time of that row.
+
 ## Decisions (owner, 2026-11-09)
 
 - **Default times, editable.** Each template carries suggested times
