@@ -33,6 +33,10 @@ void main() {
       expect(find.text(label), findsWidgets);
     }
     expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
+    expect(find.text('আমার প্লেলিস্ট ও অফলাইন ডাউনলোড'), findsOneWidget);
+    expect(find.text('রুকইয়াহ অডিও'), findsOneWidget);
+    expect(find.text('রুকইয়াহর আয়াত পড়ুন'), findsNothing);
+    expect(find.byIcon(Icons.open_in_new_rounded), findsNothing);
     expect(find.text('Published resource'), findsNothing);
     expect(repository.browseCalls, 0);
   });
