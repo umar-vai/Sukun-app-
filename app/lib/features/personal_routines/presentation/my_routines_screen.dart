@@ -211,7 +211,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         final actionId = await _repository.saveAction(
           routineId: routineId,
           title: draft.title,
-          notificationTitle: draft.title,
+          notificationTitle: draft.notificationTitle ?? draft.title,
           contentItemId: draft.cmsResourceIds.firstOrNull,
           scheduleKind: 'fixed',
           offsetMinutes: 10,

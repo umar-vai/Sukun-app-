@@ -49,7 +49,9 @@ List<ReminderSchedule> planCareReminders({
         taskId: task.id,
         actionId: action.id,
         title: 'সুকুন লাইফ',
-        body: 'আপনার নির্ধারিত কাজের সময় হয়েছে।',
+        // Owner decision 2026-11-10: the admin-set reminder name shows on
+        // the device. Without one, the generic private text is kept.
+        body: action.notificationTitle ?? 'আপনার নির্ধারিত কাজের সময় হয়েছে।',
         scheduledAt: scheduledAt,
         payload: 'care_task:${task.id}',
       ),
@@ -70,7 +72,7 @@ ReminderSchedule planSnoozeReminder({
   taskId: task.id,
   actionId: task.action.id,
   title: 'সুকুন লাইফ',
-  body: 'পরে করার জন্য রাখা কাজটির সময় হয়েছে।',
+  body: task.action.notificationTitle ?? 'পরে করার জন্য রাখা কাজটির সময় হয়েছে।',
   scheduledAt: snoozedUntil,
   payload: 'care_task:${task.id}',
 );

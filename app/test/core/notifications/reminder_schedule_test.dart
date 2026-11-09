@@ -49,6 +49,25 @@ void main() {
     );
   });
 
+  test('shows the admin-set reminder name, else the private generic text', () {
+    final named = planCareReminders(
+      tasks: [
+        _task(
+          id: 'named',
+          exactTime: DateTime(2000, 1, 1, 9),
+          notificationTitle: 'রুকইয়াহ পানি পান করুন',
+        ),
+      ],
+      now: now,
+    ).single;
+    expect(named.body, 'রুকইয়াহ পানি পান করুন');
+    final plain = planCareReminders(
+      tasks: [_task(id: 'plain', exactTime: DateTime(2000, 1, 1, 9))],
+      now: now,
+    ).single;
+    expect(plain.body, isNot(contains('Approved care action')));
+  });
+
   test('uses the explicit patient-selected snooze time', () {
     final snoozedUntil = DateTime(2026, 10, 2, 12, 15);
     final task = _task(
@@ -85,6 +104,7 @@ PatientTask _task({
   bool reminderEnabled = true,
   PatientTaskStatus status = PatientTaskStatus.pending,
   DateTime? snoozedUntil,
+  String? notificationTitle,
 }) {
   final date = occurrenceDate ?? DateTime(2026, 10, 2);
   return PatientTask(
@@ -107,6 +127,7 @@ PatientTask _task({
       reviewStatus: reviewStatus,
       reminderEnabled: reminderEnabled,
       exactTime: exactTime,
+      notificationTitle: notificationTitle,
     ),
   );
 }

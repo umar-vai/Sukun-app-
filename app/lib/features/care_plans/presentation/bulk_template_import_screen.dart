@@ -68,6 +68,10 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
   String? _category;
   List<ContentResourceOption> _resources = const [];
 
+  /// Second step: every selected row in one list to check and edit
+  /// (times, reminder name, content, on/off) before importing.
+  bool _reviewing = false;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +81,10 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         _resources = value
             .where((resource) => resource.isLinkable)
             .toList(growable: false);
+        // Rows ticked before the library loaded get their content now.
+        for (final item in _selected.values) {
+          item.fillSuggestedResources(_resources);
+        }
       });
     }, onError: (_) {});
   }
@@ -212,6 +220,10 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
       );
       return;
     }
+    if (!_reviewing) {
+      setState(() => _reviewing = true);
+      return;
+    }
     Navigator.of(context).pop(items);
   }
 
@@ -222,9 +234,19 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     final blocked = items.where((item) => !item.isReady).length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('আমল ও রিমাইন্ডার বাছুন'),
+        leading: _reviewing
+            ? IconButton(
+                key: const Key('bulk-review-back'),
+                tooltip: 'বাছাইয়ে ফিরে যান',
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => setState(() => _reviewing = false),
+              )
+            : null,
+        title: Text(
+          _reviewing ? 'সব একসাথে দেখে নিন' : 'আমল ও রিমাইন্ডার বাছুন',
+        ),
         actions: [
-          if (_selected.isNotEmpty)
+          if (_selected.isNotEmpty && !_reviewing)
             TextButton(
               onPressed: () => setState(_selected.clear),
               child: const Text('সব মুছুন'),
@@ -235,6 +257,8 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         hint: Text(
           items.isEmpty
               ? 'যা যা দরকার টিক দিন। সময় আগে থেকেই বসানো আছে, চাইলে বদলান।'
+              : !_reviewing && blocked == 0
+              ? '${toBanglaDigits('${items.length}')}টি বাছাই · পরের ধাপে সব একসাথে দেখে নিন'
               : blocked > 0
               ? '${toBanglaDigits('${items.length}')}টি বাছাই · '
                     '${toBanglaDigits('$blocked')}টিতে তথ্য বাকি'
@@ -248,15 +272,21 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         ),
         children: [
           FilledButton.icon(
-            key: const Key('bulk-import-confirm'),
+            key: Key(_reviewing ? 'bulk-import-final' : 'bulk-import-confirm'),
             onPressed: items.isEmpty ? null : _confirm,
-            icon: const Icon(Icons.notifications_active_outlined),
+            icon: Icon(
+              _reviewing
+                  ? Icons.notifications_active_outlined
+                  : Icons.fact_check_outlined,
+            ),
             label: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 items.isEmpty
                     ? widget.confirmLabel
-                    : '${widget.confirmLabel} (${toBanglaDigits('${items.length}')})',
+                    : _reviewing
+                    ? '${widget.confirmLabel} (${toBanglaDigits('${items.length}')})'
+                    : 'দেখে নিন ও এডিট (${toBanglaDigits('${items.length}')})',
               ),
             ),
           ),
@@ -265,97 +295,197 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 820),
-          child: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  SukunSpace.page,
-                  SukunSpace.md,
-                  SukunSpace.page,
-                  0,
-                ),
-                sliver: SliverList.list(
-                  children: [
-                    SukunSurface(
-                      tone: SukunSurfaceTone.soft,
-                      showBorder: false,
-                      padding: const EdgeInsets.all(SukunSpace.lg),
-                      child: Row(
+          child: _reviewing
+              ? _reviewList(context, items)
+              : CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        SukunSpace.page,
+                        SukunSpace.md,
+                        SukunSpace.page,
+                        0,
+                      ),
+                      sliver: SliverList.list(
                         children: [
-                          const SukunIconBadge(
-                            icon: Icons.playlist_add_check_rounded,
-                            size: 44,
-                          ),
-                          const SizedBox(width: SukunSpace.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          SukunSurface(
+                            tone: SukunSurfaceTone.soft,
+                            showBorder: false,
+                            padding: const EdgeInsets.all(SukunSpace.lg),
+                            child: Row(
                               children: [
-                                Text(
-                                  widget.recipientLabel,
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                const SukunIconBadge(
+                                  icon: Icons.playlist_add_check_rounded,
+                                  size: 44,
                                 ),
-                                const SizedBox(height: 2),
-                                const Text(
-                                  'একসাথে বাছাই করুন, এক ক্লিকে সব যুক্ত হবে '
-                                  'এবং প্রতিদিনের রিমাইন্ডার চালু হবে।',
+                                const SizedBox(width: SukunSpace.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.recipientLabel,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'একসাথে বাছাই করুন, এক ক্লিকে সব যুক্ত হবে '
+                                        'এবং প্রতিদিনের রিমাইন্ডার চালু হবে।',
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(height: SukunSpace.md),
+                          if (widget.showTemplates)
+                            SegmentedButton<_BulkTab>(
+                              showSelectedIcon: false,
+                              segments: [
+                                ButtonSegment(
+                                  value: _BulkTab.templates,
+                                  icon: const Icon(
+                                    Icons.auto_awesome_motion_outlined,
+                                  ),
+                                  label: Text(
+                                    'সুকুন টেমপ্লেট '
+                                    '(${toBanglaDigits('${officialPrescriptionTemplates.length}')})',
+                                  ),
+                                ),
+                                ButtonSegment(
+                                  value: _BulkTab.resources,
+                                  icon: const Icon(
+                                    Icons.library_books_outlined,
+                                  ),
+                                  label: const Text('সব উপকরণ'),
+                                ),
+                              ],
+                              selected: {_tab},
+                              onSelectionChanged: (value) => setState(() {
+                                _tab = value.single;
+                                _category = null;
+                              }),
+                            ),
+                          const SizedBox(height: SukunSpace.md),
+                          SukunSearchField(
+                            controller: _search,
+                            hintText: _tab == _BulkTab.templates
+                                ? 'আমল, সাপ্লিমেন্ট, গোসল খুঁজুন'
+                                : 'দোয়া, অডিও, সূরা খুঁজুন',
+                            onChanged: (_) => setState(() {}),
+                            onClear: () => setState(_search.clear),
+                          ),
+                          const SizedBox(height: SukunSpace.md),
                         ],
                       ),
                     ),
-                    const SizedBox(height: SukunSpace.md),
-                    if (widget.showTemplates)
-                      SegmentedButton<_BulkTab>(
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                            value: _BulkTab.templates,
-                            icon: const Icon(
-                              Icons.auto_awesome_motion_outlined,
-                            ),
-                            label: Text(
-                              'সুকুন টেমপ্লেট '
-                              '(${toBanglaDigits('${officialPrescriptionTemplates.length}')})',
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: _BulkTab.resources,
-                            icon: const Icon(Icons.library_books_outlined),
-                            label: const Text('সব উপকরণ'),
-                          ),
-                        ],
-                        selected: {_tab},
-                        onSelectionChanged: (value) => setState(() {
-                          _tab = value.single;
-                          _category = null;
-                        }),
-                      ),
-                    const SizedBox(height: SukunSpace.md),
-                    SukunSearchField(
-                      controller: _search,
-                      hintText: _tab == _BulkTab.templates
-                          ? 'আমল, সাপ্লিমেন্ট, গোসল খুঁজুন'
-                          : 'দোয়া, অডিও, সূরা খুঁজুন',
-                      onChanged: (_) => setState(() {}),
-                      onClear: () => setState(_search.clear),
+                    if (_tab == _BulkTab.templates)
+                      ..._templateSlivers(context)
+                    else
+                      ..._resourceSlivers(context),
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  /// Step two: only the chosen rows, each fully open for editing.
+  Widget _reviewList(BuildContext context, List<BulkImportItem> items) {
+    final reminders = items
+        .where((item) => item.reminderEnabled)
+        .fold<int>(0, (sum, item) => sum + item.times.length);
+    return ListView(
+      key: const Key('bulk-review-list'),
+      padding: const EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        SukunSpace.md,
+        SukunSpace.page,
+        32,
+      ),
+      children: [
+        SukunSurface(
+          tone: SukunSurfaceTone.soft,
+          showBorder: false,
+          padding: const EdgeInsets.all(SukunSpace.lg),
+          child: Row(
+            children: [
+              const SukunIconBadge(icon: Icons.fact_check_outlined, size: 44),
+              const SizedBox(width: SukunSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.recipientLabel,
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: SukunSpace.md),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${toBanglaDigits('${items.length}')}টি করণীয় · '
+                      '${toBanglaDigits('$reminders')}টি দৈনিক রিমাইন্ডার। '
+                      'সময়, নোটিফিকেশনের নাম ও কন্টেন্ট এখানেই ঠিক করে নিন।',
+                    ),
                   ],
                 ),
               ),
-              if (_tab == _BulkTab.templates)
-                ..._templateSlivers(context)
-              else
-                ..._resourceSlivers(context),
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: SukunSpace.md),
+        for (final item in items) ...[
+          _rowForItem(item),
+          const SizedBox(height: SukunSpace.sm),
+        ],
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _reviewing = false),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('আরও বাছাই করুন'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  _BulkRow _rowForItem(BulkImportItem item) {
+    final template = item.template;
+    return _BulkRow(
+      key: Key('bulk-review-${item.key}'),
+      title: item.title,
+      subtitle: template?.instruction ?? _typeLabel(item.resource!.type),
+      item: item,
+      onToggle: () => setState(() {
+        _selected.remove(item.key);
+        if (_selected.isEmpty) _reviewing = false;
+      }),
+      onEditTime: (i) => _editTime(item, i),
+      onRemoveTime: (i) => setState(() => item.times.removeAt(i)),
+      onVariable: (name, value) => setState(() => item.variables[name] = value),
+      onDuration: widget.showDuration
+          ? (days) => setState(() => item.durationDays = days)
+          : null,
+      onPickResource: template == null ? null : () => _pickResource(item),
+      onRemoveResource: template == null
+          ? null
+          : (id) => setState(() => item.resourceIds.remove(id)),
+      linkedResources: _linkedResources(item),
+      needsResource: template?.requiresLinkedResource ?? false,
+      onNotificationTitle: (value) =>
+          setState(() => item.notificationTitle = value),
+      onReminderEnabled: widget.showDuration
+          ? (value) => setState(() => item.reminderEnabled = value)
+          : null,
     );
   }
 
@@ -445,6 +575,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                     setState(() => item!.resourceIds.remove(id)),
                 linkedResources: _linkedResources(item),
                 needsResource: template.requiresLinkedResource,
+                onNotificationTitle: (value) =>
+                    setState(() => item!.notificationTitle = value),
+                onReminderEnabled: widget.showDuration
+                    ? (value) => setState(() => item!.reminderEnabled = value)
+                    : null,
               );
             },
           ),
@@ -534,6 +669,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                 onRemoveResource: null,
                 linkedResources: const [],
                 needsResource: false,
+                onNotificationTitle: (value) =>
+                    setState(() => item!.notificationTitle = value),
+                onReminderEnabled: widget.showDuration
+                    ? (value) => setState(() => item!.reminderEnabled = value)
+                    : null,
               );
             },
           ),
@@ -652,6 +792,8 @@ class _BulkRow extends StatelessWidget {
     required this.onRemoveResource,
     required this.linkedResources,
     required this.needsResource,
+    required this.onNotificationTitle,
+    this.onReminderEnabled,
   });
 
   final String title;
@@ -666,6 +808,10 @@ class _BulkRow extends StatelessWidget {
   final ValueChanged<String>? onRemoveResource;
   final List<_LinkedResource> linkedResources;
   final bool needsResource;
+  final ValueChanged<String> onNotificationTitle;
+
+  /// Null hides the switch (routines are always on).
+  final ValueChanged<bool>? onReminderEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -741,6 +887,31 @@ class _BulkRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _ReminderNameField(
+                    key: ValueKey('bulk-name-${item!.key}'),
+                    initial: item!.notificationTitle,
+                    fallback: item!.defaultNotificationTitle,
+                    onChanged: onNotificationTitle,
+                  ),
+                  if (onReminderEnabled != null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item!.reminderEnabled
+                                ? 'রিমাইন্ডার চালু'
+                                : 'রিমাইন্ডার বন্ধ (শুধু তালিকায় থাকবে)',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                        Switch.adaptive(
+                          key: ValueKey('bulk-reminder-${item!.key}'),
+                          value: item!.reminderEnabled,
+                          onChanged: onReminderEnabled,
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -945,6 +1116,53 @@ class _QuickNumbers extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "What the phone will say": the reminder name, editable in place. Blank
+/// falls back to the row title.
+class _ReminderNameField extends StatefulWidget {
+  const _ReminderNameField({
+    super.key,
+    required this.initial,
+    required this.fallback,
+    required this.onChanged,
+  });
+
+  final String? initial;
+  final String fallback;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_ReminderNameField> createState() => _ReminderNameFieldState();
+}
+
+class _ReminderNameFieldState extends State<_ReminderNameField> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial ?? widget.fallback,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      maxLength: bulkMaxNotificationTitleLength,
+      textInputAction: TextInputAction.done,
+      decoration: const InputDecoration(
+        isDense: true,
+        counterText: '',
+        prefixIcon: Icon(Icons.notifications_none_rounded, size: 20),
+        labelText: 'নোটিফিকেশনে যে নাম দেখাবে',
+        helperText: 'ফাঁকা রাখলে উপরের শিরোনাম দেখাবে',
+      ),
+      onChanged: widget.onChanged,
     );
   }
 }

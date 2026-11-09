@@ -122,9 +122,9 @@ void main() {
       ]);
       expect(suggested.map((r) => r.id), [
         'id-srg2024-aml-005',
+        'id-sukun-ruqyahbd-ayatul-kursi',
         'quran:113',
         'quran:114',
-        'id-sukun-ruqyahbd-ayatul-kursi',
         'id-sukun-ruqyahbd-three-kul',
       ]);
       expect(
@@ -223,6 +223,36 @@ void main() {
       },
     );
 
+    test('reminder name and off switch reach the saved actions', () async {
+      final repo = _FakeRepo();
+      final names = <String, String?>{};
+      final morning = BulkImportItem.template(findOfficialTemplate('a03')!)
+        ..notificationTitle = 'বিসমিল্লাহ বলুন';
+      final quiet = BulkImportItem.template(findOfficialTemplate('a02')!)
+        ..reminderEnabled = false;
+      await BulkCarePlanImporter(
+        repo,
+        setNotificationTitle: (id, title) async => names[id] = title,
+      ).import(
+        patientId: 'p1',
+        items: [morning, quiet],
+        resourceLookup: const {},
+        now: DateTime(2026, 11, 9, 10),
+      );
+      expect(repo.saved.map((s) => s.reminderEnabled), [true, false]);
+      expect(names.values, ['বিসমিল্লাহ বলুন', quiet.title]);
+    });
+
+    test('rows picked before the library loads get their content', () {
+      final item = BulkImportItem.template(findOfficialTemplate('a05')!);
+      expect(item.resourceIds, isEmpty);
+      item.fillSuggestedResources(_library);
+      expect(item.resourceIds, contains('id-sukun-ruqyahbd-ayatul-kursi'));
+      final before = List.of(item.resourceIds);
+      item.fillSuggestedResources(_library);
+      expect(item.resourceIds, before);
+    });
+
     test('live plan: new version keeps old actions approved', () async {
       final repo = _FakeRepo()
         ..plans.add(_plan('live', CarePlanStatus.active))
@@ -303,10 +333,34 @@ void main() {
     await tester.tap(find.byKey(const Key('bulk-template-a01')));
     await tester.tap(find.byKey(const Key('bulk-template-a02')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('৩টি দৈনিক রিমাইন্ডার'), findsOneWidget);
     await tester.tap(find.byKey(const Key('bulk-import-confirm')));
     await tester.pumpAndSettle();
+    // Second step: every chosen row in one list, with its reminder name.
+    expect(find.byKey(const Key('bulk-review-list')), findsOneWidget);
+    expect(find.textContaining('৩টি দৈনিক রিমাইন্ডার'), findsWidgets);
+    expect(result, isNull);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('bulk-name-t:a02')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('bulk-review-list')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const ValueKey('bulk-name-t:a02')),
+        matching: find.byType(TextField),
+      ),
+      'ঘুমের আগে আমল করুন',
+    );
+    await tester.tap(find.byKey(const Key('bulk-import-final')));
+    await tester.pumpAndSettle();
     expect(result!.map((i) => i.templateId), ['a01', 'a02']);
+    expect(result!.last.effectiveNotificationTitle, 'ঘুমের আগে আমল করুন');
+    expect(result!.first.effectiveNotificationTitle, result!.first.title);
     expect(tester.takeException(), isNull);
   });
 

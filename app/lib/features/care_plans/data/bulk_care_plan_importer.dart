@@ -29,11 +29,19 @@ final class BulkCarePlanImportResult {
 /// with its reminder on, links resources, then publishes. Pressing the import
 /// button is the admin's approval; this is not an AI path.
 class BulkCarePlanImporter {
-  BulkCarePlanImporter(this._repository, {String Function()? newRequestId})
-    : _newRequestId = newRequestId ?? (() => const Uuid().v4());
+  BulkCarePlanImporter(
+    this._repository, {
+    String Function()? newRequestId,
+    this.setNotificationTitle,
+  }) : _newRequestId = newRequestId ?? (() => const Uuid().v4());
 
   final CarePlansRepository _repository;
   final String Function() _newRequestId;
+
+  /// Saves the reminder name on a draft action. Null skips names (older
+  /// callers and tests); the phone then shows the generic text.
+  final Future<void> Function(String actionId, String? title)?
+  setNotificationTitle;
 
   Future<BulkCarePlanImportResult> import({
     required String patientId,
@@ -145,10 +153,14 @@ class BulkCarePlanImporter {
           startDate: start,
           endDate: end,
           reviewStatus: ActionReviewStatus.approved,
-          reminderEnabled: true,
+          reminderEnabled: item.reminderEnabled,
           requestId: _newRequestId(),
         ),
       );
+      final name = item.notificationTitle;
+      if (name != null && setNotificationTitle != null) {
+        await setNotificationTitle!(saved.id, name);
+      }
       final cms = item.cmsResourceIds;
       if (cms.isNotEmpty) {
         await _repository.replaceActionResources(

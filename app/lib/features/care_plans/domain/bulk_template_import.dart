@@ -160,6 +160,27 @@ final class BulkImportItem {
   /// Empty means the reminder continues until the plan ends.
   int? durationDays;
 
+  /// What the phone shows when the reminder fires. Null or blank uses
+  /// [defaultNotificationTitle]. The admin can edit it before importing.
+  String? notificationTitle;
+
+  /// Off saves the row without a phone reminder (it still shows in the
+  /// person's daily list). Care plans only; routines are always on.
+  bool reminderEnabled = true;
+
+  String get defaultNotificationTitle => title;
+
+  /// The name the reminder will actually carry.
+  String get effectiveNotificationTitle {
+    final custom = notificationTitle?.trim();
+    final value = custom == null || custom.isEmpty
+        ? defaultNotificationTitle
+        : custom;
+    return value.length > bulkMaxNotificationTitleLength
+        ? value.substring(0, bulkMaxNotificationTitleLength)
+        : value;
+  }
+
   String get key =>
       template != null ? 't:${template!.id}' : 'r:${resource!.id}';
 
@@ -179,6 +200,16 @@ final class BulkImportItem {
 
   bool get isReady =>
       times.isNotEmpty && missingVariables.isEmpty && !needsResource;
+
+  /// Adds the curated library items once the library has loaded, for rows
+  /// picked before it finished (the row would otherwise stay empty).
+  void fillSuggestedResources(List<ContentResourceOption> library) {
+    final source = template;
+    if (source == null || resourceIds.isNotEmpty) return;
+    resourceIds.addAll(
+      suggestResourcesForTemplate(source, library).map((r) => r.id),
+    );
+  }
 
   /// Human readable reason this row blocks the import, or null.
   String? get problem {
@@ -212,6 +243,8 @@ final class BulkImportItem {
           resourceIds: List.unmodifiable(resourceIds),
           durationDays: durationDays,
           officialTemplateId: templateId,
+          notificationTitle: effectiveNotificationTitle,
+          reminderEnabled: reminderEnabled,
         ),
     ];
   }
@@ -226,6 +259,8 @@ final class BulkActionDraft {
     this.instruction,
     this.durationDays,
     this.officialTemplateId,
+    this.notificationTitle,
+    this.reminderEnabled = true,
   });
 
   final String title;
@@ -235,6 +270,10 @@ final class BulkActionDraft {
   final List<String> resourceIds;
   final int? durationDays;
   final String? officialTemplateId;
+
+  /// Shown by the phone when the reminder fires.
+  final String? notificationTitle;
+  final bool reminderEnabled;
 
   List<String> get cmsResourceIds =>
       resourceIds.where((id) => !id.startsWith('quran:')).toList();
@@ -249,6 +288,7 @@ final class BulkActionDraft {
     'title': title.length > 160 ? title.substring(0, 160) : title,
     if (instruction != null) 'notes': instruction,
     if (officialTemplateId != null) 'official_template_id': officialTemplateId,
+    if (notificationTitle != null) 'notification_title': notificationTitle,
     'local_time': time.databaseValue,
     'resources': [
       for (final id in resourceIds)
@@ -265,6 +305,9 @@ List<BulkActionDraft> expandBulkItems(Iterable<BulkImportItem> items) => [
 
 /// Most linked resources one reminder may carry (server limit).
 const bulkMaxResourcesPerItem = 16;
+
+/// Longest reminder name the database accepts.
+const bulkMaxNotificationTitleLength = 120;
 
 /// Best published match for a template that must link audio or a surah, so
 /// the admin usually only confirms instead of searching. Returns null when
@@ -336,17 +379,29 @@ ContentResourceOption? _suggestByKeyword(
 }
 
 /// Curated links from each official template to published library items
-/// (owner request 2026-11-09). Entries are CMS slugs or canonical
-/// `quran:N` chapters; missing or unpublished ones are skipped silently.
-/// Only clear one-to-one matches are listed. Templates whose prescription
-/// names an unspecified dua, count or recitation (for example a04, a08-a11,
-/// u11, u13, x02, x04, x05, x08) are left for the admin to choose.
+/// (owner request 2026-11-09, completed 2026-11-10). Entries are CMS slugs or
+/// canonical `quran:N` chapters; missing or unpublished ones are skipped.
+///
+/// Rule: when a template names a recitation, both forms are linked, the
+/// text (Arabic ayat or surah) and the audio of the same recitation, so the
+/// person can read or listen. Guide sections that explain the method come
+/// first.
+///
+/// Not linked on purpose (owner decision 2026-11-10): a04 Tasbih-e-Fatemi,
+/// a08 Durood, a09 Istighfar and x02 Ya Fattahu will open the planned dhikr
+/// counter (see docs/BULK_TEMPLATE_IMPORT.md). a10, a11, u11, u13, x04, x05
+/// and x08 name a dua, reciter or set the paper prescription decides, so the
+/// admin picks.
 const officialTemplateResourceRefs = <String, List<String>>{
   // আমল
   'a01': [
     'srg2024-c04-t033',
     'srg2024-aml-001',
     'srg2024-aml-002',
+    _ayatulKursiText,
+    _ayatulKursiAudio,
+    ..._threeQulText,
+    _threeQulAudio,
     'srg2024-dua-009',
     'srg2024-dua-010',
     'srg2024-dua-011',
@@ -357,17 +412,23 @@ const officialTemplateResourceRefs = <String, List<String>>{
     'srg2024-aml-003',
     'srg2024-aml-004',
     'srg2024-aml-005',
+    _ayatulKursiText,
+    _ayatulKursiAudio,
     'srg2024-aml-006',
+    'srg2024-qur-006',
     'srg2024-aml-007',
+    ..._threeQulText,
+    _threeQulAudio,
     'srg2024-dua-013',
   ],
   'a03': ['srg2024-c04-t036', 'srg2024-dua-022'],
   'a05': [
     'srg2024-aml-005',
+    _ayatulKursiText,
+    _ayatulKursiAudio,
     'quran:113',
     'quran:114',
-    'sukun-ruqyahbd-ayatul-kursi',
-    'sukun-ruqyahbd-three-kul',
+    _threeQulAudio,
   ],
   'a06': ['quran:2', 'sukun-ruqyahbd-baqara'],
   'a07': ['sukun-ruqyahbd-baqara', 'quran:2'],
@@ -376,19 +437,28 @@ const officialTemplateResourceRefs = <String, List<String>>{
     'srg2024-c03-t004',
     'srg2024-sup-001',
     'quran:1',
-    'srg2024-aml-005',
-    'quran:112',
-    'quran:113',
-    'quran:114',
+    'sukun-ruqyahbd-fatiha',
+    _ayatulKursiText,
+    _ayatulKursiAudio,
+    ..._threeQulText,
+    _threeQulAudio,
+    'srg2024-c04-t011',
+    'sukun-ruqyahbd-common-bangla',
   ],
   's02': [
+    'srg2024-c03-t003',
     'srg2024-c04-t015',
+    'sukun-ruqyahbd-sihr-hibshi',
     'srg2024-c04-t021',
+    'sukun-ruqyahbd-shifa',
+    'sukun-ruqyahbd-shifa-sakina',
     'srg2024-c04-t013',
+    'sukun-ruqyahbd-harq',
     'srg2024-c04-t022',
+    'sukun-ruqyahbd-qital-tadmir',
   ],
   's03': ['srg2024-sup-001', 'srg2024-c03-t004'],
-  's04': ['srg2024-sup-001'],
+  's04': ['srg2024-sup-001', 'srg2024-c03-t004'],
   's05': ['srg2024-sup-001', 'srg2024-c03-t027'],
   's06': ['srg2024-sup-002', 'srg2024-c03-t005'],
   's07': ['srg2024-sup-003', 'srg2024-c03-t006'],
@@ -396,36 +466,71 @@ const officialTemplateResourceRefs = <String, List<String>>{
   's09': ['srg2024-sup-013', 'srg2024-c03-t016'],
   's10': ['srg2024-c03-t003', 'srg2024-sup-001'],
   // গোসল
-  'b01': ['srg2024-ghs-002', 'srg2024-c03-t028'],
-  'b02': ['srg2024-ghs-003', 'srg2024-c03-t029', 'srg2024-sup-007'],
+  'b01': [
+    'srg2024-ghs-002',
+    'srg2024-c03-t028',
+    'srg2024-c04-t014',
+    'sukun-ruqyahbd-evil-eye',
+  ],
+  'b02': [
+    'srg2024-ghs-003',
+    'srg2024-c03-t029',
+    'srg2024-sup-007',
+    'srg2024-c04-t015',
+    'sukun-ruqyahbd-sihr-hibshi',
+  ],
   'b03': ['srg2024-ghs-004', 'srg2024-c03-t030'],
-  'b04': ['srg2024-ghs-002', 'srg2024-c03-t028'],
+  'b04': [
+    'srg2024-ghs-002',
+    'srg2024-c03-t028',
+    'srg2024-c04-t014',
+    'sukun-ruqyahbd-evil-eye',
+  ],
   'b05': ['srg2024-ghs-002', 'srg2024-ghs-003', 'srg2024-ghs-004'],
   'b06': ['srg2024-ghs-003', 'srg2024-ghs-004', 'srg2024-ghs-002'],
-  'b07': ['sukun-ruqyahbd-evil-eye', 'srg2024-ghs-002'],
-  'b08': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-ghs-003'],
+  'b07': ['sukun-ruqyahbd-evil-eye', 'srg2024-c04-t014', 'srg2024-ghs-002'],
+  'b08': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-c04-t015', 'srg2024-ghs-003'],
   'b09': ['srg2024-c03-t027', 'srg2024-c03-t031'],
-  // অডিও
+  // অডিও: audio first, then the ayat it recites
   'u01': ['sukun-ruqyahbd-jinn', 'srg2024-c04-t012'],
   'u02': ['sukun-ruqyahbd-harq', 'srg2024-c04-t013'],
-  'u03': ['srg2024-c04-t022'],
+  'u03': ['sukun-ruqyahbd-qital-tadmir', 'srg2024-c04-t022'],
   'u04': [
     'sukun-ruqyahbd-shifa-sakina',
+    'sukun-ruqyahbd-shifa',
     'srg2024-c04-t021',
     'srg2024-c04-t026',
   ],
-  'u05': ['srg2024-c04-t024'],
+  'u05': ['sukun-ruqyahbd-khuruj', 'srg2024-c04-t024'],
   'u06': ['sukun-ruqyahbd-evil-eye', 'srg2024-c04-t014'],
-  'u07': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-c04-t015'],
+  'u07': ['sukun-ruqyahbd-sihr-hibshi', 'srg2024-c04-t015', 'srg2024-c04-t016'],
   'u08': ['sukun-ruqyahbd-eight-surah'],
-  'u09': ['sukun-ruqyahbd-three-kul', 'quran:112', 'quran:113', 'quran:114'],
-  'u10': ['sukun-ruqyahbd-ayatul-kursi', 'srg2024-aml-005'],
-  'u12': ['sukun-ruqyahbd-ajmy'],
+  'u09': [_threeQulAudio, ..._threeQulText],
+  'u10': [_ayatulKursiAudio, _ayatulKursiText, 'srg2024-aml-005'],
+  'u12': ['sukun-ruqyahbd-ajmy', ..._threeQulText, _ayatulKursiText],
   // বিশেষ আমল
   'x01': ['quran:60', 'quran:28', 'quran:25'],
   'x03': ['srg2024-c02-t005', 'srg2024-c04-t008'],
   'x06': ['srg2024-sup-001', 'srg2024-c03-t004'],
   'x07': ['srg2024-sup-006', 'srg2024-c03-t009'],
+};
+
+/// Ayatul Kursi (2:255) in the verified Self Ruqyah ayat set.
+const _ayatulKursiText = 'srg2024-qur-005';
+const _ayatulKursiAudio = 'sukun-ruqyahbd-ayatul-kursi';
+
+/// Surah Ikhlas, Falaq and Nas as canonical chapters.
+const _threeQulText = ['quran:112', 'quran:113', 'quran:114'];
+const _threeQulAudio = 'sukun-ruqyahbd-three-kul';
+
+/// Templates that will link to the planned dhikr counter instead of library
+/// items (owner decision 2026-11-10). Not shown yet; kept so the counter can
+/// wire itself to the right template later.
+const officialTemplateDhikrRefs = <String, String>{
+  'a04': 'tasbih-fatemi',
+  'a08': 'durood',
+  'a09': 'istighfar',
+  'x02': 'ya-fattahu',
 };
 
 const _templateKeywords = <String, List<String>>{
