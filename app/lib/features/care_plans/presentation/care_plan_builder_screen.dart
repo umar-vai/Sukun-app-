@@ -5,11 +5,14 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/care_plans/data/bulk_care_plan_importer.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action_approval.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
 import 'package:uuid/uuid.dart';
 
 class CarePlanBuilderScreen extends ConsumerStatefulWidget {
@@ -69,6 +72,57 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/$suffix',
     );
     if (mounted && changed == true) _reload();
+  }
+
+  /// Adds many template/library rows at once with reminders on, then
+  /// publishes when nothing else in the draft still needs review.
+  Future<void> _bulkImport() async {
+    if (_working) return;
+    final repository = ref.read(carePlansRepositoryProvider);
+    final resources = repository.getAvailableResources();
+    final items = await showBulkTemplateImport(
+      context,
+      recipientLabel: 'এই পরিকল্পনায় যোগ হবে',
+      resources: resources,
+    );
+    if (items == null || items.isEmpty || !mounted) return;
+    setState(() => _working = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      var lookup = <String, ContentResourceOption>{};
+      try {
+        lookup = {for (final r in await resources) r.id: r};
+      } catch (_) {}
+      final result = await BulkCarePlanImporter(repository).import(
+        patientId: widget.patientId,
+        items: items,
+        resourceLookup: lookup,
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            result.published
+                ? 'যুক্ত ও প্রকাশিত হয়েছে, রিমাইন্ডার চালু।'
+                : 'যুক্ত হয়েছে। বাকি করণীয় অনুমোদন করে প্রকাশ করুন।',
+          ),
+        ),
+      );
+      if (result.plan.id != widget.planId && mounted) {
+        context.pushReplacement(
+          '/admin/patients/${widget.patientId}/plans/${result.plan.id}',
+        );
+        return;
+      }
+    } on CarePlanWorkflowException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) {
+        setState(() => _working = false);
+        _reload();
+      }
+    }
   }
 
   Future<void> _duplicateAction(PlanAction action) async {
@@ -313,7 +367,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                         plan: data.plan,
                         working: _working,
                         onGenerate: () => _generateActions(data.plan),
-                        onAdd: () => _openAction(),
+                        onAdd: _bulkImport,
                         onArchive: () => _archive(data.plan),
                       ),
                       const SizedBox(height: SukunSpace.section),
