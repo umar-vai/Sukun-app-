@@ -57,6 +57,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('সকাল-সন্ধ্যায় তিনবার পড়ুন'), findsOneWidget);
+      expect(find.text('বিস্তারিত'), findsNothing);
+      expect(find.text('নির্দেশনা'), findsNothing);
+      expect(find.text('লেখা'), findsNothing);
+      expect(find.textContaining('৫. সকাল-সন্ধ্যায় তিনবার পড়ুন'), findsOneWidget);
       expect(find.text('সংক্ষেপে'), findsNothing);
       expect(find.textContaining('Owner-provided source'), findsNothing);
       expect(find.text('তথ্যসূত্র'), findsNothing);
