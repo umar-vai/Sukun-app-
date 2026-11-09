@@ -37,7 +37,7 @@ class PatientInboxMessage {
   String get descriptionBn => switch (type) {
     'plan_updated' => 'আপনার বর্তমান পরিকল্পনাটি খুলে দেখুন।',
     'care_reminder' => 'আজকের করণীয়গুলো দেখে নিন।',
-    _ => 'বিস্তারিত জানতে আপনার আজকের কাজগুলো দেখুন।',
+    _ => 'আজকের কাজগুলো খুলে দেখুন।',
   };
 
   String get safeTargetRoute => switch (type) {
