@@ -70,7 +70,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   Future<void> _openMedia(ContentResource resource) async {
     final target = resolveResourceMedia(resource.linkedResource);
     if (target == null) {
-      _showError('এই উপকরণের লিংকটি এখন কাজ করছে না।');
+      _showError('লিংকটি এখন কাজ করছে না।');
       return;
     }
     if (target.kind == ResourceMediaKind.audio) {
@@ -94,7 +94,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     try {
       await ref.read(resourceLauncherProvider).open(resource.linkedResource);
     } catch (error) {
-      _showError('উপকরণটি খোলা যাচ্ছে না। আবার চেষ্টা করুন।');
+      _showError('এখন খোলা যাচ্ছে না। আবার চেষ্টা করুন।');
     }
   }
 
@@ -123,13 +123,13 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
-            body: AppLoadingState(label: 'উপকরণটি আনা হচ্ছে…'),
+            appBar: AppBar(title: const Text('পাঠ')),
+            body: AppLoadingState(label: 'পাঠ আনা হচ্ছে…'),
           );
         }
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+            appBar: AppBar(title: const Text('পাঠ')),
             body: AppErrorState(
               message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
               onRetry: _reload,
@@ -139,11 +139,11 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         final resource = snapshot.data;
         if (resource == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('ইসলামিক উপকরণ')),
+            appBar: AppBar(title: const Text('পাঠ')),
             body: AppEmptyState(
-              title: 'উপকরণটি পাওয়া যায়নি',
+              title: 'পাঠটি পাওয়া যায়নি',
               message:
-                  'এই উপকরণটি এখনো প্রকাশ করা হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
+                  'এই পাঠটি এখনো প্রকাশিত হয়নি অথবা আপনার জন্য দেওয়া হয়নি।',
             ),
           );
         }
@@ -160,7 +160,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text('ইসলামিক উপকরণ'),
+            title: const Text('পাঠ'),
             actions: [
               ReaderSettingsAction(
                 showTranslationSwitch: resource.type == 'quran',
@@ -174,7 +174,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     await context.push('/admin/content/${resource.id}/edit');
                     if (mounted) _reload();
                   },
-                  tooltip: 'উপকরণ সম্পাদনা করুন',
+                  tooltip: 'কনটেন্ট সম্পাদনা করুন',
                   icon: const Icon(Icons.edit_outlined),
                 ),
             ],
@@ -182,11 +182,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
-              SukunStatusPill(
-                label: _typeLabel(resource.type),
-                tone: SukunStatusTone.brand,
-              ),
-              const SizedBox(height: 14),
               SukunPageIntro(
                 title: resource.titleBn?.isNotEmpty == true
                     ? resource.titleBn!
@@ -242,9 +237,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                 BlogArticleBody(content: resource.body ?? ''),
               ] else
                 _Section(
-                  label: resource.type == 'article' || resource.type == 'guide'
-                      ? 'বিস্তারিত'
-                      : 'নির্দেশনা',
+                  label: 'নির্দেশনা',
+                  showLabel: false,
                   value: resource.isRuqyahBdAudio
                       ? null
                       : publicResourceInstructions(resource.body),
@@ -265,11 +259,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'উপকরণটি খুলুন',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 12),
+
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -292,11 +282,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.label, this.value, this.bangla = false});
+  const _Section({required this.label, this.value, this.bangla = false, this.showLabel = true});
 
   final String label;
   final String? value;
   final bool bangla;
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -313,15 +304,17 @@ class _Section extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1,
+            if (showLabel) ...[
+              Text(
+                label.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
+            ],
             Directionality(
               textDirection: TextDirection.ltr,
               child: ValueListenableBuilder<AppDisplayPreferences>(
@@ -341,25 +334,12 @@ class _Section extends StatelessWidget {
   }
 }
 
-String _typeLabel(String type) => switch (type) {
-  'quran' => 'কুরআন',
-  'hadith' => 'হাদিস',
-  'dua' => 'দোয়া',
-  'amal' => 'আমল',
-  'audio' => 'অডিও',
-  'video' => 'ভিডিও',
-  'book' || 'book_chapter' => 'বই',
-  'pdf' => 'পিডিএফ',
-  'article' => 'লেখা',
-  _ => 'উপকরণ',
-};
-
 String _openLabel(String? mediaType) => switch (mediaType) {
   'direct_audio_url' => 'অডিও শুনুন',
   'youtube' => 'ভিডিও দেখুন',
   'direct_video_url' => 'ভিডিও চালু করুন',
   'external_pdf' => 'পিডিএফ খুলুন',
-  _ => 'উপকরণ খুলুন',
+  _ => 'খুলুন',
 };
 
 IconData _openIcon(String? mediaType) => switch (mediaType) {
