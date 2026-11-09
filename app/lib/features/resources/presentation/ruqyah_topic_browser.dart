@@ -68,7 +68,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
         ],
         if (items.isEmpty)
           const AppEmptyState(
-            title: 'এই বিভাগে এখনো উপকরণ নেই',
+            title: 'এই বিভাগে এখনো পাঠ নেই',
             message: 'অন্য বিভাগ দেখুন।',
           )
         else
