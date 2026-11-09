@@ -89,6 +89,7 @@ class _AdminScaffoldState extends State<AdminScaffold> {
       body: widget.body,
       floatingActionButton: widget.floatingActionButton,
       bottomNavigationBar: SukunBottomNavigation(
+        navyEmphasis: true,
         selectedIndex: widget.selectedIndex,
         onSelected: (index) {
           // Detail screens share an active tab with their parent. A tap must
