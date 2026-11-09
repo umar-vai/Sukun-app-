@@ -178,14 +178,14 @@ class QuranCollectionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ayat collections')),
+      appBar: AppBar(title: const Text('আয়াতের সংকলন')),
       body: FutureBuilder<List<ContentCollection>>(
         future: ref
             .read(resourcesRepositoryProvider)
             .browseCollections(types: const {'selected_ayat', 'ruqyah_ayat'}),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading collections');
+            return const AppLoadingState(label: 'সংকলন আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -325,14 +325,14 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ayat collection')),
+      appBar: AppBar(title: const Text('আয়াতের সংকলন')),
       body: FutureBuilder<ContentCollectionDetails?>(
         future: ref
             .read(resourcesRepositoryProvider)
             .getCollection(collectionId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading collection');
+            return const AppLoadingState(label: 'সংকলন আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -342,7 +342,7 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
           final details = snapshot.data;
           if (details == null) {
             return const AppEmptyState(
-              title: 'Collection unavailable',
+              title: 'সংকলনটি পাওয়া যাচ্ছে না',
               message: 'উপকরণটি পাওয়া যায়নি।',
             );
           }
@@ -350,7 +350,7 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               SukunPageIntro(
-                eyebrow: 'Ayat collection',
+                eyebrow: 'আয়াতের সংকলন',
                 title: details.collection.titleBn ?? details.collection.title,
                 trailing: const SukunIconBadge(
                   icon: Icons.collections_bookmark_outlined,
@@ -396,12 +396,12 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
   Widget build(BuildContext context) {
     final repository = ref.watch(resourcesRepositoryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Hadith by topic')),
+      appBar: AppBar(title: const Text('বিষয়ভিত্তিক হাদিস')),
       body: FutureBuilder<(List<ResourceTopic>, List<ContentResource>)>(
         future: _load(repository),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading Hadith topics');
+            return const AppLoadingState(label: 'হাদিসের বিষয় আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -413,7 +413,7 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               const SukunPageIntro(
-                title: 'Hadith by topic',
+                title: 'বিষয়ভিত্তিক হাদিস',
                 subtitle: 'বিষয়ভিত্তিক হাদিস',
                 trailing: SukunIconBadge(
                   icon: Icons.format_quote_rounded,
@@ -426,7 +426,7 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
                 runSpacing: 8,
                 children: [
                   SukunFilterPill(
-                    label: 'All topics',
+                    label: 'সব বিষয়',
                     selected: _topicSlug == null,
                     onTap: () => setState(() => _topicSlug = null),
                   ),
@@ -442,7 +442,7 @@ class _HadithBrowserScreenState extends ConsumerState<HadithBrowserScreen> {
               const SizedBox(height: 18),
               if (data.$2.isEmpty)
                 const AppEmptyState(
-                  title: 'No Hadith published in this topic',
+                  title: 'এই বিষয়ে এখনো কোনো হাদিস প্রকাশিত হয়নি',
                   message: 'অন্য বিষয় দেখুন।',
                 )
               else
@@ -636,7 +636,7 @@ class _ResourceFutureList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return const AppLoadingState(label: 'Loading resources');
+      return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে…');
     }
     if (snapshot.hasError) {
       return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');

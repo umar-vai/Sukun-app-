@@ -127,14 +127,30 @@ New shared parts: `features/personal_routines/presentation/routine_hub_parts.dar
 
 Tests: `test/features/personal_routines/routine_hub_redesign_test.dart` (12 tests).
 
+### Resources hub and Qur'an reader (`/resources`, `/resources/quran[/:n]`)
+| Old entry point | Where it is now |
+|---|---|
+| Intro, search (debounced, no catalog load before a query), backend-unavailable note, search results | Unchanged |
+| Admin "নতুন রিসোর্স যোগ করুন", "রিসোর্স পরিচালনা" | Same buttons as quiet text buttons under the intro |
+| "আমার প্লেলিস্ট ও অফলাইন ডাউনলোড", "রুকইয়াহ অডিও" dialog, "রুকইয়াহর আয়াত পড়ুন" (external) | Three compact tiles in one row (were three stacked full-width buttons) |
+| 8 section tiles | Unchanged (same grid sizes, tests intact) |
+| Surah list (number, name, ayah count, prelive notice, retry, Quran.com fallback) | Calm cards with number badge and Arabic name; same tap target and texts ("Quran.com এ পড়ুন") |
+| Surah reader: full-surah play, per-ayah play, highlight and auto-scroll, `?ayah=` deep link, paging, reader settings, audio shortcut | Same; calmer header and verse cards (highlight colours unchanged) |
+| Source attribution | Still hidden, by the owner's decision on 9 Nov 2026 (see question log) |
+| Hadith and ayat-collection screens | English titles/labels translated to Bangla |
+| **New:** continue reading | `QuranLastReadStore` (device only, `sukun.quran.last_read`): saved on scroll, verse play, full-surah playback and the new per-verse "এখান থেকে পরে পড়ব" bookmark. "চালিয়ে পড়ুন" card on the hub and above the surah list. Cleared when the signed-in account changes |
+
+Not changed on purpose: "আজকের আয়াত" (needs an approved daily-ayah source first), the dead `QuranBrowserScreen`/`QuranSurahScreen` code (no route), the admin collections screen (library pass).
+
+Tests: `test/features/resources/quran_continue_reading_test.dart` (4 tests).
+
 ## Verification
 - `flutter analyze`: no issues.
-- `flutter test`: 572 passed, 3 skipped after the routine pass (547 before the redesign).
+- `flutter test`: 576 passed, 3 skipped after the resources pass (547 before the redesign).
 - Web screenshots at 390x844 of admin home, member home, guest home and login.
 
 ## Still to do (next passes)
 Rework these into the approved layout, using the same checklist approach:
 content
-library and notices, resources hub, Qur'an reader and
-audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
+library and notices, audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
 real data queries, so they are not added yet (no invented numbers).
