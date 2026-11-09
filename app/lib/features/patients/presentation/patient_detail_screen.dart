@@ -58,8 +58,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     final created = await context.push<bool>(
       '/admin/patients/${widget.patientId}/prescriptions/new',
     );
-    if (!mounted || created != true) return;
+    if (!mounted) return;
+    // The AI flow may end on the plan builder instead of returning a
+    // result, so refresh plans and prescriptions either way.
     _reload();
+    if (created != true) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('মূল নির্দেশনা ইতিহাসসহ সংরক্ষিত হয়েছে।')),
     );
@@ -105,7 +108,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
           final patient = snapshot.data?.$1;
           if (patient == null) {
             return const AppEmptyState(
-              title: 'রোগীকে পাওয়া যায়নি',
+              title: 'রোগীকে পাওয়া যায়নি',
               message: 'রোগীর তথ্য সংরক্ষণাগারে থাকতে পারে।',
             );
           }
@@ -184,7 +187,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             _DetailTab.plans => <Widget>[
               SukunSectionHeader(
                 title: 'সেবা পরিকল্পনা',
-                subtitle: 'প্রতিটি সংস্করণের নির্দেশনা ও করণীয়।',
+                subtitle: 'প্রতিটি সংস্করণের নির্দেশনা ও করণীয়।',
                 action: SukunStatusPill(label: '${plans.length}টি সংস্করণ'),
               ),
               const SizedBox(height: SukunSpace.md),

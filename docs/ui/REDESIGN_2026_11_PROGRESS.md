@@ -82,14 +82,33 @@ must stay reachable. When a shortcut moves, it is recorded below.
 
 Tests: `test/features/patients/patient_detail_redesign_test.dart` (6 tests) proves each row above still works.
 
+### Prescription to plan (`/admin/patients/:id/prescriptions/new` → `plans/:planId`)
+Shared pieces: `SukunStepper` (লিখুন → যাচাই → অনুমোদন) and `SukunBottomActionBar` in `core/widgets/sukun_design.dart`.
+
+| Old entry point | Where it is now |
+|---|---|
+| Typed or uploaded prescription, session date, patient visibility, idempotent save, retry from stored PDF, draft-conflict dialogs, "নিজে প্রেসক্রিপশন লিখুন" | Same screen with stepper step 1; save-only is now the quieter outlined button |
+| `ai_configuration_missing` message | **Changed:** no longer names the AI provider (AGENTS.md rule 12); offers the manual path |
+| AI review: select, "select ready", filters, bulk morning/evening time, resource matches, Qur'an references, material draft, manual builder, retry | Same, all in Bangla; original prescription now open by default; needs-review cards have a Saffron border |
+| After Import | **Changed:** continues to the plan builder (was: back to patient detail). When the builder opened the review (`?from=builder`), it returns there as before |
+| Manual builder from AI review | From a new prescription it opens the builder with `addAction=1`; from the builder it keeps the old editor push |
+| Patient detail after the flow | Always reloads plans and prescriptions when the flow returns |
+| Builder: preview, add action, actions from prescription, publish (blocked until all approved), new version, archive, reorder, duplicate, reject, `addAction=1` | Publish and preview in a fixed bottom bar; add/generate (or archive) under the summary; everything else unchanged |
+| Approving an action | **New:** "অনুমোদন" button on each unapproved card with a confirmation dialog. Uses `approvePlanAction` (`care_plans/domain/plan_action_approval.dart`): the same `saveAction` input the editor sends, plus the same multi-resource relink, so linked resources survive. The editor's status field still works |
+| Action editor | Numbered step headings, save button fixed at the bottom; fields, keys and validation unchanged |
+| Preview | Bangla copy, stepper, "প্ল্যানে ফিরে যান"; still read-only, shows approved actions only |
+| New plan / new version | Stepper; prescription list now shows loading and error states |
+
+Tests: `test/features/care_plans/plan_flow_redesign_test.dart` (approval keeps every field, restores resources, confirm/cancel, stepper) and two navigation tests in `ai_action_suggestion_test.dart`. Three older tests were updated to the Bangla copy with the same meaning.
+
 ## Verification
 - `flutter analyze`: no issues.
-- `flutter test`: 547 passed, 3 skipped (same as before the change).
+- `flutter test`: 560 passed, 3 skipped after the prescription-to-plan pass (547 before the redesign).
 - Web screenshots at 390x844 of admin home, member home, guest home and login.
 
 ## Still to do (next passes)
 Rework these into the approved layout, using the same checklist approach:
-prescription to plan wizard (3 steps), content
+content
 library and notices, routine and progress, resources hub, Qur'an reader and
 audio player, account and settings. The admin "আজ যা দেখতে হবে" counts need
 real data queries, so they are not added yet (no invented numbers).

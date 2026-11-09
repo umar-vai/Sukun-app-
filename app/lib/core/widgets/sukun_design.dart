@@ -816,3 +816,122 @@ class _SukunNavItem extends StatelessWidget {
     );
   }
 }
+
+/// The three steps of turning a prescription into an approved plan.
+const sukunPlanFlowSteps = ['লিখুন', 'যাচাই', 'অনুমোদন'];
+
+/// Calm horizontal progress for multi-step admin flows. [current] is
+/// zero-based; earlier steps read as done, later ones as upcoming.
+class SukunStepper extends StatelessWidget {
+  const SukunStepper({
+    super.key,
+    required this.current,
+    this.steps = sukunPlanFlowSteps,
+  });
+
+  final int current;
+  final List<String> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: 'ধাপ ${current + 1} / ${steps.length}: ${steps[current]}',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            for (var i = 0; i < steps.length; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  key: Key('sukun-step-$i'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: i <= current
+                            ? SukunColors.sukunBlue
+                            : scheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(SukunRadius.chip),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${i + 1}. ${steps[i]}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: i == current
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                        fontWeight: i == current
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A bottom bar that keeps the screen's main actions in reach while the
+/// content scrolls, instead of buttons buried at the end of a long page.
+class SukunBottomActionBar extends StatelessWidget {
+  const SukunBottomActionBar({super.key, required this.children, this.hint});
+
+  final List<Widget> children;
+  final Widget? hint;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      boxShadow: [
+        BoxShadow(
+          color: SukunColors.nightNavy.withValues(alpha: 0.06),
+          blurRadius: 20,
+          offset: const Offset(0, -6),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        SukunSpace.md,
+        SukunSpace.page,
+        SukunSpace.md,
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (hint != null) ...[hint!, const SizedBox(height: 8)],
+              Row(
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 10),
+                    Expanded(child: children[i]),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}

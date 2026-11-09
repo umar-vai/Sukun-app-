@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
@@ -129,6 +130,24 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const SukunStepper(current: 0),
+                      const SizedBox(height: SukunSpace.page),
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) ...[
+                        const LinearProgressIndicator(
+                          key: Key('create-plan-prescriptions-loading'),
+                        ),
+                        const SizedBox(height: SukunSpace.md),
+                      ] else if (snapshot.hasError) ...[
+                        Text(
+                          'মূল প্রেসক্রিপশনের তালিকা আনা যায়নি। প্রেসক্রিপশন '
+                          'ছাড়াও খসড়া তৈরি করতে পারেন।',
+                          key: const Key('create-plan-prescriptions-error'),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: SukunColors.error),
+                        ),
+                        const SizedBox(height: SukunSpace.md),
+                      ],
                       SukunPageIntro(
                         eyebrow: 'রোগীর সেবা',
                         title: isNewVersion
@@ -155,7 +174,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                               SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Actions and resource links will be copied into a new draft. Every copied action is marked “Needs review” and must be approved again before publishing.',
+                                  'করণীয় ও উপকরণের সংযোগ নতুন খসড়ায় কপি হবে। কপি হওয়া প্রতিটি করণীয় “যাচাই বাকি” থাকবে এবং চালুর আগে আবার অনুমোদন করতে হবে।',
                                 ),
                               ),
                             ],
@@ -199,7 +218,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                                   SukunChoiceOption(
                                     value: prescription.id,
                                     title:
-                                        'Recorded ${_formatDate(prescription.createdAt)}',
+                                        'সংরক্ষিত ${_formatDate(prescription.createdAt)}',
                                     description: prescription.rawText,
                                     icon: Icons.description_outlined,
                                   ),
@@ -303,7 +322,7 @@ class _DateTile extends StatelessWidget {
               if (onClear != null)
                 IconButton(
                   onPressed: onClear,
-                  tooltip: 'Clear date',
+                  tooltip: 'তারিখ মুছুন',
                   icon: const Icon(Icons.close_rounded),
                 ),
             ],

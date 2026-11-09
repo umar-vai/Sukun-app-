@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action_approval.dart';
 import 'package:uuid/uuid.dart';
 
 class CarePlanBuilderScreen extends ConsumerStatefulWidget {
@@ -81,7 +84,8 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     if (prescriptionId == null) return;
     final changed = await context.push<bool>(
       '/admin/patients/${widget.patientId}/plans/${widget.planId}/actions/suggest'
-      '?prescriptionId=${Uri.encodeQueryComponent(prescriptionId)}',
+      '?prescriptionId=${Uri.encodeQueryComponent(prescriptionId)}'
+      '&from=builder',
     );
     if (mounted && changed == true) _reload();
   }
@@ -134,6 +138,33 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
           .read(carePlansRepositoryProvider)
           .rejectAction(action.id, const Uuid().v4());
     }, successMessage: 'খসড়া থেকে করণীয়টি বাদ দেওয়া হয়েছে।');
+  }
+
+  /// One-tap approval. Shows what will be approved, then saves through the
+  /// same repository path as the action editor (see plan_action_approval).
+  Future<void> _approve(PlanAction action) async {
+    if (_working) return;
+    final details = [
+      '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+      if (action.countTarget != null) 'কতবার: ${action.countTarget}',
+      if (action.durationMinutes != null)
+        'সময়: ${action.durationMinutes} মিনিট',
+      if (action.instruction?.isNotEmpty == true) action.instruction!,
+    ].join('\n');
+    final confirmed = await showSukunDecisionDialog(
+      context: context,
+      title: '“${action.title}” অনুমোদন করবেন?',
+      message:
+          '$details\n\nভালো করে মিলিয়ে নিন। কিছু বদলাতে হলে আগে '
+          '"সংশোধন করুন" চাপুন।',
+      confirmLabel: 'অনুমোদন করুন',
+      cancelLabel: 'বাতিল',
+      icon: Icons.verified_outlined,
+    );
+    if (confirmed != true || _working) return;
+    await _runMutation(() async {
+      await approvePlanAction(ref.read(carePlansRepositoryProvider), action);
+    }, successMessage: 'করণীয়টি অনুমোদিত হয়েছে।');
   }
 
   Future<void> _publish(_BuilderData data) async {
@@ -216,10 +247,32 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
     );
   }
 
+  int _unresolved(_BuilderData data) => data.actions
+      .where((action) => action.reviewStatus != ActionReviewStatus.approved)
+      .length;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('রোগীর পরিকল্পনা সাজান')),
+      bottomNavigationBar: FutureBuilder<_BuilderData>(
+        future: _data,
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          if (data == null || snapshot.hasError) return const SizedBox.shrink();
+          return _PlanBottomBar(
+            plan: data.plan,
+            working: _working,
+            actionCount: data.actions.length,
+            unresolvedCount: _unresolved(data),
+            onPreview: () => context.push(
+              '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
+            ),
+            onPublish: () => _publish(data),
+            onCreateVersion: () => _createVersion(data.plan),
+          );
+        },
+      ),
       body: FutureBuilder<_BuilderData>(
         future: _data,
         builder: (context, snapshot) {
@@ -233,43 +286,37 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
             );
           }
           final data = snapshot.data!;
+          final unresolved = _unresolved(data);
+          final step =
+              !data.plan.isEditable ||
+                  (data.actions.isNotEmpty && unresolved == 0)
+              ? 2
+              : 1;
           return RefreshIndicator(
             onRefresh: () async => _reload(),
             child: CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    SukunSpace.page,
+                    SukunSpace.sm,
+                    SukunSpace.page,
+                    SukunSpace.sm,
+                  ),
                   sliver: SliverList.list(
                     children: [
-                      const SukunPageIntro(
-                        eyebrow: 'রোগীর সেবার কাজ',
-                        title: 'রোগীর করণীয় সাজান',
-                        subtitle: 'রোগীর কাছে পাঠানোর আগে প্রতিটি করণীয় যাচাই ও অনুমোদন করুন।',
-                      ),
-                      const SizedBox(height: 20),
+                      SukunStepper(current: step),
+                      const SizedBox(height: SukunSpace.page),
                       _PlanSummary(plan: data.plan),
-                      const SizedBox(height: 16),
-                      _PlanActions(
+                      const SizedBox(height: SukunSpace.md),
+                      _PlanSecondaryActions(
                         plan: data.plan,
                         working: _working,
-                        actionCount: data.actions.length,
-                        unresolvedCount: data.actions
-                            .where(
-                              (action) =>
-                                  action.reviewStatus !=
-                                  ActionReviewStatus.approved,
-                            )
-                            .length,
-                        onPreview: () => context.push(
-                          '/admin/patients/${widget.patientId}/plans/${widget.planId}/preview',
-                        ),
                         onGenerate: () => _generateActions(data.plan),
                         onAdd: () => _openAction(),
-                        onPublish: () => _publish(data),
                         onArchive: () => _archive(data.plan),
-                        onCreateVersion: () => _createVersion(data.plan),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: SukunSpace.section),
                       SukunSectionHeader(
                         title: 'করণীয় কাজগুলো',
                         subtitle: data.plan.isEditable
@@ -280,7 +327,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                           tone: SukunStatusTone.brand,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: SukunSpace.md),
                     ],
                   ),
                 ),
@@ -294,7 +341,12 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 104),
+                    padding: const EdgeInsets.fromLTRB(
+                      SukunSpace.page,
+                      0,
+                      SukunSpace.page,
+                      SukunSpace.section,
+                    ),
                     sliver: SliverReorderableList(
                       itemCount: data.actions.length,
                       onReorderItem: (oldIndex, newIndex) =>
@@ -311,6 +363,7 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                             onEdit: () => _openAction(action),
                             onDuplicate: () => _duplicateAction(action),
                             onReject: () => _reject(action),
+                            onApprove: () => _approve(action),
                           ),
                         );
                       },
@@ -339,20 +392,16 @@ class _PlanSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return SukunSurface(
-      tone: SukunSurfaceTone.navy,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(SukunSpace.page),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SukunIconBadge(
-                icon: Icons.assignment_outlined,
-                color: Colors.white,
-                backgroundColor: Color(0x3328B8EF),
-              ),
+              const SukunIconBadge(icon: Icons.assignment_outlined),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -360,16 +409,22 @@ class _PlanSummary extends StatelessWidget {
                   children: [
                     Text(
                       plan.name,
-                      style: Theme.of(context).textTheme.titleLarge
-                          ?.copyWith(color: Colors.white),
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      'সংস্করণ ${plan.version}',
-                      style: const TextStyle(color: Colors.white70),
+                      'সংস্করণ ${plan.version} · ${_formatDate(plan.startDate)} – '
+                      '${plan.endDate == null ? 'শেষ তারিখ নির্ধারিত নয়' : _formatDate(plan.endDate!)}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: SukunColors.muted,
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               SukunStatusPill(
                 label: _planStatusLabel(plan.status),
                 tone: plan.isEditable
@@ -378,17 +433,11 @@ class _PlanSummary extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            '${_formatDate(plan.startDate)} – '
-            '${plan.endDate == null ? 'শেষ তারিখ নির্ধারিত নয়' : _formatDate(plan.endDate!)}',
-            style: const TextStyle(color: Colors.white70),
-          ),
           if (plan.isEditable) ...[
-            const SizedBox(height: 10),
-            const Text(
+            const SizedBox(height: SukunSpace.md),
+            Text(
               'সব করণীয় যাচাই ও অনুমোদনের পর পরিকল্পনাটি চালু করা হলে রোগী দেখতে পাবেন।',
-              style: TextStyle(color: Colors.white70),
+              style: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
             ),
           ],
         ],
@@ -397,17 +446,60 @@ class _PlanSummary extends StatelessWidget {
   }
 }
 
-class _PlanActions extends StatelessWidget {
-  const _PlanActions({
+class _PlanSecondaryActions extends StatelessWidget {
+  const _PlanSecondaryActions({
+    required this.plan,
+    required this.working,
+    required this.onGenerate,
+    required this.onAdd,
+    required this.onArchive,
+  });
+
+  final CarePlan plan;
+  final bool working;
+  final VoidCallback onGenerate;
+  final VoidCallback onAdd;
+  final VoidCallback onArchive;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!plan.isEditable && !plan.canArchive) return const SizedBox.shrink();
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        if (plan.isEditable) ...[
+          OutlinedButton.icon(
+            onPressed: working ? null : onAdd,
+            icon: const Icon(Icons.add),
+            label: const Text('নতুন করণীয় যোগ করুন'),
+          ),
+          if (plan.prescriptionId != null)
+            OutlinedButton.icon(
+              onPressed: working ? null : onGenerate,
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: const Text('প্রেসক্রিপশন থেকে করণীয় সাজান'),
+            ),
+        ] else if (plan.canArchive)
+          TextButton.icon(
+            onPressed: working ? null : onArchive,
+            icon: const Icon(Icons.archive_outlined),
+            label: const Text('সংরক্ষণাগারে রাখুন'),
+          ),
+      ],
+    );
+  }
+}
+
+/// Publishing is the plan's main decision, so it stays in a fixed bar.
+class _PlanBottomBar extends StatelessWidget {
+  const _PlanBottomBar({
     required this.plan,
     required this.working,
     required this.actionCount,
     required this.unresolvedCount,
     required this.onPreview,
-    required this.onGenerate,
-    required this.onAdd,
     required this.onPublish,
-    required this.onArchive,
     required this.onCreateVersion,
   });
 
@@ -416,61 +508,52 @@ class _PlanActions extends StatelessWidget {
   final int actionCount;
   final int unresolvedCount;
   final VoidCallback onPreview;
-  final VoidCallback onGenerate;
-  final VoidCallback onAdd;
   final VoidCallback onPublish;
-  final VoidCallback onArchive;
   final VoidCallback onCreateVersion;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+    final blocked = actionCount == 0 || unresolvedCount > 0;
+    return SukunBottomActionBar(
+      hint: plan.isEditable && blocked
+          ? Text(
+              actionCount == 0
+                  ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
+                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF7A5A10),
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
       children: [
         OutlinedButton.icon(
           onPressed: onPreview,
           icon: const Icon(Icons.visibility_outlined),
-          label: const Text('রোগী যেমন দেখবেন'),
+          label: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('রোগী যেমন দেখবেন'),
+          ),
         ),
-        if (plan.isEditable) ...[
-          if (plan.prescriptionId != null)
-            FilledButton.tonalIcon(
-              onPressed: working ? null : onGenerate,
-              icon: const Icon(Icons.auto_awesome_outlined),
-              label: const Text('প্রেসক্রিপশন থেকে করণীয় সাজান'),
-            ),
+        if (plan.isEditable)
           FilledButton.icon(
-            onPressed: working ? null : onAdd,
-            icon: const Icon(Icons.add),
-            label: const Text('নতুন করণীয় যোগ করুন'),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: working || actionCount == 0 || unresolvedCount > 0
-                ? null
-                : onPublish,
+            onPressed: working || blocked ? null : onPublish,
             icon: const Icon(Icons.publish_outlined),
-            label: const Text('রোগীর জন্য চালু করুন'),
-          ),
-          if (actionCount == 0 || unresolvedCount > 0)
-            Text(
-              actionCount == 0
-                  ? 'আগে অন্তত একটি করণীয় যোগ ও অনুমোদন করুন।'
-                  : '$unresolvedCountটি করণীয় যাচাই ও অনুমোদন বাকি।',
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('রোগীর জন্য চালু করুন'),
             ),
-        ] else ...[
-          FilledButton.tonalIcon(
+          )
+        else
+          FilledButton.icon(
             onPressed: working ? null : onCreateVersion,
             icon: const Icon(Icons.copy_all_outlined),
-            label: const Text('নতুন সংস্করণ তৈরি করুন'),
-          ),
-          if (plan.canArchive)
-            TextButton.icon(
-              onPressed: working ? null : onArchive,
-              icon: const Icon(Icons.archive_outlined),
-              label: const Text('সংরক্ষণাগারে রাখুন'),
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('নতুন সংস্করণ তৈরি করুন'),
             ),
-        ],
+          ),
       ],
     );
   }
@@ -484,6 +567,7 @@ class _ActionCard extends StatelessWidget {
     required this.onEdit,
     required this.onDuplicate,
     required this.onReject,
+    required this.onApprove,
   });
 
   final PlanAction action;
@@ -492,88 +576,115 @@ class _ActionCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDuplicate;
   final VoidCallback onReject;
+  final VoidCallback onApprove;
 
   @override
   Widget build(BuildContext context) {
-    return SukunSurface(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (editable)
-            ReorderableDragStartListener(
-              index: index,
-              child: const Padding(
-                padding: EdgeInsets.only(right: 10, top: 8),
-                child: Icon(Icons.drag_indicator),
+    final needsAttention =
+        action.reviewStatus == ActionReviewStatus.needsReview;
+    return Container(
+      decoration: needsAttention
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(SukunRadius.card + 1.5),
+              border: Border.all(color: SukunColors.saffron, width: 1.5),
+            )
+          : null,
+      child: SukunSurface(
+        padding: const EdgeInsets.all(SukunSpace.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (editable)
+              ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 10, top: 8),
+                  child: Icon(Icons.drag_indicator),
+                ),
               ),
-            ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      action.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SukunStatusPill(
-                      label: _reviewStatusLabel(action.reviewStatus),
-                      tone: action.reviewStatus == ActionReviewStatus.approved
-                          ? SukunStatusTone.success
-                          : SukunStatusTone.warning,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        action.title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SukunStatusPill(
+                        label: _reviewStatusLabel(action.reviewStatus),
+                        tone: action.reviewStatus == ActionReviewStatus.approved
+                            ? SukunStatusTone.success
+                            : SukunStatusTone.warning,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
+                  ),
+                  if (action.countTarget != null)
+                    Text('কতবার: ${action.countTarget}'),
+                  if (action.durationMinutes != null)
+                    Text('সময়: ${action.durationMinutes} মিনিট'),
+                  if (action.instruction?.isNotEmpty == true) ...[
+                    const SizedBox(height: 6),
+                    Text(action.instruction!),
+                  ],
+                  if (action.linkedResources.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    for (final resource in action.linkedResources)
+                      Text(
+                        'সহায়ক উপকরণ: ${resource.titleBn ?? resource.title}',
+                      ),
+                  ],
+                  if (editable &&
+                      action.reviewStatus != ActionReviewStatus.approved) ...[
+                    const SizedBox(height: SukunSpace.md),
+                    FilledButton.tonalIcon(
+                      key: Key('approve-action-${action.id}'),
+                      onPressed: onApprove,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      icon: const Icon(Icons.verified_outlined, size: 18),
+                      label: const Text('অনুমোদন'),
                     ),
                   ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${_frequencyLabel(action.frequency)} · ${_timingLabel(action)}',
-                ),
-                if (action.countTarget != null)
-                  Text('কতবার: ${action.countTarget}'),
-                if (action.durationMinutes != null)
-                  Text('সময়: ${action.durationMinutes} মিনিট'),
-                if (action.instruction?.isNotEmpty == true) ...[
-                  const SizedBox(height: 6),
-                  Text(action.instruction!),
                 ],
-                if (action.linkedResources.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  for (final resource in action.linkedResources)
-                    Text('সহায়ক উপকরণ: ${resource.titleBn ?? resource.title}'),
+              ),
+            ),
+            if (editable) ...[
+              IconButton(
+                onPressed: onEdit,
+                tooltip: 'সংশোধন করুন',
+                icon: const Icon(Icons.edit_outlined),
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'আরও কাজ',
+                onSelected: (value) {
+                  if (value == 'duplicate') {
+                    onDuplicate();
+                  } else if (value == 'remove') {
+                    onReject();
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'duplicate',
+                    child: Text('ডুপ্লিকেট করে নতুন খসড়া'),
+                  ),
+                  PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
                 ],
-              ],
-            ),
-          ),
-          if (editable) ...[
-            IconButton(
-              onPressed: onEdit,
-              tooltip: 'সংশোধন করুন',
-              icon: const Icon(Icons.edit_outlined),
-            ),
-            PopupMenuButton<String>(
-              tooltip: 'আরও কাজ',
-              onSelected: (value) {
-                if (value == 'duplicate') {
-                  onDuplicate();
-                } else if (value == 'remove') {
-                  onReject();
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'duplicate',
-                  child: Text('ডুপ্লিকেট করে নতুন খসড়া'),
-                ),
-                PopupMenuItem(value: 'remove', child: Text('বাদ দিন')),
-              ],
-            ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -585,7 +696,15 @@ String _timingLabel(PlanAction action) {
     final minute = action.exactTime!.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
-  return action.timeWindow ?? 'সময় নির্ধারিত নেই';
+  return switch (action.timeWindow) {
+    'morning' => 'সকাল',
+    'afternoon' => 'দুপুর',
+    'evening' => 'সন্ধ্যা',
+    'night' => 'রাত',
+    'anytime' => 'যেকোনো সময়',
+    null || '' => 'সময় নির্ধারিত নেই',
+    final other => other,
+  };
 }
 
 String _formatDate(DateTime value) =>

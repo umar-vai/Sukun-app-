@@ -1,7 +1,7 @@
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 const aiManualFallbackMessage =
-    'Automatic action generation is temporarily unavailable. You can continue manually.';
+    'স্বয়ংক্রিয়ভাবে করণীয় তৈরি এই মুহূর্তে সম্ভব হচ্ছে না। আপনি নিজে লিখে এগিয়ে যেতে পারেন।';
 
 enum AiActionGenerationStatus { generated, manualRequired }
 

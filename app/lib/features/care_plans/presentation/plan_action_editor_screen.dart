@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
@@ -430,9 +431,8 @@ class _PlanActionEditorScreenState
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _submitting) return;
     if (_frequencyType == ActionFrequencyType.weekly && _weekdays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one weekday.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('অন্তত একটি বার বাছুন।')));
       return;
     }
     setState(() => _submitting = true);
@@ -500,11 +500,32 @@ class _PlanActionEditorScreenState
     final editing = widget.actionId != null;
     return Scaffold(
       appBar: AppBar(title: Text(editing ? 'করণীয় সংশোধন' : 'নতুন করণীয়')),
+      bottomNavigationBar: FutureBuilder<_EditorData>(
+        future: _data,
+        builder: (context, snapshot) => !snapshot.hasData
+            ? const SizedBox.shrink()
+            : SukunBottomActionBar(
+                children: [
+                  FilledButton.icon(
+                    onPressed: _submitting ? null : _submit,
+                    icon: _submitting
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: Text(
+                      _submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন',
+                    ),
+                  ),
+                ],
+              ),
+      ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading action editor');
+            return const AppLoadingState(label: 'করণীয় আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -528,10 +549,7 @@ class _PlanActionEditorScreenState
                         subtitle: 'কী করবেন, কখন করবেন এবং কোন উপকরণ খুলবেন—এক জায়গায় সাজান।',
                       ),
                       const SizedBox(height: 18),
-                      Text(
-                        '১ · কী করবেন',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      const _EditorStepHeading(number: '১', title: 'কী করবেন'),
                       const SizedBox(height: 8),
                       _buildResourceSelection(data.resources),
                       const SizedBox(height: 14),
@@ -564,9 +582,9 @@ class _PlanActionEditorScreenState
                         ),
                       ),
                       const SizedBox(height: 22),
-                      Text(
-                        '২ · কখন করবেন ও মনে করাবেন',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      const _EditorStepHeading(
+                        number: '২',
+                        title: 'কখন করবেন ও মনে করাবেন',
                       ),
                       const SizedBox(height: 8),
                       SegmentedButton<ActionFrequencyType>(
@@ -744,9 +762,9 @@ class _PlanActionEditorScreenState
                         ],
                       ),
                       const SizedBox(height: 22),
-                      Text(
-                        '৩ · যাচাই করে সংরক্ষণ',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      const _EditorStepHeading(
+                        number: '৩',
+                        title: 'যাচাই করে সংরক্ষণ',
                       ),
                       const SizedBox(height: 6),
                       const Text(
@@ -786,21 +804,7 @@ class _PlanActionEditorScreenState
                         onChanged: (value) =>
                             setState(() => _reviewStatus = value),
                       ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: _submitting ? null : _submit,
-                        icon: _submitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(
-                          _submitting ? 'সংরক্ষণ হচ্ছে…' : 'করণীয় সংরক্ষণ করুন',
-                        ),
-                      ),
+                      const SizedBox(height: SukunSpace.section),
                     ],
                   ),
                 ),
@@ -851,7 +855,7 @@ class _ActionDateTile extends StatelessWidget {
             ? const Icon(Icons.chevron_right)
             : IconButton(
                 onPressed: onClear,
-                tooltip: 'Clear date',
+                tooltip: 'তারিখ মুছুন',
                 icon: const Icon(Icons.close),
               ),
         onTap: onTap,
@@ -861,8 +865,46 @@ class _ActionDateTile extends StatelessWidget {
 }
 
 String _weekdayName(int day) =>
-    const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day - 1];
+    const ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'][day - 1];
 
 String _formatDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+/// Numbered section heading so the three editor parts read as clear steps.
+class _EditorStepHeading extends StatelessWidget {
+  const _EditorStepHeading({required this.number, required this.title});
+
+  final String number;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: SukunColors.mist,
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          number,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: SukunColors.deepTide,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+    ],
+  );
+}

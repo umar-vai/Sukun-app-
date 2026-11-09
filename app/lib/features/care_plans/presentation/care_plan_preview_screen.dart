@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
@@ -51,13 +52,23 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Patient preview')),
+      appBar: AppBar(title: const Text('রোগী যেমন দেখবেন')),
+      bottomNavigationBar: SukunBottomActionBar(
+        children: [
+          OutlinedButton.icon(
+            key: const Key('preview-back-to-plan'),
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text('প্ল্যানে ফিরে যান'),
+          ),
+        ],
+      ),
       backgroundColor: SukunColors.mist,
       body: FutureBuilder<(CarePlan, List<PlanAction>)>(
         future: _preview,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing patient preview');
+            return const AppLoadingState(label: 'প্রিভিউ তৈরি হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -68,6 +79,8 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
             children: [
+              const SukunStepper(current: 2),
+              const SizedBox(height: SukunSpace.page),
               if (plan.status == CarePlanStatus.draft) ...[
                 const SukunSurface(
                   tone: SukunSurfaceTone.warning,
@@ -78,7 +91,7 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Preview only. The patient cannot see this draft until it is reviewed and published.',
+                          'শুধু প্রিভিউ। যাচাই ও চালু না করা পর্যন্ত রোগী এই খসড়া দেখবেন না।',
                         ),
                       ),
                     ],
@@ -87,10 +100,9 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
                 const SizedBox(height: 14),
               ],
               SukunPageIntro(
-                eyebrow: 'Patient preview',
-                title: 'Your care plan',
-                subtitle:
-                    '${plan.name} · Starting ${_formatDate(plan.startDate)}',
+                eyebrow: 'রোগীর প্রিভিউ',
+                title: 'আপনার সেবা পরিকল্পনা',
+                subtitle: '${plan.name} · শুরু ${_formatDate(plan.startDate)}',
                 trailing: const SukunIconBadge(
                   icon: Icons.assignment_turned_in_outlined,
                   size: 54,
@@ -98,18 +110,15 @@ class _CarePlanPreviewScreenState extends ConsumerState<CarePlanPreviewScreen> {
               ),
               const SizedBox(height: 24),
               const SukunSectionHeader(
-                title: "Today's actions",
-                subtitle:
-                    'Only approved actions appear in the patient experience.',
+                title: 'আজকের করণীয়',
+                subtitle: 'শুধু অনুমোদিত করণীয় রোগী দেখতে পান।',
               ),
               const SizedBox(height: 12),
               if (actions.isEmpty)
                 const SukunSurface(
                   tone: SukunSurfaceTone.soft,
                   showBorder: false,
-                  child: Text(
-                    'No approved actions are available in this preview yet.',
-                  ),
+                  child: Text('এই প্রিভিউতে এখনো কোনো অনুমোদিত করণীয় নেই।'),
                 )
               else
                 for (final action in actions) ...[
@@ -150,7 +159,7 @@ class _PatientActionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${action.frequency.label} · ${_timingLabel(action, context)}',
+                      '${_frequencyLabelBn(action.frequency)} · ${_timingLabel(action, context)}',
                     ),
                   ],
                 ),
@@ -167,9 +176,9 @@ class _PatientActionCard extends StatelessWidget {
               spacing: 8,
               children: [
                 if (action.countTarget != null)
-                  SukunStatusPill(label: '${action.countTarget} repetitions'),
+                  SukunStatusPill(label: '${action.countTarget} বার'),
                 if (action.durationMinutes != null)
-                  SukunStatusPill(label: '${action.durationMinutes} minutes'),
+                  SukunStatusPill(label: '${action.durationMinutes} মিনিট'),
               ],
             ),
           ],
@@ -201,10 +210,28 @@ String _timingLabel(PlanAction action, BuildContext context) {
     return TimeOfDay.fromDateTime(action.exactTime!).format(context);
   }
   final value = action.timeWindow;
-  if (value == null || value.isEmpty) return 'Time not specified';
-  return value[0].toUpperCase() + value.substring(1);
+  if (value == null || value.isEmpty) return 'সময় নির্ধারিত নেই';
+  return switch (value) {
+    'morning' => 'সকাল',
+    'afternoon' => 'দুপুর',
+    'evening' => 'সন্ধ্যা',
+    'night' => 'রাত',
+    'anytime' => 'যেকোনো সময়',
+    _ => value,
+  };
 }
 
 String _formatDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _frequencyLabelBn(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.daily) {
+    return frequency.interval == 1
+        ? 'প্রতিদিন'
+        : 'প্রতি ${frequency.interval} দিন পর';
+  }
+  const days = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি', 'রবি'];
+  final selected = frequency.weekdays.toList()..sort();
+  return selected.map((day) => days[day - 1]).join(', ');
+}
