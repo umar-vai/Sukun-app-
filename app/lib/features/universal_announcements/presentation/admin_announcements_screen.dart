@@ -469,7 +469,7 @@ class _AdminAnnouncementEditorScreenState
                 maxLines: 10,
                 maxLength: 5000,
                 decoration: const InputDecoration(
-                  labelText: 'নোটিশের বিস্তারিত লেখা',
+                  labelText: 'নোটিশের লেখা',
                 ),
               ),
               const SizedBox(height: 8),
