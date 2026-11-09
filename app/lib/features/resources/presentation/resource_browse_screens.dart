@@ -345,7 +345,7 @@ class QuranCollectionDetailScreen extends ConsumerWidget {
           if (details == null) {
             return const AppEmptyState(
               title: 'সংকলনটি পাওয়া যাচ্ছে না',
-              message: 'উপকরণটি পাওয়া যায়নি।',
+              message: 'পাঠটি পাওয়া যায়নি।',
             );
           }
           return ListView(
@@ -602,7 +602,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
               future: _resourcesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে');
+                  return const AppLoadingState(label: 'পাঠ আনা হচ্ছে');
                 }
                 if (snapshot.hasError) {
                   return AppErrorState(
@@ -669,7 +669,7 @@ class _ResourceFutureList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে…');
+      return const AppLoadingState(label: 'পাঠ আনা হচ্ছে…');
     }
     if (snapshot.hasError) {
       return AppErrorState(message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।');
