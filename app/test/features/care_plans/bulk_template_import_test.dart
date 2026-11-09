@@ -48,7 +48,7 @@ void main() {
       expect(item.isReady, isFalse);
       item.variables['বার'] = 100;
       expect(item.isReady, isTrue);
-      expect(item.instruction, contains('100'));
+      expect(item.instruction, contains('১০০'));
     });
 
     test('audio template needs a resource; suggestion fills it', () {

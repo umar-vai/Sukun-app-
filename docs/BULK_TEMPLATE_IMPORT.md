@@ -57,9 +57,30 @@ duration (care plans only), and an audio/surah link for templates that need one
   up to 120 rows per import). Tests:
   `supabase/tests/admin_bulk_import_user_routine_reminders_test.sql`.
 
-**Production:** the routine migration must be applied to Production before
-the admin "user and routine" bulk button works there. The patient path needs no
-migration.
+**Production:** both migrations were applied to Production on 2026-11-09
+(see `docs/PRODUCTION_ENVIRONMENT.md`). The patient path needs no migration.
+
+## Prescription PDF and two sections
+
+Patient detail (summary tab) and the admin user/routine screen show a
+**prescription card**:
+
+1. **Sukun's amal and supplements**: the active care plan's approved actions
+   plus routines an admin set (found through the audit log by
+   `admin_get_user_routine_overview`). A **PDF** button downloads it at any
+   time, and the success message after a bulk import offers "PDF নিন".
+2. **Self-added**: active routines the patient or user created for
+   themselves. Shown only when there is at least one, so it takes no space
+   otherwise.
+
+The PDF (`app/lib/features/care_plans/data/prescription_pdf.dart`) is A4 with
+the official logo, name and date. Items are grouped by section (আমল,
+সাপ্লিমেন্ট, গোসল, অডিও ও তিলাওয়াত, বিশেষ আমল, অন্যান্য); under each section
+title the items run on as one paragraph, not one per line. Reminder times are
+not printed. Repeats of one item at several times print once. Pages are drawn
+with Flutter's text engine and the bundled Bangla font, then embedded as
+images, because PDF text engines break Bangla conjuncts. The text is therefore
+not selectable in the PDF.
 
 ## Known limits
 

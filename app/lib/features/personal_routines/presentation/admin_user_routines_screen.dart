@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
+import 'package:sukun_life/features/care_plans/presentation/prescription_overview_card.dart';
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
@@ -25,6 +27,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   final _search = TextEditingController();
   late Future<List<Map<String, dynamic>>> _users;
   Future<Map<String, dynamic>>? _progress;
+  Future<PrescriptionOverview>? _overview;
   Map<String, dynamic>? _selected;
   String _query = '';
   int _days = 7;
@@ -96,9 +99,15 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
   void _selectUser(Map<String, dynamic> user) {
     final id = user['id']?.toString();
     if (id == null || id.isEmpty) return;
+    final container = ProviderScope.containerOf(context);
     setState(() {
       _selected = user;
       _progress = _loadProgress(id, _days);
+      _overview = loadPrescriptionOverview(
+        carePlans: container.read(carePlansRepositoryProvider),
+        routines: container.read(routineOverviewLoaderProvider),
+        userId: id,
+      );
     });
   }
 
@@ -331,6 +340,19 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            if (_overview != null) ...[
+              PrescriptionOverviewCard(
+                key: ValueKey(_overview),
+                recipientName:
+                    selected['display_name']?.toString().trim().isNotEmpty ==
+                        true
+                    ? selected['display_name'].toString()
+                    : 'ব্যবহারকারী',
+                overview: _overview!,
+                selfLabel: 'ইউজার নিজে যোগ করেছেন',
+              ),
+              const SizedBox(height: 12),
+            ],
             FutureBuilder<Map<String, dynamic>>(
               future: _progress,
               builder: (context, snapshot) {

@@ -8,6 +8,9 @@ import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/bulk_care_plan_importer.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
+import 'package:sukun_life/features/care_plans/data/prescription_pdf.dart';
+import 'package:sukun_life/features/care_plans/presentation/prescription_overview_card.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
@@ -33,6 +36,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
   late Future<(Patient?, List<Prescription>, List<CarePlan>)> _details;
   _DetailTab _tab = _DetailTab.summary;
   String? _patientName;
+  Future<PrescriptionOverview>? _overview;
   bool _importing = false;
 
   @override
@@ -48,7 +52,14 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       repository.getPrescriptions(widget.patientId),
       ref.read(carePlansRepositoryProvider).getPatientPlans(widget.patientId),
     ]);
-    _patientName = (results[0] as Patient?)?.fullName;
+    final patient = results[0] as Patient?;
+    _patientName = patient?.fullName;
+    _overview = loadPrescriptionOverview(
+      carePlans: ref.read(carePlansRepositoryProvider),
+      routines: ref.read(routineOverviewLoaderProvider),
+      plans: results[2] as List<CarePlan>,
+      userId: patient?.userId,
+    );
     return (
       results[0] as Patient?,
       results[1] as List<Prescription>,
@@ -125,9 +136,14 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       if (result.published) {
         messenger.showSnackBar(
           SnackBar(
+            duration: const Duration(seconds: 8),
             content: Text(
               '${_bn(result.actionsAdded)}টি করণীয় যুক্ত হয়েছে, রিমাইন্ডার চালু। '
               'রোগী এখনই দেখতে পাবেন।',
+            ),
+            action: SnackBarAction(
+              label: 'PDF নিন',
+              onPressed: _downloadPdfNow,
             ),
           ),
         );
@@ -157,6 +173,24 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       );
     } finally {
       if (mounted) setState(() => _importing = false);
+    }
+  }
+
+  Future<void> _downloadPdfNow() async {
+    final overview = _overview;
+    if (overview == null) return;
+    try {
+      final data = await overview;
+      if (data.adminSections.isEmpty) return;
+      await downloadPrescriptionPdf(
+        recipientName: _patientName ?? 'রোগী',
+        sections: data.adminSections,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PDF তৈরি করা যায়নি। আবার চেষ্টা করুন।')),
+      );
     }
   }
 
@@ -261,6 +295,20 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   onBuildPlan: () =>
                       _createPlan(prescriptionId: prescriptions.first.id),
                 ),
+              if (_overview != null) ...[
+                const SizedBox(height: SukunSpace.section),
+                const SukunSectionHeader(
+                  title: 'প্রেসক্রিপশন',
+                  subtitle: 'সেকশন অনুযায়ী সব আমল, যেকোনো সময় PDF নিন',
+                ),
+                const SizedBox(height: SukunSpace.md),
+                PrescriptionOverviewCard(
+                  key: ValueKey(_overview),
+                  recipientName: patient.fullName,
+                  overview: _overview!,
+                  selfLabel: 'রোগী নিজে যোগ করেছেন',
+                ),
+              ],
             ],
             _DetailTab.plans => <Widget>[
               SukunSectionHeader(

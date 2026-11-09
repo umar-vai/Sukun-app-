@@ -193,7 +193,8 @@ final class BulkImportItem {
   String? get instruction {
     final source = template;
     if (source == null) return null;
-    return source.render(variables);
+    // Numbers the admin picked read in Bangla on the patient's screen and PDF.
+    return toBanglaDigits(source.render(variables));
   }
 
   /// One reminder action per time. A suffix keeps titles distinct when the
