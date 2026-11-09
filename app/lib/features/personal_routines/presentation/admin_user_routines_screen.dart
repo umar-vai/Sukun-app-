@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_overview_card.dart';
+import 'package:sukun_life/features/care_plans/data/reminder_controls.dart';
+import 'package:sukun_life/features/care_plans/presentation/live_reminders_card.dart';
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
@@ -109,6 +111,23 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
         userId: id,
       );
     });
+  }
+
+  /// Actions of routines an admin set (the user's own ones are theirs to
+  /// control, so they are not listed here).
+  Future<List<LiveReminder>> _adminRoutineReminders(String userId) async {
+    final routines = await ProviderScope.containerOf(context)
+        .read(routineOverviewLoaderProvider)(userId);
+    return [
+      for (final routine in routines)
+        if (routine['is_active'] == true &&
+            routine['assigned_by_admin'] == true)
+          for (final action in routine['actions'] as List? ?? const [])
+            if (action is Map)
+              ?LiveReminder.fromRoutineAction(
+                Map<String, dynamic>.from(action),
+              ),
+    ];
   }
 
   /// Public, published resources only: a routine is visible outside care
@@ -350,6 +369,21 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
                     : 'ব্যবহারকারী',
                 overview: _overview!,
                 selfLabel: 'ইউজার নিজে যোগ করেছেন',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'চলমান রিমাইন্ডার (অ্যাডমিনের দেওয়া)',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              LiveRemindersCard(
+                key: ValueKey(('live', _overview)),
+                emptyText: 'অ্যাডমিনের দেওয়া কোনো চলমান রিমাইন্ডার নেই।',
+                load: () => _adminRoutineReminders(selected['id'].toString()),
+                onToggle: (id, enabled) =>
+                    ProviderScope.containerOf(context)
+                        .read(reminderControlsProvider)
+                        .setRoutineActionReminder(id, enabled),
               ),
               const SizedBox(height: 12),
             ],

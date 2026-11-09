@@ -6,11 +6,14 @@ import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/bulk_care_plan_importer.dart';
+import 'package:sukun_life/features/care_plans/data/reminder_controls.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
 import 'package:sukun_life/features/care_plans/data/prescription_pdf.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_overview_card.dart';
+import 'package:sukun_life/features/care_plans/presentation/live_reminders_card.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
@@ -126,11 +129,16 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       } catch (_) {
         // Titles fall back to the surah number if the library is offline.
       }
-      final result = await BulkCarePlanImporter(repository).import(
-        patientId: widget.patientId,
-        items: items,
-        resourceLookup: lookup,
-      );
+      final result =
+          await BulkCarePlanImporter(
+            repository,
+            setNotificationTitle: (id, title) =>
+                saveReminderName(ref, id, title),
+          ).import(
+            patientId: widget.patientId,
+            items: items,
+            resourceLookup: lookup,
+          );
       if (!mounted) return;
       _reload();
       if (result.published) {
@@ -271,6 +279,32 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                   planCard(plan),
                   const SizedBox(height: 10),
                 ],
+              if (activePlans.isNotEmpty) ...[
+                const SizedBox(height: SukunSpace.section),
+                const SukunSectionHeader(
+                  title: 'চলমান রিমাইন্ডার',
+                  subtitle: 'যেকোনো রিমাইন্ডার এখান থেকেই চালু বা বন্ধ করুন',
+                ),
+                const SizedBox(height: SukunSpace.md),
+                LiveRemindersCard(
+                  key: ValueKey(('live', _details)),
+                  load: () async {
+                    final repository = ref.read(carePlansRepositoryProvider);
+                    return [
+                      for (final plan in activePlans)
+                        for (final action in await repository.getActions(
+                          plan.id,
+                        ))
+                          if (action.reviewStatus ==
+                              ActionReviewStatus.approved)
+                            LiveReminder.fromPlanAction(action),
+                    ];
+                  },
+                  onToggle: (id, enabled) => ref
+                      .read(reminderControlsProvider)
+                      .setLivePlanReminder(id, enabled),
+                ),
+              ],
               const SizedBox(height: SukunSpace.section),
               SukunSectionHeader(
                 title: 'সর্বশেষ মূল নির্দেশনা',

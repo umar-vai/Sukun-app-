@@ -6,6 +6,7 @@ import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/bulk_care_plan_importer.dart';
+import 'package:sukun_life/features/care_plans/data/reminder_controls.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
@@ -93,11 +94,16 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       try {
         lookup = {for (final r in await resources) r.id: r};
       } catch (_) {}
-      final result = await BulkCarePlanImporter(repository).import(
-        patientId: widget.patientId,
-        items: items,
-        resourceLookup: lookup,
-      );
+      final result =
+          await BulkCarePlanImporter(
+            repository,
+            setNotificationTitle: (id, title) =>
+                saveReminderName(ref, id, title),
+          ).import(
+            patientId: widget.patientId,
+            items: items,
+            resourceLookup: lookup,
+          );
       messenger.showSnackBar(
         SnackBar(
           content: Text(

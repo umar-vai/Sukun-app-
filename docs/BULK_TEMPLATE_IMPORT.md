@@ -39,6 +39,49 @@ a chip the admin can remove, and "আরও কন্টেন্ট যোগ" 
   decides, or have no matching library item yet, so the admin picks.
 - Every linked item is saved on each reminder time of that row.
 
+## Full content, review step and live switches (2026-11-10)
+
+Owner request: every template must carry the content it names, in both forms
+when both exist; the admin must check and edit everything in one place before
+importing; and running reminders must be switchable from the person's account.
+
+- **Text and audio together.** `officialTemplateResourceRefs` now links, for
+  each recitation a template names, the text (Arabic ayat or canonical surah)
+  and the audio of the same recitation. Examples: s01 (water) links the water
+  guide, Fatiha text and audio, Ayatul Kursi text (`srg2024-qur-005`) and
+  audio, the three Quls as surahs and audio, and the primary ruqyah ayat
+  section with the common ruqyah audio. s02 links the Sihr, Shifa, Harq and
+  Qital ayat sections each with its audio.
+- **Three audios unlocked for patients.** Owner decision: Qital-Tadmir, Khuruj
+  and Ayatush Shifa audios moved from `staff_only` to `assigned_only`. They
+  stay out of public Resources; a patient can play them only when they are on
+  that patient's approved plan. Routines (public items only) still skip them.
+- **Dhikr templates wait for the dhikr counter.** a04 Tasbih-e-Fatemi, a08
+  Durood, a09 Istighfar and x02 Ya Fattahu get no library link. They are
+  listed in `officialTemplateDhikrRefs`; the planned dhikr counter will open
+  the matching dhikr from the reminder. a10, a11, u11, u13, x04, x05 and x08
+  still need the admin to pick, because the paper prescription decides.
+- **Rows ticked before the library loads** now receive their content when it
+  arrives (previously they could stay empty).
+- **Review step.** "দেখে নিন ও এডিট" opens one list with every chosen row:
+  times (edit/add/remove), counts, duration, linked content, a
+  **notification name** box and (care plans) a reminder on/off switch. The
+  final button imports and turns reminders on.
+- **Notification name.** Stored as `plan_actions.notification_title` (care
+  plans) and the existing `personal_routine_actions.notification_title`
+  (routines). Owner decision: the phone shows this name. Blank uses the row
+  title. Web push stays generic because the server never sends patient text.
+- **Live switches.** Patient detail → "চলমান রিমাইন্ডার" and Admin → user and
+  routine → "চলমান রিমাইন্ডার (অ্যাডমিনের দেওয়া)" list running reminders with a
+  switch each. A switch saves at once through
+  `admin_set_plan_action_reminder` / `admin_set_user_routine_action_reminder`
+  (Super Admin checked in the database, audited, no new plan version). The
+  published-action guard trigger allows only the `reminder_enabled` flag to
+  change, and only inside that function. Times, names and instructions still
+  change through a new plan version. A user's self-added routines are refused.
+- Migration: `supabase/migrations/20261110090000_reminder_names_and_live_toggles.sql`,
+  tests: `supabase/tests/reminder_names_and_live_toggles_test.sql`.
+
 ## Decisions (owner, 2026-11-09)
 
 - **Default times, editable.** Each template carries suggested times

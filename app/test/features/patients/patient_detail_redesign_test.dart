@@ -85,6 +85,9 @@ void main() {
     expect(find.text('Active plan'), findsOneWidget);
     // Drafts live on the plans tab, not the summary.
     expect(find.text('Draft plan'), findsNothing);
+    // Running reminders of the live plan, each with its own switch.
+    expect(find.text('চলমান রিমাইন্ডার'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Latest instruction'), 300);
     expect(find.text('Latest instruction'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

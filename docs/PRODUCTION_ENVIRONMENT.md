@@ -13,6 +13,28 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-10: reminder names and live reminder switches (Production)
+
+- Applied `supabase/migrations/20261110090000_reminder_names_and_live_toggles.sql`
+  as remote version `20261109231505`
+  (`reminder_names_and_live_toggles_20261110`).
+- Adds nullable `plan_actions.notification_title` (1 to 120 chars), copies it
+  into new plan versions, adds `set_draft_action_notification_title`,
+  `admin_set_plan_action_reminder` and `admin_set_user_routine_action_reminder`
+  (audited, Super Admin checked in the database), lets routine import take an
+  optional `notification_title`, and adds `id`/`notification_title` to the
+  routine overview. The published-action guard trigger now allows only the
+  `reminder_enabled` flag of an ACTIVE plan to change, and only inside the
+  audited switch function.
+- Owner decision: `sukun-ruqyahbd-qital-tadmir`, `sukun-ruqyahbd-khuruj` and
+  `sukun-ruqyahbd-shifa` audios changed from `staff_only` to `assigned_only`.
+- Verified before applying inside rolled-back transactions on Production
+  (15 pgTAP checks passed, nothing kept). Verified after: the column exists,
+  `anon` cannot execute the three new functions, `authenticated` can, and the
+  three audios are `assigned_only`. The deployed client keeps working: all
+  changes are backward compatible. Local `supabase test db` could not run in
+  the session (container image pulls were rate limited).
+
 ### 2026-11-09: bulk template import and routine overview (Production)
 
 - Applied two additive SECURITY DEFINER functions (no table, grant or RLS

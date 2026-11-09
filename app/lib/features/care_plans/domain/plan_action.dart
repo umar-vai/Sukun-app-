@@ -129,6 +129,7 @@ class PlanAction {
     this.endDate,
     this.resource,
     this.resources = const [],
+    this.notificationTitle,
   });
 
   factory PlanAction.fromJson(Map<String, dynamic> json) {
@@ -213,6 +214,7 @@ class PlanAction {
       reminderEnabled: json['reminder_enabled'] as bool? ?? false,
       resource: resources.isEmpty ? null : resources.first,
       resources: List.unmodifiable(resources),
+      notificationTitle: _blankToNull(json['notification_title'] as String?),
     );
   }
 
@@ -234,9 +236,18 @@ class PlanAction {
   final LinkedResource? resource;
   final List<LinkedResource> resources;
 
+  /// Short name the phone shows when this reminder fires. Null means the
+  /// generic reminder text.
+  final String? notificationTitle;
+
   List<LinkedResource> get linkedResources => resources.isNotEmpty
       ? resources
       : (resource == null ? const [] : [resource!]);
+}
+
+String? _blankToNull(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }
 
 DateTime? _parseDate(String? value) =>
