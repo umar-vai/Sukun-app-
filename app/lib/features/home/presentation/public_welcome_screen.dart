@@ -248,7 +248,7 @@ class _WelcomeHero extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => context.go('/resources'),
               icon: const Icon(Icons.auto_stories_outlined),
-              label: const Text('রিসোর্স দেখুন'),
+              label: const Text('পাঠ ও অডিও দেখুন'),
             ),
             OutlinedButton.icon(
               onPressed: () => context.go('/login'),
