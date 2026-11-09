@@ -13,6 +13,28 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-09: bulk template import and routine overview (Production)
+
+- Applied two additive SECURITY DEFINER functions (no table, grant or RLS
+  policy changes on existing tables):
+  - `admin_import_user_routine_reminders` from
+    `supabase/migrations/20261109090000_admin_bulk_import_user_routine_reminders.sql`
+    as remote version `20261109173732`
+    (`admin_bulk_import_user_routine_reminders_20261109`).
+  - `admin_get_user_routine_overview` from
+    `supabase/migrations/20261109120000_admin_user_routine_overview.sql`
+    as remote version `20261109173739`
+    (`admin_user_routine_overview_20261109`).
+- Verified before applying: the routine tables and columns they use exist and
+  neither function existed. Verified after: `anon` cannot execute either
+  function, `authenticated` can (Super Admin is checked inside), and both are
+  audited. Local `supabase test db` passed all 39 files including the two new
+  pgTAP files. Security advisors list both under the same generic
+  "authenticated SECURITY DEFINER" warning as the existing admin RPCs.
+- Owner decision: an admin bulk import creates an ACTIVE user routine with
+  fixed reminder times (no owner opt-in). See `docs/BULK_TEMPLATE_IMPORT.md`.
+- The Flutter client using these must be deployed after this migration.
+
 ### 2026-10-24: approved public MP3 download gateway (Production)
 
 - Verified Production source project `vydfafumxptanpkmtrpr` had the

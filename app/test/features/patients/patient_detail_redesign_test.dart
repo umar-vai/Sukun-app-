@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/data/patients_repository.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
@@ -61,6 +64,7 @@ void main() {
           patientsRepositoryProvider.overrideWithValue(_FakePatients()),
           carePlansRepositoryProvider.overrideWithValue(_FakePlans()),
           progressRepositoryProvider.overrideWithValue(_FakeProgress()),
+          routineOverviewLoaderProvider.overrideWithValue((_) async => []),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -120,13 +124,16 @@ void main() {
     expect(find.text('New prescription page'), findsOneWidget);
   });
 
-  testWidgets('bottom create-plan action opens a plan without prescription', (
+  testWidgets('bottom main action opens the bulk template picker', (
     tester,
   ) async {
     await pumpDetail(tester);
-    await tester.tap(find.byKey(const Key('patient-detail-create-plan')));
+    await tester.tap(find.byKey(const Key('patient-detail-bulk-import')));
     await tester.pumpAndSettle();
-    expect(find.text('New plan page -'), findsOneWidget);
+    expect(find.text('আমল ও রিমাইন্ডার বাছুন'), findsOneWidget);
+    expect(find.text('রোগী: Amina Rahman'), findsOneWidget);
+    expect(find.byKey(const Key('bulk-template-a01')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('patient list shows the real status and filters by it', (
@@ -229,6 +236,12 @@ final class _FakePlans implements CarePlansRepository {
       createdAt: DateTime.utc(2026, 11, 8),
     ),
   ];
+
+  @override
+  Future<List<ContentResourceOption>> getAvailableResources() async => [];
+
+  @override
+  Future<List<PlanAction>> getActions(String planId) async => [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
