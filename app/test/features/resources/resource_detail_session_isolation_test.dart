@@ -44,7 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PRIVATE FOR PATIENT A'), findsNothing);
-    expect(find.text('উপকরণটি পাওয়া যায়নি'), findsOneWidget);
+    expect(find.text('পাঠটি পাওয়া যায়নি'), findsOneWidget);
     expect(repository.getCalls, greaterThanOrEqualTo(2));
     expect(tester.takeException(), isNull);
   });
@@ -118,7 +118,7 @@ void main() {
     sessionChanges.add(const AppSession.guest());
     await tester.pumpAndSettle();
     expect(find.text('PRIVATE AUDIO FOR PATIENT A'), findsNothing);
-    expect(find.text('কোনো উপকরণ পাওয়া যায়নি'), findsOneWidget);
+    expect(find.text('কোনো পাঠ পাওয়া যায়নি'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
