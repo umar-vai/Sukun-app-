@@ -59,9 +59,6 @@ class ResourcePickerField extends StatelessWidget {
         .where((resource) => resource.id == selectedId)
         .firstOrNull;
     final title = selected?.displayTitle ?? 'লাইব্রেরি থেকে উপকরণ বাছুন';
-    final subtitle = selected == null
-        ? 'প্রকাশিত দুআ, অডিও, ভিডিও, আর্টিকেল ও পিডিএফ খুঁজুন'
-        : '${selected.categoryLabel} · ${_displayType(selected.type)}';
 
     return Semantics(
       button: true,
@@ -139,14 +136,6 @@ class ResourcePickerField extends StatelessWidget {
                           color: SukunColors.nightNavy,
                           fontWeight: FontWeight.w700,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(color: SukunColors.muted),
                       ),
                     ],
                   ),
@@ -803,20 +792,14 @@ class _ResourceTile extends StatelessWidget {
       title: resource.displayTitle,
       subtitle: !resource.isLinkable
           ? _unavailableReason(resource)
-          : resource.canonicalSurahNumber != null
-          ? 'Public কুরআন পাঠে খুলবে · সূরা ${resource.canonicalSurahNumber}'
           : resource.isEditorialRuqyahExcerpt
-          ? 'সম্পাদিত উৎস-উদ্ধৃতি · পূর্ণ যাচাইকৃত আয়াত নয়'
-          : resource.titleBn?.trim().isNotEmpty == true
-          ? resource.title
-          : resource.linkabilityMessage,
+          ? 'সম্পাদিত পাঠ · পূর্ণ যাচাইকৃত আয়াত নয়'
+          : '',
       meta: [
-        _MetaBadge(label: _displayType(resource.type)),
-        _MetaBadge(
-          label: _displayStatus(resource.status),
-          emphasized: resource.status == 'published',
-        ),
-        _MetaBadge(label: _displayVisibility(resource.visibility)),
+        if (resource.status != 'published')
+          _MetaBadge(label: _displayStatus(resource.status)),
+        if (resource.visibility != 'public')
+          _MetaBadge(label: _displayVisibility(resource.visibility)),
       ],
       trailing: selected
           ? const _SelectedMark()
@@ -896,14 +879,16 @@ class _PickerCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(color: SukunColors.muted),
-                      ),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                                              Text(
+                                                subtitle,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context).textTheme.bodySmall
+                                                    ?.copyWith(color: SukunColors.muted),
+                                              ),
+                      ],
                       if (meta.isNotEmpty) ...[
                         const SizedBox(height: 9),
                         Wrap(spacing: 6, runSpacing: 6, children: meta),
@@ -1054,5 +1039,5 @@ String _unavailableReason(ContentResourceOption resource) {
   if (!resource.isPatientAccessible) {
     return 'শুধু কর্মীদের উপকরণ রোগীর করণীয়তে যুক্ত করা যাবে না।';
   }
-  return 'উৎস যাচাই ছাড়া কুরআনের উপকরণ যুক্ত করা যাবে না।';
+  return 'কুরআনের মূল পাঠ যাচাই ছাড়া যুক্ত করা যাবে না।';
 }
