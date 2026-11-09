@@ -885,7 +885,7 @@ class _AdminContentListScreenState
         OutlinedButton.icon(
           onPressed: _importPrivateCatalog,
           icon: const Icon(Icons.upload_file_outlined),
-          label: const Text('Private Dua/Amal Draft Catalog Import (Staging)'),
+          label: const Text('দোয়া/আমলের গোপন খসড়া তালিকা আমদানি (স্টেজিং)'),
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(

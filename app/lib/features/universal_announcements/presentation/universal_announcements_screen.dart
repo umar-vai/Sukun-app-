@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/universal_announcements/data/announcement_repository.dart';
 import 'package:sukun_life/features/universal_announcements/data/universal_notice_push.dart';
@@ -348,50 +351,81 @@ class UniversalAnnouncementsScreen extends ConsumerWidget {
           if (UniversalNoticePush.supported) const _UniversalPushToggle(),
           Expanded(
             child: items.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('নোটিশ লোড করা যায়নি।'),
-                      TextButton(
-                        onPressed: () =>
-                            ref.invalidate(publishedAnnouncementsProvider),
-                        child: const Text('আবার চেষ্টা করুন'),
-                      ),
-                    ],
-                  ),
-                ),
+              loading: () => const AppLoadingState(label: 'নোটিশ আনা হচ্ছে…'),
+              error: (error, stack) => AppErrorState(
+                message: 'নোটিশ লোড করা যায়নি।',
+                onRetry: () => ref.invalidate(publishedAnnouncementsProvider),
               ),
               data: (list) => list.isEmpty
-                  ? const Center(child: Text('এখন কোনো প্রকাশিত নোটিশ নেই।'))
+                  ? const AppEmptyState(
+                      icon: Icons.campaign_outlined,
+                      title: 'এখন কোনো প্রকাশিত নোটিশ নেই।',
+                      message: 'নতুন নোটিশ এলে এখানে দেখা যাবে।',
+                    )
                   : RefreshIndicator(
                       onRefresh: () async {
                         ref.invalidate(publishedAnnouncementsProvider);
                         await ref.read(publishedAnnouncementsProvider.future);
                       },
                       child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(
+                          SukunSpace.page,
+                          SukunSpace.sm,
+                          SukunSpace.page,
+                          SukunSpace.section,
+                        ),
                         itemCount: list.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 9),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final notice = list[index];
-                          return Card(
-                            child: ListTile(
-                              leading: const Icon(
-                                Icons.notifications_active_outlined,
-                              ),
-                              title: Text(notice.title),
-                              subtitle: Text(
-                                notice.body,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () =>
-                                  context.push('/announcements/${notice.id}'),
+                          return SukunSurface(
+                            key: Key('notice-item-${notice.id}'),
+                            padding: const EdgeInsets.all(14),
+                            radius: SukunRadius.tile + 2,
+                            onTap: () =>
+                                context.push('/announcements/${notice.id}'),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SukunIconBadge(
+                                  icon: Icons.campaign_outlined,
+                                  size: 42,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        notice.title,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        notice.body,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: SukunColors.muted,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Color(0xFF8AA3B5),
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -442,7 +476,7 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Push চালু করা যায়নি। পরে চেষ্টা করুন।'),
+            content: Text('নোটিফিকেশন চালু করা যায়নি। পরে চেষ্টা করুন।'),
           ),
         );
       }

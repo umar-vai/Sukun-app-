@@ -78,10 +78,10 @@ final class SupabaseAiActionsRepository implements AiActionsRepository {
 }
 
 String safeAiGenerationError(int status) => switch (status) {
-  401 => 'Please sign in again before generating actions.',
-  403 => 'Super Admin access is required to generate actions.',
-  400 => 'Use a draft care plan linked to the selected prescription.',
-  404 => 'The source prescription could not be found.',
-  409 => 'Action generation is already in progress. Please try again shortly.',
+  401 => 'করণীয় তৈরির আগে আবার লগইন করুন।',
+  403 => 'করণীয় তৈরি করতে সুপার অ্যাডমিন অনুমতি লাগবে।',
+  400 => 'বাছাই করা প্রেসক্রিপশনের সাথে যুক্ত খসড়া পরিকল্পনা ব্যবহার করুন।',
+  404 => 'মূল প্রেসক্রিপশনটি পাওয়া যায়নি।',
+  409 => 'করণীয় তৈরি ইতিমধ্যে চলছে। একটু পরে আবার চেষ্টা করুন।',
   _ => aiManualFallbackMessage,
 };

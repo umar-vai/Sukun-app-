@@ -483,6 +483,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                           initialSeed: state.extra is AiActionReviewSeed
                               ? state.extra! as AiActionReviewSeed
                               : null,
+                          returnToCaller:
+                              state.uri.queryParameters['from'] == 'builder',
                         ),
                       ),
                       GoRoute(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/features/resources/data/quran_last_read_store.dart';
 import 'package:sukun_life/app/router/app_router.dart';
 import 'package:sukun_life/core/updates/android_update_panel.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
@@ -189,6 +190,8 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
       // can use the app. No patient records are consulted or modified.
       if (oldId != null) {
         unawaited(service.cancelOwner(oldId).catchError((Object _) {}));
+        // The Qur'an "continue reading" place belongs to the previous user.
+        unawaited(QuranLastReadStore.clear());
       }
       if (newId != null && next.value?.requiresCredentialChange != true) {
         unawaited(service.refresh().catchError((Object _) => 0));

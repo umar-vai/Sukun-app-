@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -176,7 +177,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(aiManualFallbackMessage), findsOneWidget);
-    expect(find.text('Open Manual Action Builder'), findsOneWidget);
+    expect(find.text('নিজে করণীয় তৈরি করুন'), findsOneWidget);
     expect(find.textContaining('quota'), findsNothing);
   });
 
@@ -207,25 +208,31 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Original prescription'), findsOneWidget);
-      expect(find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'), findsNothing);
-      await tester.tap(find.text('Original prescription'));
-      await tester.pumpAndSettle();
+      // The original prescription is open from the start so every
+      // suggestion can be compared with it.
+      expect(find.text('মূল প্রেসক্রিপশন'), findsOneWidget);
       expect(
         find.text('সকাল-সন্ধ্যা আয়াতুল কুরসি ৩ বার পড়বেন।'),
         findsOneWidget,
       );
+      // The open prescription pushes the summary down; check it before
+      // scrolling further so the lazily built list still holds it.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+      await tester.pumpAndSettle();
+      expect(find.text('0টি প্রস্তুত · 2টি যাচাই দরকার'), findsOneWidget);
+      expect(find.text('যাচাই দরকার · 2'), findsOneWidget);
       await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.text('আয়াতুল কুরসি (সকাল)'), findsWidgets);
       // The evening session is below the fold in this lazily built list.
-      expect(find.textContaining('Source evidence:'), findsOneWidget);
-      expect(find.text('Check these ambiguities:'), findsOneWidget);
-      expect(find.text('Possible resource matches'), findsOneWidget);
-      expect(find.text('No actions selected'), findsOneWidget);
-      expect(find.text('0 ready · 2 need review'), findsOneWidget);
-      expect(find.text('Needs review · 2'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Import'), findsOneWidget);
+      expect(find.textContaining('মূল লেখায় যা আছে:'), findsOneWidget);
+      expect(find.text('এগুলো মিলিয়ে দেখুন:'), findsOneWidget);
+      expect(find.text('মিলতে পারে এমন উপকরণ'), findsOneWidget);
+      expect(find.text('কোনো করণীয় বাছাই করা হয়নি'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'প্ল্যানে যোগ করুন'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -263,6 +270,72 @@ void main() {
       expect(find.text(aiManualFallbackMessage), findsNothing);
     },
   );
+
+  Widget routedReview({required bool fromBuilder}) => ProviderScope(
+    overrides: [
+      aiActionsRepositoryProvider.overrideWithValue(
+        const _ManualAiActionsRepository(),
+      ),
+      carePlansRepositoryProvider.overrideWithValue(
+        _ReviewCarePlansRepository(),
+      ),
+      patientsRepositoryProvider.overrideWithValue(
+        const _ReviewPatientsRepository(),
+      ),
+    ],
+    child: MaterialApp.router(
+      routerConfig: GoRouter(
+        initialLocation: '/admin/patients/patient-1/plans/plan-1/review',
+        routes: [
+          GoRoute(
+            path: '/admin/patients/patient-1/plans/plan-1',
+            builder: (_, state) => Scaffold(
+              body: Text(
+                'Plan builder ${state.uri.queryParameters['addAction'] ?? '-'}',
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: 'review',
+                builder: (_, _) => AiActionReviewScreen(
+                  patientId: 'patient-1',
+                  planId: 'plan-1',
+                  prescriptionId: 'prescription-1',
+                  returnToCaller: fromBuilder,
+                ),
+              ),
+              GoRoute(
+                path: 'actions/new',
+                builder: (_, _) => const Scaffold(body: Text('Action editor')),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  testWidgets(
+    'manual path from a new prescription continues to the plan builder',
+    (tester) async {
+      await tester.pumpWidget(routedReview(fromBuilder: false));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('নিজে করণীয় তৈরি করুন'));
+      await tester.pumpAndSettle();
+      // The builder opens with its new-action editor (addAction=1).
+      expect(find.text('Plan builder 1'), findsOneWidget);
+    },
+  );
+
+  testWidgets('manual path opened from the builder keeps the old editor flow', (
+    tester,
+  ) async {
+    await tester.pumpWidget(routedReview(fromBuilder: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('নিজে করণীয় তৈরি করুন'));
+    await tester.pumpAndSettle();
+    expect(find.text('Action editor'), findsOneWidget);
+  });
 }
 
 final class _ReviewPatientsRepository implements PatientsRepository {

@@ -83,7 +83,7 @@ void main() {
     expect(find.text('Approved patient action'), findsOneWidget);
     expect(find.text('Unreviewed internal action'), findsNothing);
     expect(find.text('Assigned recording'), findsOneWidget);
-    expect(find.textContaining('Preview only'), findsOneWidget);
+    expect(find.textContaining('শুধু প্রিভিউ'), findsOneWidget);
   });
 
   testWidgets('publish is disabled when an action has not been approved', (

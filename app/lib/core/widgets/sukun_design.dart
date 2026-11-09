@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 
 const sukunPagePadding = EdgeInsets.symmetric(horizontal: 20);
 
@@ -71,7 +72,7 @@ class SukunSurface extends StatelessWidget {
     required this.child,
     this.tone = SukunSurfaceTone.white,
     this.padding = const EdgeInsets.all(20),
-    this.radius = 24,
+    this.radius = SukunRadius.card,
     this.onTap,
     this.showBorder = true,
   });
@@ -112,17 +113,13 @@ class SukunSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        border: showBorder && !dark && !night
-            ? Border.all(color: SukunColors.border.withValues(alpha: 0.78))
+        // White cards rely on soft elevation; borders only separate tinted
+        // tones from the canvas, which keeps screens calm and uncluttered.
+        border: showBorder && !dark && !night && tone != SukunSurfaceTone.white
+            ? Border.all(color: SukunColors.border.withValues(alpha: 0.55))
             : null,
         boxShadow: !night && tone == SukunSurfaceTone.white
-            ? [
-                BoxShadow(
-                  color: SukunColors.nightNavy.withValues(alpha: 0.065),
-                  blurRadius: 24,
-                  offset: const Offset(0, 9),
-                ),
-              ]
+            ? SukunShadows.card
             : null,
       ),
       child: dark
@@ -694,6 +691,7 @@ class SukunBottomNavigation extends StatelessWidget {
     required this.destinations,
     required this.onSelected,
     this.leadingAction,
+    this.navyEmphasis = false,
   });
 
   /// The bar is 70 high plus 8/10 safe-area margins. A floating player also
@@ -705,50 +703,52 @@ class SukunBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onSelected;
   final Widget? leadingAction;
 
+  /// Admin mode marks the active tab in Night Navy so staff always know
+  /// they are in the management area, not the patient experience.
+  final bool navyEmphasis;
+
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
-      boxShadow: [
-        BoxShadow(
-          color: SukunColors.nightNavy.withValues(alpha: 0.05),
-          blurRadius: 20,
-          offset: const Offset(0, -6),
-        ),
-      ],
-    ),
-    child: SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: Container(
-        height: 70,
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(SukunRadius.nav),
+            border: night
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  )
+                : null,
+            boxShadow: night ? null : SukunShadows.floating,
+          ),
+          child: Row(
+            children: [
+              if (leadingAction != null) ...[
+                SizedBox(width: 46, child: leadingAction),
+                const SizedBox(width: 3),
+              ],
+              for (var index = 0; index < destinations.length; index++)
+                Expanded(
+                  child: _SukunNavItem(
+                    destination: destinations[index],
+                    selected: index == selectedIndex,
+                    navyEmphasis: navyEmphasis && !night,
+                    onTap: () => onSelected(index),
+                  ),
+                ),
+            ],
           ),
         ),
-        child: Row(
-          children: [
-            if (leadingAction != null) ...[
-              SizedBox(width: 46, child: leadingAction),
-              const SizedBox(width: 3),
-            ],
-            for (var index = 0; index < destinations.length; index++)
-              Expanded(
-                child: _SukunNavItem(
-                  destination: destinations[index],
-                  selected: index == selectedIndex,
-                  onTap: () => onSelected(index),
-                ),
-              ),
-          ],
-        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SukunNavItem extends StatelessWidget {
@@ -756,54 +756,180 @@ class _SukunNavItem extends StatelessWidget {
     required this.destination,
     required this.selected,
     required this.onTap,
+    this.navyEmphasis = false,
   });
 
   final SukunNavDestination destination;
   final bool selected;
   final VoidCallback onTap;
+  final bool navyEmphasis;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    selected: selected,
-    button: true,
-    label: destination.label,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              selected ? destination.selectedIcon : destination.icon,
-              size: 22,
-              color: selected
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 3),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                destination.label,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: selected
-                      ? Theme.of(context).colorScheme.onPrimaryContainer
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final activeBackground = navyEmphasis
+        ? SukunColors.nightNavy
+        : scheme.primaryContainer;
+    final activeForeground = navyEmphasis
+        ? Colors.white
+        : scheme.onPrimaryContainer;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: destination.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? activeBackground : Colors.transparent,
+            borderRadius: BorderRadius.circular(SukunRadius.tile),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                selected ? destination.selectedIcon : destination.icon,
+                size: 22,
+                color: selected ? activeForeground : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  destination.label,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: selected
+                        ? activeForeground
+                        : scheme.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The three steps of turning a prescription into an approved plan.
+const sukunPlanFlowSteps = ['লিখুন', 'যাচাই', 'অনুমোদন'];
+
+/// Calm horizontal progress for multi-step admin flows. [current] is
+/// zero-based; earlier steps read as done, later ones as upcoming.
+class SukunStepper extends StatelessWidget {
+  const SukunStepper({
+    super.key,
+    required this.current,
+    this.steps = sukunPlanFlowSteps,
+  });
+
+  final int current;
+  final List<String> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: 'ধাপ ${current + 1} / ${steps.length}: ${steps[current]}',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            for (var i = 0; i < steps.length; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  key: Key('sukun-step-$i'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: i <= current
+                            ? SukunColors.sukunBlue
+                            : scheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(SukunRadius.chip),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${i + 1}. ${steps[i]}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: i == current
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                        fontWeight: i == current
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A bottom bar that keeps the screen's main actions in reach while the
+/// content scrolls, instead of buttons buried at the end of a long page.
+class SukunBottomActionBar extends StatelessWidget {
+  const SukunBottomActionBar({super.key, required this.children, this.hint});
+
+  final List<Widget> children;
+  final Widget? hint;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      boxShadow: [
+        BoxShadow(
+          color: SukunColors.nightNavy.withValues(alpha: 0.06),
+          blurRadius: 20,
+          offset: const Offset(0, -6),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        SukunSpace.md,
+        SukunSpace.page,
+        SukunSpace.md,
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (hint != null) ...[hint!, const SizedBox(height: 8)],
+              Row(
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 10),
+                    Expanded(child: children[i]),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     ),

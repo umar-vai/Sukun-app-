@@ -50,7 +50,7 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                     ? 'ব্রাউজারের ট্যাব খোলা থাকলে নির্ধারিত সময়ে রিমাইন্ডার দেখাবে।'
                     : 'মনে করিয়ে দেওয়ার অনুমতি চালু হয়েছে।'
               : kIsWeb
-              ? 'ব্রাউজারের Notification permission দিন।'
+              ? 'ব্রাউজারে নোটিফিকেশনের অনুমতি দিন।'
               : 'অনুমতি পাওয়া যায়নি। ফোনের সেটিংস থেকে চালু করতে পারেন।',
         ),
       ),

@@ -127,9 +127,9 @@ void main() {
         child: MaterialApp.router(routerConfig: router),
       ),
     );
-    await tester.ensureVisible(find.text('Upload & generate draft actions'));
+    await tester.ensureVisible(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Upload & generate draft actions'));
+    await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
     await tester.pumpAndSettle();
 
     expect(documents.importCalls, 1);
@@ -172,11 +172,16 @@ void main() {
         child: MaterialApp.router(routerConfig: router),
       ),
     );
-    await tester.ensureVisible(find.text('Upload & generate draft actions'));
+    await tester.ensureVisible(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Upload & generate draft actions'));
+    await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Gemini API সেটআপ নেই'), findsOneWidget);
+    // The admin sees a friendly manual path, never the AI provider name.
+    expect(
+      find.textContaining('স্বয়ংক্রিয়ভাবে করণীয় তৈরি এখন চালু নেই'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Gemini'), findsNothing);
     expect(documents.importCalls, 1);
     expect(documents.retryCalls, 0);
     expect(find.text('সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন'), findsOneWidget);
@@ -209,9 +214,11 @@ void main() {
           child: MaterialApp.router(routerConfig: router),
         ),
       );
-      await tester.ensureVisible(find.text('Upload & generate draft actions'));
+      await tester.ensureVisible(
+        find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Upload & generate draft actions'));
+      await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
       await tester.pumpAndSettle();
       expect(documents.importCalls, 1);
       await tester.ensureVisible(
@@ -258,9 +265,11 @@ void main() {
           child: MaterialApp.router(routerConfig: router),
         ),
       );
-      await tester.ensureVisible(find.text('Upload & generate draft actions'));
+      await tester.ensureVisible(
+        find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Upload & generate draft actions'));
+      await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
       await tester.pumpAndSettle();
 
       expect(

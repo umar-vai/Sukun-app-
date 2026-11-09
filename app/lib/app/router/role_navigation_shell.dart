@@ -82,6 +82,7 @@ class RoleNavigationShell extends ConsumerWidget {
                     ),
                   ),
                 SukunBottomNavigation(
+                  navyEmphasis: admin,
                   leadingAction: path.startsWith('/resources/')
                       ? IconButton(
                           key: const Key('navigation-back'),

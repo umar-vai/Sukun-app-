@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/core/widgets/reader_settings_sheet.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
@@ -98,7 +102,9 @@ class _PersonalActionDetailScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            status == 'done' ? 'আজকের আমল সম্পন্ন' : 'আজকের আমল Skip করা হয়েছে',
+            status == 'done'
+                ? 'আজকের আমল সম্পন্ন'
+                : 'আজকের আমল বাদ দেওয়া হয়েছে',
           ),
         ),
       );
@@ -118,85 +124,121 @@ class _PersonalActionDetailScreenState
       title: const Text('আমার করণীয়'),
       actions: const [ReaderSettingsAction()],
     ),
+    bottomNavigationBar: FutureBuilder<_PersonalActionDetail>(
+      future: _load,
+      builder: (context, snapshot) => snapshot.data?.action == null
+          ? const SizedBox.shrink()
+          : SukunBottomActionBar(
+              children: [
+                OutlinedButton(
+                  key: const Key('personal-action-skip'),
+                  onPressed: _saving ? null : () => _complete('skipped'),
+                  child: const Text('আজ বাদ দিন'),
+                ),
+                FilledButton.icon(
+                  key: const Key('personal-action-done'),
+                  onPressed: _saving ? null : () => _complete('done'),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('আজকের আমল সম্পন্ন'),
+                  ),
+                ),
+              ],
+            ),
+    ),
     body: FutureBuilder<_PersonalActionDetail>(
       future: _load,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(
-            child: OutlinedButton(
-              onPressed: () => setState(() => _load = _read()),
-              child: const Text('রিসোর্স আনা যায়নি — আবার চেষ্টা করুন'),
-            ),
+          return AppErrorState(
+            message: 'রিসোর্স আনা যায়নি। আবার চেষ্টা করুন।',
+            onRetry: () => setState(() => _load = _read()),
           );
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const AppLoadingState(label: 'করণীয় আনা হচ্ছে…');
         }
         final data = snapshot.data!;
         if (data.action == null) {
-          return const Center(
-            child: Text('অ্যাকশনটি পাওয়া যায়নি বা অনুমতি নেই।'),
+          return const AppEmptyState(
+            title: 'অ্যাকশনটি পাওয়া যায়নি বা অনুমতি নেই।',
+            message: 'রুটিন পাতা থেকে আবার খুলে দেখুন।',
           );
         }
         final action = data.action!;
+        final textTheme = Theme.of(context).textTheme;
+        final reminder = (action['notification_title'] as String? ?? '').trim();
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            SukunSpace.page,
+            SukunSpace.xs,
+            SukunSpace.page,
+            SukunSpace.section,
+          ),
           children: [
             Text(
               action['title'] as String? ?? 'আমার করণীয়',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              action['notification_title'] as String? ?? '',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            if ((action['notes'] as String? ?? '').trim().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SelectableText(
-                    action['notes'] as String,
-                    key: const Key('personal-action-reviewed-instructions'),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+            if (reminder.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                reminder,
+                style: textTheme.bodyLarge?.copyWith(color: SukunColors.muted),
+              ),
+            ],
+            if (data.todayOutcome case final outcome?) ...[
+              const SizedBox(height: SukunSpace.md),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SukunStatusPill(
+                  label: outcome == 'done'
+                      ? 'আজকের অবস্থা: সম্পন্ন'
+                      : 'আজকের অবস্থা: বাদ দেওয়া হয়েছে',
+                  tone: outcome == 'done'
+                      ? SukunStatusTone.success
+                      : SukunStatusTone.neutral,
                 ),
               ),
             ],
-            const SizedBox(height: 18),
-            Text(
-              'সংযুক্ত রিসোর্স',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            if ((action['notes'] as String? ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: SukunSpace.lg),
+              SukunSurface(
+                tone: SukunSurfaceTone.soft,
+                showBorder: false,
+                child: SelectableText(
+                  action['notes'] as String,
+                  key: const Key('personal-action-reviewed-instructions'),
+                  style: textTheme.bodyLarge,
+                ),
+              ),
+            ],
+            const SizedBox(height: SukunSpace.section),
+            const SukunSectionHeader(title: 'সংযুক্ত রিসোর্স'),
+            const SizedBox(height: SukunSpace.sm),
             if (data.references.isEmpty)
-              const ListTile(
-                title: Text('এখনো কোনো রিসোর্স যুক্ত করা হয়নি'),
-                subtitle: Text(
-                  'রুটিন থেকে Edit করে লাইব্রেরির রিসোর্স যুক্ত করুন।',
+              const SukunSurface(
+                tone: SukunSurfaceTone.soft,
+                showBorder: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'এখনো কোনো রিসোর্স যুক্ত করা হয়নি',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'রুটিন থেকে "সম্পাদনা" চেপে লাইব্রেরির রিসোর্স যুক্ত করুন।',
+                    ),
+                  ],
                 ),
               ),
             for (final reference in data.references)
               _ResourceReferenceTile(reference: reference),
-            const SizedBox(height: 24),
-            if (data.todayOutcome case final outcome?) ...[
-              Text(
-                outcome == 'done'
-                    ? 'আজকের অবস্থা: সম্পন্ন'
-                    : 'আজকের অবস্থা: Skip করা হয়েছে',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 12),
-            ],
-            FilledButton.icon(
-              onPressed: _saving ? null : () => _complete('done'),
-              icon: const Icon(Icons.check_circle_outline),
-              label: const Text('আজকের আমল সম্পন্ন'),
-            ),
-            TextButton(
-              onPressed: _saving ? null : () => _complete('skipped'),
-              child: const Text('আজকের জন্য Skip'),
-            ),
           ],
         );
       },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
@@ -90,7 +91,7 @@ class _CreatePrescriptionScreenState
     final bytes = await picked.readAsBytes();
     final mimeType = _mimeTypeFor(picked.extension);
     if (mimeType == null) {
-      _showMessage('Choose a PDF, JPG, or PNG prescription.');
+      _showMessage('PDF, JPG বা PNG ফাইল বাছুন।');
       return;
     }
 
@@ -184,7 +185,7 @@ class _CreatePrescriptionScreenState
   Future<void> _submitDocumentPrescription() async {
     final file = _documentFile;
     if (file == null) {
-      _showMessage('Choose a prescription PDF or photo first.');
+      _showMessage('আগে প্রেসক্রিপশনের PDF বা ছবি বাছুন।');
       return;
     }
 
@@ -217,8 +218,10 @@ class _CreatePrescriptionScreenState
         });
         _showMessage(switch (result.aiResult.failureCode) {
           'ai_configuration_missing' =>
-            'সার্ভারে Gemini API সেটআপ নেই। Admin/Developer-এর সাহায্য নিন। '
-                'PDF নিরাপদে সংরক্ষিত আছে।',
+            // Never name the AI provider or its keys in the admin UI
+            // (AGENTS.md rule 12). Offer the manual path instead.
+            'স্বয়ংক্রিয়ভাবে করণীয় তৈরি এখন চালু নেই। PDF নিরাপদে সংরক্ষিত '
+                'আছে। নিজে প্রেসক্রিপশন লিখে এগিয়ে যান, অথবা পরে আবার চেষ্টা করুন।',
           'draft_plan_conflict' =>
             'এই রোগীর জন্য আগে থেকেই একটি অন্য প্রেসক্রিপশনের Draft Plan আছে। '
                 'সেটি Review/Complete করুন অথবা Admin-এর সাহায্য নিন। '
@@ -377,7 +380,7 @@ class _CreatePrescriptionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Record prescription')),
+      appBar: AppBar(title: const Text('মূল নির্দেশনা লিখুন')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -388,37 +391,34 @@ class _CreatePrescriptionScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SukunPageIntro(
-                    eyebrow: 'Source record',
-                    title: 'Record the prescription',
-                    subtitle: 'Preserve the practitioner’s original instruction before creating structured actions.',
-                  ),
-                  const SizedBox(height: 20),
+                  const SukunStepper(current: 0),
+                  const SizedBox(height: SukunSpace.page),
                   _SourceModeSelector(
                     value: _mode,
                     enabled: !_submitting && _savedTypedPrescription == null,
                     onChanged: (value) => setState(() => _mode = value),
                   ),
                   const SizedBox(height: 20),
-                  const SukunSurface(
-                    tone: SukunSurfaceTone.warning,
-                    showBorder: false,
-                    radius: 18,
-                    padding: EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning_amber_rounded),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Preserve the original source exactly. AI only creates reviewable drafts and must never invent a dose, repetition, exact time, or ruling.',
-                          ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 18,
+                        color: SukunColors.deepTide,
+                      ),
+                      const SizedBox(width: SukunSpace.sm),
+                      Expanded(
+                        child: Text(
+                          'মূল লেখা হুবহু রাখুন। AI শুধু যাচাইযোগ্য খসড়া বানায়; ডোজ, '
+                          'কতবার, নির্দিষ্ট সময় বা শরয়ি বিধান নিজে থেকে বসায় না।',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: SukunColors.muted),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: SukunSpace.md),
                   SukunSurface(
                     padding: const EdgeInsets.all(18),
                     child: Column(
@@ -431,7 +431,7 @@ class _CreatePrescriptionScreenState
                             maxLines: 14,
                             textCapitalization: TextCapitalization.sentences,
                             decoration: const InputDecoration(
-                              labelText: 'Original prescription / instruction',
+                              labelText: 'মূল প্রেসক্রিপশন বা নির্দেশনা',
                               alignLabelWithHint: true,
                             ),
                             validator: validatePrescriptionText,
@@ -478,11 +478,11 @@ class _CreatePrescriptionScreenState
                               ? null
                               : (value) =>
                                     setState(() => _patientVisible = value),
-                          title: const Text('Visible to patient'),
+                          title: const Text('রোগী দেখতে পারবেন'),
                           subtitle: Text(
                             _patientVisible
-                                ? 'The patient may read the preserved prescription text.'
-                                : 'The source remains staff-only.',
+                                ? 'রোগী সংরক্ষিত মূল লেখাটি পড়তে পারবেন।'
+                                : 'মূল লেখা শুধু স্টাফ দেখবেন।',
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -498,9 +498,11 @@ class _CreatePrescriptionScreenState
                               'সংরক্ষণ করে AI দিয়ে করণীয় তৈরি করুন',
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: SukunSpace.sm),
                         ],
-                        FilledButton.icon(
+                        (_mode == _PrescriptionSourceMode.typed
+                            ? OutlinedButton.icon
+                            : FilledButton.icon)(
                           onPressed: _submitting ? null : _submit,
                           icon: _submitting
                               ? const SizedBox.square(
@@ -517,12 +519,12 @@ class _CreatePrescriptionScreenState
                           label: Text(
                             _submitting
                                 ? _mode == _PrescriptionSourceMode.typed
-                                      ? 'Saving…'
-                                      : 'Reading securely…'
+                                      ? 'সংরক্ষণ হচ্ছে…'
+                                      : 'নিরাপদে পড়া হচ্ছে…'
                                 : _mode == _PrescriptionSourceMode.typed
                                 ? 'শুধু প্রেসক্রিপশন সংরক্ষণ করুন'
                                 : _storedDocumentAttachmentId == null
-                                ? 'Upload & generate draft actions'
+                                ? 'আপলোড করে করণীয়ের খসড়া তৈরি করুন'
                                 : 'সংরক্ষিত PDF থেকে আবার AI চেষ্টা করুন',
                           ),
                         ),
@@ -560,7 +562,7 @@ class _CreatePrescriptionScreenState
                           ],
                           const SizedBox(height: 12),
                           const Text(
-                            'The original file stays private. Generated actions remain drafts until a Super Admin reviews them.',
+                            'মূল ফাইল গোপন থাকবে। সুপার অ্যাডমিন যাচাই না করা পর্যন্ত তৈরি হওয়া করণীয় খসড়া থাকবে।',
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -596,8 +598,8 @@ class _SourceModeSelector extends StatelessWidget {
           child: _SourceModeButton(
             selected: value == _PrescriptionSourceMode.typed,
             icon: Icons.edit_note_outlined,
-            title: 'Type manually',
-            subtitle: 'Paste or type the original instruction',
+            title: 'নিজে লিখুন',
+            subtitle: 'মূল নির্দেশনা লিখুন বা পেস্ট করুন',
             onTap: enabled
                 ? () => onChanged(_PrescriptionSourceMode.typed)
                 : null,
@@ -608,8 +610,8 @@ class _SourceModeSelector extends StatelessWidget {
           child: _SourceModeButton(
             selected: value == _PrescriptionSourceMode.document,
             icon: Icons.upload_file_outlined,
-            title: 'Upload document',
-            subtitle: 'PDF, JPG or PNG · max 10 MB',
+            title: 'ফাইল আপলোড',
+            subtitle: 'PDF, JPG বা PNG · সর্বোচ্চ ১০ MB',
             onTap: enabled
                 ? () => onChanged(_PrescriptionSourceMode.document)
                 : null,
@@ -716,12 +718,12 @@ class _DocumentPicker extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Choose another file',
+              tooltip: 'অন্য ফাইল বাছুন',
               onPressed: enabled ? onPick : null,
               icon: const Icon(Icons.refresh),
             ),
             IconButton(
-              tooltip: 'Remove file',
+              tooltip: 'ফাইল সরান',
               onPressed: enabled ? onClear : null,
               icon: const Icon(Icons.close),
             ),
@@ -746,20 +748,20 @@ class _DocumentPicker extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Upload the original prescription',
+            'মূল প্রেসক্রিপশন আপলোড করুন',
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
           const Text(
-            'PDF, JPG or PNG · maximum 10 MB',
+            'PDF, JPG বা PNG · সর্বোচ্চ ১০ MB',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
           OutlinedButton.icon(
             onPressed: enabled ? onPick : null,
             icon: const Icon(Icons.upload_file_outlined),
-            label: const Text('Choose file'),
+            label: const Text('ফাইল বাছুন'),
           ),
         ],
       ),
@@ -785,12 +787,12 @@ class _SessionDateTile extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: ListTile(
         leading: const Icon(Icons.event_outlined),
-        title: const Text('Session date'),
-        subtitle: Text(date == null ? 'Not specified' : _formatDate(date!)),
+        title: const Text('সেশনের তারিখ'),
+        subtitle: Text(date == null ? 'নির্ধারিত নয়' : _formatDate(date!)),
         trailing: date == null
             ? const Icon(Icons.chevron_right)
             : IconButton(
-                tooltip: 'Clear date',
+                tooltip: 'তারিখ মুছুন',
                 onPressed: onClear,
                 icon: const Icon(Icons.close),
               ),

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/features/resources/presentation/quran_continue_card.dart';
 import 'package:sukun_life/core/auth/app_session.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -160,24 +162,27 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                // Admin tools stay available but quiet, so the library reads
+                // the same for staff as for patients.
                 if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    key: const Key('resources-admin-tools'),
+                    spacing: 4,
+                    runSpacing: 4,
                     children: [
-                      FilledButton.icon(
+                      TextButton.icon(
                         onPressed: () => context.push('/admin/content/new'),
                         icon: const Icon(Icons.add_circle_outline_rounded),
                         label: const Text('নতুন রিসোর্স যোগ করুন'),
                       ),
-                      OutlinedButton.icon(
+                      TextButton.icon(
                         onPressed: () => context.push('/admin/content'),
                         icon: const Icon(Icons.edit_note_outlined),
                         label: const Text('রিসোর্স পরিচালনা'),
                       ),
                     ],
                   ),
-                const SizedBox(height: 20),
+                const SizedBox(height: SukunSpace.md),
                 if (backendUnavailable)
                   SukunSurface(
                     tone: SukunSurfaceTone.soft,
@@ -206,29 +211,42 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                       _refresh();
                     },
                   ),
-                const SizedBox(height: 18),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/my-media'),
-                  icon: const Icon(Icons.library_music_outlined),
-                  label: const Text('আমার প্লেলিস্ট ও অফলাইন ডাউনলোড'),
+                const SizedBox(height: SukunSpace.lg),
+                const QuranContinueCard(),
+                const SizedBox(height: SukunSpace.md),
+                Row(
+                  key: const Key('resources-quick-links'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _QuickLink(
+                        icon: Icons.library_music_outlined,
+                        label: 'আমার প্লেলিস্ট ও অফলাইন ডাউনলোড',
+                        onTap: () => context.push('/my-media'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _QuickLink(
+                        icon: Icons.headphones_outlined,
+                        label: 'রুকইয়াহ অডিও',
+                        onTap: _openBookAudioLinks,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _QuickLink(
+                        icon: Icons.open_in_new_rounded,
+                        label: 'রুকইয়াহর আয়াত পড়ুন',
+                        onTap: () => launchUrl(
+                          Uri.parse('https://ayat.ruqyahbd.org/'),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _openBookAudioLinks,
-                  icon: const Icon(Icons.headphones_outlined),
-                  label: const Text('রুকইয়াহ অডিও'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => launchUrl(
-                    Uri.parse('https://ayat.ruqyahbd.org/'),
-                    mode: LaunchMode.externalApplication,
-                  ),
-                  icon: const Icon(Icons.menu_book_outlined),
-                  label: const Text('রুকইয়াহর আয়াত পড়ুন'),
-                ),
-                const SizedBox(height: 8),
-                const SizedBox(height: 22),
+                const SizedBox(height: SukunSpace.sectionLarge),
                 SukunSectionHeader(title: 'বিষয় অনুযায়ী দেখুন'),
                 const SizedBox(height: 10),
                 LayoutBuilder(
@@ -468,3 +486,37 @@ String _typeLabel(String type) => switch (type) {
   'article' => 'লেখা',
   _ => 'উপকরণ',
 };
+
+/// Compact shortcut tile for secondary library destinations.
+class _QuickLink extends StatelessWidget {
+  const _QuickLink({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SukunSurface(
+    radius: SukunRadius.tile,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+    onTap: onTap,
+    child: Column(
+      children: [
+        SukunIconBadge(icon: icon, size: 36),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
+    ),
+  );
+}

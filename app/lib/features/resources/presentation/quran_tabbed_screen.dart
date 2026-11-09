@@ -1,6 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/resources/presentation/quran_continue_card.dart';
+import 'package:sukun_life/features/resources/data/quran_last_read_store.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:go_router/go_router.dart';
@@ -231,11 +236,21 @@ class QuranSurahList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+    padding: const EdgeInsets.fromLTRB(
+      SukunSpace.page,
+      SukunSpace.md,
+      SukunSpace.page,
+      40,
+    ),
     children: [
+      const QuranContinueCard(),
+      const SizedBox(height: SukunSpace.md),
       if (isPrelive)
-        const Card(
-          child: Padding(
+        const Padding(
+          padding: EdgeInsets.only(bottom: SukunSpace.md),
+          child: SukunSurface(
+            tone: SukunSurfaceTone.warning,
+            showBorder: false,
             padding: EdgeInsets.all(14),
             child: Text('কিছু সূরা এখনো পাওয়া যাচ্ছে না।'),
           ),
@@ -243,19 +258,71 @@ class QuranSurahList extends StatelessWidget {
       if (chapters.isEmpty)
         const Center(child: Text('এখনো কোনো সূরা পাওয়া যায়নি।')),
       for (final chapter in chapters)
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(child: Text('${chapter['id'] ?? ''}')),
-            title: Text(chapterTitle(chapter)),
-            subtitle: Text('${chapter['verses_count'] ?? '—'} আয়াত'),
-            trailing: const Icon(Icons.chevron_right),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SukunSurface(
+            key: Key('quran-surah-${chapter['id']}'),
+            radius: SukunRadius.tile + 2,
+            padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
             onTap: () {
               final number = chapter['id'];
               if (number is int && number >= 1 && number <= 114) {
                 onOpenSurah(number);
               }
             },
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: SukunColors.mist,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Text(
+                    '${chapter['id'] ?? ''}',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: SukunColors.deepTide,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        chapterTitle(chapter),
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${chapter['verses_count'] ?? '—'} আয়াত',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: SukunColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                if ((chapter['name_arabic'] as String? ?? '').isNotEmpty)
+                  ValueListenableBuilder<AppDisplayPreferences>(
+                    valueListenable: AppDisplaySettings.instance,
+                    builder: (context, settings, _) => Text(
+                      chapter['name_arabic'] as String,
+                      textDirection: TextDirection.rtl,
+                      style: readerArabicStyle(
+                        settings,
+                        fontSize: 20,
+                        defaultHeight: 1.4,
+                        color: SukunColors.deepTide,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
     ],
@@ -296,10 +363,19 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
   bool _more = true;
   String? _error;
   int _page = 0;
+  String? _lastReadKey;
+  Timer? _positionTimer;
 
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onScrollForPosition);
+    QuranLastReadStore.load().then((_) {
+      final saved = QuranLastReadStore.current.value;
+      if (mounted && saved?.surah == widget.surahNumber) {
+        setState(() => _lastReadKey = '${saved!.surah}:${saved.ayah}');
+      }
+    });
     _surahTitle = _surahTitles[widget.surahNumber] ?? 'কুরআন';
     _arabicTitle = _surahArabicNames[widget.surahNumber] ?? '';
     _loadTitle();
@@ -378,6 +454,8 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
         playingKey.startsWith('${widget.surahNumber}:') &&
         _lastAutoScrolled != playingKey) {
       _lastAutoScrolled = playingKey;
+      // Listening also moves the "continue reading" place forward.
+      _rememberVerse(playingKey);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final target = _verseKeys[playingKey]?.currentContext;
@@ -483,6 +561,7 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
       return;
     }
     setState(() => _verseLoading = true);
+    _rememberVerse(key);
     try {
       await controller.loadQuran(
         title: _surahTitle,
@@ -566,8 +645,54 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
     );
   }
 
+  /// Saves this verse as the device's "continue reading" place.
+  void _rememberVerse(String verseKey, {bool announce = false}) {
+    final parts = verseKey.split(':');
+    final ayah = parts.length == 2 ? int.tryParse(parts.last) : null;
+    if (ayah == null || int.tryParse(parts.first) != widget.surahNumber) {
+      return;
+    }
+    if (mounted) setState(() => _lastReadKey = verseKey);
+    unawaited(
+      QuranLastReadStore.save(
+        QuranLastRead(
+          surah: widget.surahNumber,
+          ayah: ayah,
+          title: _surahTitle == 'কুরআন'
+              ? 'সূরা ${widget.surahNumber}'
+              : _surahTitle,
+        ),
+      ),
+    );
+    if (announce && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('এই আয়াত মনে রাখা হলো।')));
+    }
+  }
+
+  /// After scrolling settles, remember the first verse in view.
+  void _onScrollForPosition() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer(const Duration(milliseconds: 900), () {
+      if (!mounted || !_scroll.hasClients || _scroll.offset < 40) return;
+      for (final verse in _verses) {
+        final key = verse['verse_key'] as String?;
+        final box =
+            _verseKeys[key]?.currentContext?.findRenderObject() as RenderBox?;
+        if (key == null || box == null || !box.attached) continue;
+        final bottom = box.localToGlobal(Offset(0, box.size.height)).dy;
+        if (bottom > kToolbarHeight + 60) {
+          _rememberVerse(key);
+          return;
+        }
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _positionTimer?.cancel();
+    _scroll.removeListener(_onScrollForPosition);
     _controller?.removeListener(_onAudioChanged);
     _scroll.dispose();
     super.dispose();
@@ -603,62 +728,70 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 210),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _surahTitle,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        if (_arabicTitle.isNotEmpty)
-                          ValueListenableBuilder<AppDisplayPreferences>(
-                            valueListenable: AppDisplaySettings.instance,
-                            builder: (context, settings, _) => Text(
-                              _arabicTitle,
-                              textDirection: TextDirection.rtl,
-                              style: readerArabicStyle(
-                                settings,
-                                fontSize: 27 * settings.arabicScale,
-                                defaultHeight: 1.7,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+          SukunSurface(
+            key: const Key('quran-surah-header'),
+            radius: SukunRadius.hero,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _surahTitle,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      if (_arabicTitle.isNotEmpty)
+                        ValueListenableBuilder<AppDisplayPreferences>(
+                          valueListenable: AppDisplaySettings.instance,
+                          builder: (context, settings, _) => Text(
+                            _arabicTitle,
+                            textDirection: TextDirection.rtl,
+                            style: readerArabicStyle(
+                              settings,
+                              fontSize: 27 * settings.arabicScale,
+                              defaultHeight: 1.7,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                      ],
+                        ),
+                    ],
+                  ),
+                ),
+                if (_masterLoading)
+                  const SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(strokeWidth: 3),
+                  )
+                else
+                  IconButton.filled(
+                    tooltip: sameSurahPlaying
+                        ? 'পূর্ণ সূরা বিরতি দিন'
+                        : 'সম্পূর্ণ সূরা শুনুন',
+                    onPressed: _verses.isEmpty ? null : _playEntireSurah,
+                    style: IconButton.styleFrom(
+                      backgroundColor: SukunColors.deepTide,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(56, 56),
+                    ),
+                    iconSize: 30,
+                    icon: Icon(
+                      sameSurahPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
                     ),
                   ),
-                  if (_masterLoading)
-                    const SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: CircularProgressIndicator(strokeWidth: 3),
-                    )
-                  else
-                    IconButton.filledTonal(
-                      tooltip: sameSurahPlaying
-                          ? 'পূর্ণ সূরা বিরতি দিন'
-                          : 'সম্পূর্ণ সূরা শুনুন',
-                      onPressed: _verses.isEmpty ? null : _playEntireSurah,
-                      iconSize: 30,
-                      icon: Icon(
-                        sameSurahPlaying
-                            ? Icons.pause_circle_filled_rounded
-                            : Icons.play_circle_fill_rounded,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: SukunSpace.lg),
           if (widget.initialAyah != null && _showFromTarget) ...[
-            Card(
+            SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              padding: EdgeInsets.zero,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -672,12 +805,13 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
                       TextButton(
                         onPressed: () =>
                             setState(() => _showFromTarget = false),
-                        child: const Text('সূরার শুরু থেকে পড়ুন'),
+                        child: const Text('সূরার শুরু থেকে পড়ুন'),
                       ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: SukunSpace.md),
           ],
           for (final verse in _verses)
             if (!_showFromTarget ||
@@ -726,16 +860,23 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       key: _verseKeys.putIfAbsent(key, GlobalKey.new),
-      child: Card(
-        color: highlighted ? quranHighlightedVerseBackground(scheme) : null,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: highlighted
+              ? quranHighlightedVerseBackground(scheme)
+              : Theme.of(context).brightness == Brightness.dark
+              ? scheme.surface
+              : Colors.white,
+          borderRadius: BorderRadius.circular(SukunRadius.card),
+          border: Border.all(
             color: highlighted ? scheme.primary : Colors.transparent,
-            width: highlighted ? 2 : 0,
+            width: 2,
           ),
+          boxShadow: Theme.of(context).brightness == Brightness.dark
+              ? null
+              : SukunShadows.card,
         ),
-        margin: const EdgeInsets.only(bottom: 14),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
           child: Column(
@@ -743,12 +884,37 @@ class _QuranApiSurahScreenState extends ConsumerState<QuranApiSurahScreen> {
             children: [
               Row(
                 children: [
-                  Text(
-                    key,
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(color: scheme.onSurface),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SukunColors.mist,
+                      borderRadius: BorderRadius.circular(SukunRadius.chip),
+                    ),
+                    child: Text(
+                      key,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: SukunColors.deepTide,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   const Spacer(),
+                  IconButton(
+                    key: Key('quran-bookmark-$key'),
+                    tooltip: 'এখান থেকে পরে পড়ব',
+                    onPressed: () => _rememberVerse(key, announce: true),
+                    icon: Icon(
+                      _lastReadKey == key
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      color: _lastReadKey == key
+                          ? SukunColors.deepTide
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
                   if (highlighted)
                     Icon(Icons.equalizer_rounded, color: scheme.primary),
                   if (audioUrl != null)
@@ -837,7 +1003,7 @@ class _ConnectionNotice extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => launchUrl(Uri.parse('https://quran.com/')),
-            child: const Text('Quran.com খুলুন'),
+            child: const Text('Quran.com এ পড়ুন'),
           ),
         ],
       ),

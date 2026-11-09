@@ -134,7 +134,7 @@ class _PrivateResourceDraftImportDialogState
   Widget build(BuildContext context) {
     final batch = _batch;
     return AlertDialog(
-      title: const Text('Private Resource Draft Import'),
+      title: const Text('গোপন উপকরণের খসড়া আমদানি'),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(

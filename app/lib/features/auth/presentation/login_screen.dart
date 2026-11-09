@@ -95,8 +95,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Center(child: SukunLifeLogo(height: 78)),
-                  const SizedBox(height: 18),
+                  // Calm Mist hero: the official logo sits untouched on a
+                  // white tile so it is never recolored or cropped.
+                  Container(
+                    key: const Key('login-brand-hero'),
+                    padding: const EdgeInsets.symmetric(vertical: 28),
+                    decoration: BoxDecoration(
+                      color: SukunColors.mist,
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: SukunColors.nightNavy.withValues(
+                                alpha: 0.08,
+                              ),
+                              blurRadius: 30,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const SukunLifeLogo(height: 78),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   SukunPageIntro(
                     eyebrow: copy?.signInEyebrow ?? 'ব্যক্তিগত অ্যাকাউন্ট',
                     title: copy?.signInWelcome ?? 'স্বাগতম',

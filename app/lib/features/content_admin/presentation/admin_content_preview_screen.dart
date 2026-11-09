@@ -254,7 +254,7 @@ class _AdminContentPreviewScreenState
                       label: const Text('সংশোধনের জন্য ফেরত দিন'),
                     ),
                   if ((!item.isCanonical && item.status == 'review') ||
-                      (item.isCanonical && item.status == 'অনুমোদিত হয়েছে'))
+                      (item.isCanonical && item.status == 'verified'))
                     FilledButton.icon(
                       onPressed: _working
                           ? null
@@ -262,7 +262,7 @@ class _AdminContentPreviewScreenState
                       icon: const Icon(Icons.publish_outlined),
                       label: const Text('প্রকাশ করুন'),
                     ),
-                  if (item.status == 'প্রকাশিত হয়েছে')
+                  if (item.status == 'published')
                     OutlinedButton.icon(
                       onPressed: _working
                           ? null
@@ -270,7 +270,7 @@ class _AdminContentPreviewScreenState
                       icon: const Icon(Icons.visibility_off_outlined),
                       label: const Text('প্রকাশ বন্ধ করুন'),
                     ),
-                  if (item.status != 'সংরক্ষিত হয়েছে')
+                  if (item.status != 'archived')
                     TextButton.icon(
                       onPressed: _working ? null : () => _transition('archive'),
                       icon: const Icon(Icons.archive_outlined),

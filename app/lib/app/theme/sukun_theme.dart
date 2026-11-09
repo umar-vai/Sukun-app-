@@ -5,6 +5,7 @@ import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
@@ -53,32 +54,32 @@ abstract final class SukunTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleSpacing: 20,
-        toolbarHeight: 68,
-        titleTextStyle: textTheme.titleMedium?.copyWith(
+        titleSpacing: SukunSpace.page,
+        toolbarHeight: 64,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
         ),
       ),
       cardTheme: CardThemeData(
         color: SukunColors.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 0.6,
-        shadowColor: SukunColors.nightNavy.withValues(alpha: 0.10),
+        elevation: 1.5,
+        shadowColor: SukunColors.nightNavy.withValues(alpha: 0.12),
         margin: EdgeInsets.zero,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-          side: BorderSide(color: Color(0x110D2B45)),
+          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.card)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: SukunColors.sukunBlue,
-          foregroundColor: SukunColors.nightNavy,
-          minimumSize: const Size(48, 54),
+          // Deep Tide keeps white button text at WCAG AA contrast.
+          backgroundColor: SukunColors.deepTide,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(48, 52),
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SukunRadius.control),
           ),
           textStyle: textTheme.labelLarge,
         ),
@@ -86,11 +87,12 @@ abstract final class SukunTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: SukunColors.deepTide,
+          backgroundColor: Colors.white,
           minimumSize: const Size(48, 52),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           side: const BorderSide(color: SukunColors.border),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SukunRadius.control),
           ),
           textStyle: textTheme.labelLarge,
         ),
@@ -115,19 +117,19 @@ abstract final class SukunTheme {
         hintStyle: textTheme.bodyMedium?.copyWith(color: SukunColors.muted),
         helperStyle: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SukunRadius.control),
           borderSide: const BorderSide(color: SukunColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SukunRadius.control),
           borderSide: const BorderSide(color: SukunColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: SukunColors.sukunBlue, width: 2),
+          borderRadius: BorderRadius.circular(SukunRadius.control),
+          borderSide: const BorderSide(color: SukunColors.deepTide, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SukunRadius.control),
           borderSide: const BorderSide(color: SukunColors.error),
         ),
       ),
@@ -137,10 +139,12 @@ abstract final class SukunTheme {
         space: 1,
       ),
       chipTheme: base.chipTheme.copyWith(
-        backgroundColor: SukunColors.paleBlue,
-        selectedColor: SukunColors.softBlue,
+        backgroundColor: Colors.white,
+        selectedColor: SukunColors.mist,
         side: const BorderSide(color: SukunColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SukunRadius.chip),
+        ),
         labelStyle: textTheme.labelMedium,
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       ),
@@ -149,7 +153,7 @@ abstract final class SukunTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(26)),
+          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.hero)),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -158,16 +162,66 @@ abstract final class SukunTheme {
         modalBackgroundColor: Colors.white,
         showDragHandle: true,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SukunRadius.sheet),
+          ),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: SukunColors.sukunBlue,
-        foregroundColor: SukunColors.nightNavy,
+        backgroundColor: SukunColors.deepTide,
+        foregroundColor: Colors.white,
         elevation: 3,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(18)),
+          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.tile)),
         ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: SukunColors.deepTide,
+        contentPadding: EdgeInsets.symmetric(horizontal: SukunSpace.lg),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.tile)),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? Colors.white : null,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? SukunColors.deepTide
+              : null,
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? SukunColors.mist
+                : Colors.white,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? SukunColors.deepTide
+                : SukunColors.muted,
+          ),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: SukunColors.border),
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(
+                Radius.circular(SukunRadius.control),
+              ),
+            ),
+          ),
+        ),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: SukunColors.nightNavy,
+        unselectedLabelColor: SukunColors.muted,
+        indicatorColor: SukunColors.deepTide,
+        dividerColor: SukunColors.border,
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: SukunColors.sukunBlue,
