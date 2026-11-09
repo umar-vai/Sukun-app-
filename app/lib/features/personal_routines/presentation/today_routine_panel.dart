@@ -322,7 +322,7 @@ class _TodayActionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      done ? 'আজ সম্পন্ন' : 'বাকি · বিস্তারিত খুলুন',
+                      done ? 'আজ সম্পন্ন' : 'বাকি',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: done ? SukunColors.deepTide : SukunColors.muted,
                       ),
@@ -333,7 +333,7 @@ class _TodayActionTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'করণীয় ও রিসোর্স খুলুন',
+            tooltip: 'করণীয় খুলুন',
             onPressed: onOpen,
             icon: const Icon(Icons.arrow_forward_ios_rounded, size: 17),
           ),
