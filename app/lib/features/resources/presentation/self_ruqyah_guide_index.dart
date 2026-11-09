@@ -38,7 +38,13 @@ const selfRuqyahChapterLabels = <String>[
 /// Grouping changes navigation only; each source item remains unchanged.
 const selfRuqyahGroups = <SelfRuqyahGuideGroup>[
   SelfRuqyahGuideGroup(1, 'introduction', 'রুকইয়াহ পরিচিতি', 1, 5),
-  SelfRuqyahGuideGroup(1, 'precautions', 'প্রচলিত চিকিৎসা, তাবিজ ও সতর্কতা', 6, 9),
+  SelfRuqyahGuideGroup(
+    1,
+    'precautions',
+    'প্রচলিত চিকিৎসা, তাবিজ ও সতর্কতা',
+    6,
+    9,
+  ),
   SelfRuqyahGuideGroup(1, 'raqi', 'রাকি ও রুকইয়াহ গ্রহণ', 10, 13),
   SelfRuqyahGuideGroup(1, 'self', 'সেলফ রুকইয়াহ', 14, 15),
   SelfRuqyahGuideGroup(2, 'evil-eye', 'বদনজর', 1, 5),
@@ -70,7 +76,10 @@ const _guidePath = '/resources/ruqyah/ruqyah-self-guide';
 
 int? selfRuqyahTopicNumber(String? slug, int chapter) {
   if (chapter < 1 || chapter > 4 || slug == null) return null;
-  final expression = RegExp('^srg2024-c0$chapter-t([0-9]{3})' r'$');
+  final expression = RegExp(
+    '^srg2024-c0$chapter-t([0-9]{3})'
+    r'$',
+  );
   final match = expression.firstMatch(slug);
   return match == null ? null : int.tryParse(match.group(1)!);
 }
@@ -97,14 +106,15 @@ class SelfRuqyahGuideIndex extends StatelessWidget {
   final String? groupSlug;
 
   List<ContentResource> _topicsFor(int chapter, SelfRuqyahGuideGroup? group) {
-    final selected = resources.where((resource) {
-      final number = selfRuqyahTopicNumber(resource.slug, chapter);
-      return number != null &&
-          (group == null ||
-              (number >= group.firstTopic && number <= group.lastTopic));
-    }).toList(growable: false);
-    return selected
-      ..sort((a, b) => (a.slug ?? '').compareTo(b.slug ?? ''));
+    final selected = resources
+        .where((resource) {
+          final number = selfRuqyahTopicNumber(resource.slug, chapter);
+          return number != null &&
+              (group == null ||
+                  (number >= group.firstTopic && number <= group.lastTopic));
+        })
+        .toList(growable: false);
+    return selected..sort((a, b) => (a.slug ?? '').compareTo(b.slug ?? ''));
   }
 
   @override
@@ -135,10 +145,7 @@ class SelfRuqyahGuideIndex extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'অধ্যায়সমূহ',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('অধ্যায়সমূহ', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 14),
         for (var chapter = 1; chapter <= 4; chapter++)
           Padding(
@@ -207,10 +214,7 @@ class SelfRuqyahGuideIndex extends StatelessWidget {
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: 5),
-        Text(
-          group.title,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+        Text(group.title, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         for (final item in items)
           Padding(
@@ -267,10 +271,7 @@ class _NavigationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
