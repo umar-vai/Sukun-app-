@@ -5,7 +5,12 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/care_plans/data/bulk_care_plan_importer.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
+import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/patients/data/patients_providers.dart';
 import 'package:sukun_life/features/patients/domain/patient.dart';
@@ -27,6 +32,8 @@ class PatientDetailScreen extends ConsumerStatefulWidget {
 class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
   late Future<(Patient?, List<Prescription>, List<CarePlan>)> _details;
   _DetailTab _tab = _DetailTab.summary;
+  String? _patientName;
+  bool _importing = false;
 
   @override
   void initState() {
@@ -41,6 +48,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       repository.getPrescriptions(widget.patientId),
       ref.read(carePlansRepositoryProvider).getPatientPlans(widget.patientId),
     ]);
+    _patientName = (results[0] as Patient?)?.fullName;
     return (
       results[0] as Patient?,
       results[1] as List<Prescription>,
@@ -78,9 +86,78 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     if (!mounted || plan == null) return;
     _reload();
     await context.push<void>(
-      '/admin/patients/${widget.patientId}/plans/${plan.id}?addAction=1',
+      '/admin/patients/${widget.patientId}/plans/${plan.id}',
     );
     if (mounted) _reload();
+  }
+
+  /// Main path: tick Sukun templates or library resources, press one button,
+  /// and the patient's plan is updated, approved, published with reminders.
+  Future<void> _bulkImport() async {
+    if (_importing) return;
+    final repository = ref.read(carePlansRepositoryProvider);
+    final resources = repository.getAvailableResources();
+    final name = _patientName?.trim();
+    final items = await showBulkTemplateImport(
+      context,
+      recipientLabel: name == null || name.isEmpty
+          ? 'এই রোগীর জন্য'
+          : 'রোগী: $name',
+      resources: resources,
+    );
+    if (items == null || items.isEmpty || !mounted) return;
+    setState(() => _importing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      var lookup = <String, ContentResourceOption>{};
+      try {
+        lookup = {for (final r in await resources) r.id: r};
+      } catch (_) {
+        // Titles fall back to the surah number if the library is offline.
+      }
+      final result = await BulkCarePlanImporter(repository).import(
+        patientId: widget.patientId,
+        items: items,
+        resourceLookup: lookup,
+      );
+      if (!mounted) return;
+      _reload();
+      if (result.published) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              '${_bn(result.actionsAdded)}টি করণীয় যুক্ত হয়েছে, রিমাইন্ডার চালু। '
+              'রোগী এখনই দেখতে পাবেন।',
+            ),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'যুক্ত হয়েছে। খসড়ায় আগের কিছু যাচাই বাকি আছে, '
+              'সেগুলো দেখে প্রকাশ করুন।',
+            ),
+          ),
+        );
+        await context.push<void>(
+          '/admin/patients/${widget.patientId}/plans/${result.plan.id}',
+        );
+        if (mounted) _reload();
+      }
+    } on CarePlanWorkflowException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'ইম্পোর্ট সম্পূর্ণ হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
   }
 
   @override
@@ -91,7 +168,8 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
       // hidden behind a "+" menu.
       bottomNavigationBar: _PatientActionBar(
         onAddPrescription: _addPrescription,
-        onCreatePlan: _createPlan,
+        onBulkImport: _bulkImport,
+        importing: _importing,
       ),
       body: FutureBuilder<(Patient?, List<Prescription>, List<CarePlan>)>(
         future: _details,
@@ -147,7 +225,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
               ),
               const SizedBox(height: SukunSpace.md),
               if (plans.isEmpty)
-                _EmptyPlans(onCreatePlan: _createPlan)
+                _EmptyPlans(onBulkImport: _bulkImport)
               else if (activePlans.isEmpty)
                 const _SoftNote(
                   text:
@@ -192,7 +270,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
               ),
               const SizedBox(height: SukunSpace.md),
               if (plans.isEmpty)
-                _EmptyPlans(onCreatePlan: _createPlan)
+                _EmptyPlans(onBulkImport: _bulkImport)
               else
                 for (final plan in plans) ...[
                   planCard(plan),
@@ -346,11 +424,13 @@ class _DetailTabs extends StatelessWidget {
 class _PatientActionBar extends StatelessWidget {
   const _PatientActionBar({
     required this.onAddPrescription,
-    required this.onCreatePlan,
+    required this.onBulkImport,
+    required this.importing,
   });
 
   final VoidCallback onAddPrescription;
-  final VoidCallback onCreatePlan;
+  final VoidCallback onBulkImport;
+  final bool importing;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -381,19 +461,27 @@ class _PatientActionBar extends StatelessWidget {
               icon: const Icon(Icons.note_add_outlined),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('মূল নির্দেশনা যোগ করুন'),
+                child: Text('প্রেসক্রিপশন'),
               ),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
+            flex: 2,
             child: FilledButton.icon(
-              key: const Key('patient-detail-create-plan'),
-              onPressed: onCreatePlan,
-              icon: const Icon(Icons.add_task),
-              label: const FittedBox(
+              key: const Key('patient-detail-bulk-import'),
+              onPressed: importing ? null : onBulkImport,
+              icon: importing
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.playlist_add_check_rounded),
+              label: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('সেবা পরিকল্পনা তৈরি করুন'),
+                child: Text(
+                  importing ? 'যুক্ত হচ্ছে…' : 'আমল ও রিমাইন্ডার যোগ করুন',
+                ),
               ),
             ),
           ),
@@ -404,9 +492,9 @@ class _PatientActionBar extends StatelessWidget {
 }
 
 class _EmptyPlans extends StatelessWidget {
-  const _EmptyPlans({required this.onCreatePlan});
+  const _EmptyPlans({required this.onBulkImport});
 
-  final VoidCallback onCreatePlan;
+  final VoidCallback onBulkImport;
 
   @override
   Widget build(BuildContext context) => SukunSurface(
@@ -416,14 +504,14 @@ class _EmptyPlans extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'এখনো সেবা পরিকল্পনা নেই। আগে মূল নির্দেশনা সংরক্ষণ করুন অথবা '
-          'নিজে পরিকল্পনা সাজান।',
+          'এখনো সেবা পরিকল্পনা নেই। সুকুন টেমপ্লেট থেকে আমল ও সাপ্লিমেন্ট '
+          'বাছাই করুন, এক ক্লিকে রিমাইন্ডারসহ চালু হবে।',
         ),
         const SizedBox(height: SukunSpace.md),
-        OutlinedButton.icon(
-          onPressed: onCreatePlan,
-          icon: const Icon(Icons.add_task),
-          label: const Text('সেবা পরিকল্পনা তৈরি করুন'),
+        FilledButton.icon(
+          onPressed: onBulkImport,
+          icon: const Icon(Icons.playlist_add_check_rounded),
+          label: const Text('আমল ও রিমাইন্ডার যোগ করুন'),
         ),
       ],
     ),
@@ -743,3 +831,5 @@ class _CarePlanCard extends StatelessWidget {
 String _formatDate(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/'
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _bn(int value) => toBanglaDigits('$value');

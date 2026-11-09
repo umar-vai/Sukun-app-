@@ -16,7 +16,10 @@ import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_pro
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
+import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_reminder_planner.dart';
@@ -169,6 +172,71 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     controller.dispose();
     if (title == null || title.isEmpty || _working) return;
     await _mutate(() => _repository.createRoutine(title));
+  }
+
+  /// Pick many library items (duas, audio, surahs) at once and get daily
+  /// reminders for all of them in a new routine.
+  Future<void> _bulkResourceReminders() async {
+    if (_working) return;
+    final resources = ref
+        .read(carePlansRepositoryProvider)
+        .getAvailableResources()
+        .then(
+          (all) => all
+              .where((r) => r.isLinkable && r.visibility == 'public')
+              .toList(growable: false),
+        );
+    final items = await showBulkTemplateImport(
+      context,
+      recipientLabel: 'আমার রিমাইন্ডার',
+      resources: resources,
+      showTemplates: false,
+      showDuration: false,
+      confirmLabel: 'রিমাইন্ডার চালু করুন',
+    );
+    if (items == null || items.isEmpty || !mounted) return;
+    var saved = false;
+    await _mutate(() async {
+      final settings = await ref.read(utilityPreferencesStoreProvider).load();
+      final routine = await _repository.createRoutine('উপকরণের রিমাইন্ডার');
+      final routineId = routine['id'] as String;
+      for (final draft in expandBulkItems(items)) {
+        final links = [
+          for (final id in draft.resourceIds)
+            if (id.startsWith('quran:'))
+              PersonalActionResourceSelection.quran(int.parse(id.substring(6)))
+            else
+              PersonalActionResourceSelection.cms(id),
+        ];
+        final actionId = await _repository.saveAction(
+          routineId: routineId,
+          title: draft.title,
+          notificationTitle: draft.title,
+          contentItemId: draft.cmsResourceIds.firstOrNull,
+          scheduleKind: 'fixed',
+          offsetMinutes: 10,
+          fixedTime: draft.time.databaseValue,
+          timezoneName: settings.location?.timezone,
+        );
+        if (links.isNotEmpty) {
+          await _repository.replaceActionResources(
+            actionId: actionId,
+            orderedResources: links,
+          );
+        }
+      }
+      saved = true;
+    });
+    if (!saved || !mounted) return;
+    if (_reminderEnabled) {
+      _notice(
+        '${toBanglaDigits('${items.length}')}টি উপকরণের রিমাইন্ডার চালু হয়েছে।',
+      );
+    } else {
+      // The user started this, so it is the right moment to ask for
+      // notification permission instead of sending them to the bell icon.
+      await _toggleReminders();
+    }
   }
 
   Future<void> _mutate(Future<dynamic> Function() action) async {
@@ -899,6 +967,13 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             const SizedBox(height: SukunSpace.md),
           ],
           FilledButton.icon(
+            key: const Key('routine-bulk-resource-reminders'),
+            onPressed: _working ? null : _bulkResourceReminders,
+            icon: const Icon(Icons.notifications_active_outlined),
+            label: const Text('উপকরণ থেকে রিমাইন্ডার চালু করুন'),
+          ),
+          const SizedBox(height: SukunSpace.sm),
+          OutlinedButton.icon(
             onPressed: _working ? null : _createRoutine,
             icon: const Icon(Icons.add_rounded),
             label: const Text('নতুন রুটিন তৈরি করুন'),

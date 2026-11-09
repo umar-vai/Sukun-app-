@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
-import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
-import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
+import 'package:sukun_life/features/care_plans/presentation/bulk_template_import_screen.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
-import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
-import 'package:sukun_life/features/personal_routines/presentation/routine_quran_reference_picker.dart';
-import 'package:sukun_life/features/resources/presentation/canonical_quran_ayah_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The server checks Super Admin authorization on EVERY cross-user read/write.
@@ -103,62 +102,64 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
     });
   }
 
+  /// Public, published resources only: a routine is visible outside care
+  /// plans, so patient-only items are never linked here.
   Future<List<ContentResourceOption>> _loadPickerResources() async {
-    final rows = await _client
-        .from('content_items')
-        .select(
-          'id,slug,title,title_bn,type,status,visibility,'
-          'verification_status,category_id,surah_number,ayah_number,'
-          'ayah_end_number,media_source_type,media_url,'
-          'content_categories(id,name,name_bn,slug,sort_order)',
+    final all = await ProviderScope.containerOf(context)
+        .read(carePlansRepositoryProvider)
+        .getAvailableResources();
+    return all
+        .where(
+          (resource) => resource.isLinkable && resource.visibility == 'public',
         )
-        .eq('status', 'published')
-        .eq('visibility', 'public')
-        .order('title')
-        .limit(500);
-    return rows
-        .map(ContentResourceOption.fromJson)
-        .where((resource) => resource.isLinkable)
         .toList(growable: false);
   }
 
-  Future<void> _composeRoutine() async {
+  /// One click: tick templates or library items, check the times, import.
+  /// The routine is active straight away with daily reminder times.
+  Future<void> _bulkImport() async {
     final user = _selected;
     if (_saving || user == null) return;
+    final name = user['display_name']?.toString().trim();
+    final items = await showBulkTemplateImport(
+      context,
+      recipientLabel: name == null || name.isEmpty
+          ? 'নির্বাচিত ব্যবহারকারী'
+          : 'ব্যবহারকারী: $name',
+      resources: _loadPickerResources(),
+      showDuration: false,
+    );
+    if (items == null || items.isEmpty || !mounted) return;
     setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      final resources = await _loadPickerResources();
-      if (!mounted) return;
-      final proposal = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => _AdminRoutineComposer(resources: resources),
-      );
-      if (proposal == null || !mounted) return;
+      final drafts = expandBulkItems(items);
+      final now = DateTime.now();
       await _client.rpc(
-        'admin_create_user_routine',
+        'admin_import_user_routine_reminders',
         params: {
           'p_target_user_id': user['id'],
-          'p_title': proposal['title'],
-          'p_actions': proposal['actions'],
+          'p_title':
+              'সুকুন রুটিন · ${toBanglaDigits('${now.day}/${now.month}')}',
+          'p_actions': [for (final draft in drafts) draft.toRoutineJson()],
         },
       );
       if (!mounted) return;
       _selectUser(user);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      messenger.showSnackBar(
+        SnackBar(
           content: Text(
-            'ব্যবহারকারীর জন্য রুটিন খসড়া তৈরি হয়েছে। '
-            'তিনি নিজে চালু করলে রুটিন সক্রিয় হবে।',
+            '${toBanglaDigits('${drafts.length}')}টি করণীয় রিমাইন্ডারসহ চালু হয়েছে। '
+            'ব্যবহারকারী অ্যাপ খুললেই সময়মতো রিমাইন্ডার পাবেন।',
           ),
         ),
       );
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'রুটিন তৈরি করা যায়নি। Super Admin অনুমতি, '
-            'ডাটাবেস আপডেট এবং উপকরণের প্রকাশনা যাচাই করুন।',
+            'ইম্পোর্ট করা যায়নি। Super Admin অনুমতি, সংযোগ ও '
+            'উপকরণ প্রকাশিত কিনা দেখে আবার চেষ্টা করুন।',
           ),
         ),
       );
@@ -292,10 +293,13 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
                       runSpacing: 8,
                       children: [
                         FilledButton.icon(
-                          onPressed: _saving ? null : _composeRoutine,
-                          icon: const Icon(Icons.playlist_add_rounded),
+                          key: const Key('admin-routine-bulk-import'),
+                          onPressed: _saving ? null : _bulkImport,
+                          icon: const Icon(Icons.playlist_add_check_rounded),
                           label: Text(
-                            _saving ? 'প্রস্তুত হচ্ছে…' : 'নতুন রুটিন তৈরি',
+                            _saving
+                                ? 'যুক্ত হচ্ছে…'
+                                : 'আমল ও রিমাইন্ডার যোগ করুন',
                           ),
                         ),
                         OutlinedButton.icon(
@@ -403,391 +407,4 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
       ),
     );
   }
-}
-
-class _ComposerAction {
-  _ComposerAction()
-    : title = TextEditingController(),
-      notes = TextEditingController();
-  final TextEditingController title;
-  final TextEditingController notes;
-  String? officialTemplateId;
-  bool needsLinkedResource = false;
-  final List<Map<String, String>> resources = [];
-
-  void dispose() {
-    title.dispose();
-    notes.dispose();
-  }
-}
-
-class _AdminRoutineComposer extends StatefulWidget {
-  const _AdminRoutineComposer({required this.resources});
-  final List<ContentResourceOption> resources;
-
-  @override
-  State<_AdminRoutineComposer> createState() => _AdminRoutineComposerState();
-}
-
-class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
-  final _title = TextEditingController();
-  final _actions = <_ComposerAction>[_ComposerAction()];
-
-  @override
-  void dispose() {
-    _title.dispose();
-    for (final action in _actions) {
-      action.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _addCms(_ComposerAction action) async {
-    if (action.resources.length >= 16) return;
-    final options = widget.resources
-        .where(
-          (r) => !action.resources.any(
-            (linked) => linked['content_item_id'] == r.id,
-          ),
-        )
-        .toList(growable: false);
-    final id = await showResourcePickerSheet(
-      context: context,
-      resources: options,
-      selectedId: '',
-      includeOfficialTemplates: true,
-      onPickCanonicalQuran: (pickerContext, wholeSurah) =>
-          pickRoutineQuranReference(
-            pickerContext,
-            wholeSurah,
-            selectedReferences: action.resources
-                .where((ref) => ref['provider'] == 'quran')
-                .map((ref) => ref['external_resource_ref']!)
-                .toSet(),
-          ),
-    );
-    if (!mounted || id == null || id.isEmpty) return;
-    if (id.startsWith('official-template:')) {
-      final template = findOfficialTemplate(
-        id.substring('official-template:'.length),
-      );
-      if (template != null) await _applyOfficialTemplate(action, template);
-      return;
-    }
-    if (action.resources.any(
-      (ref) =>
-          ref['content_item_id'] == id || ref['external_resource_ref'] == id,
-    )) {
-      return;
-    }
-    setState(() {
-      action.resources.add(
-        id.startsWith('quran:')
-            ? {'provider': 'quran', 'external_resource_ref': id}
-            : {'provider': 'cms', 'content_item_id': id},
-      );
-    });
-  }
-
-  Future<void> _applyOfficialTemplate(
-    _ComposerAction action,
-    OfficialPrescriptionTemplate template,
-  ) async {
-    final fields = <String, TextEditingController>{
-      for (final variable in template.requiredVariables)
-        variable: TextEditingController(),
-    };
-    Map<String, int>? values;
-    try {
-      values = await showDialog<Map<String, int>>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text('অফিসিয়াল টেমপ্লেট · ${template.title}'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'মূল প্রেসক্রিপশন দেখে দিন, বার ও মিনিট যাচাই করুন। '
-                  'এটি চিকিৎসার অনুমোদন নয়; রুটিনটি রোগীর সম্মতি ছাড়া চালু হবে না।',
-                ),
-                const SizedBox(height: 12),
-                Text(template.instruction),
-                for (final entry in fields.entries)
-                  TextField(
-                    key: Key('admin-routine-template-${entry.key}'),
-                    controller: entry.value,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: '${entry.key} সংখ্যা',
-                    ),
-                  ),
-                if (template.requiresLinkedResource)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 12),
-                    child: Text(
-                      'এই আমল/অডিও চালু করতে নিচ থেকে অনুমোদিত '
-                      'প্রকাশিত অডিও বা সূরার রিসোর্স যুক্ত করুন।',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('বাতিল'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final approvedValues = <String, int>{};
-                for (final entry in fields.entries) {
-                  final number = int.tryParse(entry.value.text.trim());
-                  if (number == null || number < 1 || number > 365) {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
-                        content: Text('প্রেসক্রিপশন দেখে সঠিক সংখ্যা লিখুন'),
-                      ),
-                    );
-                    return;
-                  }
-                  approvedValues[entry.key] = number;
-                }
-                Navigator.pop(dialogContext, approvedValues);
-              },
-              child: const Text('খসড়ায় বসান'),
-            ),
-          ],
-        ),
-      );
-    } finally {
-      // Defer teardown until the dialog's reverse animation is complete.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        for (final controller in fields.values) {
-          controller.dispose();
-        }
-      });
-    }
-    if (!mounted || values == null) return;
-    setState(() {
-      action.title.text = template.title;
-      action.notes.text = template.render(values!);
-      action.officialTemplateId = template.id;
-      action.needsLinkedResource = template.requiresLinkedResource;
-    });
-  }
-
-  Future<void> _addQuranAyah(_ComposerAction action) async {
-    if (action.resources.length >= 16) return;
-    final choice = await showCanonicalQuranAyahPicker(
-      context: context,
-      excludedReferences: action.resources
-          .where((r) => r['provider'] == 'quran')
-          .map((r) => r['external_resource_ref']!)
-          .toSet(),
-    );
-    if (!mounted || choice == null) return;
-    setState(() {
-      action.resources.add({
-        'provider': 'quran',
-        'external_resource_ref': choice.reference,
-      });
-    });
-  }
-
-  Future<void> _addSurah(_ComposerAction action) async {
-    if (action.resources.length >= 16) return;
-    final excluded = action.resources
-        .where(
-          (r) =>
-              r['provider'] == 'quran' &&
-              (r['external_resource_ref']?.split(':').length ?? 0) == 2,
-        )
-        .map((r) => int.tryParse(r['external_resource_ref']!.split(':').last))
-        .whereType<int>()
-        .toSet();
-    final number = await showPersonalSurahPicker(
-      context: context,
-      exclude: excluded,
-    );
-    if (!mounted || number == null) return;
-    setState(() {
-      action.resources.add({
-        'provider': 'quran',
-        'external_resource_ref': 'quran:$number',
-      });
-    });
-  }
-
-  void _save() {
-    if (_title.text.trim().isEmpty ||
-        _title.text.trim().length > 120 ||
-        _actions.any(
-          (a) =>
-              a.title.text.trim().isEmpty ||
-              a.title.text.trim().length > 160 ||
-              a.notes.text.trim().length > 3000 ||
-              RegExp(r'\{(দিন|বার|মিনিট)\}').hasMatch(a.notes.text) ||
-              (a.needsLinkedResource && a.resources.isEmpty),
-        )) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('করণীয়, নির্দেশনা ও বাধ্যতামূলক উপকরণ যাচাই করুন।'),
-        ),
-      );
-      return;
-    }
-    Navigator.pop(context, {
-      'title': _title.text.trim(),
-      'actions': [
-        for (final action in _actions)
-          {
-            'title': action.title.text.trim(),
-            'notes': action.notes.text.trim(),
-            if (action.officialTemplateId != null)
-              'official_template_id': action.officialTemplateId,
-            'resources': action.resources,
-          },
-      ],
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('ব্যবহারকারীর জন্য রুটিন তৈরি'),
-    content: SizedBox(
-      width: 610,
-      height: MediaQuery.sizeOf(context).height * .67,
-      child: ListView(
-        children: [
-          const Text(
-            'রুটিনটি প্রথমে বন্ধ থাকবে। ব্যবহারকারী নিজে চালু করবেন '
-            'এবং নোটিফিকেশনের অনুমতি দেবেন।',
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _title,
-            maxLength: 120,
-            decoration: const InputDecoration(labelText: 'রুটিনের নাম'),
-          ),
-          for (var index = 0; index < _actions.length; index++) ...[
-            const Divider(),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'করণীয় ${index + 1}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (_actions.length > 1)
-                  IconButton(
-                    tooltip: 'করণীয় বাদ দিন',
-                    onPressed: () =>
-                        setState(() => _actions.removeAt(index).dispose()),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-              ],
-            ),
-            TextField(
-              controller: _actions[index].title,
-              maxLength: 160,
-              decoration: const InputDecoration(
-                labelText: 'করণীয়ের নাম',
-                hintText: 'উদাহরণ: সূরা ফাতিহা পাঠ',
-              ),
-            ),
-            TextField(
-              controller: _actions[index].notes,
-              minLines: 2,
-              maxLines: 5,
-              maxLength: 3000,
-              decoration: const InputDecoration(
-                labelText: 'পর্যালোচিত সম্পূর্ণ নির্দেশনা',
-                hintText: 'টেমপ্লেট থেকে নির্বাচন করুন বা নির্দেশনা লিখুন',
-              ),
-            ),
-            if (_actions[index].officialTemplateId != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  'Sukun Life Official Template: '
-                  '${_actions[index].officialTemplateId} · খসড়া',
-                ),
-              ),
-            if (_actions[index].needsLinkedResource &&
-                _actions[index].resources.isEmpty)
-              const Text(
-                'অনুমোদিত প্রকাশিত অডিও/সূরা সংযুক্ত করুন',
-                style: TextStyle(color: Colors.deepOrange),
-              ),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => _addCms(_actions[index]),
-                  icon: const Icon(Icons.library_books_outlined),
-                  label: const Text('অফিসিয়াল টেমপ্লেট / উপকরণ'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _addSurah(_actions[index]),
-                  icon: const Icon(Icons.menu_book_outlined),
-                  label: const Text('সূরা'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _addQuranAyah(_actions[index]),
-                  icon: const Icon(Icons.format_list_numbered_rounded),
-                  label: const Text('আয়াত'),
-                ),
-              ],
-            ),
-            for (var item = 0; item < _actions[index].resources.length; item++)
-              ListTile(
-                dense: true,
-                title: Text(
-                  _actions[index].resources[item]['provider'] == 'quran'
-                      ? _actions[index]
-                                .resources[item]['external_resource_ref'] ??
-                            'কুরআন'
-                      : widget.resources
-                                .where(
-                                  (r) =>
-                                      r.id ==
-                                      _actions[index]
-                                          .resources[item]['content_item_id'],
-                                )
-                                .firstOrNull
-                                ?.displayTitle ??
-                            'উপকরণ',
-                ),
-                trailing: IconButton(
-                  tooltip: 'সংযুক্ত উপকরণ বাদ দিন',
-                  icon: const Icon(Icons.close),
-                  onPressed: () =>
-                      setState(() => _actions[index].resources.removeAt(item)),
-                ),
-              ),
-          ],
-          if (_actions.length < 12)
-            OutlinedButton.icon(
-              onPressed: () => setState(() => _actions.add(_ComposerAction())),
-              icon: const Icon(Icons.add),
-              label: const Text('আরও একটি করণীয় যোগ করুন'),
-            ),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('বাতিল'),
-      ),
-      FilledButton(
-        onPressed: _save,
-        child: const Text('নিষ্ক্রিয় খসড়া রুটিন দিন'),
-      ),
-    ],
-  );
 }
