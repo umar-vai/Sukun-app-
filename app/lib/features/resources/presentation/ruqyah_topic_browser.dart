@@ -159,7 +159,11 @@ class RuqyahTopicBrowser extends StatelessWidget {
                 ),
               ),
               Text(
-                '$count',
+                topic.slug == 'ruqyah-self-guide'
+                    ? '৪ অধ্যায়'
+                    : topic.slug == 'ruqyah-ayat'
+                    ? 'বিষয়সমূহ'
+                    : '$count',
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: scheme.onSurfaceVariant),
               ),
