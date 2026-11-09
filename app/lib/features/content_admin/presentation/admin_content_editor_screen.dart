@@ -456,7 +456,8 @@ class _AdminContentEditorScreenState
                     SukunChoiceOption(
                       value: 'sukun_approved_reference',
                       title: 'সুকুন লাইফ অনুমোদিত তথ্যসূত্র',
-                      description: 'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন তথ্যসূত্র।',
+                      description:
+                          'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন তথ্যসূত্র।',
                       icon: Icons.verified_outlined,
                     ),
                   ],
@@ -1233,7 +1234,8 @@ String _kindInstruction(AdminResourceKind kind) => switch (kind) {
   AdminResourceKind.bookPdf => 'পিডিএফ লিংক ও ব্যবহারের অনুমতির তথ্য দিন।',
   AdminResourceKind.video => 'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
   AdminResourceKind.duaAzkar => 'শুধু তথ্যসূত্রে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
-  AdminResourceKind.articleGuide => 'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় তথ্যসূত্র দিন।',
+  AdminResourceKind.articleGuide =>
+    'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় তথ্যসূত্র দিন।',
   AdminResourceKind.blog => 'শিরোনাম, লেখা ও ছবি দিয়ে ব্লগ তৈরি করুন।',
 };
 
