@@ -263,9 +263,7 @@ class _ResourceCategoryScreenState
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return const AppLoadingState(
-                            label: 'পাঠ আনা হচ্ছে…',
-                          );
+                          return const AppLoadingState(label: 'পাঠ আনা হচ্ছে…');
                         }
                         if (snapshot.hasError) {
                           return AppErrorState(
