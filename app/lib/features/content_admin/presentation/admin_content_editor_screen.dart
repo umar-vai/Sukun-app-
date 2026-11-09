@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -347,7 +348,7 @@ class _AdminContentEditorScreenState
 
   String? _repeatReference() {
     final count = _nullable('repeatCount');
-    return count == null ? null : 'Repeat count from approved source: $count';
+    return count == null ? null : 'অনুমোদিত উৎস অনুযায়ী কতবার: $count';
   }
 
   String _shortTitle(String value) {
@@ -443,21 +444,19 @@ class _AdminContentEditorScreenState
                       value: 'official_dataset',
                       title: 'সরকারি বা যাচাই করা ডিজিটাল উৎস',
                       description:
-                          'A trusted API or checked digital text source.',
+                          'বিশ্বস্ত API বা যাচাই করা ডিজিটাল লেখার উৎস।',
                       icon: Icons.dataset_outlined,
                     ),
                     SukunChoiceOption(
                       value: 'licensed_publication',
                       title: 'অনুমতি-প্রাপ্ত প্রকাশনা',
-                      description:
-                          'A printed or digital edition Sukun Life may use.',
+                      description: 'ছাপা বা ডিজিটাল সংস্করণ, যা সুকুন লাইফ ব্যবহার করতে পারে।',
                       icon: Icons.menu_book_outlined,
                     ),
                     SukunChoiceOption(
                       value: 'sukun_approved_reference',
                       title: 'সুকুন লাইফ অনুমোদিত উৎস',
-                      description:
-                          'A source already checked by the Sukun Life team.',
+                      description: 'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন উৎস।',
                       icon: Icons.verified_outlined,
                     ),
                   ],
@@ -468,23 +467,24 @@ class _AdminContentEditorScreenState
               _SourceTextField(
                 controller: reference,
                 label: 'উৎসের নাম বা তথ্যসূত্র *',
-                helper: 'Example: publication title, collection reference, or dataset name.',
+                helper:
+                    'যেমন: প্রকাশনার নাম, সংকলনের রেফারেন্স বা ডেটাসেটের নাম।',
               ),
               _SourceTextField(
                 controller: edition,
                 label: 'প্রকাশনা বা সংস্করণ *',
-                helper: 'Enter the edition, revision, or dataset version shown by the source.',
+                helper: 'উৎসে যে সংস্করণ বা ভার্সন লেখা আছে তা লিখুন।',
               ),
               if (_nullable('banglaText') != null)
                 _SourceTextField(
                   controller: translation,
                   label: 'বাংলা অনুবাদের উৎস *',
-                  helper: 'Name the approved Bangla translator or publication.',
+                  helper: 'অনুমোদিত বাংলা অনুবাদক বা প্রকাশনার নাম লিখুন।',
                 ),
               _SourceTextField(
                 controller: sourceUrl,
                 label: 'উৎসের লিংক (ঐচ্ছিক)',
-                helper: 'Paste an HTTPS link when the source is online.',
+                helper: 'উৎস অনলাইনে থাকলে HTTPS লিংক দিন।',
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -497,9 +497,7 @@ class _AdminContentEditorScreenState
                             translation.text.trim().isEmpty)) {
                       ScaffoldMessenger.of(sheetContext).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Complete the required source information.',
-                          ),
+                          content: Text('উৎসের দরকারি তথ্য পূরণ করুন।'),
                         ),
                       );
                       return;
@@ -537,6 +535,36 @@ class _AdminContentEditorScreenState
           _savedContentId == null ? 'নতুন উপকরণ যোগ করুন' : 'উপকরণ সংশোধন করুন',
         ),
       ),
+      // Save actions stay in reach while the long form scrolls.
+      bottomNavigationBar: _kind == null
+          ? null
+          : SukunBottomActionBar(
+              hint: OutlinedButton.icon(
+                key: const Key('content-editor-preview'),
+                onPressed: _saving ? null : () => _save(_SaveAction.preview),
+                icon: const Icon(Icons.visibility_outlined),
+                label: const Text('আগে দেখে নিন'),
+              ),
+              children: [
+                OutlinedButton(
+                  key: const Key('content-editor-save-draft'),
+                  onPressed: _saving ? null : () => _save(_SaveAction.draft),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('খসড়া সংরক্ষণ করুন'),
+                  ),
+                ),
+                FilledButton.icon(
+                  key: const Key('content-editor-submit'),
+                  onPressed: _saving ? null : () => _save(_SaveAction.submit),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('যাচাইয়ের জন্য পাঠান'),
+                  ),
+                ),
+              ],
+            ),
       body: FutureBuilder<_EditorData>(
         future: _data,
         builder: (context, snapshot) {
@@ -648,31 +676,7 @@ class _AdminContentEditorScreenState
           _advancedSettings(data),
           const SizedBox(height: 26),
           if (_saving) const LinearProgressIndicator(),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: _saving ? null : () => _save(_SaveAction.preview),
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('আগে দেখে নিন'),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _saving ? null : () => _save(_SaveAction.draft),
-                  child: const Text('খসড়া সংরক্ষণ করুন'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _saving ? null : () => _save(_SaveAction.submit),
-                  icon: const Icon(Icons.fact_check_outlined),
-                  label: const Text('যাচাইয়ের জন্য পাঠান'),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: SukunSpace.lg),
         ],
       ),
     );
@@ -965,7 +969,7 @@ class _AdminContentEditorScreenState
       padding: const EdgeInsets.only(top: 12),
       child: SukunChoiceField<String>(
         label: 'বিভাগ${required ? ' *' : ''}',
-        placeholder: 'Choose the most suitable category',
+        placeholder: 'সবচেয়ে মানানসই বিভাগ বাছুন',
         helperText: 'এতে পাঠক সহজে উপকরণটি খুঁজে পাবেন।',
         value: _categoryId,
         options: [

@@ -395,6 +395,10 @@ class PlaylistTransportControls extends StatelessWidget {
             ? const Center(child: CircularProgressIndicator())
             : IconButton.filled(
                 key: const ValueKey('playlist-play-pause'),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A70A8),
+                  foregroundColor: Colors.white,
+                ),
                 tooltip: playing ? 'বিরতি' : 'চালান',
                 onPressed: onPlayPause,
                 icon: Icon(
@@ -452,15 +456,10 @@ class _PlaylistArt extends StatelessWidget {
     return SizedBox(
       height: height,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
+        // Solid Night Navy instead of a heavy gradient (brand rule).
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0D2B45), Color(0xFF0A70A8), Color(0xFF0F9BD7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: const BoxDecoration(color: Color(0xFF0D2B45)),
           child: Stack(
             fit: StackFit.expand,
             children: [

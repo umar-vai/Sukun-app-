@@ -80,7 +80,7 @@ class _AdminContentCollectionsScreenState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Collection ${transition}d.')));
+        ).showSnackBar(SnackBar(content: Text(_transitionMessage(transition))));
         setState(_reload);
       }
     } on ContentAdminException catch (error) {
@@ -94,7 +94,7 @@ class _AdminContentCollectionsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ayat collections')),
+      appBar: AppBar(title: const Text('আয়াতের সংকলন')),
       floatingActionButton:
           FutureBuilder<(List<AdminContentCollection>, List<AdminContentItem>)>(
             future: _data,
@@ -103,14 +103,14 @@ class _AdminContentCollectionsScreenState
                   ? () => _openEditor(snapshot.data!.$2)
                   : null,
               icon: const Icon(Icons.add),
-              label: const Text('New collection'),
+              label: const Text('নতুন সংকলন'),
             ),
           ),
       body: FutureBuilder<(List<AdminContentCollection>, List<AdminContentItem>)>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Loading collections');
+            return const AppLoadingState(label: 'সংকলন আনা হচ্ছে…');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -123,10 +123,10 @@ class _AdminContentCollectionsScreenState
           if (collections.isEmpty) {
             return AppEmptyState(
               icon: Icons.collections_bookmark_outlined,
-              title: 'No Ayat collections yet',
+              title: 'এখনো কোনো আয়াতের সংকলন নেই',
               message: ayat.isEmpty
-                  ? 'Publish Qur’an Ayat before creating a collection.'
-                  : 'Create a selected-Ayat or Ruqyah-Ayat collection.',
+                  ? 'সংকলন তৈরির আগে কুরআনের আয়াত প্রকাশ করুন।'
+                  : 'নির্বাচিত আয়াত বা রুকইয়াহর আয়াতের সংকলন তৈরি করুন।',
             );
           }
           return ListView.separated(
@@ -138,9 +138,9 @@ class _AdminContentCollectionsScreenState
                 return const Padding(
                   padding: EdgeInsets.only(bottom: 10),
                   child: SukunPageIntro(
-                    eyebrow: 'Canonical reuse',
-                    title: 'Ayat collections',
-                    subtitle: 'Curate selected and Ruqyah sets without duplicating sourced Qur’an text.',
+                    eyebrow: 'একই আয়াত, বারবার ব্যবহার',
+                    title: 'আয়াতের সংকলন',
+                    subtitle: 'উৎসসহ কুরআনের লেখা নকল না করেই নির্বাচিত ও রুকইয়াহর সংকলন সাজান।',
                     trailing: SukunIconBadge(
                       icon: Icons.collections_bookmark_outlined,
                       size: 54,
@@ -159,7 +159,7 @@ class _AdminContentCollectionsScreenState
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 5),
                     child: Text(
-                      '${_label(collection.type)} · ${collection.contentItemIds.length} Ayat',
+                      '${_label(collection.type)} · ${collection.contentItemIds.length}টি আয়াত',
                     ),
                   ),
                   trailing: Row(
@@ -183,22 +183,22 @@ class _AdminContentCollectionsScreenState
                           if (collection.status == 'draft') ...[
                             const PopupMenuItem(
                               value: 'edit',
-                              child: Text('Edit'),
+                              child: Text('সম্পাদনা'),
                             ),
                             const PopupMenuItem(
                               value: 'publish',
-                              child: Text('Publish'),
+                              child: Text('প্রকাশ করুন'),
                             ),
                           ],
                           if (collection.status == 'published')
                             const PopupMenuItem(
                               value: 'unpublish',
-                              child: Text('Unpublish'),
+                              child: Text('প্রকাশ বন্ধ করুন'),
                             ),
                           if (collection.status != 'archived')
                             const PopupMenuItem(
                               value: 'archive',
-                              child: Text('Archive'),
+                              child: Text('আর্কাইভ করুন'),
                             ),
                         ],
                       ),
@@ -315,11 +315,12 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SukunPageIntro(
-                  eyebrow: 'Collection editor',
+                  eyebrow: 'সংকলন সম্পাদনা',
                   title: widget.collection == null
-                      ? 'New Ayat collection'
-                      : 'Edit collection',
-                  subtitle: 'Select published, sourced canonical Ayat and set the approved audience.',
+                      ? 'নতুন আয়াতের সংকলন'
+                      : 'সংকলন সম্পাদনা',
+                  subtitle:
+                      'উৎসসহ প্রকাশিত আয়াত বাছুন এবং কারা দেখবে তা ঠিক করুন।',
                   trailing: const SukunIconBadge(
                     icon: Icons.collections_bookmark_outlined,
                     size: 54,
@@ -332,20 +333,20 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                       children: [
                         SukunChoiceField<String>(
                           value: _type,
-                          label: 'Collection type',
-                          placeholder: 'Choose a type',
+                          label: 'সংকলনের ধরন',
+                          placeholder: 'ধরন বাছুন',
                           options: const [
                             SukunChoiceOption(
                               value: 'selected_ayat',
-                              title: 'Selected Ayat',
-                              description: 'A curated reading collection.',
+                              title: 'নির্বাচিত আয়াত',
+                              description: 'পড়ার জন্য বাছাই করা সংকলন।',
                               icon: Icons.bookmarks_outlined,
                             ),
                             SukunChoiceOption(
                               value: 'ruqyah_ayat',
-                              title: 'Ruqyah Ayat',
+                              title: 'রুকইয়াহর আয়াত',
                               description:
-                                  'Approved Ayat grouped for Ruqyah browsing.',
+                                  'রুকইয়াহর জন্য সাজানো অনুমোদিত আয়াত।',
                               icon: Icons.health_and_safety_outlined,
                             ),
                           ],
@@ -354,52 +355,56 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _titleController,
-                          decoration: const InputDecoration(labelText: 'Title'),
+                          decoration: const InputDecoration(
+                            labelText: 'শিরোনাম',
+                          ),
                           validator: (value) =>
                               value == null || value.trim().isEmpty
-                              ? 'Title is required.'
+                              ? 'শিরোনাম দিতে হবে।'
                               : null,
                         ),
                         TextFormField(
                           controller: _titleBnController,
                           decoration: const InputDecoration(
-                            labelText: 'Bangla title',
+                            labelText: 'বাংলা শিরোনাম',
                           ),
                         ),
                         TextFormField(
                           controller: _slugController,
-                          decoration: const InputDecoration(labelText: 'Slug'),
+                          decoration: const InputDecoration(
+                            labelText: 'Slug (ওয়েব ঠিকানার অংশ)',
+                          ),
                           validator: (value) =>
                               value == null ||
                                   !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
                                       .hasMatch(value)
-                              ? 'Use lowercase words separated by hyphens.'
+                              ? 'ছোট হাতের ইংরেজি শব্দ হাইফেন দিয়ে লিখুন, যেমন morning-ayat।'
                               : null,
                         ),
                         TextFormField(
                           controller: _summaryController,
                           decoration: const InputDecoration(
-                            labelText: 'Summary',
+                            labelText: 'সংক্ষিপ্ত বিবরণ',
                           ),
                           maxLines: 2,
                         ),
                         const SizedBox(height: 12),
                         SukunChoiceField<String>(
                           value: _visibility,
-                          label: 'Visibility',
-                          placeholder: 'Choose the audience',
+                          label: 'কারা দেখবে',
+                          placeholder: 'দর্শক বাছুন',
                           options: const [
                             SukunChoiceOption(
                               value: 'public',
-                              title: 'Public',
-                              description: 'Available to guests and signed-in users after publishing.',
+                              title: 'সবার জন্য',
+                              description:
+                                  'প্রকাশের পর অতিথি ও লগইন করা সবাই দেখবেন।',
                               icon: Icons.public_rounded,
                             ),
                             SukunChoiceOption(
                               value: 'patient_only',
-                              title: 'Patient only',
-                              description:
-                                  'Restricted to authenticated patients.',
+                              title: 'শুধু রোগী',
+                              description: 'শুধু লগইন করা রোগীরা দেখবেন।',
                               icon: Icons.person_outline_rounded,
                             ),
                           ],
@@ -410,14 +415,14 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Published canonical Ayat (${_selectedIds.length} selected)',
+                            'প্রকাশিত আয়াত (${_selectedIds.length}টি বাছাই করা)',
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
                         if (widget.ayat.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Text('No published Ayat are available.'),
+                            child: Text('এখনো কোনো প্রকাশিত আয়াত নেই।'),
                           )
                         else
                           for (final ayah in widget.ayat)
@@ -426,7 +431,7 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                               value: _selectedIds.contains(ayah.id),
                               title: Text(ayah.titleBn ?? ayah.title),
                               subtitle: Text(
-                                'Surah ${ayah.surahNumber ?? '-'} • Ayah ${ayah.ayahNumber ?? '-'} • ${_label(ayah.status)}',
+                                'সূরা ${ayah.surahNumber ?? '-'} • আয়াত ${ayah.ayahNumber ?? '-'} • ${_label(ayah.status)}',
                               ),
                               onChanged: (selected) => setState(() {
                                 if (selected == true) {
@@ -448,14 +453,16 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                         onPressed: _saving
                             ? null
                             : () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
+                        child: const Text('বাতিল'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: _saving ? null : _save,
-                        child: Text(_saving ? 'Saving…' : 'Save draft'),
+                        child: Text(
+                          _saving ? 'সংরক্ষণ হচ্ছে…' : 'খসড়া সংরক্ষণ করুন',
+                        ),
                       ),
                     ),
                   ],
@@ -469,10 +476,32 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
   }
 }
 
-String _label(String value) => value
-    .split('_')
-    .map(
-      (word) =>
-          word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}',
-    )
-    .join(' ');
+/// Bangla labels for stored values. Unknown values fall back to readable
+/// words so nothing is hidden.
+String _label(String value) => switch (value) {
+  'selected_ayat' => 'নির্বাচিত আয়াত',
+  'ruqyah_ayat' => 'রুকইয়াহর আয়াত',
+  'draft' => 'খসড়া',
+  'review' => 'যাচাইয়ের অপেক্ষায়',
+  'verified' => 'যাচাইকৃত',
+  'published' => 'প্রকাশিত',
+  'archived' => 'আর্কাইভ',
+  'public' => 'সবার জন্য',
+  'patient_only' => 'শুধু রোগী',
+  _ =>
+    value
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' '),
+};
+
+String _transitionMessage(String transition) => switch (transition) {
+  'publish' => 'সংকলনটি প্রকাশিত হয়েছে।',
+  'unpublish' => 'সংকলনের প্রকাশ বন্ধ হয়েছে।',
+  'archive' => 'সংকলনটি আর্কাইভ হয়েছে।',
+  _ => 'সংকলন হালনাগাদ হয়েছে।',
+};

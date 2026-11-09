@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -365,6 +366,10 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
               ? const Center(child: CircularProgressIndicator())
               : IconButton.filled(
                   key: const ValueKey('audio-play-pause'),
+                  style: IconButton.styleFrom(
+                    backgroundColor: SukunColors.deepTide,
+                    foregroundColor: Colors.white,
+                  ),
                   iconSize: 39,
                   tooltip: playing ? 'থামান' : 'চালু করুন',
                   onPressed: () => _runPlaybackAction(
@@ -523,19 +528,10 @@ class _AudioHero extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     height: height,
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(SukunRadius.hero),
+      // Solid Night Navy: calm, and the white waveform stays legible.
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              SukunColors.nightNavy,
-              SukunColors.navySoft,
-              SukunColors.deepTide,
-            ],
-          ),
-        ),
+        decoration: const BoxDecoration(color: SukunColors.nightNavy),
         child: Stack(
           fit: StackFit.expand,
           children: [

@@ -158,13 +158,27 @@ Tests: `test/features/resources/quran_continue_reading_test.dart` (4 tests).
 
 Tests: `test/features/account/account_redesign_test.dart` (3 tests).
 
+### Admin library, notices and the full audio player
+| Old entry point | Where it is now |
+|---|---|
+| Content preview workflow buttons | **Bug fixed:** a past bulk translation had turned stored status values into Bangla (`'প্রকাশিত হয়েছে'` etc.), so canonical Qur'an/Hadith items could never be published, "প্রকাশ বন্ধ করুন" never appeared and archive always appeared. Restored to the real values (`verified`, `published`, `archived`). Covered by `admin_preview_status_actions_test.dart` (fails on the old code) |
+| Ayat collections screen (list, menu, editor dialog) | Same actions and data, all copy in Bangla; stored values shown as Bangla labels |
+| Content editor source sheet and placeholders | Bangla copy |
+| Content editor preview / save draft / submit | Fixed bottom bar (keys `content-editor-*`), same actions |
+| Staging private draft import button and dialog title | Bangla copy |
+| Admin notices list | Sukun cards with status pills, loading/error/empty states |
+| Notice editor | Same fields and `notice-*` keys; status pill, countdown and safety note in Sukun cards |
+| User notices list | Sukun cards; push toggle and QA token unchanged |
+| Full audio player and playlist player | Same controls and keys; solid Night Navy hero instead of a gradient, Deep Tide play button |
+
+Tests: `admin_preview_status_actions_test.dart` (4), `admin_collections_bangla_test.dart` (1).
+
 ## Verification
 - `flutter analyze`: no issues.
-- `flutter test`: 579 passed, 3 skipped after the account pass (547 before the redesign).
+- `flutter test`: 584 passed, 3 skipped after the final pass (547 before the redesign).
 - Web screenshots at 390x844 of admin home, member home, guest home and login.
 
-## Still to do (next passes)
-Rework these into the approved layout, using the same checklist approach:
-content
-library and notices, audio player. The admin "আজ যা দেখতে হবে" counts need
-real data queries, so they are not added yet (no invented numbers).
+## Still to do
+- The admin "আজ যা দেখতে হবে" counts need real data queries, so they are not added yet (no invented numbers).
+- Signed-in role flows (patient, member, admin) and the AI prescription flow still need a manual check on production after release.
+- `docs/VISUAL_ACCEPTANCE_GATE.md` should be re-run against the new screens.

@@ -4,6 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
@@ -59,66 +63,108 @@ class _AdminAnnouncementsScreenState
       future: _items,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const AppLoadingState(label: 'নোটিশ আনা হচ্ছে…');
         }
         if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
-              onPressed: _refresh,
-              child: const Text('নোটিশ লোড হয়নি — আবার চেষ্টা করুন'),
-            ),
+          return AppErrorState(
+            message: 'নোটিশ লোড হয়নি। আবার চেষ্টা করুন।',
+            onRetry: _refresh,
           );
         }
         final items = snapshot.data ?? [];
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            SukunSpace.page,
+            SukunSpace.sm,
+            SukunSpace.page,
+            104,
+          ),
           children: [
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'এখানে প্রকাশিত নোটিশ সব Guest, Member ও Patient দেখতে পাবেন। '
-                  'এ পর্যায়ে ফোনে দূরবর্তী Push Delivery সক্রিয় নয়। '
-                  'সেটির জন্য Firebase sender ও বাস্তব ফোনের পরীক্ষা প্রয়োজন।',
-                ),
+            const SukunSurface(
+              tone: SukunSurfaceTone.soft,
+              showBorder: false,
+              padding: EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline_rounded, color: SukunColors.deepTide),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'এখানে প্রকাশিত নোটিশ সব Guest, Member ও Patient দেখতে পাবেন। '
+                      'এ পর্যায়ে ফোনে দূরবর্তী Push Delivery সক্রিয় নয়। '
+                      'সেটির জন্য Firebase sender ও বাস্তব ফোনের পরীক্ষা প্রয়োজন।',
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: SukunSpace.lg),
             if (items.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('কোনো নোটিশ তৈরি করা হয়নি।'),
+              const AppEmptyState(
+                icon: Icons.campaign_outlined,
+                title: 'কোনো নোটিশ তৈরি করা হয়নি।',
+                message: 'নিচের "নতুন নোটিশ" বাটন দিয়ে প্রথম নোটিশ লিখুন।',
               ),
-            for (final notice in items)
-              Card(
-                child: ListTile(
-                  leading: Icon(
-                    notice.isPublished
-                        ? Icons.campaign_rounded
-                        : Icons.edit_note_rounded,
-                  ),
-                  title: Text(notice.title),
-                  subtitle: Text(
-                    notice.status == 'published'
-                        ? 'প্রকাশিত'
-                        : notice.status == 'draft'
-                        ? 'ড্রাফট'
-                        : 'আর্কাইভ',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context
-                      .push('/admin/announcements/${notice.id}/edit')
-                      .then((_) {
-                        if (mounted) _refresh();
-                      }),
+            for (final notice in items) ...[
+              SukunSurface(
+                key: Key('admin-notice-${notice.id}'),
+                padding: const EdgeInsets.all(14),
+                radius: SukunRadius.tile + 2,
+                onTap: () => context
+                    .push('/admin/announcements/${notice.id}/edit')
+                    .then((_) {
+                      if (mounted) _refresh();
+                    }),
+                child: Row(
+                  children: [
+                    SukunIconBadge(
+                      icon: notice.isPublished
+                          ? Icons.campaign_rounded
+                          : Icons.edit_note_rounded,
+                      size: 42,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        notice.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SukunStatusPill(
+                      label: noticeStatusLabel(notice.status),
+                      tone: switch (notice.status) {
+                        'published' => SukunStatusTone.success,
+                        'draft' => SukunStatusTone.warning,
+                        _ => SukunStatusTone.neutral,
+                      },
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF8AA3B5),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 10),
+            ],
           ],
         );
       },
     ),
   );
 }
+
+/// Bangla label for a stored notice status.
+String noticeStatusLabel(String status) => switch (status) {
+  'published' => 'প্রকাশিত',
+  'draft' => 'ড্রাফট',
+  _ => 'আর্কাইভ',
+};
 
 class AdminAnnouncementEditorScreen extends ConsumerStatefulWidget {
   const AdminAnnouncementEditorScreen({super.key, this.id});
@@ -392,13 +438,19 @@ class _AdminAnnouncementEditorScreenState
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('নোটিশ তৈরি ও প্রকাশ')),
     body: _loading
-        ? const Center(child: CircularProgressIndicator())
+        ? const AppLoadingState(label: 'নোটিশ আনা হচ্ছে…')
         : ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(SukunSpace.page),
             children: [
               if (widget.id != null) ...[
-                Text('বর্তমান অবস্থা: $_status'),
-                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SukunStatusPill(
+                    label: 'বর্তমান অবস্থা: ${noticeStatusLabel(_status)}',
+                    tone: SukunStatusTone.brand,
+                  ),
+                ),
+                const SizedBox(height: SukunSpace.lg),
               ],
               TextField(
                 key: const Key('notice-title'),
@@ -445,9 +497,11 @@ class _AdminAnnouncementEditorScreenState
                   child: const Text('ছবি বাদ দিন'),
                 ),
               const SizedBox(height: 12),
-              Card(
+              SukunSurface(
+                key: const Key('notice-countdown-card'),
+                padding: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -502,7 +556,7 @@ class _AdminAnnouncementEditorScreenState
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: Colors.red),
+                    style: const TextStyle(color: SukunColors.error),
                   ),
                 ),
               if (_busy)
@@ -537,9 +591,14 @@ class _AdminAnnouncementEditorScreenState
                       ),
                   ],
                 ),
-              const SizedBox(height: 14),
-              const Text(
-                'নিরাপত্তা: নোটিশে রোগীর ব্যক্তিগত তথ্য বা গোপন প্রেসক্রিপশন যোগ করবেন না।',
+              const SizedBox(height: SukunSpace.lg),
+              const SukunSurface(
+                tone: SukunSurfaceTone.warning,
+                showBorder: false,
+                padding: EdgeInsets.all(14),
+                child: Text(
+                  'নিরাপত্তা: নোটিশে রোগীর ব্যক্তিগত তথ্য বা গোপন প্রেসক্রিপশন যোগ করবেন না।',
+                ),
               ),
             ],
           ),
