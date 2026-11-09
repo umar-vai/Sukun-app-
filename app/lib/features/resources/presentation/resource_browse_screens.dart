@@ -561,7 +561,8 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
         ? selfRuqyahGroupBySlug(
                 guideChapter ?? 0,
                 widget.guideGroupSlug,
-              )?.title ?? 'বিষয় পাওয়া যায়নি'
+              )?.title ??
+              'বিষয় পাওয়া যায়নি'
         : guideChapter != null && guideChapter >= 1 && guideChapter <= 4
         ? selfRuqyahChapterTitles[guideChapter - 1]
         : RuqyahTopicBrowser.titleFor(widget.topicSlug);
@@ -593,58 +594,58 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
       body: !isDua && widget.topicSlug == 'ruqyah-ayat'
           ? const RuqyahAyatLibrary()
           : FutureBuilder<List<ContentResource>>(
-        future: _resourcesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে');
-          }
-          if (snapshot.hasError) {
-            return AppErrorState(
-              message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
-            );
-          }
-          final resources = snapshot.data ?? const <ContentResource>[];
-          return ListView(
-            key: PageStorageKey<String>(
-              'taxonomy-${isDua ? 'dua' : 'ruqyah'}-${widget.groupSlug}-${widget.categorySlug}-${widget.topicSlug}',
-            ),
-            padding: EdgeInsets.fromLTRB(20, isIndex ? 24 : 16, 20, 96),
-            children: [
-              if (isIndex) ...[
-                SukunPageIntro(
-                  title: isDua ? 'দোয়া ও আযকার' : 'রুকইয়াহ',
-                  subtitle: isDua
-                      ? 'দৈনন্দিন দোয়া ও যিকির'
-                      : 'অডিও, আয়াত ও আমল',
-                  trailing: SukunIconBadge(
-                    icon: isDua
-                        ? Icons.auto_awesome_rounded
-                        : Icons.health_and_safety_outlined,
-                    size: 54,
+              future: _resourcesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const AppLoadingState(label: 'উপকরণ আনা হচ্ছে');
+                }
+                if (snapshot.hasError) {
+                  return AppErrorState(
+                    message: 'তথ্য আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+                  );
+                }
+                final resources = snapshot.data ?? const <ContentResource>[];
+                return ListView(
+                  key: PageStorageKey<String>(
+                    'taxonomy-${isDua ? 'dua' : 'ruqyah'}-${widget.groupSlug}-${widget.categorySlug}-${widget.topicSlug}',
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
-              if (isDua)
-                DuaAzkarBrowseSection(
-                  resources: resources,
-                  groupSlug: widget.groupSlug,
-                  categorySlug: widget.categorySlug,
-                )
-              else
-                RuqyahTopicBrowser(
-                  resources: resources,
-                  topicSlug: widget.topicSlug,
-                  guideChapterNumber: guideChapter,
-                  guideGroupSlug: widget.guideGroupSlug,
-                  onOpenResource: _openRuqyahItem,
-                  onOpenAyat: () =>
-                      context.push('/resources/quran/collections'),
-                ),
-            ],
-          );
-        },
-      ),
+                  padding: EdgeInsets.fromLTRB(20, isIndex ? 24 : 16, 20, 96),
+                  children: [
+                    if (isIndex) ...[
+                      SukunPageIntro(
+                        title: isDua ? 'দোয়া ও আযকার' : 'রুকইয়াহ',
+                        subtitle: isDua
+                            ? 'দৈনন্দিন দোয়া ও যিকির'
+                            : 'অডিও, আয়াত ও আমল',
+                        trailing: SukunIconBadge(
+                          icon: isDua
+                              ? Icons.auto_awesome_rounded
+                              : Icons.health_and_safety_outlined,
+                          size: 54,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    if (isDua)
+                      DuaAzkarBrowseSection(
+                        resources: resources,
+                        groupSlug: widget.groupSlug,
+                        categorySlug: widget.categorySlug,
+                      )
+                    else
+                      RuqyahTopicBrowser(
+                        resources: resources,
+                        topicSlug: widget.topicSlug,
+                        guideChapterNumber: guideChapter,
+                        guideGroupSlug: widget.guideGroupSlug,
+                        onOpenResource: _openRuqyahItem,
+                        onOpenAyat: () =>
+                            context.push('/resources/quran/collections'),
+                      ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }
