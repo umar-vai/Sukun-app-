@@ -259,7 +259,6 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -282,7 +281,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.label, this.value, this.bangla = false, this.showLabel = true});
+  const _Section({
+    required this.label,
+    this.value,
+    this.bangla = false,
+    this.showLabel = true,
+  });
 
   final String label;
   final String? value;
