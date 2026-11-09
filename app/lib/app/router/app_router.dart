@@ -337,8 +337,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                               guideChapterNumber: int.tryParse(
                                 state.pathParameters['chapterNumber'] ?? '',
                               ),
-                              guideGroupSlug:
-                                  state.pathParameters['groupSlug'],
+                              guideGroupSlug: state.pathParameters['groupSlug'],
                             ),
                           ),
                         ],
