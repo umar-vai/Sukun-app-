@@ -89,8 +89,13 @@ void main() {
       );
       expect(find.text('রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ'), findsOneWidget);
       expect(find.byKey(const Key('challenge-login')), findsOneWidget);
-      expect(find.text('৪০ দিনের ৫টি ধাপ'), findsOneWidget);
       expect(find.byKey(const Key('challenge-progress')), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('৪০ দিনের ৫টি ধাপ'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('৪০ দিনের ৫টি ধাপ'), findsOneWidget);
     },
   );
 
