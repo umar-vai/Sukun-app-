@@ -14,8 +14,9 @@ ContentResource _topic(String slug, String name) => ContentResource(
 );
 
 void main() {
-  testWidgets('groups the approved self-ruqyah topics into four chapters',
-      (tester) async {
+  testWidgets('groups the approved self-ruqyah topics into four chapters', (
+    tester,
+  ) async {
     String? selected;
     final resources = [
       _topic('srg2024-c01-t001', 'রুকইয়াহ'),
@@ -25,16 +26,18 @@ void main() {
       _topic('unrelated-resource', 'এই লেখা গাইডের নয়'),
     ];
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: SelfRuqyahGuideIndex(
-            resources: resources,
-            onOpenResource: (item) => selected = item.id,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: SelfRuqyahGuideIndex(
+              resources: resources,
+              onOpenResource: (item) => selected = item.id,
+            ),
           ),
         ),
       ),
-    ));
+    );
 
     expect(find.text('প্রথম অধ্যায়'), findsOneWidget);
     expect(find.text('দ্বিতীয় অধ্যায়'), findsOneWidget);
@@ -47,23 +50,26 @@ void main() {
     expect(selected, 'srg2024-c01-t001');
   });
 
-  testWidgets('search filters guide titles without modifying source text',
-      (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: SelfRuqyahGuideIndex(
-            resources: [
-              _topic('srg2024-c01-t001', 'রুকইয়াহ'),
-              _topic('srg2024-c02-t001', 'জাদুর লক্ষণ'),
-              _topic('srg2024-c03-t001', 'রুকইয়াহ গোসল'),
-              _topic('srg2024-c04-t001', 'জাদুর আয়াত'),
-            ],
-            onOpenResource: (_) {},
+  testWidgets('search filters guide titles without modifying source text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: SelfRuqyahGuideIndex(
+              resources: [
+                _topic('srg2024-c01-t001', 'রুকইয়াহ'),
+                _topic('srg2024-c02-t001', 'জাদুর লক্ষণ'),
+                _topic('srg2024-c03-t001', 'রুকইয়াহ গোসল'),
+                _topic('srg2024-c04-t001', 'জাদুর আয়াত'),
+              ],
+              onOpenResource: (_) {},
+            ),
           ),
         ),
       ),
-    ));
+    );
 
     await tester.enterText(find.byType(TextField), 'জাদুর');
     await tester.pumpAndSettle();
