@@ -23,57 +23,72 @@ class RuqyahSection {
   final String? audioSlug;
 }
 
+/// Each category follows the exact sequence of the book's Ayat and Dua
+/// excerpts. These are editorial passages, not independently numbered verses.
 const ruqyahSections = <RuqyahSection>[
   RuqyahSection(
-    'বেসিক রুকইয়াহ',
-    'প্রাথমিক রুকইয়াহর নির্বাচিত আয়াত',
+    'প্রাথমিক রুকইয়াহ আয়াত',
+    'প্রাথমিক পাঠ ও নির্বাচিত আয়াত',
     'sukun-ruqyahbd-common-bangla',
   ),
-  RuqyahSection(
-    'রুকইয়াহ আয়াত',
-    'বিষয়ভিত্তিক রুকইয়াহর আয়াত ও অংশ',
-    'sukun-ruqyahbd-eight-surah',
-  ),
-  RuqyahSection('রুকইয়াহ দোয়া', 'নির্বাচিত দোয়া ও বাংলা অর্থ', null),
-  RuqyahSection(
-    'বদনজরের আয়াত',
-    'বদনজর সম্পর্কিত নির্বাচিত আয়াত',
-    'sukun-ruqyahbd-evil-eye',
-  ),
-  RuqyahSection(
-    'সিহরের আয়াত',
-    'জাদু ও সিহর সম্পর্কিত আয়াত',
-    'sukun-ruqyahbd-sihr-hibshi',
-  ),
-  RuqyahSection('আয়াতুশ শিফা', 'শিফা সম্পর্কিত আয়াত', 'sukun-ruqyahbd-shifa'),
+  RuqyahSection('জিনের আয়াত', 'জিন সম্পর্কিত নির্বাচিত অংশ', null),
   RuqyahSection(
     'আয়াতুল হারক',
     'হারক সম্পর্কিত নির্বাচিত আয়াত',
     'sukun-ruqyahbd-harq',
   ),
   RuqyahSection(
-    'আয়াতুস সাকিনাহ',
-    'সাকিনাহ সম্পর্কিত আয়াত',
+    'বদনজরের আয়াত',
+    'বদনজর সম্পর্কিত নির্বাচিত আয়াত',
+    'sukun-ruqyahbd-evil-eye',
+  ),
+  RuqyahSection(
+    'জাদু ও সিহরের আয়াত',
+    'সিহর ও জাদু সম্পর্কিত আয়াত',
+    'sukun-ruqyahbd-sihr-hibshi',
+  ),
+  RuqyahSection(
+    'আয়াতুশ শিফা',
+    'শিফা সম্পর্কিত আয়াত',
+    'sukun-ruqyahbd-shifa',
+  ),
+  RuqyahSection('কিতাল-তাদমির', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection('জিনা-ফাহিশা', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection('খুরুজ', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection('আয়াতুস সালাম', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection(
+    'আয়াতুস সাকিনা',
+    'সাকিনা সম্পর্কিত নির্বাচিত আয়াত',
     'sukun-ruqyahbd-shifa-sakina',
   ),
+  RuqyahSection('আয়াতুত তাখফিফ', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection('আয়াতুল ইজাম', 'নির্বাচিত আয়াত ও অংশ', null),
+  RuqyahSection('রুকইয়াহর দুআ', 'নির্বাচিত দুআ ও বাংলা অর্থ', null),
 ];
 
-/// Explicitly maps already-reviewed book excerpt identifiers. No guessed
-/// surah/ayah boundaries and no attribution to a different source corpus.
+/// Source-book paragraph IDs, not surah/ayah numbering. Never infer missing
+/// Quran ayah references from an index or import a second copy of these rows.
 int? ruqyahSectionForSlug(String slug) {
-  if (slug.startsWith('srg2024-dua-')) return 2;
+  if (RegExp(r'^srg2024-dua-[0-9]{3}$').hasMatch(slug)) {
+    final id = int.tryParse(slug.substring(slug.length - 3));
+    return id != null && id >= 1 && id <= 23 ? 13 : null;
+  }
   if (!RegExp(r'^srg2024-qur-[0-9]{3}$').hasMatch(slug)) return null;
   final number = int.tryParse(slug.substring(slug.length - 3));
   if (number == null || number < 1 || number > 101) return null;
   if (number <= 13) return 0;
   if (number <= 19) return 1;
-  if (number <= 27) return 6;
+  if (number <= 27) return 2;
   if (number <= 37) return 3;
   if (number <= 48) return 4;
   if (number <= 54) return 5;
-  if (number <= 84) return 1;
-  if (number <= 90) return 7;
-  return 1;
+  if (number <= 60) return 6;
+  if (number <= 68) return 7;
+  if (number <= 77) return 8;
+  if (number <= 84) return 9;
+  if (number <= 90) return 10;
+  if (number <= 94) return 11;
+  return 12;
 }
 
 /// Bengali names of surahs referenced in the approved editorial mapping.
@@ -434,11 +449,6 @@ class _RuqyahAyatLibraryState extends State<RuqyahAyatLibrary> {
                             ),
                           );
                         },
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'পাঠ ও অডিও যাচাইকৃত তথ্যের ভিত্তিতে দেখানো হয়। প্রতিটি বিভাগের অডিও আলাদা রেকর্ডিং।',
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
