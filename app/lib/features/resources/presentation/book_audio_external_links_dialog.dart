@@ -35,7 +35,7 @@ class _BookAudioExternalLinksDialogState
           future: _sources,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-              return const Text('অডিওর উৎস তালিকা এখন খোলা যাচ্ছে না।');
+              return const Text('অডিও তালিকা এখন খোলা যাচ্ছে না।');
             }
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
