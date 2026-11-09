@@ -143,7 +143,7 @@ class _AdminContentListScreenState
       context: context,
       title: '${candidates.length}টি যাচাইকৃত খসড়া প্রকাশ করবেন?',
       message:
-          'শুধু অনুমোদিত উৎস ও প্রকাশের তথ্য থাকা উপকরণগুলো সবার জন্য '
+          'শুধু অনুমোদিত তথ্যসূত্র ও প্রকাশের তথ্য থাকা উপকরণগুলো সবার জন্য '
           'দৃশ্যমান করা হবে। Draft → Review → Published ধাপে '
           'প্রতিটি পরিবর্তনের Admin audit history থাকবে। '
           'যেসব আয়াতে “সূত্র যাচাই প্রয়োজন” লেখা আছে এবং '
@@ -502,7 +502,7 @@ class _AdminContentListScreenState
             if (publishable.length < selected.length) ...[
               const SizedBox(height: 8),
               Text(
-                '${selected.length - publishable.length}টি উপকরণের উৎস যাচাই '
+                '${selected.length - publishable.length}টি উপকরণের তথ্যসূত্র যাচাই '
                 'বা প্রকাশের অনুমোদন বাকি। এগুলো Bulk Publish হবে না।',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -625,7 +625,7 @@ class _AdminContentListScreenState
               const SizedBox(height: 8),
               Text(
                 '${selected.length - publishable.length}টি খসড়ার '
-                'উৎস/অনুমোদন যাচাই বাকি; এগুলো Bulk Publish হবে না।',
+                'তথ্যসূত্র/অনুমোদন যাচাই বাকি; এগুলো Bulk Publish হবে না।',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -858,7 +858,7 @@ class _AdminContentListScreenState
       const SizedBox(height: 18),
       _DashboardShortcut(
         icon: Icons.menu_book_outlined,
-        title: 'কুরআনের পাঠ — উৎস যাচাই বাকি',
+        title: 'কুরআনের পাঠ — তথ্যসূত্র যাচাই বাকি',
         detail: data == null
             ? 'মূল বইয়ের আয়াত ও পাঠের অংশ যাচাই করুন'
             : '$quranPendingটি বইয়ের পাঠের খসড়া · সূরা–আয়াত যাচাই না হওয়া পর্যন্ত অপ্রকাশিত',
@@ -891,7 +891,7 @@ class _AdminContentListScreenState
         OutlinedButton.icon(
           onPressed: _openAudioReferences,
           icon: const Icon(Icons.headphones_outlined),
-          label: const Text('বইয়ে উল্লেখিত Ruqyah BD অডিও — ১৯টি উৎস'),
+          label: const Text('বইয়ে উল্লেখিত Ruqyah BD অডিও — ১৯টি তথ্যসূত্র'),
         ),
         const SizedBox(height: 12),
       ],
