@@ -98,7 +98,7 @@ class AyahReadingCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onOpenDetail,
                 icon: const Icon(Icons.menu_book_outlined),
-                label: const Text('বিস্তারিত দেখুন'),
+                label: const Text('পাঠ খুলুন'),
               ),
             ),
           ],
