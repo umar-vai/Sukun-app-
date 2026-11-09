@@ -468,9 +468,7 @@ class _AdminAnnouncementEditorScreenState
                 minLines: 4,
                 maxLines: 10,
                 maxLength: 5000,
-                decoration: const InputDecoration(
-                  labelText: 'নোটিশের বিস্তারিত লেখা',
-                ),
+                decoration: const InputDecoration(labelText: 'নোটিশের লেখা'),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(

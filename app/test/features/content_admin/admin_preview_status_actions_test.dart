@@ -61,14 +61,14 @@ void main() {
       verification: 'verified',
     );
     expect(find.text('প্রকাশ করুন'), findsOneWidget);
-    expect(find.text('উৎস অনুমোদন করুন'), findsNothing);
+    expect(find.text('মূল তথ্য যাচাই করুন'), findsNothing);
   });
 
   testWidgets('a Qur\'an item in review offers source approval', (
     tester,
   ) async {
     await show(tester, type: 'quran', status: 'review');
-    expect(find.text('উৎস অনুমোদন করুন'), findsOneWidget);
+    expect(find.text('মূল তথ্য যাচাই করুন'), findsOneWidget);
     expect(find.text('সংশোধনের জন্য ফেরত দিন'), findsOneWidget);
     expect(find.text('প্রকাশ করুন'), findsNothing);
   });

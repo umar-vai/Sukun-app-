@@ -214,7 +214,7 @@ class _PlanActionEditorScreenState
                   const SizedBox(height: 10),
                   const Text(
                     'এই পাঠ/অডিওর জন্য আলাদাভাবে প্রকাশিত যাচাইকৃত '
-                    'রিসোর্স বাছতে হবে। শুধু টেমপ্লেট দিয়ে অডিও যুক্ত হয় না।',
+                    'পাঠ বা অডিও বাছতে হবে। শুধু টেমপ্লেট দিয়ে অডিও যুক্ত হয় না।',
                   ),
                 ],
               ],
@@ -376,7 +376,7 @@ class _PlanActionEditorScreenState
           TextFormField(
             controller: _usageNoteController,
             decoration: const InputDecoration(
-              labelText: 'এই রিসোর্স ব্যবহারের নোট (ঐচ্ছিক)',
+              labelText: 'ব্যবহারের নোট (ঐচ্ছিক)',
             ),
           ),
       ],

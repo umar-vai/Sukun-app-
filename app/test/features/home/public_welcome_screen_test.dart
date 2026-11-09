@@ -86,7 +86,7 @@ void main() {
     final sectionTitle = tester.widget<Text>(find.text('সুকুন লাইফে যা পাবেন'));
     expect(sectionTitle.style?.color, SukunColors.nightNavy);
 
-    final whiteCardTitle = tester.widget<Text>(find.text('ইসলামিক রিসোর্স'));
+    final whiteCardTitle = tester.widget<Text>(find.text('ইসলামিক পাঠ ও অডিও'));
     expect(whiteCardTitle.style?.color, SukunColors.nightNavy);
 
     final downloadButton = tester.widget<OutlinedButton>(

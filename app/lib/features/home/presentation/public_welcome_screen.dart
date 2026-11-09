@@ -123,7 +123,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                                   _WelcomeBenefit(
                                     width: cardWidth,
                                     icon: Icons.menu_book_outlined,
-                                    title: 'ইসলামিক রিসোর্স',
+                                    title: 'ইসলামিক পাঠ ও অডিও',
                                     description: 'কুরআন, দোয়া, রুকইয়াহ, অডিও ও গাইড খুঁজে পড়ুন।',
                                   ),
                                   _WelcomeBenefit(
@@ -171,7 +171,7 @@ class _WelcomeHeader extends StatelessWidget {
       children: [
         TextButton(
           onPressed: () => context.go('/resources'),
-          child: const Text('রিসোর্স'),
+          child: const Text('পাঠ ও অডিও'),
         ),
         TextButton(
           onPressed: () => context.go('/announcements'),
@@ -248,7 +248,7 @@ class _WelcomeHero extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => context.go('/resources'),
               icon: const Icon(Icons.auto_stories_outlined),
-              label: const Text('রিসোর্স দেখুন'),
+              label: const Text('পাঠ ও অডিও দেখুন'),
             ),
             OutlinedButton.icon(
               onPressed: () => context.go('/login'),

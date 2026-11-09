@@ -57,6 +57,27 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('ruqyah-filter-ruqyah-self-guide')),
+        matching: find.byIcon(Icons.menu_book_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('ruqyah-filter-ruqyah-ayat')),
+        matching: find.byIcon(Icons.auto_stories_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
+        matching: find.byIcon(Icons.headphones_rounded),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     await tester.ensureVisible(

@@ -25,5 +25,8 @@ void main() {
     );
     expect(find.text('রুকইয়াহ শুনুন'), findsOneWidget);
     expect(find.textContaining('editorial review required'), findsNothing);
+    for (final typeLabel in ['অডিও', 'লেখা', 'উপকরণ', 'পিডিএফ']) {
+      expect(find.text(typeLabel), findsNothing);
+    }
   });
 }

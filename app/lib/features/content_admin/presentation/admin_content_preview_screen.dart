@@ -201,11 +201,11 @@ class _AdminContentPreviewScreenState
                 if (item.type == 'article' && item.slug.startsWith('blog-'))
                   BlogArticleBody(content: item.body!)
                 else
-                  _PreviewSection(title: 'বিস্তারিত লেখা', body: item.body!),
+                  _PreviewSection(title: 'মূল লেখা', body: item.body!),
               const SizedBox(height: 26),
               const SukunSectionHeader(
-                title: 'উৎস ও তথ্যসূত্র',
-                subtitle: 'উপকরণটির উৎস যাচাইয়ের জন্য প্রয়োজনীয় তথ্য।',
+                title: 'প্রকাশনার তথ্য',
+                subtitle: 'প্রকাশের আগে মূল তথ্য যাচাই করুন।',
               ),
               const SizedBox(height: 8),
               _Metadata(item: item),
@@ -243,7 +243,7 @@ class _AdminContentPreviewScreenState
                           ? null
                           : () => _transition('verify', item: item),
                       icon: const Icon(Icons.verified_outlined),
-                      label: const Text('উৎস অনুমোদন করুন'),
+                      label: const Text('মূল তথ্য যাচাই করুন'),
                     ),
                   if (item.isCanonical &&
                       item.status == 'review' &&
@@ -327,7 +327,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SukunStatusPill(
     label: label,
-    tone: label == 'প্রকাশিত' || label == 'উৎস অনুমোদিত'
+    tone: label == 'প্রকাশিত' || label == 'তথ্য যাচাইকৃত'
         ? SukunStatusTone.success
         : SukunStatusTone.brand,
   );
@@ -441,8 +441,8 @@ String _label(String value) => value
     .join(' ');
 
 String _transitionExplanation(String transition) => switch (transition) {
-  'submit' => 'উপকরণটি যাচাইয়ের জন্য পাঠান। কুরআন ও হাদিসের উৎস অনুমোদিত না হলে প্রকাশ করা যাবে না।',
-  'verify' => 'আসল লেখা ও উৎস অনুমোদিত তথ্যসূত্রের সঙ্গে মিলিয়ে নিশ্চিত করুন।',
+  'submit' => 'কনটেন্টটি যাচাইয়ের জন্য পাঠান। কুরআন ও হাদিসের মূল পাঠ যাচাই না হলে প্রকাশ করা যাবে না।',
+  'verify' => 'মূল লেখা ও প্রকাশনার তথ্য মিলিয়ে নিশ্চিত করুন।',
   'reject' => 'লেখা বা ইতিহাস না মুছে সংশোধনের জন্য ফেরত দিন।',
   'publish' => 'যাচাই করা উপকরণটি নির্ধারিত পাঠকদের জন্য প্রকাশ করুন।',
   'unpublish' => 'আগের তথ্য রেখে উপকরণটি পাঠকদের তালিকা থেকে সরান।',
@@ -453,7 +453,7 @@ String _transitionExplanation(String transition) => switch (transition) {
 
 String _transitionLabel(String transition) => switch (transition) {
   'submit' => 'যাচাইয়ের জন্য পাঠান',
-  'verify' => 'উৎস অনুমোদন করুন',
+  'verify' => 'মূল তথ্য যাচাই করুন',
   'reject' => 'সংশোধনের জন্য ফেরত দিন',
   'publish' => 'প্রকাশ করুন',
   'unpublish' => 'প্রকাশ বন্ধ করুন',
@@ -463,18 +463,18 @@ String _transitionLabel(String transition) => switch (transition) {
 
 String _statusLabel(AdminContentItem item) => switch (item.status) {
   'draft' => 'খসড়া',
-  'review' => item.isCanonical ? 'উৎস যাচাই বাকি' : 'প্রকাশের অপেক্ষায়',
-  'অনুমোদিত হয়েছে' => 'উৎস অনুমোদিত',
+  'review' => item.isCanonical ? 'তথ্য যাচাই বাকি' : 'প্রকাশের অপেক্ষায়',
+  'অনুমোদিত হয়েছে' => 'তথ্য যাচাইকৃত',
   'প্রকাশিত হয়েছে' => 'প্রকাশিত',
   'সংরক্ষিত হয়েছে' => 'সংরক্ষিত',
   _ => _label(item.status),
 };
 
 String _verificationLabel(String value) => switch (value) {
-  'pending' => 'উৎস যাচাই বাকি',
-  'অনুমোদিত হয়েছে' => 'উৎস অনুমোদিত',
+  'pending' => 'তথ্য যাচাই বাকি',
+  'অনুমোদিত হয়েছে' => 'তথ্য যাচাইকৃত',
   'সংশোধনের জন্য ফেরত গেছে' => 'সংশোধন প্রয়োজন',
-  _ => 'উৎস যাচাই শুরু হয়নি',
+  _ => 'তথ্য যাচাই শুরু হয়নি',
 };
 
 String _audienceLabel(String value) => switch (value) {

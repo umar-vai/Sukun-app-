@@ -68,7 +68,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
         ],
         if (items.isEmpty)
           const AppEmptyState(
-            title: 'এই বিভাগে এখনো উপকরণ নেই',
+            title: 'এই বিভাগে এখনো পাঠ নেই',
             message: 'অন্য বিভাগ দেখুন।',
           )
         else
@@ -94,7 +94,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'উপকরণ',
+          'বিভাগসমূহ',
           style: Theme.of(context).textTheme.titleMedium
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
@@ -149,7 +149,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.headphones_rounded, color: scheme.primary),
+              Icon(_iconForTopic(topic.slug), color: scheme.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -180,3 +180,10 @@ class RuqyahTopicBrowser extends StatelessWidget {
     );
   }
 }
+
+IconData _iconForTopic(String slug) => switch (slug) {
+  'ruqyah-ayat' => Icons.auto_stories_outlined,
+  'ruqyah-self-guide' => Icons.menu_book_outlined,
+  'all' => Icons.grid_view_rounded,
+  _ => Icons.headphones_rounded,
+};

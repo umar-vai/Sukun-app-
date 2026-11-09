@@ -140,7 +140,7 @@ class _AdminContentCollectionsScreenState
                   child: SukunPageIntro(
                     eyebrow: 'একই আয়াত, বারবার ব্যবহার',
                     title: 'আয়াতের সংকলন',
-                    subtitle: 'উৎসসহ কুরআনের লেখা নকল না করেই নির্বাচিত ও রুকইয়াহর সংকলন সাজান।',
+                    subtitle: 'তথ্যসূত্রসহ কুরআনের লেখা নকল না করেই নির্বাচিত ও রুকইয়াহর সংকলন সাজান।',
                     trailing: SukunIconBadge(
                       icon: Icons.collections_bookmark_outlined,
                       size: 54,
@@ -319,8 +319,7 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                   title: widget.collection == null
                       ? 'নতুন আয়াতের সংকলন'
                       : 'সংকলন সম্পাদনা',
-                  subtitle:
-                      'উৎসসহ প্রকাশিত আয়াত বাছুন এবং কারা দেখবে তা ঠিক করুন।',
+                  subtitle: 'তথ্যসূত্রসহ প্রকাশিত আয়াত বাছুন এবং কারা দেখবে তা ঠিক করুন।',
                   trailing: const SukunIconBadge(
                     icon: Icons.collections_bookmark_outlined,
                     size: 54,

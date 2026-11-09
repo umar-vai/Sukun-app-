@@ -14,7 +14,7 @@ class ResourceMaterialPacket {
       ..writeln()
       ..writeln('**শুধু অ্যাডমিন পর্যালোচনার জন্য — রোগীর জন্য প্রকাশিত নয়।**')
       ..writeln(
-        'নিচের নিয়মগুলো মূল প্রেসক্রিপশন ও অনুমোদিত উৎসের সঙ্গে মিলিয়ে দেখুন।',
+        'নিচের নিয়মগুলো মূল প্রেসক্রিপশন ও যাচাইকৃত গ্রন্থের সঙ্গে মিলিয়ে দেখুন।',
       )
       ..writeln();
 
@@ -61,8 +61,8 @@ class ResourceMaterialPacket {
       if (!approved) {
         buffer
           ..writeln(
-            '**উপকরণের অবস্থা:** অনুমোদিত উৎস পাওয়া যায়নি; '
-            'অ্যাডমিন যাচাই ও Resource Library linkage প্রয়োজন।',
+            '**পাঠের অবস্থা:** যাচাইকৃত পাঠ পাওয়া যায়নি; '
+            'অ্যাডমিন যাচাই ও লাইব্রেরিতে সংযোগ প্রয়োজন।',
           )
           ..writeln();
         continue;
@@ -77,8 +77,11 @@ class ResourceMaterialPacket {
         ('আরবি', resource.arabicText),
         ('বাংলা', resource.banglaText),
         ('অর্থ/অনুবাদ', resource.translation),
-        ('বিস্তারিত', resource.body),
-        ('উৎস', resource.referenceText ?? resource.sourceReference),
+        ('মূল লেখা', resource.body),
+        (
+          'গ্রন্থ ও তথ্যসূত্র',
+          resource.referenceText ?? resource.sourceReference,
+        ),
       ]) {
         final value = field.$2?.trim();
         if (value == null || value.isEmpty) continue;

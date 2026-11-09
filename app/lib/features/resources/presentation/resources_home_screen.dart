@@ -19,7 +19,6 @@ import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ResourcesHomeScreen extends ConsumerStatefulWidget {
   const ResourcesHomeScreen({
@@ -173,12 +172,12 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                       TextButton.icon(
                         onPressed: () => context.push('/admin/content/new'),
                         icon: const Icon(Icons.add_circle_outline_rounded),
-                        label: const Text('নতুন রিসোর্স যোগ করুন'),
+                        label: const Text('নতুন কনটেন্ট যোগ করুন'),
                       ),
                       TextButton.icon(
                         onPressed: () => context.push('/admin/content'),
                         icon: const Icon(Icons.edit_note_outlined),
-                        label: const Text('রিসোর্স পরিচালনা'),
+                        label: const Text('কনটেন্ট পরিচালনা'),
                       ),
                     ],
                   ),
@@ -196,7 +195,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                           color: SukunColors.deepTide,
                         ),
                         SizedBox(width: 10),
-                        Expanded(child: Text('এখন উপকরণ দেখানো যাচ্ছে না।')),
+                        Expanded(child: Text('এখন কিছু দেখানো যাচ্ছে না।')),
                       ],
                     ),
                   )
@@ -231,17 +230,6 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         icon: Icons.headphones_outlined,
                         label: 'রুকইয়াহ অডিও',
                         onTap: _openBookAudioLinks,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _QuickLink(
-                        icon: Icons.open_in_new_rounded,
-                        label: 'রুকইয়াহর আয়াত পড়ুন',
-                        onTap: () => launchUrl(
-                          Uri.parse('https://ayat.ruqyahbd.org/'),
-                          mode: LaunchMode.externalApplication,
-                        ),
                       ),
                     ),
                   ],
@@ -295,7 +283,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   return const SliverToBoxAdapter(
                     child: SizedBox(
                       height: 160,
-                      child: AppLoadingState(label: 'উপকরণ আনা হচ্ছে…'),
+                      child: AppLoadingState(label: 'পাঠ আনা হচ্ছে…'),
                     ),
                   );
                 }
@@ -303,7 +291,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: AppErrorState(
-                      message: 'উপকরণ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+                      message: 'পাঠ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
                       onRetry: _refresh,
                     ),
                   );
@@ -313,10 +301,10 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: AppEmptyState(
-                      title: 'কোনো উপকরণ পাওয়া যায়নি',
+                      title: 'কোনো পাঠ পাওয়া যায়নি',
                       message: _searchController.text.trim().isNotEmpty
                           ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
-                          : 'এখানে এখনো কোনো উপকরণ দেওয়া হয়নি।',
+                          : 'এখনো কোনো পাঠ দেওয়া হয়নি।',
                     ),
                   );
                 }
@@ -431,23 +419,6 @@ class ResourceCard extends StatelessWidget {
                             )
                           : Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (resource.titleBn?.isNotEmpty == true &&
-                        resource.titleBn!.trim() != resource.title.trim()) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        resource.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 9),
-                    SukunStatusPill(
-                      label: _typeLabel(resource.type),
-                      tone: SukunStatusTone.brand,
-                    ),
                   ],
                 ),
               ),
@@ -472,19 +443,6 @@ IconData _resourceIcon(String type) => switch (type) {
   'video' => Icons.ondemand_video_outlined,
   'pdf' || 'book' || 'book_chapter' => Icons.picture_as_pdf_outlined,
   _ => Icons.article_outlined,
-};
-
-String _typeLabel(String type) => switch (type) {
-  'quran' => 'কুরআন',
-  'hadith' => 'হাদিস',
-  'dua' => 'দোয়া',
-  'amal' => 'আমল',
-  'audio' => 'অডিও',
-  'video' => 'ভিডিও',
-  'pdf' => 'পিডিএফ',
-  'book' || 'book_chapter' => 'বই',
-  'article' => 'লেখা',
-  _ => 'উপকরণ',
 };
 
 /// Compact shortcut tile for secondary library destinations.

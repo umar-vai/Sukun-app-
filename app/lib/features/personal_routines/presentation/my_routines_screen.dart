@@ -221,7 +221,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         // Fail closed on inaccessible, unpublished or offline resource.
       }
       if (prefill == null) {
-        _notice('এই প্রকাশিত রিসোর্সটি রুটিনে যুক্ত করা যাচ্ছে না।');
+        _notice('এই পাঠটি রুটিনে যুক্ত করা যাচ্ছে না।');
         title.dispose();
         reminder.dispose();
         return;
@@ -299,14 +299,11 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                     ListTile(
                       leading: const Icon(Icons.library_books_outlined),
                       title: Text(prefill.actionTitle),
-                      subtitle: const Text(
-                        'প্রকাশিত লাইব্রেরি রিসোর্স — নাম ও সময় সম্পাদনা করুন',
-                      ),
                     ),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'সংযুক্ত রিসোর্স (সর্বোচ্চ ১৬টি)',
+                      'সংযুক্ত পাঠ ও অডিও (সর্বোচ্চ ১৬টি)',
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
@@ -325,12 +322,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                                 ? selectedItem.ayahNumber == null
                                       ? 'সূরা ${selectedItem.surahNumber}'
                                       : 'সূরা ${selectedItem.surahNumber} · আয়াত ${selectedItem.ayahNumber}'
-                                : resource?.displayTitle ?? 'রিসোর্স অনুপলব্ধ',
-                          ),
-                          subtitle: Text(
-                            selectedItem.provider == 'quran'
-                                ? 'কুরআন রিডারে খুলবে'
-                                : resource?.type ?? 'অনুপলব্ধ',
+                                : resource?.displayTitle ??
+                                      'পাঠটি এখন পাওয়া যাচ্ছে না',
                           ),
                           leading: Icon(
                             selectedItem.provider == 'quran'
@@ -949,7 +942,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             child: TextButton.icon(
               onPressed: () => context.push('/resources'),
               icon: const Icon(Icons.library_books_outlined),
-              label: const Text('রিসোর্স লাইব্রেরি খুলুন'),
+              label: const Text('পাঠ ও অডিও খুলুন'),
             ),
           ),
           const SizedBox(height: SukunSpace.section),

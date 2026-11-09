@@ -259,7 +259,7 @@ class AdminHomeScreen extends StatelessWidget {
                 title: 'প্রয়োজনীয় টুলস',
                 action: TextButton(
                   onPressed: () => context.go('/resources'),
-                  child: const Text('রিসোর্স'),
+                  child: const Text('পাঠ ও অডিও'),
                 ),
               ),
               const SizedBox(height: SukunSpace.md),

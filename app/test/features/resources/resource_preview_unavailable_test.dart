@@ -24,7 +24,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('এখন উপকরণ দেখানো যাচ্ছে না'), findsOneWidget);
+    expect(find.textContaining('এখন পাঠ দেখানো যাচ্ছে না'), findsOneWidget);
     expect(find.text('পরে আবার চেষ্টা করুন।'), findsOneWidget);
     expect(find.text('আবার চেষ্টা করুন'), findsNothing);
     expect(find.byType(TextField), findsNothing);
@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('এখন উপকরণ দেখানো যাচ্ছে না'), findsOneWidget);
+    expect(find.textContaining('এখন কিছু দেখানো যাচ্ছে না'), findsOneWidget);
     expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
     expect(find.text('অডিও'), findsWidgets);
     expect(find.byType(TextField), findsNothing);

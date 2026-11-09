@@ -528,7 +528,7 @@ class _AdminRoutineComposerState extends State<_AdminRoutineComposer> {
                     padding: EdgeInsets.only(top: 12),
                     child: Text(
                       'এই আমল/অডিও চালু করতে নিচ থেকে অনুমোদিত '
-                      'প্রকাশিত অডিও বা সূরার রিসোর্স যুক্ত করুন।',
+                      'প্রকাশিত অডিও বা সূরা যুক্ত করুন।',
                     ),
                   ),
               ],
