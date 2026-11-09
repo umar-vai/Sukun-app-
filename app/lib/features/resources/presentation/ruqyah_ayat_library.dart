@@ -47,11 +47,7 @@ const ruqyahSections = <RuqyahSection>[
     'সিহর ও জাদু সম্পর্কিত আয়াত',
     'sukun-ruqyahbd-sihr-hibshi',
   ),
-  RuqyahSection(
-    'আয়াতুশ শিফা',
-    'শিফা সম্পর্কিত আয়াত',
-    'sukun-ruqyahbd-shifa',
-  ),
+  RuqyahSection('আয়াতুশ শিফা', 'শিফা সম্পর্কিত আয়াত', 'sukun-ruqyahbd-shifa'),
   RuqyahSection('কিতাল-তাদমির', 'নির্বাচিত আয়াত ও অংশ', null),
   RuqyahSection('জিনা-ফাহিশা', 'নির্বাচিত আয়াত ও অংশ', null),
   RuqyahSection('খুরুজ', 'নির্বাচিত আয়াত ও অংশ', null),
