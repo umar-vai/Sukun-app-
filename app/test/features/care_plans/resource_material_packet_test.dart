@@ -44,7 +44,7 @@ void main() {
     final result = ResourceMaterialPacket.draftMarkdown([
       const MaterialPacketAction(title: 'Needs review', resource: staffOnly),
     ]);
-    expect(result, contains('Resource Library linkage'));
+    expect(result, contains('লাইব্রেরিতে সংযোগ প্রয়োজন'));
     expect(result, isNot(contains('PRIVATE SOURCE MUST NOT LEAK')));
   });
 
@@ -62,7 +62,7 @@ void main() {
       const MaterialPacketAction(title: 'Read', resource: quran),
     ]);
     expect(result, isNot(contains('UNVERIFIED ARABIC')));
-    expect(result, contains('উৎস পাওয়া যায়নি'));
+    expect(result, contains('যাচাইকৃত পাঠ পাওয়া যায়নি'));
   });
 
   test('never invents frequencies when prescription omits them', () {
