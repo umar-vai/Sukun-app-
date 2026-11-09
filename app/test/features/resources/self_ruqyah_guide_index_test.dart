@@ -20,8 +20,7 @@ void main() {
     expect(selfRuqyahChapterTitles, hasLength(4));
     for (var chapter = 1; chapter <= 4; chapter++) {
       for (var topic = 1; topic <= totals[chapter - 1]; topic++) {
-        final slug =
-            'srg2024-c0$chapter-t${topic.toString().padLeft(3, '0')}';
+        final slug = 'srg2024-c0$chapter-t${topic.toString().padLeft(3, '0')}';
         final number = selfRuqyahTopicNumber(slug, chapter);
         expect(number, topic);
         final matches = selfRuqyahGroups.where(
@@ -62,8 +61,10 @@ void main() {
     for (var chapter = 1; chapter <= 4; chapter++) {
       expect(find.byKey(Key('self-guide-chapter-$chapter')), findsOneWidget);
     }
-    expect(find.byKey(const Key('self-guide-topic-srg2024-c01-t001')),
-        findsNothing);
+    expect(
+      find.byKey(const Key('self-guide-topic-srg2024-c01-t001')),
+      findsNothing,
+    );
     expect(find.text('অন্য কনটেন্ট'), findsNothing);
   });
 
@@ -120,8 +121,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('self-guide-chapter-2')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('self-guide-group-evil-eye')),
-        findsOneWidget);
+    expect(find.byKey(const Key('self-guide-group-evil-eye')), findsOneWidget);
     expect(find.text('বদনজর ও প্রাথমিক আলোচনা'), findsNothing);
 
     await tester.tap(find.byKey(const Key('self-guide-group-evil-eye')));
