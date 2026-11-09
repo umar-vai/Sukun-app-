@@ -78,7 +78,10 @@ class ResourceMaterialPacket {
         ('বাংলা', resource.banglaText),
         ('অর্থ/অনুবাদ', resource.translation),
         ('মূল লেখা', resource.body),
-        ('গ্রন্থ ও তথ্যসূত্র', resource.referenceText ?? resource.sourceReference),
+        (
+          'গ্রন্থ ও তথ্যসূত্র',
+          resource.referenceText ?? resource.sourceReference,
+        ),
       ]) {
         final value = field.$2?.trim();
         if (value == null || value.isEmpty) continue;
