@@ -253,7 +253,7 @@ class _ResourceCategoryScreenState
               child: backendUnavailable
                   ? AppEmptyState(
                       icon: Icons.cloud_off_outlined,
-                      title: 'এখন উপকরণ দেখানো যাচ্ছে না',
+                      title: 'এখন পাঠ দেখানো যাচ্ছে না',
                       message: 'পরে আবার চেষ্টা করুন।',
                     )
                   : _searchPending
@@ -264,12 +264,12 @@ class _ResourceCategoryScreenState
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const AppLoadingState(
-                            label: 'উপকরণ আনা হচ্ছে…',
+                            label: 'পাঠ আনা হচ্ছে…',
                           );
                         }
                         if (snapshot.hasError) {
                           return AppErrorState(
-                            message: 'উপকরণ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+                            message: 'পাঠ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
                             onRetry: _refresh,
                           );
                         }
@@ -283,8 +283,8 @@ class _ResourceCategoryScreenState
                               padding: const EdgeInsets.all(20),
                               children: const [
                                 AppEmptyState(
-                                  title: 'কোনো উপকরণ পাওয়া যায়নি',
-                                  message: 'এই বিভাগে এখনো কোনো উপকরণ নেই।',
+                                  title: 'কোনো পাঠ পাওয়া যায়নি',
+                                  message: 'এখনো কোনো পাঠ নেই।',
                                 ),
                               ],
                             ),
