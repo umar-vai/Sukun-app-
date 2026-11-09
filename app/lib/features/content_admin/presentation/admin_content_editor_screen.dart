@@ -312,18 +312,18 @@ class _AdminContentEditorScreenState
     final kind = _kind;
     if (kind == null) return 'আগে উপকরণের ধরন বেছে নিন।';
     if (kind.requiresApprovedSource && _nullable('sourceType') == null) {
-      return 'অনুমোদিত উৎসটি বেছে নিন।';
+      return 'অনুমোদিত তথ্যসূত্রটি বেছে নিন।';
     }
     if (kind.requiresApprovedSource &&
         (_nullable('sourceReference') == null ||
             _nullable('sourceEdition') == null)) {
-      return 'উৎসের নাম ও সংস্করণের তথ্য দিন।';
+      return 'তথ্যসূত্রের নাম ও সংস্করণের তথ্য দিন।';
     }
     if (kind == AdminResourceKind.duaAzkar) {
       final repeatCount = _nullable('repeatCount');
       if (repeatCount != null &&
           (int.tryParse(repeatCount) == null || int.parse(repeatCount) < 1)) {
-        return 'উৎস অনুযায়ী ১ বা তার বেশি একটি সংখ্যা দিন।';
+        return 'তথ্যসূত্র অনুযায়ী ১ বা তার বেশি একটি সংখ্যা দিন।';
       }
     }
     return null;
@@ -348,7 +348,7 @@ class _AdminContentEditorScreenState
 
   String? _repeatReference() {
     final count = _nullable('repeatCount');
-    return count == null ? null : 'অনুমোদিত উৎস অনুযায়ী কতবার: $count';
+    return count == null ? null : 'অনুমোদিত তথ্যসূত্র অনুযায়ী কতবার: $count';
   }
 
   String _shortTitle(String value) {
@@ -427,8 +427,8 @@ class _AdminContentEditorScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SukunPageIntro(
-                eyebrow: 'উৎস যাচাই',
-                title: 'অনুমোদিত উৎস',
+                eyebrow: 'তথ্যসূত্র যাচাই',
+                title: 'অনুমোদিত তথ্যসূত্র',
                 subtitle:
                     'লেখাটি কোথা থেকে নেওয়া, তা লিখুন যাতে যাচাই করা যায়।',
               ),
@@ -436,15 +436,15 @@ class _AdminContentEditorScreenState
               ValueListenableBuilder<String>(
                 valueListenable: sourceType,
                 builder: (context, value, _) => SukunChoiceField<String>(
-                  label: 'উৎসের ধরন',
-                  placeholder: 'উৎসের ধরন বেছে নিন',
+                  label: 'তথ্যসূত্রের ধরন',
+                  placeholder: 'তথ্যসূত্রের ধরন বেছে নিন',
                   value: value,
                   options: const [
                     SukunChoiceOption(
                       value: 'official_dataset',
-                      title: 'সরকারি বা যাচাই করা ডিজিটাল উৎস',
+                      title: 'সরকারি বা যাচাই করা ডিজিটাল তথ্যসূত্র',
                       description:
-                          'বিশ্বস্ত API বা যাচাই করা ডিজিটাল লেখার উৎস।',
+                          'বিশ্বস্ত API বা যাচাই করা ডিজিটাল লেখার তথ্যসূত্র।',
                       icon: Icons.dataset_outlined,
                     ),
                     SukunChoiceOption(
@@ -455,8 +455,8 @@ class _AdminContentEditorScreenState
                     ),
                     SukunChoiceOption(
                       value: 'sukun_approved_reference',
-                      title: 'সুকুন লাইফ অনুমোদিত উৎস',
-                      description: 'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন উৎস।',
+                      title: 'সুকুন লাইফ অনুমোদিত তথ্যসূত্র',
+                      description: 'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন তথ্যসূত্র।',
                       icon: Icons.verified_outlined,
                     ),
                   ],
@@ -466,25 +466,25 @@ class _AdminContentEditorScreenState
               const SizedBox(height: 12),
               _SourceTextField(
                 controller: reference,
-                label: 'উৎসের নাম বা তথ্যসূত্র *',
+                label: 'তথ্যসূত্রের নাম বা তথ্যসূত্র *',
                 helper:
                     'যেমন: প্রকাশনার নাম, সংকলনের রেফারেন্স বা ডেটাসেটের নাম।',
               ),
               _SourceTextField(
                 controller: edition,
                 label: 'প্রকাশনা বা সংস্করণ *',
-                helper: 'উৎসে যে সংস্করণ বা ভার্সন লেখা আছে তা লিখুন।',
+                helper: 'তথ্যসূত্রে যে সংস্করণ বা ভার্সন লেখা আছে তা লিখুন।',
               ),
               if (_nullable('banglaText') != null)
                 _SourceTextField(
                   controller: translation,
-                  label: 'বাংলা অনুবাদের উৎস *',
+                  label: 'বাংলা অনুবাদের তথ্যসূত্র *',
                   helper: 'অনুমোদিত বাংলা অনুবাদক বা প্রকাশনার নাম লিখুন।',
                 ),
               _SourceTextField(
                 controller: sourceUrl,
-                label: 'উৎসের লিংক (ঐচ্ছিক)',
-                helper: 'উৎস অনলাইনে থাকলে HTTPS লিংক দিন।',
+                label: 'তথ্যসূত্রের লিংক (ঐচ্ছিক)',
+                helper: 'তথ্যসূত্র অনলাইনে থাকলে HTTPS লিংক দিন।',
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -497,14 +497,14 @@ class _AdminContentEditorScreenState
                             translation.text.trim().isEmpty)) {
                       ScaffoldMessenger.of(sheetContext).showSnackBar(
                         const SnackBar(
-                          content: Text('উৎসের দরকারি তথ্য পূরণ করুন।'),
+                          content: Text('তথ্যসূত্রের দরকারি তথ্য পূরণ করুন।'),
                         ),
                       );
                       return;
                     }
                     Navigator.pop(sheetContext, true);
                   },
-                  child: const Text('এই উৎস ব্যবহার করুন'),
+                  child: const Text('এই তথ্যসূত্র ব্যবহার করুন'),
                 ),
               ),
             ],
@@ -665,7 +665,7 @@ class _AdminContentEditorScreenState
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'অনুমোদিত উৎস থেকে লেখাটি হুবহু দিন। প্রকাশের আগে যাচাই করা হবে।',
+                      'অনুমোদিত তথ্যসূত্র থেকে লেখাটি হুবহু দিন। প্রকাশের আগে যাচাই করা হবে।',
                     ),
                   ),
                 ],
@@ -691,7 +691,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+        helper: 'অনুমোদিত তথ্যসূত্র থেকে আরবি হুবহু লিখুন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -712,7 +712,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'অনুমোদিত উৎসের আরবি হুবহু লিখুন।',
+        helper: 'অনুমোদিত তথ্যসূত্রের আরবি হুবহু লিখুন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -733,14 +733,14 @@ class _AdminContentEditorScreenState
       _field(
         'hadithNumber',
         'হাদিস নম্বর *',
-        helper: 'উৎসে থাকা হাদিস নম্বরটি দিন।',
+        helper: 'তথ্যসূত্রে থাকা হাদিস নম্বরটি দিন।',
         required: true,
       ),
       _approvedSourceField(),
       _field(
         'grade',
         'হাদিসের মান (ঐচ্ছিক)',
-        helper: 'উৎসে মান উল্লেখ থাকলে তবেই লিখুন।',
+        helper: 'তথ্যসূত্রে মান উল্লেখ থাকলে তবেই লিখুন।',
       ),
     ],
     AdminResourceKind.quranAudio => [
@@ -757,7 +757,7 @@ class _AdminContentEditorScreenState
       ),
       _field(
         'author',
-        'কারীর নাম বা উৎস (ঐচ্ছিক)',
+        'কারীর নাম বা তথ্যসূত্র (ঐচ্ছিক)',
         helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
       ),
       _rightsField(),
@@ -798,7 +798,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'ভিডিও লিংক *',
-        helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের উৎসেই থাকবে।',
+        helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের তথ্যসূত্রেই থাকবে।',
         required: true,
         url: true,
       ),
@@ -809,7 +809,7 @@ class _AdminContentEditorScreenState
       _field(
         'arabicText',
         'আরবি *',
-        helper: 'অনুমোদিত উৎস থেকে আরবি হুবহু লিখুন।',
+        helper: 'অনুমোদিত তথ্যসূত্র থেকে আরবি হুবহু লিখুন।',
         lines: 6,
         required: true,
         rtl: true,
@@ -826,7 +826,7 @@ class _AdminContentEditorScreenState
       _field(
         'repeatCount',
         'পাঠের সংখ্যা (ঐচ্ছিক)',
-        helper: 'অনুমোদিত উৎসে সংখ্যা থাকলেই সেটি লিখুন।',
+        helper: 'অনুমোদিত তথ্যসূত্রে সংখ্যা থাকলেই সেটি লিখুন।',
         numeric: true,
       ),
     ],
@@ -883,8 +883,8 @@ class _AdminContentEditorScreenState
       ),
       _field(
         'author',
-        'লেখক বা উৎস (ঐচ্ছিক)',
-        helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা উৎস উল্লেখ করুন।',
+        'লেখক বা তথ্যসূত্র (ঐচ্ছিক)',
+        helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা তথ্যসূত্র উল্লেখ করুন।',
       ),
     ],
   };
@@ -903,8 +903,8 @@ class _AdminContentEditorScreenState
 
   Widget _rightsField() => _field(
     'rightsNote',
-    'উৎস ও ব্যবহারের অনুমতি *',
-    helper: 'উপকরণের উৎস ও ব্যবহারের অনুমতির তথ্য লিখুন।',
+    'তথ্যসূত্র ও ব্যবহারের অনুমতি *',
+    helper: 'উপকরণের তথ্যসূত্র ও ব্যবহারের অনুমতির তথ্য লিখুন।',
     lines: 3,
     required: true,
   );
@@ -1009,12 +1009,12 @@ class _AdminContentEditorScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'অনুমোদিত উৎস *',
+                    'অনুমোদিত তথ্যসূত্র *',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    selected ?? 'উৎসের তথ্য যোগ করতে চাপ দিন।',
+                    selected ?? 'তথ্যসূত্রের তথ্য যোগ করতে চাপ দিন।',
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: SukunColors.muted),
                   ),
@@ -1225,15 +1225,15 @@ String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'অনুমোদিত উৎস থেকে আয়াতটি হুবহু লিখুন।',
+  AdminResourceKind.quranAyah => 'অনুমোদিত তথ্যসূত্র থেকে আয়াতটি হুবহু লিখুন।',
   AdminResourceKind.hadith => 'বিশ্বস্ত হাদিসগ্রন্থ থেকে লেখা ও সূত্র দিন।',
   AdminResourceKind.quranAudio =>
     'অডিওর সরাসরি লিংক দিন; ফাইল এখানে আপলোড হবে না।',
   AdminResourceKind.ruqyahAudio => 'অনুমোদিত অডিও লিংক ও রুকইয়াহর বিভাগ দিন।',
   AdminResourceKind.bookPdf => 'পিডিএফ লিংক ও ব্যবহারের অনুমতির তথ্য দিন।',
   AdminResourceKind.video => 'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
-  AdminResourceKind.duaAzkar => 'শুধু উৎসে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
-  AdminResourceKind.articleGuide => 'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় উৎস দিন।',
+  AdminResourceKind.duaAzkar => 'শুধু তথ্যসূত্রে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
+  AdminResourceKind.articleGuide => 'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় তথ্যসূত্র দিন।',
   AdminResourceKind.blog => 'শিরোনাম, লেখা ও ছবি দিয়ে ব্লগ তৈরি করুন।',
 };
 
