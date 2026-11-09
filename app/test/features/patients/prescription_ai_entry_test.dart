@@ -214,7 +214,9 @@ void main() {
           child: MaterialApp.router(routerConfig: router),
         ),
       );
-      await tester.ensureVisible(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
+      await tester.ensureVisible(
+        find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
       await tester.pumpAndSettle();
@@ -263,7 +265,9 @@ void main() {
           child: MaterialApp.router(routerConfig: router),
         ),
       );
-      await tester.ensureVisible(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
+      await tester.ensureVisible(
+        find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('আপলোড করে করণীয়ের খসড়া তৈরি করুন'));
       await tester.pumpAndSettle();
