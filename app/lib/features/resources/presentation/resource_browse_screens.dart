@@ -513,7 +513,8 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
       return Future.value(const <ContentResource>[]);
     }
     final isDua = widget.kind == TaxonomyKind.duaAzkar;
-    final isGuide = widget.kind == TaxonomyKind.ruqyah &&
+    final isGuide =
+        widget.kind == TaxonomyKind.ruqyah &&
         widget.topicSlug == 'ruqyah-self-guide';
     return ref
         .read(resourcesRepositoryProvider)
