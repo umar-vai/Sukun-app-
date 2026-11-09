@@ -92,7 +92,7 @@ class _BookAudioSourceDialogState extends ConsumerState<BookAudioSourceDialog> {
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               if (snapshot.hasError) {
-                return const Text('অডিওর উৎস তালিকা পড়া যাচ্ছে না।');
+                return const Text('অডিও তালিকা পড়া যাচ্ছে না।');
               }
               return const Center(child: CircularProgressIndicator());
             }
