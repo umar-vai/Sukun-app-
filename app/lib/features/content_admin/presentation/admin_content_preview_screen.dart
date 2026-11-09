@@ -204,8 +204,8 @@ class _AdminContentPreviewScreenState
                   _PreviewSection(title: 'বিস্তারিত লেখা', body: item.body!),
               const SizedBox(height: 26),
               const SukunSectionHeader(
-                title: 'উৎস ও তথ্যসূত্র',
-                subtitle: 'উপকরণটির উৎস যাচাইয়ের জন্য প্রয়োজনীয় তথ্য।',
+                title: 'প্রকাশনার তথ্য',
+                subtitle: 'প্রকাশের আগে মূল তথ্য যাচাই করুন।',
               ),
               const SizedBox(height: 8),
               _Metadata(item: item),
