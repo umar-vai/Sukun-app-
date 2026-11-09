@@ -46,8 +46,7 @@ class _SelfRuqyahGuideIndexState extends State<SelfRuqyahGuideIndex> {
       if (_topicSlug.firstMatch(item.slug ?? '') == null) return false;
       if (terms.isEmpty) return true;
       return (item.titleBn ?? item.title).toLowerCase().contains(terms);
-    }).toList()
-      ..sort((a, b) => (a.slug ?? '').compareTo(b.slug ?? ''));
+    }).toList()..sort((a, b) => (a.slug ?? '').compareTo(b.slug ?? ''));
 
     final byChapter = <int, List<ContentResource>>{
       for (var chapter = 1; chapter <= 4; chapter++) chapter: [],
@@ -82,9 +81,7 @@ class _SelfRuqyahGuideIndexState extends State<SelfRuqyahGuideIndex> {
                     icon: const Icon(Icons.close_rounded),
                     onPressed: () => setState(_search.clear),
                   ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
         const SizedBox(height: 18),
