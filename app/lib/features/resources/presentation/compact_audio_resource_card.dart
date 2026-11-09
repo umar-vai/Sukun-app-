@@ -35,28 +35,13 @@ class CompactAudioResourceCard extends StatelessWidget {
               SukunIconBadge(icon: Icons.headphones_rounded, size: 40),
               const SizedBox(width: 9),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: SukunTypography.banglaBody(
-                        textStyle: Theme.of(context).textTheme.titleSmall,
-                      ).copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'অডিও',
-                      maxLines: 1,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: SukunTypography.banglaBody(
+                    textStyle: Theme.of(context).textTheme.titleSmall,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               AudioLibraryActions(
