@@ -319,8 +319,7 @@ class _CollectionEditorDialogState extends State<_CollectionEditorDialog> {
                   title: widget.collection == null
                       ? 'নতুন আয়াতের সংকলন'
                       : 'সংকলন সম্পাদনা',
-                  subtitle:
-                      'তথ্যসূত্রসহ প্রকাশিত আয়াত বাছুন এবং কারা দেখবে তা ঠিক করুন।',
+                  subtitle: 'তথ্যসূত্রসহ প্রকাশিত আয়াত বাছুন এবং কারা দেখবে তা ঠিক করুন।',
                   trailing: const SukunIconBadge(
                     icon: Icons.collections_bookmark_outlined,
                     size: 54,
