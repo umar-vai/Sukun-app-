@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/data/reminder_controls.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
@@ -96,6 +97,31 @@ void main() {
     });
   });
 
+  testWidgets('admin writes the name the reminder shows on the phone', (
+    tester,
+  ) async {
+    final repo = _EditorRepository(const ActionFrequency.daily());
+    final names = _FakeReminderControls();
+    await _openEditor(tester, repo, reminderControls: names);
+
+    final box = find.byKey(const Key('plan-action-notification-title'));
+    expect(box, findsOneWidget);
+    await tester.enterText(box, 'রুকইয়াহ পানি পানের সময়');
+    await _save(tester);
+
+    expect(names.titles, {'action-1': 'রুকইয়াহ পানি পানের সময়'});
+  });
+
+  testWidgets('an untouched name box saves no reminder name', (tester) async {
+    final repo = _EditorRepository(const ActionFrequency.daily());
+    final names = _FakeReminderControls();
+    await _openEditor(tester, repo, reminderControls: names);
+    await _save(tester);
+
+    expect(repo.saved, isNotNull);
+    expect(names.titles, isEmpty);
+  });
+
   testWidgets('editing a Surah plus CMS link keeps the CMS UUID anchor', (
     tester,
   ) async {
@@ -119,6 +145,7 @@ Future<void> _openEditor(
   WidgetTester tester,
   _EditorRepository repo, {
   bool compact = false,
+  ReminderControls? reminderControls,
 }) async {
   // This suite asserts save semantics, not short-viewport scroll behavior.
   // Keep the full form visible so test taps are genuine hits.
@@ -151,7 +178,12 @@ Future<void> _openEditor(
   addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [carePlansRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        carePlansRepositoryProvider.overrideWithValue(repo),
+        reminderControlsProvider.overrideWithValue(
+          reminderControls ?? _FakeReminderControls(),
+        ),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -259,4 +291,21 @@ final class _EditorRepository implements CarePlansRepository {
     List<String> actionIds,
     String requestId,
   ) => throw UnimplementedError();
+}
+
+final class _FakeReminderControls implements ReminderControls {
+  final titles = <String, String?>{};
+
+  @override
+  Future<void> setDraftNotificationTitle(String actionId, String? title) async {
+    titles[actionId] = title;
+  }
+
+  @override
+  Future<bool> setLivePlanReminder(String actionId, bool enabled) async =>
+      enabled;
+
+  @override
+  Future<bool> setRoutineActionReminder(String actionId, bool enabled) async =>
+      enabled;
 }

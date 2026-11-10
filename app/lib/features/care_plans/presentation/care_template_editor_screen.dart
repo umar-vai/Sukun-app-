@@ -63,6 +63,9 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
   late final TextEditingController _instruction = TextEditingController(
     text: widget.template?.instruction ?? '',
   );
+  late final TextEditingController _notificationTitle = TextEditingController(
+    text: widget.template?.notificationTitle ?? '',
+  );
   late String _category =
       widget.template?.category ??
       widget.initialCategory ??
@@ -88,6 +91,7 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
   void dispose() {
     _title.dispose();
     _instruction.dispose();
+    _notificationTitle.dispose();
     super.dispose();
   }
 
@@ -197,6 +201,9 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
       defaultTimes: List.of(_times),
       resourceRefs: List.of(_refs),
       requiresResource: _requiresResource,
+      notificationTitle: _notificationTitle.text.trim().isEmpty
+          ? null
+          : _notificationTitle.text.trim(),
       isActive: _active,
       sortOrder: widget.template?.sortOrder ?? 0,
     );
@@ -277,6 +284,7 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
                 controller: _title,
                 maxLength: 120,
                 decoration: const InputDecoration(counterText: ''),
+                onChanged: (_) => setState(() {}),
               ),
               label('নির্দেশনা'),
               TextField(
@@ -321,6 +329,27 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
                       onPressed: () => _editTime(_times.length),
                     ),
                 ],
+              ),
+              label('নোটিফিকেশনে যে নাম দেখাবে'),
+              TextField(
+                key: const Key('care-template-notification-title'),
+                controller: _notificationTitle,
+                maxLength: bulkMaxNotificationTitleLength,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  counterText: '',
+                  prefixIcon: const Icon(
+                    Icons.notifications_none_rounded,
+                    size: 20,
+                  ),
+                  hintText: _title.text.trim().isEmpty
+                      ? 'যেমন: রুকইয়াহ পানি পানের সময়'
+                      : _title.text.trim(),
+                  helperText:
+                      'ফাঁকা রাখলে শিরোনামই যাবে। ইমপোর্টের সময় '
+                      'প্রতিজনের জন্য আলাদা করে বদলানো যাবে।',
+                  helperMaxLines: 2,
+                ),
               ),
               label(
                 'কন্টেন্ট (লেখা ও অডিও) '

@@ -7,6 +7,8 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
+import 'package:sukun_life/features/care_plans/data/reminder_controls.dart';
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan_inputs.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
@@ -44,6 +46,7 @@ class _PlanActionEditorScreenState
   final _durationController = TextEditingController();
   final _dailyIntervalController = TextEditingController(text: '1');
   final _usageNoteController = TextEditingController();
+  final _notificationTitleController = TextEditingController();
   final _requestId = const Uuid().v4();
   final _resourceLinkRequestId = const Uuid().v4();
   final _quranLinkRequestId = const Uuid().v4();
@@ -122,6 +125,7 @@ class _PlanActionEditorScreenState
     _typeController.text = action.type;
     _titleController.text = action.title;
     _instructionController.text = action.instruction ?? '';
+    _notificationTitleController.text = action.notificationTitle ?? '';
     _countController.text = action.countTarget?.toString() ?? '';
     _durationController.text = action.durationMinutes?.toString() ?? '';
     _frequencyType = action.frequency.type;
@@ -259,6 +263,7 @@ class _PlanActionEditorScreenState
     setState(() {
       _typeController.text = template.actionType;
       _titleController.text = template.title;
+      _notificationTitleController.text = template.notificationTitle ?? '';
       _instructionController.text = template.render(values!);
       _reviewStatus = ActionReviewStatus.needsReview;
       _reminderEnabled = false;
@@ -387,6 +392,7 @@ class _PlanActionEditorScreenState
   void dispose() {
     _typeController.dispose();
     _titleController.dispose();
+    _notificationTitleController.dispose();
     _instructionController.dispose();
     _countController.dispose();
     _durationController.dispose();
@@ -464,6 +470,15 @@ class _PlanActionEditorScreenState
           requestId: _requestId,
         ),
       );
+      final reminderName = _notificationTitleController.text.trim();
+      final previousName = (await _data).action?.notificationTitle ?? '';
+      if (reminderName != previousName) {
+        await saveReminderName(
+          ref,
+          saved.id,
+          reminderName.isEmpty ? null : reminderName,
+        );
+      }
       final cmsIds = _contentItemIds
           .where((id) => !id.startsWith('quran:'))
           .toList();
@@ -702,6 +717,27 @@ class _PlanActionEditorScreenState
                           _exactTime == null
                               ? 'আগে নির্দিষ্ট সময় বাছুন। সময় ছাড়া রিমাইন্ডার পাঠানো যায় না।'
                               : 'নির্ধারিত সময়ে রোগীর ডিভাইসে মনে করানো হবে।',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _titleController,
+                        builder: (context, title, _) => TextFormField(
+                          key: const Key('plan-action-notification-title'),
+                          controller: _notificationTitleController,
+                          maxLength: bulkMaxNotificationTitleLength,
+                          decoration: InputDecoration(
+                            counterText: '',
+                            prefixIcon: const Icon(
+                              Icons.notifications_none_rounded,
+                              size: 20,
+                            ),
+                            labelText: 'নোটিফিকেশনে যে নাম দেখাবে',
+                            hintText: title.text.trim().isEmpty
+                                ? null
+                                : title.text.trim(),
+                            helperText: 'ফাঁকা রাখলে উপরের শিরোনাম দেখাবে',
+                          ),
                         ),
                       ),
                       ExpansionTile(

@@ -73,6 +73,31 @@ void main() {
       );
     });
 
+    test('a template reminder name is read, saved and used on import', () {
+      final named = OfficialPrescriptionTemplate.fromJson({
+        ..._row(),
+        'notification_title': '  পানি পানের সময়  ',
+      });
+      expect(named.notificationTitle, 'পানি পানের সময়');
+      expect(named.toSaveJson()['notification_title'], 'পানি পানের সময়');
+      final item = BulkImportItem.template(named);
+      expect(item.defaultNotificationTitle, 'পানি পানের সময়');
+      expect(item.effectiveNotificationTitle, 'পানি পানের সময়');
+      item.notificationTitle = 'শুধু এই রোগীর জন্য';
+      expect(item.effectiveNotificationTitle, 'শুধু এই রোগীর জন্য');
+
+      final unnamed = OfficialPrescriptionTemplate.fromJson({
+        ..._row(),
+        'notification_title': '   ',
+      });
+      expect(unnamed.notificationTitle, isNull);
+      expect(unnamed.toSaveJson()['notification_title'], isNull);
+      expect(
+        BulkImportItem.template(unnamed).effectiveNotificationTitle,
+        'ডাটাবেসের পানি',
+      );
+    });
+
     test('a new template sends no id so the server picks one', () {
       const draft = OfficialPrescriptionTemplate(
         id: '',
@@ -139,11 +164,24 @@ void main() {
       find.byKey(const Key('care-template-title')),
       'নতুন শিরোনাম',
     );
+    final nameBox = find.byKey(const Key('care-template-notification-title'));
+    await tester.scrollUntilVisible(
+      nameBox,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView).last,
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.enterText(nameBox, 'পানি পানের সময় হয়েছে');
     await tester.tap(find.byKey(const Key('care-template-save')));
     await tester.pumpAndSettle();
 
     expect(saved.single.id, 's01');
     expect(saved.single.title, 'নতুন শিরোনাম');
+    expect(saved.single.notificationTitle, 'পানি পানের সময় হয়েছে');
     expect(saved.single.resourceRefs, ['srg2024-sup-001', 'quran:1']);
     expect(find.text('নতুন শিরোনাম'), findsOneWidget);
     expect(tester.takeException(), isNull);
