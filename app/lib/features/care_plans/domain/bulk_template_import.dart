@@ -110,7 +110,11 @@ const officialTemplateDefaultTimes = <String, List<ReminderClock>>{
 };
 
 List<ReminderClock> defaultTimesForTemplate(OfficialPrescriptionTemplate t) {
-  final preset = officialTemplateDefaultTimes[t.id];
+  final saved = t.defaultTimes;
+  if (saved != null && saved.isNotEmpty) return List.of(saved);
+  final preset = t.defaultTimes == null
+      ? officialTemplateDefaultTimes[t.id]
+      : null;
   if (preset != null) return List.of(preset);
   return switch (t.category) {
     'bath' => [const ReminderClock(10, 0)],
@@ -340,7 +344,11 @@ List<ContentResourceOption> suggestResourcesForTemplate(
     if (result.length < bulkMaxResourcesPerItem) result.add(resource);
   }
 
-  for (final ref in officialTemplateResourceRefs[template.id] ?? const []) {
+  final refs =
+      template.resourceRefs ??
+      officialTemplateResourceRefs[template.id] ??
+      const <String>[];
+  for (final ref in refs) {
     add(ref.startsWith('quran:') ? byId[ref] : bySlug[ref]);
   }
   if (result.isEmpty) {

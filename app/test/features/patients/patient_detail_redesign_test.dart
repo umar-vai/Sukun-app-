@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
+import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_repository.dart';
 import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
@@ -65,6 +67,9 @@ void main() {
           carePlansRepositoryProvider.overrideWithValue(_FakePlans()),
           progressRepositoryProvider.overrideWithValue(_FakeProgress()),
           routineOverviewLoaderProvider.overrideWithValue((_) async => []),
+          careTemplateRepositoryProvider.overrideWithValue(
+            const _BuiltInTemplates(),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -271,4 +276,16 @@ final class _FakeProgress implements ProgressRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _BuiltInTemplates implements CareTemplateRepository {
+  const _BuiltInTemplates();
+
+  @override
+  Future<CareTemplateCatalog> load() async => CareTemplateCatalog.builtIn;
+
+  @override
+  Future<OfficialPrescriptionTemplate> save(
+    OfficialPrescriptionTemplate template,
+  ) async => template;
 }

@@ -1,7 +1,11 @@
-/// Sukun Life's review-only transcription inventory from nine supplied
-/// prescription photographs. These are NOT published medical instructions.
-/// No patient identifiers or private record contents are stored here.
-/// Always let a responsible admin compare and approve the original paper.
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
+
+/// Sukun Life's prescription templates for bulk import.
+///
+/// Since 2026-11-10 the live list is the `care_templates` table, edited by a
+/// Super Admin in the app (no deploy needed). [officialPrescriptionTemplates]
+/// below is the built-in copy used when the table cannot be read. These are
+/// NOT published medical instructions; an admin reviews before importing.
 final class OfficialPrescriptionTemplate {
   const OfficialPrescriptionTemplate({
     required this.id,
@@ -9,13 +13,71 @@ final class OfficialPrescriptionTemplate {
     required this.title,
     required this.instruction,
     required this.actionType,
+    this.defaultTimes,
+    this.resourceRefs,
+    this.requiresResource,
+    this.isActive = true,
+    this.sortOrder = 0,
   });
 
+  factory OfficialPrescriptionTemplate.fromJson(Map<String, dynamic> json) {
+    final times = <ReminderClock>[];
+    for (final raw in json['default_times'] as List? ?? const []) {
+      final parts = raw.toString().split(':');
+      final hour = parts.isNotEmpty ? int.tryParse(parts[0]) : null;
+      final minute = parts.length > 1 ? int.tryParse(parts[1]) : null;
+      if (hour == null || minute == null || hour > 23 || minute > 59) continue;
+      times.add(ReminderClock(hour, minute));
+    }
+    return OfficialPrescriptionTemplate(
+      id: json['id'] as String,
+      category: json['category'] as String,
+      title: json['title'] as String,
+      instruction: json['instruction'] as String,
+      actionType: json['action_type'] as String,
+      defaultTimes: List.unmodifiable(times),
+      resourceRefs: List.unmodifiable([
+        for (final ref in json['resource_refs'] as List? ?? const [])
+          ref.toString(),
+      ]),
+      requiresResource: json['requires_resource'] as bool? ?? false,
+      isActive: json['is_active'] as bool? ?? true,
+      sortOrder: json['sort_order'] as int? ?? 0,
+    );
+  }
+
+  /// Empty for a template that is not saved yet (the server picks it).
   final String id;
   final String category;
   final String title;
   final String instruction;
   final String actionType;
+
+  /// Null on the built-in copy: the code defaults apply.
+  final List<ReminderClock>? defaultTimes;
+
+  /// CMS slugs or `quran:N`. Null on the built-in copy.
+  final List<String>? resourceRefs;
+  final bool? requiresResource;
+  final bool isActive;
+  final int sortOrder;
+
+  /// Payload for `admin_save_care_template`.
+  Map<String, dynamic> toSaveJson() => {
+    if (id.isNotEmpty) 'id': id,
+    'category': category,
+    'title': title.trim(),
+    'instruction': instruction.trim(),
+    'action_type': actionType,
+    'default_times': [
+      for (final time in defaultTimes ?? const <ReminderClock>[])
+        time.databaseValue,
+    ],
+    'resource_refs': resourceRefs ?? const <String>[],
+    'requires_resource': requiresResource ?? false,
+    'is_active': isActive,
+    if (id.isNotEmpty) 'sort_order': sortOrder,
+  };
 
   /// Nothing is silently inferred: every variable needs a reviewer value.
   static const variables = ['দিন', 'বার', 'মিনিট'];
@@ -36,9 +98,14 @@ final class OfficialPrescriptionTemplate {
   }
 
   bool get requiresLinkedResource =>
-      category == 'audio' ||
-      (category == 'amal' && (id == 'a05' || id == 'a06' || id == 'a07'));
+      requiresResource ??
+      (category == 'audio' ||
+          (category == 'amal' && (id == 'a05' || id == 'a06' || id == 'a07')));
 }
+
+/// Action type a category saves as ("special" rows are amal).
+String actionTypeForTemplateCategory(String category) =>
+    category == 'special' ? 'amal' : category;
 
 final class OfficialTemplateCategory {
   const OfficialTemplateCategory({

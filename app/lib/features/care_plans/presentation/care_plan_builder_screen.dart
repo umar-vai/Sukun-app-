@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -85,6 +86,9 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
       context,
       recipientLabel: 'এই পরিকল্পনায় যোগ হবে',
       resources: resources,
+      templates: ref.read(careTemplateRepositoryProvider).load(),
+      saveTemplate: (template) =>
+          ref.read(careTemplateRepositoryProvider).save(template),
     );
     if (items == null || items.isEmpty || !mounted) return;
     setState(() => _working = true);

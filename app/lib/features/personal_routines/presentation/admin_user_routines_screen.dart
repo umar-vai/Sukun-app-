@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
 import 'package:sukun_life/features/care_plans/data/care_plans_providers.dart';
 import 'package:sukun_life/features/care_plans/data/prescription_overview.dart';
 import 'package:sukun_life/features/care_plans/presentation/prescription_overview_card.dart';
@@ -149,6 +150,8 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
     final user = _selected;
     if (_saving || user == null) return;
     final name = user['display_name']?.toString().trim();
+    final templateRepository = ProviderScope.containerOf(context)
+        .read(careTemplateRepositoryProvider);
     final items = await showBulkTemplateImport(
       context,
       recipientLabel: name == null || name.isEmpty
@@ -156,6 +159,8 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
           : 'ব্যবহারকারী: $name',
       resources: _loadPickerResources(),
       showDuration: false,
+      templates: templateRepository.load(),
+      saveTemplate: templateRepository.save,
     );
     if (items == null || items.isEmpty || !mounted) return;
     setState(() => _saving = true);
