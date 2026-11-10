@@ -100,11 +100,16 @@ jobs:
           }
           # Newer apksigner may label signers "Signer #1" or by SDK range, so
           # accept any signer line. Every signer must be the approved key.
-          certs=$("$signer_tool" verify --print-certs "$apk" 2>/dev/null) || {
+          certs=$("$signer_tool" verify --verbose --print-certs "$apk" 2>&1) || {
+            echo "$certs"
             echo "::error::apksigner could not verify the APK signature"; exit 1;
           }
-          digests=$(sed -n 's/^Signer[^:]*certificate SHA-256 digest: *//p' <<<"$certs" | tr '[:upper:]' '[:lower:]' | sort -u)
-          echo "Signer certificate SHA-256 digests (public):"
+          # Certificate details are public; print them so a format change is visible.
+          echo "apksigner --print-certs output (public):"
+          echo "$certs"
+          # Any line naming a certificate SHA-256 digest, with or without colons.
+          digests=$(grep -iE 'certificate.*sha-?256' <<<"$certs" | tr -d ':' | grep -oiE '[a-f0-9]{64}' | tr '[:upper:]' '[:lower:]' | sort -u || true)
+          echo "Signer certificate SHA-256 digests:"
           echo "$digests"
           [[ -n "$digests" ]] || { echo "::error::No signer certificate found"; exit 1; }
           approved=$(printf '%s' "$APPROVED_CERT" | tr -d ':' | tr '[:upper:]' '[:lower:]')
