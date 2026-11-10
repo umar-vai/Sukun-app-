@@ -95,11 +95,24 @@ jobs:
           pkg=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<<"$line")
           actual_code=$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" <<<"$line")
           actual_version=$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" <<<"$line")
-          [[ "$pkg" == 'com.sukunlife.app' && "$actual_code" == "$CODE" && "$actual_version" == "$VERSION" ]]
-          cert=$("$signer_tool" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)
-          [[ "$cert" =~ ^[a-fA-F0-9]{64}$ ]]
+          [[ "$pkg" == 'com.sukunlife.app' && "$actual_code" == "$CODE" && "$actual_version" == "$VERSION" ]] || {
+            echo "::error::APK identity mismatch: package=$pkg versionCode=$actual_code versionName=$actual_version"; exit 1;
+          }
+          # Newer apksigner may label signers "Signer #1" or by SDK range, so
+          # accept any signer line. Every signer must be the approved key.
+          certs=$("$signer_tool" verify --print-certs "$apk" 2>/dev/null) || {
+            echo "::error::apksigner could not verify the APK signature"; exit 1;
+          }
+          digests=$(sed -n 's/^Signer[^:]*certificate SHA-256 digest: *//p' <<<"$certs" | tr '[:upper:]' '[:lower:]' | sort -u)
+          echo "Signer certificate SHA-256 digests (public):"
+          echo "$digests"
+          [[ -n "$digests" ]] || { echo "::error::No signer certificate found"; exit 1; }
           approved=$(printf '%s' "$APPROVED_CERT" | tr -d ':' | tr '[:upper:]' '[:lower:]')
-          [[ "${cert,,}" == "$approved" ]]
+          while read -r cert; do
+            [[ "$cert" =~ ^[a-f0-9]{64}$ && "$cert" == "$approved" ]] || {
+              echo "::error::APK signer $cert is not the approved certificate"; exit 1;
+            }
+          done <<<"$digests"
           mv "$apk" candidate/SukunLife.apk
           echo "APK_SHA=$real_sha" >> "$GITHUB_ENV"
           echo "APK_BYTES=$size" >> "$GITHUB_ENV"
