@@ -39,6 +39,29 @@ a chip the admin can remove, and "আরও কন্টেন্ট যোগ" 
   decides, or have no matching library item yet, so the admin picks.
 - Every linked item is saved on each reminder time of that row.
 
+## Templates are edited in the app, no deploy (2026-11-10)
+
+Owner request: content changes must show at once instead of waiting 10 to 25
+minutes for a web deploy.
+
+- The 51 templates now live in `care_templates` (Super Admin only RLS). The
+  picker loads them on open; the code list in
+  `official_prescription_template_catalog.dart` is only the offline fallback
+  and can not be edited.
+- In the picker each template has a pencil button and there is a "নতুন
+  টেমপ্লেট যোগ করুন" button. The editor changes category (new only), title,
+  instruction (with `{বার}`/`{দিন}`/`{মিনিট}` buttons), default times,
+  ordered content links (CMS slugs or `quran:N`, never UUIDs), "needs
+  content" and "show in list" (hide instead of delete).
+- Saves go through `admin_save_care_template` (validated, audited with the
+  old and new row). New ids take the next number of the category letter
+  (a, s, b, u, x). Imported plans keep their own copy, so editing a template
+  never rewrites an existing plan.
+- Migration `supabase/migrations/20261110120000_care_templates_admin_editable.sql`,
+  tests `supabase/tests/care_templates_admin_editable_test.sql`.
+- Deploy time: the post-merge web deploy no longer repeats the tests that the
+  PR and main CI already ran on the same commit (about 9 minutes saved).
+
 ## Full content, review step and live switches (2026-11-10)
 
 Owner request: every template must carry the content it names, in both forms

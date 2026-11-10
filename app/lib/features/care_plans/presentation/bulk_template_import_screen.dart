@@ -3,9 +3,11 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
+import 'package:sukun_life/features/care_plans/presentation/care_template_editor_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 
 /// Opens the bulk picker and returns the selected rows, or null if cancelled.
@@ -19,6 +21,9 @@ Future<List<BulkImportItem>?> showBulkTemplateImport(
   bool showTemplates = true,
   bool showDuration = true,
   String confirmLabel = 'ইম্পোর্ট ও রিমাইন্ডার চালু',
+  Future<CareTemplateCatalog>? templates,
+  Future<OfficialPrescriptionTemplate> Function(OfficialPrescriptionTemplate)?
+  saveTemplate,
 }) {
   return Navigator.of(context).push<List<BulkImportItem>>(
     MaterialPageRoute(
@@ -29,6 +34,8 @@ Future<List<BulkImportItem>?> showBulkTemplateImport(
         showTemplates: showTemplates,
         showDuration: showDuration,
         confirmLabel: confirmLabel,
+        templates: templates,
+        saveTemplate: saveTemplate,
       ),
     ),
   );
@@ -44,9 +51,21 @@ class BulkTemplateImportScreen extends StatefulWidget {
     this.showTemplates = true,
     this.showDuration = true,
     this.confirmLabel = 'ইম্পোর্ট ও রিমাইন্ডার চালু',
+    this.templates,
+    this.saveTemplate,
   });
 
   final String recipientLabel;
+
+  /// The live template list from the database. Null or unreachable uses the
+  /// built-in copy, which cannot be edited.
+  final Future<CareTemplateCatalog>? templates;
+
+  /// Saves an edited or new template (Super Admin). Null hides editing.
+  final Future<OfficialPrescriptionTemplate> Function(
+    OfficialPrescriptionTemplate,
+  )?
+  saveTemplate;
   final Future<List<ContentResourceOption>> resources;
   final bool showTemplates;
 
@@ -67,6 +86,16 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
       : _BulkTab.resources;
   String? _category;
   List<ContentResourceOption> _resources = const [];
+  CareTemplateCatalog _catalog = CareTemplateCatalog.builtIn;
+
+  /// Templates shown in the picker (inactive ones are hidden).
+  List<OfficialPrescriptionTemplate> get _templates => [
+    for (final template in _catalog.templates)
+      if (template.isActive) template,
+  ];
+
+  bool get _canEditTemplates =>
+      _catalog.editable && widget.saveTemplate != null;
 
   /// Second step: every selected row in one list to check and edit
   /// (times, reminder name, content, on/off) before importing.
@@ -75,6 +104,10 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
   @override
   void initState() {
     super.initState();
+    widget.templates?.then((catalog) {
+      if (!mounted) return;
+      setState(() => _catalog = catalog);
+    }, onError: (_) {});
     widget.resources.then((value) {
       if (!mounted) return;
       setState(() {
@@ -95,10 +128,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     super.dispose();
   }
 
-  String get _query => _search.text.trim().toLowerCase();
+  String get _query => foldBanglaForSearch(_search.text.trim().toLowerCase());
 
   bool _matches(String text) =>
-      _query.isEmpty || text.toLowerCase().contains(_query);
+      _query.isEmpty ||
+      foldBanglaForSearch(text.toLowerCase()).contains(_query);
 
   BulkImportItem _newTemplateItem(OfficialPrescriptionTemplate template) {
     final item = BulkImportItem.template(template);
@@ -117,6 +151,45 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         _selected[key] = _newTemplateItem(template);
       }
     });
+  }
+
+  /// Opens the template editor; a saved change shows at once and is used by
+  /// this and every later import.
+  Future<void> _editTemplate(OfficialPrescriptionTemplate? template) async {
+    final save = widget.saveTemplate;
+    if (save == null) return;
+    final saved = await showCareTemplateEditor(
+      context,
+      template: template,
+      initialCategory: _category,
+      resources: _resources,
+      save: save,
+    );
+    if (saved == null || !mounted) return;
+    setState(() {
+      final list = [..._catalog.templates];
+      final index = list.indexWhere((t) => t.id == saved.id);
+      if (index >= 0) {
+        list[index] = saved;
+      } else {
+        list.add(saved);
+      }
+      _catalog = CareTemplateCatalog(
+        templates: List.unmodifiable(list),
+        editable: true,
+      );
+      // A ticked row restarts from the edited template.
+      final key = 't:${saved.id}';
+      if (_selected.containsKey(key)) {
+        if (saved.isActive) {
+          _selected[key] = _newTemplateItem(saved);
+        } else {
+          _selected.remove(key);
+        }
+      }
+    });
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('“${saved.title}” সেভ হয়েছে।')));
   }
 
   void _toggleResource(ContentResourceOption resource) {
@@ -356,7 +429,7 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                                   ),
                                   label: Text(
                                     'সুকুন টেমপ্লেট '
-                                    '(${toBanglaDigits('${officialPrescriptionTemplates.length}')})',
+                                    '(${toBanglaDigits('${_templates.length}')})',
                                   ),
                                 ),
                                 ButtonSegment(
@@ -513,7 +586,7 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         if (_category == null || _category == category.id)
           (
             category,
-            officialPrescriptionTemplates
+            _templates
                 .where(
                   (t) =>
                       t.category == category.id &&
@@ -530,6 +603,26 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
             (category.id, category.title),
         ]),
       ),
+      if (_canEditTemplates)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SukunSpace.page - 8,
+              SukunSpace.sm,
+              SukunSpace.page,
+              0,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('bulk-template-new'),
+                onPressed: () => _editTemplate(null),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('নতুন টেমপ্লেট যোগ করুন'),
+              ),
+            ),
+          ),
+        ),
       if (groups.isEmpty)
         const SliverToBoxAdapter(
           child: Padding(
@@ -562,6 +655,9 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                 title: template.title,
                 subtitle: template.instruction,
                 item: item,
+                onEditTemplate: _canEditTemplates
+                    ? () => _editTemplate(template)
+                    : null,
                 onToggle: () => _toggleTemplate(template),
                 onEditTime: (i) => _editTime(item!, i),
                 onRemoveTime: (i) => setState(() => item!.times.removeAt(i)),
@@ -794,6 +890,7 @@ class _BulkRow extends StatelessWidget {
     required this.needsResource,
     required this.onNotificationTitle,
     this.onReminderEnabled,
+    this.onEditTemplate,
   });
 
   final String title;
@@ -812,6 +909,9 @@ class _BulkRow extends StatelessWidget {
 
   /// Null hides the switch (routines are always on).
   final ValueChanged<bool>? onReminderEnabled;
+
+  /// Opens the template editor (Super Admin, live templates only).
+  final VoidCallback? onEditTemplate;
 
   @override
   Widget build(BuildContext context) {
@@ -868,6 +968,13 @@ class _BulkRow extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onEditTemplate != null)
+                    IconButton(
+                      tooltip: 'টেমপ্লেট এডিট',
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: onEditTemplate,
+                    ),
                   if (!selected && needsResource)
                     const Padding(
                       padding: EdgeInsets.only(top: 10, left: 6),

@@ -13,6 +13,18 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-10: admin-editable care templates (Production)
+
+- Applied `supabase/migrations/20261110120000_care_templates_admin_editable.sql`
+  as remote version `20261110031110`
+  (`care_templates_admin_editable_20261110`): new table `care_templates`
+  (RLS on, Super Admin read only, no direct writes) seeded with the 51
+  official templates, and `admin_save_care_template` (Super Admin checked in
+  the database, audited before/after).
+- Verified before applying inside a rolled-back transaction (16 checks), and
+  after: 51 rows, RLS on, `anon` cannot read the table or run the function.
+  Additive; the deployed client does not use it until the next web deploy.
+
 ### 2026-11-10: reminder names and live reminder switches (Production)
 
 - Applied `supabase/migrations/20261110090000_reminder_names_and_live_toggles.sql`
