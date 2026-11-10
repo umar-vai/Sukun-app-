@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -121,4 +122,21 @@ void main() {
       );
     },
   );
+
+  test('the published feed file is a valid approved release', () {
+    final file = File('web/updates/android.json');
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    final release = AndroidRelease.fromJson(json);
+    if (json['enabled'] != true) {
+      expect(release, isNull);
+      return;
+    }
+    expect(release, isNotNull);
+    expect(isApprovedApkUri(release!.apkUrl), isTrue);
+    expect(
+      release.apkUrl.path,
+      endsWith('/v${release.versionName}/SukunLife.apk'),
+    );
+    expect(release.isNewerThan(release.versionCode - 1), isTrue);
+  });
 }
