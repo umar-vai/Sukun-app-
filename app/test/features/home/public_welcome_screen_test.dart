@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/home/presentation/public_welcome_screen.dart';
@@ -14,6 +15,16 @@ void main() {
         'https://downloads.sukunlife.com/android/1.0.1/SukunLife.apk',
       )?.host,
       'downloads.sukunlife.com',
+    );
+    // Without an approved override the stable "latest" link is used.
+    expect(publicAndroidDownloadUri('').toString(), publicAndroidApkLink);
+    expect(
+      publicAndroidDownloadUri('https://downloads.example.com/app.apk'),
+      Uri.parse(publicAndroidApkLink),
+    );
+    expect(
+      publicAndroidApkLink,
+      endsWith('/releases/latest/download/SukunLife.apk'),
     );
     expect(
       approvedAndroidApkUri('https://downloads.example.com/app.apk'),
@@ -52,7 +63,11 @@ void main() {
         find.text('যত্ন, চর্চা ও প্রশান্তির পথে সুকুন লাইফ'),
         findsOneWidget,
       );
-      expect(find.text('Android অ্যাপ শীঘ্রই'), findsWidgets);
+      final download = find.byKey(const Key('welcome-download-android'));
+      expect(download, findsOneWidget);
+      expect(tester.widget<FilledButton>(download).onPressed, isNotNull);
+      expect(find.text('ইনস্টল করবেন যেভাবে'), findsOneWidget);
+      expect(find.text(publicAndroidApkLink), findsOneWidget);
       expect(tester.takeException(), isNull);
       final loginButton = find.widgetWithText(OutlinedButton, 'লগইন');
       await tester.ensureVisible(loginButton);
@@ -62,6 +77,45 @@ void main() {
       expect(find.text('Login route'), findsOneWidget);
     });
   }
+
+  testWidgets('copy button puts the share link on the clipboard', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1140, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const PublicWelcomeScreen()),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('welcome-copy-link')));
+    await tester.pumpAndSettle();
+    expect(copied, publicAndroidApkLink);
+    expect(find.text('ডাউনলোড লিংক কপি হয়েছে।'), findsOneWidget);
+  });
 
   testWidgets('Guest light surfaces remain readable in dark mode', (
     tester,
@@ -89,12 +143,12 @@ void main() {
     final whiteCardTitle = tester.widget<Text>(find.text('ইসলামিক পাঠ ও অডিও'));
     expect(whiteCardTitle.style?.color, SukunColors.nightNavy);
 
-    final downloadButton = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Android অ্যাপ শীঘ্রই').first,
+    final downloadButton = tester.widget<FilledButton>(
+      find.byKey(const Key('welcome-download-android')),
     );
     expect(
-      downloadButton.style?.foregroundColor?.resolve({WidgetState.disabled}),
-      SukunColors.muted,
+      downloadButton.style?.backgroundColor?.resolve({}),
+      SukunColors.sukunBlue,
     );
     expect(tester.takeException(), isNull);
   });
