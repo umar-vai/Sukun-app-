@@ -180,7 +180,11 @@ final class BulkImportItem {
   /// person's daily list). Care plans only; routines are always on.
   bool reminderEnabled = true;
 
-  String get defaultNotificationTitle => title;
+  /// The template's own reminder name when an admin set one, else the title.
+  String get defaultNotificationTitle =>
+      template?.notificationTitle?.trim().isNotEmpty == true
+      ? template!.notificationTitle!.trim()
+      : title;
 
   /// The name the reminder will actually carry.
   String get effectiveNotificationTitle {

@@ -94,6 +94,12 @@ importing; and running reminders must be switchable from the person's account.
   plans) and the existing `personal_routine_actions.notification_title`
   (routines). Owner decision: the phone shows this name. Blank uses the row
   title. Web push stays generic because the server never sends patient text.
+- **Name box everywhere a reminder is set (2026-11-10).** The same box is in
+  the template editor (`care_templates.notification_title`, the default for
+  every import of that template; blank uses the template title) and in the
+  care plan action editor (saved through `set_draft_action_notification_title`).
+  Import fills each row's box with the template's name; the admin can still
+  change it for one person.
 - **Live switches.** Patient detail → "চলমান রিমাইন্ডার" and Admin → user and
   routine → "চলমান রিমাইন্ডার (অ্যাডমিনের দেওয়া)" list running reminders with a
   switch each. A switch saves at once through

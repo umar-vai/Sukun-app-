@@ -16,6 +16,7 @@ final class OfficialPrescriptionTemplate {
     this.defaultTimes,
     this.resourceRefs,
     this.requiresResource,
+    this.notificationTitle,
     this.isActive = true,
     this.sortOrder = 0,
   });
@@ -41,6 +42,7 @@ final class OfficialPrescriptionTemplate {
           ref.toString(),
       ]),
       requiresResource: json['requires_resource'] as bool? ?? false,
+      notificationTitle: _blankToNull(json['notification_title'] as String?),
       isActive: json['is_active'] as bool? ?? true,
       sortOrder: json['sort_order'] as int? ?? 0,
     );
@@ -59,6 +61,10 @@ final class OfficialPrescriptionTemplate {
   /// CMS slugs or `quran:N`. Null on the built-in copy.
   final List<String>? resourceRefs;
   final bool? requiresResource;
+
+  /// Default name the phone shows for this template's reminder. Null means
+  /// the [title] is used. The admin can still change it per person on import.
+  final String? notificationTitle;
   final bool isActive;
   final int sortOrder;
 
@@ -75,6 +81,7 @@ final class OfficialPrescriptionTemplate {
     ],
     'resource_refs': resourceRefs ?? const <String>[],
     'requires_resource': requiresResource ?? false,
+    'notification_title': _blankToNull(notificationTitle),
     'is_active': isActive,
     if (id.isNotEmpty) 'sort_order': sortOrder,
   };
@@ -101,6 +108,11 @@ final class OfficialPrescriptionTemplate {
       requiresResource ??
       (category == 'audio' ||
           (category == 'amal' && (id == 'a05' || id == 'a06' || id == 'a07')));
+}
+
+String? _blankToNull(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }
 
 /// Action type a category saves as ("special" rows are amal).

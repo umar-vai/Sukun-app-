@@ -13,6 +13,19 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-10: default reminder name per care template (Production)
+
+- Applied `supabase/migrations/20261110150000_care_template_notification_title.sql`
+  as remote version `20261110035443` (`care_template_notification_title_20261110`):
+  adds nullable `care_templates.notification_title` (1 to 120 letters) and
+  teaches `admin_save_care_template` to save it (trimmed, blank = null,
+  still Super Admin only and audited).
+- Verified before applying inside a rolled-back transaction on Production:
+  name saved trimmed, left out clears it, 121 letters refused; afterwards the
+  column and the fixture user were confirmed absent. After applying: 51
+  templates, none named yet, `anon` still cannot run the save function.
+  Additive; older clients simply do not send the field.
+
 ### 2026-11-10: admin-editable care templates (Production)
 
 - Applied `supabase/migrations/20261110120000_care_templates_admin_editable.sql`
