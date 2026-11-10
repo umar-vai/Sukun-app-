@@ -66,6 +66,13 @@ void main() {
       expect(defaultTimesForTemplate(template), isNotEmpty);
     });
 
+    test('search treats composed and two-part Bangla letters alike', () {
+      expect(
+        foldBanglaForSearch('\u09B0\u09C1\u0995\u0987\u09DF\u09BE\u09B9'),
+        foldBanglaForSearch('\u09B0\u09C1\u0995\u0987\u09AF\u09BC\u09BE\u09B9'),
+      );
+    });
+
     test('a new template sends no id so the server picks one', () {
       const draft = OfficialPrescriptionTemplate(
         id: '',

@@ -128,10 +128,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     super.dispose();
   }
 
-  String get _query => _search.text.trim().toLowerCase();
+  String get _query => foldBanglaForSearch(_search.text.trim().toLowerCase());
 
   bool _matches(String text) =>
-      _query.isEmpty || text.toLowerCase().contains(_query);
+      _query.isEmpty ||
+      foldBanglaForSearch(text.toLowerCase()).contains(_query);
 
   BulkImportItem _newTemplateItem(OfficialPrescriptionTemplate template) {
     final item = BulkImportItem.template(template);

@@ -63,7 +63,9 @@ select is(
   (select count(*)::int from public.admin_audit_logs
    where action = 'care_template.updated'
      and metadata->>'template_id' = 's01'
-     and metadata->'before'->>'title' = 'রুকইয়াহ পাঠ দিয়ে পানি প্রস্তুত'),
+     -- Bangla can be stored composed or decomposed; compare normalized.
+     and normalize(metadata->'before'->>'title', NFC)
+         = normalize('রুকইয়াহ পাঠ দিয়ে পানি প্রস্তুত', NFC)),
   1, 'the edit is audited with the old text');
 
 select is(

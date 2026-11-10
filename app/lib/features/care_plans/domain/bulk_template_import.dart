@@ -52,6 +52,14 @@ final class ReminderClock implements Comparable<ReminderClock> {
   int get hashCode => Object.hash(hour, minute);
 }
 
+/// The same Bangla letter can be stored as one code point (য়) or as two
+/// (য + ়). Searching folds both to the two-part form so a typed word
+/// always finds the template.
+String foldBanglaForSearch(String value) => value
+    .replaceAll('\u09DC', '\u09A1\u09BC')
+    .replaceAll('\u09DD', '\u09A2\u09BC')
+    .replaceAll('\u09DF', '\u09AF\u09BC');
+
 String toBanglaDigits(String value) {
   const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   final buffer = StringBuffer();
