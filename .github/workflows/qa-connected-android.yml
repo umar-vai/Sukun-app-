@@ -40,6 +40,8 @@ jobs:
       QA_FIREBASE_SENDER_ID: ${{ secrets.SUKUN_QA_FIREBASE_SENDER_ID }}
       QA_FIREBASE_ANDROID_API_KEY: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_API_KEY }}
       QA_FIREBASE_ANDROID_APP_ID: ${{ secrets.SUKUN_QA_FIREBASE_ANDROID_APP_ID }}
+      # A project ID is public metadata, not a service-account credential.
+      PRODUCTION_FIREBASE_PROJECT_ID: ${{ vars.SUKUN_PRODUCTION_FIREBASE_PROJECT_ID }}
 
     steps:
       - name: Checkout
@@ -141,6 +143,10 @@ jobs:
               echo "::error::Android App ID does not match the Firebase sender ID."
               exit 1
             fi
+            # Applies to EVERY Firebase-configured QA build. The generic
+            # connected build must not bypass the rich-notice audience boundary.
+            # Production-targeted QA also requires a matching Firebase project.
+            QA_FIREBASE_TARGET="$environment" bash ../.github/scripts/check_qa_firebase_project_isolation.sh
             echo "Android Firebase QA client configured; device delivery still requires opted-in physical testing."
           fi
 

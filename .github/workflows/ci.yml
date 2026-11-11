@@ -37,6 +37,18 @@ jobs:
       # this advisory network check cannot make a request.
 
 
+  firebase-qa-isolation:
+    name: FCM / Staging Firebase audience isolation guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      # Offline, synthetic project IDs only; no Firebase credentials or pushes.
+      - name: Test fail-closed QA project comparison
+        run: bash .github/scripts/test_check_qa_firebase_project_isolation.sh
+
   audio-cors-advisory:
     name: Media / Authorized Host CORS Probe (Advisory)
     runs-on: ubuntu-latest
