@@ -162,7 +162,7 @@ class ResourcePickerField extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                Icon(
                   Icons.keyboard_arrow_down_rounded,
                   color: SukunColors.deepTide,
                 ),
@@ -307,7 +307,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'উপকরণ লাইব্রেরি',
                               style: TextStyle(
                                 color: SukunColors.deepTide,
@@ -432,7 +432,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: SukunColors.border)),
         ),
         child: Row(
@@ -567,7 +567,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
         )
         .toList(growable: false);
     return [
-      const SliverPadding(
+      SliverPadding(
         padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
         sliver: SliverToBoxAdapter(
           child: Card(
@@ -1102,15 +1102,11 @@ class _LinkedMark extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 24,
     height: 24,
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       color: SukunColors.softBlue,
       shape: BoxShape.circle,
     ),
-    child: const Icon(
-      Icons.link_rounded,
-      size: 15,
-      color: SukunColors.deepTide,
-    ),
+    child: Icon(Icons.link_rounded, size: 15, color: SukunColors.deepTide),
   );
 }
 
@@ -1259,7 +1255,7 @@ class _SelectedMark extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 26,
     height: 26,
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       color: SukunColors.sukunBlue,
       shape: BoxShape.circle,
     ),

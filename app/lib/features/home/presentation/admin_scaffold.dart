@@ -105,12 +105,12 @@ class _AdminScaffoldState extends State<AdminScaffold> {
           SukunNavDestination(
             icon: Icons.dashboard_outlined,
             selectedIcon: Icons.dashboard,
-            label: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+            label: copy?.adminDashboard ?? 'অ্যাডমিন হোম',
           ),
           SukunNavDestination(
             icon: Icons.people_outline,
             selectedIcon: Icons.people,
-            label: 'ব্যবহারকারী',
+            label: 'রোগী',
           ),
           SukunNavDestination(
             icon: Icons.library_books_outlined,

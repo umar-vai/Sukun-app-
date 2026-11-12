@@ -139,7 +139,7 @@ class _QiblaView extends StatelessWidget {
         SukunPageIntro(
           eyebrow: 'Direction from $locationName',
           title: 'Face the Qibla',
-          subtitle: _qiblaInstruction(reading),
+          note: _qiblaInstruction(reading),
         ),
         const SizedBox(height: 24),
         SukunSurface(
@@ -219,7 +219,7 @@ class _QiblaView extends StatelessWidget {
         const SizedBox(height: 20),
         _CalibrationCard(reading: reading),
         const SizedBox(height: 12),
-        const SukunSurface(
+        SukunSurface(
           tone: SukunSurfaceTone.soft,
           showBorder: false,
           radius: 18,

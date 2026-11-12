@@ -383,7 +383,7 @@ class AudioDockCard extends StatelessWidget {
                     key: const Key('audio-dock-progress'),
                     widthFactor: progress,
                     heightFactor: 1,
-                    child: const ColoredBox(color: SukunColors.sukunBlue),
+                    child: ColoredBox(color: SukunColors.sukunBlue),
                   ),
                 ),
               ),
@@ -405,7 +405,7 @@ class _AudioDockArtwork extends StatelessWidget {
     height: 42,
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(SukunRadius.control),
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [SukunColors.sukunBlue, SukunColors.deepTide],
@@ -467,7 +467,7 @@ class _AudioDockSpeedChip extends StatelessWidget {
                   ),
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                       color: SukunColors.deepTide,

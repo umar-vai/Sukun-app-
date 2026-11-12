@@ -105,7 +105,7 @@ class _SukunLoadingMarkState extends State<_SukunLoadingMark>
           width: widget.size < 36 ? 4 : 5,
         ),
       ),
-      child: const Align(
+      child: Align(
         alignment: Alignment.topCenter,
         child: SizedBox(
           width: 8,

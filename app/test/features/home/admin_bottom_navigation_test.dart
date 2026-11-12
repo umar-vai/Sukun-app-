@@ -37,7 +37,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SukunBottomNavigation), findsOneWidget);
-    await tester.tap(find.text('ব্যবহারকারী'));
+    await tester.tap(find.text('রোগী'));
     await tester.pumpAndSettle();
 
     expect(router.routeInformationProvider.value.uri.path, '/admin/users');

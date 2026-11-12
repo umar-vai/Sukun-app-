@@ -330,7 +330,7 @@ class _PlanActionEditorScreenState
                 backgroundColor: SukunColors.mist,
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(color: SukunColors.deepTide),
+                  style: TextStyle(color: SukunColors.deepTide),
                 ),
               ),
               title: Text(
@@ -921,7 +921,7 @@ class _EditorStepHeading extends StatelessWidget {
         width: 28,
         height: 28,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: SukunColors.mist,
           shape: BoxShape.circle,
         ),

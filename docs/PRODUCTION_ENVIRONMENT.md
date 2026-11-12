@@ -13,6 +13,21 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-12: admin Patients list shows only people under care (Production)
+
+- Applied `supabase/migrations/20261112230000_admin_care_recipients.sql` as
+  remote version `20261112221701` (`admin_care_recipients_20261112`): one
+  read-only SECURITY DEFINER function `admin_list_care_recipients(query,
+  limit, offset)`, Super Admin checked in the database. Without a search it
+  returns only patient accounts and members an admin set a routine for; a
+  search (name, email, phone, patient number) reaches any non-admin account.
+  No table, RLS or data change.
+- Verified before applying in a rolled-back transaction on Production: 4
+  people listed (the 4 patients), a search reached 16 accounts, a member got
+  `42501`; afterwards the function was confirmed absent. After applying:
+  `anon` cannot execute, `authenticated` can. pgTAP:
+  `supabase/tests/admin_care_recipients_test.sql`.
+
 ### 2026-11-12: admin-set routines listed first (Production)
 
 - Applied `supabase/migrations/20261112090000_my_admin_assigned_routines.sql`

@@ -207,7 +207,7 @@ const _adminDestinations = [
   SukunNavDestination(
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
-    label: 'ব্যবহারকারী',
+    label: 'রোগী',
   ),
   SukunNavDestination(
     icon: Icons.library_books_outlined,

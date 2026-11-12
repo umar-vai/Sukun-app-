@@ -24,7 +24,7 @@ class SukunLaunchScreen extends StatelessWidget {
                     ?.copyWith(color: Colors.white),
               ),
               const SizedBox(height: 24),
-              const SizedBox(
+              SizedBox(
                 width: 120,
                 child: LinearProgressIndicator(
                   borderRadius: BorderRadius.all(Radius.circular(99)),

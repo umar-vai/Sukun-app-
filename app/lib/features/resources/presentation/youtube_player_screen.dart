@@ -225,7 +225,7 @@ class SukunVideoLoadingOverlay extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 34,
                     height: 34,
                     child: CircularProgressIndicator(
@@ -252,7 +252,7 @@ class SukunVideoLoadingOverlay extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
@@ -277,7 +277,7 @@ class _SukunVideoBufferingBadge extends StatelessWidget {
       color: SukunColors.nightNavy.withValues(alpha: 0.9),
       borderRadius: BorderRadius.circular(14),
     ),
-    child: const Padding(
+    child: Padding(
       padding: EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -312,11 +312,7 @@ class SukunVideoErrorOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.wifi_off_rounded,
-              color: SukunColors.mist,
-              size: 26,
-            ),
+            Icon(Icons.wifi_off_rounded, color: SukunColors.mist, size: 26),
             const SizedBox(height: 6),
             const Text(
               'ভিডিও লোড করা যাচ্ছে না',
@@ -327,7 +323,7 @@ class SukunVideoErrorOverlay extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'সংযোগ পরীক্ষা করে আবার চেষ্টা করুন',
               style: TextStyle(color: SukunColors.mist, fontSize: 12),
               textAlign: TextAlign.center,
@@ -339,7 +335,7 @@ class SukunVideoErrorOverlay extends StatelessWidget {
               label: const Text('আবার চেষ্টা করুন'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: SukunColors.mist),
+                side: BorderSide(color: SukunColors.mist),
               ),
             ),
           ],

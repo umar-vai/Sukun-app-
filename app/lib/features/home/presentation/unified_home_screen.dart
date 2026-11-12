@@ -218,7 +218,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: SukunColors.nightNavy,
                       backgroundColor: Colors.white,
-                      side: const BorderSide(color: SukunColors.border),
+                      side: BorderSide(color: SukunColors.border),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 10,
@@ -269,8 +269,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                               'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
-                            SizedBox(height: 4),
-                            Text('ফ্রি গাইড, অডিও ও ধাপভিত্তিক অগ্রগতি'),
                           ],
                         ),
                       ),

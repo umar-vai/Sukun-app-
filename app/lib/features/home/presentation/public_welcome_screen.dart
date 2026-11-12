@@ -220,7 +220,7 @@ class _WelcomeHero extends StatelessWidget {
             color: SukunColors.mist,
             borderRadius: BorderRadius.circular(30),
           ),
-          child: const Text(
+          child: Text(
             'আপনার শান্ত, গুছানো দিনের সঙ্গী',
             style: TextStyle(color: SukunColors.deepTide),
           ),

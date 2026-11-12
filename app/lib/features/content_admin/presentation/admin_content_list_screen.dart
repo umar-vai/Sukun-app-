@@ -1117,7 +1117,7 @@ class _KindCard extends StatelessWidget {
               ?.copyWith(color: SukunColors.muted),
         ),
         const SizedBox(height: 8),
-        const Align(
+        Align(
           alignment: Alignment.centerRight,
           child: Icon(
             Icons.arrow_forward_rounded,
@@ -1232,7 +1232,7 @@ class _ContentCard extends StatelessWidget {
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'সম্পাদনা করুন',
           ),
-        const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+        Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
       ],
     ),
   );

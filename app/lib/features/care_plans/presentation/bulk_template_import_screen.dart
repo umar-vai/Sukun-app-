@@ -1024,7 +1024,7 @@ class _AddNewTile extends StatelessWidget {
             Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: SukunColors.sukunBlue,
                 shape: BoxShape.circle,
               ),

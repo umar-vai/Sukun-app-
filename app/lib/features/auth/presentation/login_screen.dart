@@ -267,7 +267,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.shield_outlined,
                         size: 17,
                         color: SukunColors.deepTide,

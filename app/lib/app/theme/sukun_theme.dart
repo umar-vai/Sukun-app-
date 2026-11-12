@@ -16,7 +16,7 @@ abstract final class SukunTheme {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
+      colorScheme: ColorScheme.light(
         primary: SukunColors.sukunBlue,
         onPrimary: SukunColors.nightNavy,
         primaryContainer: SukunColors.softBlue,
@@ -90,7 +90,7 @@ abstract final class SukunTheme {
           backgroundColor: Colors.white,
           minimumSize: const Size(48, 52),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          side: const BorderSide(color: SukunColors.border),
+          side: BorderSide(color: SukunColors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SukunRadius.control),
           ),
@@ -118,22 +118,22 @@ abstract final class SukunTheme {
         helperStyle: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SukunRadius.control),
-          borderSide: const BorderSide(color: SukunColors.border),
+          borderSide: BorderSide(color: SukunColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SukunRadius.control),
-          borderSide: const BorderSide(color: SukunColors.border),
+          borderSide: BorderSide(color: SukunColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SukunRadius.control),
-          borderSide: const BorderSide(color: SukunColors.deepTide, width: 2),
+          borderSide: BorderSide(color: SukunColors.deepTide, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SukunRadius.control),
           borderSide: const BorderSide(color: SukunColors.error),
         ),
       ),
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: SukunColors.border,
         thickness: 1,
         space: 1,
@@ -141,7 +141,7 @@ abstract final class SukunTheme {
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: Colors.white,
         selectedColor: SukunColors.mist,
-        side: const BorderSide(color: SukunColors.border),
+        side: BorderSide(color: SukunColors.border),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SukunRadius.chip),
         ),
@@ -167,7 +167,7 @@ abstract final class SukunTheme {
           ),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: SukunColors.deepTide,
         foregroundColor: Colors.white,
         elevation: 3,
@@ -175,7 +175,7 @@ abstract final class SukunTheme {
           borderRadius: BorderRadius.all(Radius.circular(SukunRadius.tile)),
         ),
       ),
-      listTileTheme: const ListTileThemeData(
+      listTileTheme: ListTileThemeData(
         iconColor: SukunColors.deepTide,
         contentPadding: EdgeInsets.symmetric(horizontal: SukunSpace.lg),
         shape: RoundedRectangleBorder(
@@ -205,9 +205,7 @@ abstract final class SukunTheme {
                 ? SukunColors.deepTide
                 : SukunColors.muted,
           ),
-          side: const WidgetStatePropertyAll(
-            BorderSide(color: SukunColors.border),
-          ),
+          side: WidgetStatePropertyAll(BorderSide(color: SukunColors.border)),
           shape: const WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.all(
@@ -217,13 +215,13 @@ abstract final class SukunTheme {
           ),
         ),
       ),
-      tabBarTheme: const TabBarThemeData(
+      tabBarTheme: TabBarThemeData(
         labelColor: SukunColors.nightNavy,
         unselectedLabelColor: SukunColors.muted,
         indicatorColor: SukunColors.deepTide,
         dividerColor: SukunColors.border,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: SukunColors.sukunBlue,
         linearTrackColor: SukunColors.softBlue,
         linearMinHeight: 7,
@@ -250,7 +248,7 @@ abstract final class SukunTheme {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: SukunColors.sukunBlue,
         onPrimary: Colors.black,
         primaryContainer: surfaceLow,

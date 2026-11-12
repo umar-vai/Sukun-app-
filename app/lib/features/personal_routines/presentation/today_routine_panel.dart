@@ -143,7 +143,7 @@ class TodayRoutinePanel extends StatelessWidget {
                             strokeWidth: 9,
                             strokeCap: StrokeCap.round,
                             backgroundColor: SukunColors.mist,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
+                            valueColor: AlwaysStoppedAnimation<Color>(
                               SukunColors.sukunBlue,
                             ),
                           ),
@@ -466,7 +466,7 @@ class _StreakStrip extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.local_fire_department_outlined,
                 color: SukunColors.deepTide,
                 size: 20,
