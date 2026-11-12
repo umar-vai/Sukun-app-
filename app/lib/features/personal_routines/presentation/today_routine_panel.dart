@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/personal_routines/domain/routine_calendar.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -55,11 +56,17 @@ class TodayRoutinePanel extends StatelessWidget {
       for (final routine in routines)
         if (routine['is_active'] == true) routine['id'],
     };
-    final activeActions = actions
+    final day = today ?? DateTime.now();
+    final inActiveRoutines = [
+      for (final action in actions)
+        if (activeIds.contains(action['routine_id'])) action,
+    ];
+    final detoxDates = routineDetoxDates(inActiveRoutines);
+    final activeActions = inActiveRoutines
         .where(
           (action) =>
               action['is_active'] == true &&
-              activeIds.contains(action['routine_id']),
+              routineActionRunsOn(action, day, detoxDates: detoxDates),
         )
         .toList(growable: false);
     final summary = TodayRoutineSummary(

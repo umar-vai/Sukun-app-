@@ -13,6 +13,24 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-13: ghusl calendar and detox days (Production)
+
+- Applied `supabase/migrations/20261113090000_ghusl_calendar_detox_days.sql` as
+  remote version `20261112223055` (`ghusl_calendar_detox_days_20261113`).
+  Adds the care plan `dates` frequency (validated by trigger
+  `plan_actions_validate_frequency`), patches the live `save_plan_action` and
+  `admin_import_user_routine_reminders` definitions in place (only the
+  allowed-type list and two inserted columns change), rewrites
+  `ensure_patient_tasks` / `ensure_patient_reminder_tasks` from their deployed
+  bodies plus dates and the detox rule (`private.detox_day_blocks`), and adds
+  nullable `personal_routine_actions.active_dates` / `ghusl_kind`.
+- Verified before applying in rolled-back transactions on Production: both
+  in-place patches matched; on a test detox day a daily action produced 0
+  tasks and the detox action 1 (including a task generated before the detox
+  was added); an invalid date was refused. After applying: patches present,
+  0 existing rows changed, `anon` still cannot run the generators,
+  `authenticated` cannot run the private helper.
+
 ### 2026-11-12: admin Patients list shows only people under care (Production)
 
 - Applied `supabase/migrations/20261112230000_admin_care_recipients.sql` as

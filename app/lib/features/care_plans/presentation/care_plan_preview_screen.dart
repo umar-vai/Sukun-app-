@@ -226,6 +226,10 @@ String _formatDate(DateTime value) =>
     '${value.month.toString().padLeft(2, '0')}/${value.year}';
 
 String _frequencyLabelBn(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.dates) {
+    final kind = frequency.ghusl?.label;
+    return '${kind == null ? '' : '$kind · '}${frequency.dates.length}টি তারিখ';
+  }
   if (frequency.type == ActionFrequencyType.daily) {
     return frequency.interval == 1
         ? 'প্রতিদিন'

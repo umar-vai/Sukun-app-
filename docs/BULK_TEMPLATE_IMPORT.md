@@ -196,3 +196,28 @@ blueprint for every import, and need their own place to edit, add and remove.
   "সরানো" tab shows removed ones with "ফিরিয়ে আনুন". Nothing is hard-deleted.
 - The import picker keeps its pencil shortcut; both save through
   `admin_save_care_template`.
+
+## Ghusl calendar and detox days (2026-11-12)
+
+Owner request: of the bath templates, only **বদনজরের গোসল (b01)**, **বরই পাতার
+গোসল (b02)** and **ডিটক্স গোসল (b03)** are placed on a calendar, per person, at
+import. The other bath templates keep working as before.
+
+- In the picker's গোসল section a **গোসল ক্যালেন্ডার** card opens a month calendar
+  (`ghusl_calendar_screen.dart`). Pick a bath (blue = নজর, green = বরই পাতা,
+  orange = ডিটক্স), then tap days. One bath per day, today up to one year
+  ahead, at most 120 days per bath. Tapping b01/b02/b03 directly also opens it.
+- A bath with days is selected for import with those dates; its time, reminder
+  name and linked content still come from the template, so the content the
+  patient sees on that day is edited in **সুকুন অফিসিয়াল টেমপ্লেট**.
+- Care plans save the row as `frequency_rule = {"type":"dates","dates":[...],
+  "ghusl":"detox"}`; routines save `active_dates` and `ghusl_kind`.
+- **Detox day:** every other task and reminder of that person pauses; only the
+  detox bath (and its linked content) shows. Care plans: enforced in
+  `ensure_patient_tasks` / `ensure_patient_reminder_tasks` (also hides tasks
+  generated earlier). Routines: enforced by the app when it lists today's
+  steps and plans reminders (`routine_calendar.dart`).
+- Limitation: the detox rule works inside one system. A patient's care-plan
+  detox day does not pause a routine of the same account, and the reverse.
+- Migration `20261113090000_ghusl_calendar_detox_days.sql`; pgTAP
+  `ghusl_calendar_detox_days_test.sql`.

@@ -7,7 +7,9 @@ import 'package:sukun_life/features/care_plans/data/care_template_repository.dar
 import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_template_editor_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/ghusl_calendar_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 
 /// Opens the bulk picker and returns the selected rows, or null if cancelled.
@@ -148,7 +150,48 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     return item;
   }
 
+  /// Opens the ghusl calendar and applies the chosen dates: a bath with
+  /// dates is selected for import, a bath without dates is deselected.
+  Future<void> _openGhuslCalendar([GhuslKind? focus]) async {
+    final initial = <GhuslKind, Set<DateTime>>{
+      for (final kind in GhuslKind.values)
+        kind: {...?_selected['t:${kind.templateId}']?.calendarDates},
+    };
+    final result = await showGhuslCalendar(
+      context,
+      initial: initial,
+      focus: focus,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      for (final kind in GhuslKind.values) {
+        final dates = result[kind] ?? const <DateTime>{};
+        final key = 't:${kind.templateId}';
+        if (dates.isEmpty) {
+          _selected.remove(key);
+          continue;
+        }
+        final template = _templates
+            .where((t) => t.id == kind.templateId)
+            .firstOrNull;
+        if (template == null) continue;
+        final item = _selected.putIfAbsent(
+          key,
+          () => _newTemplateItem(template),
+        );
+        item.calendarDates
+          ..clear()
+          ..addAll(dates);
+      }
+    });
+  }
+
   void _toggleTemplate(OfficialPrescriptionTemplate template) {
+    final kind = GhuslKind.forTemplate(template.id);
+    if (kind != null && !_selected.containsKey('t:${template.id}')) {
+      _openGhuslCalendar(kind);
+      return;
+    }
     setState(() {
       final key = 't:${template.id}';
       if (_selected.remove(key) == null) {
@@ -717,6 +760,29 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
           ),
         ),
       for (final (category, templates, customs) in groups) ...[
+        if (category.id == 'bath' &&
+            templates.any((t) => GhuslKind.forTemplate(t.id) != null))
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SukunSpace.page,
+                SukunSpace.md,
+                SukunSpace.page,
+                0,
+              ),
+              child: _GhuslCalendarCard(
+                counts: {
+                  for (final kind in GhuslKind.values)
+                    kind:
+                        _selected['t:${kind.templateId}']
+                            ?.calendarDates
+                            .length ??
+                        0,
+                },
+                onOpen: () => _openGhuslCalendar(),
+              ),
+            ),
+          ),
         SliverToBoxAdapter(
           child: _GroupHeader(
             title: category.title,
@@ -1630,6 +1696,72 @@ class _ReminderNameFieldState extends State<_ReminderNameField> {
         helperText: 'ফাঁকা রাখলে উপরের শিরোনাম দেখাবে',
       ),
       onChanged: widget.onChanged,
+    );
+  }
+}
+
+/// Entry to the ghusl calendar inside the bath section, with a colour dot
+/// and day count per bath.
+class _GhuslCalendarCard extends StatelessWidget {
+  const _GhuslCalendarCard({required this.counts, required this.onOpen});
+
+  final Map<GhuslKind, int> counts;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SukunSurface(
+      key: const Key('bulk-ghusl-calendar'),
+      onTap: onOpen,
+      padding: const EdgeInsets.all(SukunSpace.lg),
+      child: Row(
+        children: [
+          const SukunIconBadge(icon: Icons.calendar_month_rounded, size: 44),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'গোসল ক্যালেন্ডার',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: [
+                    for (final kind in GhuslKind.values)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: ghuslColor(kind),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${kind.label.split(' ').first} '
+                            '${toBanglaDigits('${counts[kind] ?? 0}')}',
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded),
+        ],
+      ),
     );
   }
 }

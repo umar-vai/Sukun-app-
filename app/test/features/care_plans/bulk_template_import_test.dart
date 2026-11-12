@@ -321,10 +321,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('সব বাছুন').first);
     await tester.pumpAndSettle();
-    // Bath templates need day counts, so the import is blocked with a reason.
+    // Bath templates need day counts or calendar dates, so the import is
+    // blocked with a reason.
     await tester.tap(find.byKey(const Key('bulk-import-confirm')));
     await tester.pump();
-    expect(find.textContaining('সংখ্যা বাছুন'), findsWidgets);
+    expect(find.textContaining('বাছুন'), findsWidgets);
     expect(result, isNull);
 
     await tester.tap(find.text('বাদ দিন').first);

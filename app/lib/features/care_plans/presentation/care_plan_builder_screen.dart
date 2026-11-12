@@ -790,6 +790,10 @@ String _reviewStatusLabel(ActionReviewStatus status) => switch (status) {
 };
 
 String _frequencyLabel(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.dates) {
+    final kind = frequency.ghusl?.label;
+    return '${kind == null ? '' : '$kind · '}${frequency.dates.length}টি তারিখ';
+  }
   if (frequency.type == ActionFrequencyType.daily) {
     return frequency.interval == 1
         ? 'প্রতিদিন'
