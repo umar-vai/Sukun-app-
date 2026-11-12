@@ -65,7 +65,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('আজকের রুটিন'), findsOneWidget);
+    expect(find.text('আজকের আমল'), findsOneWidget);
     expect(
       find.byKey(const Key('today-routine-progress-ring')),
       findsOneWidget,
@@ -80,5 +80,63 @@ void main() {
     await tester.tap(find.text('আয়াতুল কুরসি'));
     expect(opened, ['a1']);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('all done shows the green note and the streak strip', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TodayRoutinePanel(
+            routines: const [
+              {'id': 'r1', 'is_active': true},
+            ],
+            actions: const [
+              {'id': 'a1', 'routine_id': 'r1', 'is_active': true, 'title': 'A'},
+            ],
+            outcomes: const {'a1': 'done'},
+            history: const [
+              {'local_date': '2026-11-11', 'outcome': 'done'},
+              {'local_date': '2026-11-10', 'outcome': 'skipped'},
+            ],
+            today: DateTime(2026, 11, 12),
+            onToggleDone: (_, _) {},
+            onOpen: (_) {},
+            onOpenHistory: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('today-all-done')), findsOneWidget);
+    expect(find.byKey(const Key('today-streak-strip')), findsOneWidget);
+    expect(find.text('টানা ২ দিন আমল'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('no green note while something is left', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TodayRoutinePanel(
+            routines: const [
+              {'id': 'r1', 'is_active': true},
+            ],
+            actions: const [
+              {'id': 'a1', 'routine_id': 'r1', 'is_active': true, 'title': 'A'},
+              {'id': 'a2', 'routine_id': 'r1', 'is_active': true, 'title': 'B'},
+            ],
+            outcomes: const {'a1': 'done'},
+            onToggleDone: (_, _) {},
+            onOpen: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('today-all-done')), findsNothing);
   });
 }

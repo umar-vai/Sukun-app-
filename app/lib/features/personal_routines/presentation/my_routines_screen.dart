@@ -94,11 +94,18 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
       _repository.listRoutines(),
       _repository.listActions(),
       _repository.todaysOutcomes(DateTime.now()),
+      _repository.listAdminAssignedRoutineIds(),
+      // The streak strip is a nicety: an offline history never blocks Today.
+      _repository
+          .listProgress(days: 7)
+          .catchError((Object _) => <Map<String, dynamic>>[]),
     ]);
     return _RoutinePageData(
       routines: results[0] as List<Map<String, dynamic>>,
       actions: results[1] as List<Map<String, dynamic>>,
       outcomes: results[2] as Map<String, String>,
+      assignedIds: results[3] as Set<String>,
+      history: results[4] as List<Map<String, dynamic>>,
     );
   }
 
@@ -829,9 +836,6 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
               child: switch (_tab) {
                 RoutineHubTab.today => _todayTab(),
                 RoutineHubTab.myRoutines => _myRoutinesTab(),
-                RoutineHubTab.progress => const UnifiedProgressScreen(
-                  embedded: true,
-                ),
               },
             ),
           ],
@@ -878,7 +882,10 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             ref.watch(appSessionProvider).value?.isPatient == true
             ? () => context.push('/patient/today')
             : null,
-        onOpenHistory: () => setState(() => _tab = RoutineHubTab.progress),
+        history: data.history,
+        onOpenHistory: () => Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => const UnifiedProgressScreen()),
+        ),
       );
     },
   );
@@ -896,6 +903,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         return const AppLoadingState(label: 'রুটিন আনা হচ্ছে…');
       }
       final data = snap.data!;
+      final ordered = orderRoutinesForHub(data.routines, data.assignedIds);
       final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
       return ListView(
         key: const Key('routine-mine-list'),
@@ -959,6 +967,45 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             ),
             const SizedBox(height: SukunSpace.md),
           ],
+          if (ordered.assigned.isNotEmpty) ...[
+            const SukunSectionHeader(
+              key: Key('routine-admin-assigned-header'),
+              title: 'সুকুন লাইফের দেওয়া রুটিন',
+              subtitle: 'আপনার জন্য নির্ধারণ করে দেওয়া হয়েছে',
+            ),
+            const SizedBox(height: SukunSpace.md),
+            for (final routine in ordered.assigned) ...[
+              RoutineCard(
+                routine: routine,
+                actions: data.actions
+                    .where((item) => item['routine_id'] == routine['id'])
+                    .toList(growable: false),
+                outcomes: data.outcomes,
+                busy: _working,
+                onToggleActive: () => _mutate(
+                  () => _repository.setRoutineActive(
+                    routine['id'] as String,
+                    routine['is_active'] != true,
+                  ),
+                ),
+                onDeleteRoutine: () => _deleteRoutine(routine),
+                onOpenAction: (action) =>
+                    context.push('/my-routines/action/${action['id']}'),
+                onActionMenu: (action, value) =>
+                    _onActionMenu(routine, action, value),
+                onAddAction: () =>
+                    _editAction(routineId: routine['id'] as String),
+              ),
+              const SizedBox(height: SukunSpace.md),
+            ],
+            const SizedBox(height: SukunSpace.sm),
+            const SukunSectionHeader(
+              key: Key('routine-own-header'),
+              title: 'আমার বানানো রুটিন',
+              subtitle: 'নিজের জন্য তৈরি করা রুটিন',
+            ),
+            const SizedBox(height: SukunSpace.md),
+          ],
           FilledButton.icon(
             key: const Key('routine-bulk-resource-reminders'),
             onPressed: _working ? null : _bulkResourceReminders,
@@ -972,7 +1019,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
             label: const Text('নতুন রুটিন তৈরি করুন'),
           ),
           const SizedBox(height: SukunSpace.lg),
-          if (data.routines.isEmpty)
+          if (ordered.own.isEmpty)
             const SukunSurface(
               tone: SukunSurfaceTone.soft,
               showBorder: false,
@@ -988,7 +1035,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                 ],
               ),
             ),
-          for (final routine in data.routines) ...[
+          for (final routine in ordered.own) ...[
             RoutineCard(
               routine: routine,
               actions: data.actions
@@ -1111,8 +1158,16 @@ class _RoutinePageData {
     required this.routines,
     required this.actions,
     required this.outcomes,
+    this.assignedIds = const {},
+    this.history = const [],
   });
   final List<Map<String, dynamic>> routines;
   final List<Map<String, dynamic>> actions;
   final Map<String, String> outcomes;
+
+  /// Routines an admin set for this person; listed first in My Routines.
+  final Set<String> assignedIds;
+
+  /// Last 7 days of outcomes for the streak strip on Today.
+  final List<Map<String, dynamic>> history;
 }

@@ -407,6 +407,74 @@ void main() {
     expect(find.text('যুক্ত কন্টেন্ট (৪)'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a section can take a hand-written row for this person only', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    List<BulkImportItem>? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                result = await showBulkTemplateImport(
+                  context,
+                  recipientLabel: 'রোগী: Test',
+                  resources: Future.value(const [_audio]),
+                );
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('সাপ্লিমেন্ট').first);
+    await tester.pumpAndSettle();
+    final addNew = find.byKey(const Key('bulk-add-new-supplement'));
+    await tester.scrollUntilVisible(
+      addNew,
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(addNew);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('bulk-custom-title')),
+      'সকালে কালোজিরা',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('bulk-custom-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('সকালে কালোজিরা'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('bulk-import-confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bulk-import-final')));
+    await tester.pumpAndSettle();
+    expect(result, hasLength(1));
+    final item = result!.single;
+    expect(item.isCustom, isTrue);
+    expect(item.title, 'সকালে কালোজিরা');
+    expect(item.actionType, 'supplement');
+    // A custom row never references a Sukun template on the server.
+    expect(item.templateId, isNull);
+    expect(
+      item.expand().single.toRoutineJson(),
+      isNot(contains('official_template_id')),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 CarePlan _plan(String id, CarePlanStatus status) => CarePlan(

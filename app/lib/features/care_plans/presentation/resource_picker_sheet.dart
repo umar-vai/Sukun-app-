@@ -1,7 +1,4 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
@@ -33,6 +30,30 @@ Future<String?> showResourcePickerSheet({
       selectedId: selectedId,
       onPickCanonicalQuran: onPickCanonicalQuran,
       includeOfficialTemplates: includeOfficialTemplates,
+    ),
+  );
+}
+
+/// Grid picker where several library items can be ticked at once. Returns
+/// the newly ticked ids in tap order, or null when closed without adding.
+/// [alreadyLinked] items show as linked and cannot be ticked again.
+Future<List<String>?> showResourceMultiPickerSheet({
+  required BuildContext context,
+  required List<ContentResourceOption> resources,
+  Set<String> alreadyLinked = const {},
+  int maxSelection = 16,
+}) {
+  return showModalBottomSheet<List<String>>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => _ResourcePickerSheet(
+      resources: resources,
+      selectedId: '',
+      multiSelect: true,
+      alreadyLinked: alreadyLinked,
+      maxSelection: maxSelection,
     ),
   );
 }
@@ -160,23 +181,36 @@ class _ResourcePickerSheet extends StatefulWidget {
     required this.selectedId,
     this.onPickCanonicalQuran,
     this.includeOfficialTemplates = false,
+    this.multiSelect = false,
+    this.alreadyLinked = const {},
+    this.maxSelection = 16,
   });
 
   final List<ContentResourceOption> resources;
   final String selectedId;
   final PickCanonicalQuranReference? onPickCanonicalQuran;
   final bool includeOfficialTemplates;
+  final bool multiSelect;
+  final Set<String> alreadyLinked;
+  final int maxSelection;
 
   @override
   State<_ResourcePickerSheet> createState() => _ResourcePickerSheetState();
 }
 
+/// Browses like the public library: a grid of sections first, then a grid
+/// of items inside the opened section. Searching shows matching items from
+/// every section (or the opened one) in the same grid.
 class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   final _searchController = TextEditingController();
-  final _sectionController = PageController(viewportFraction: .72);
-  int _sectionIndex = 0;
-  DateTime? _lastWheelChange;
+  _PickerSection? _openSection;
   bool _choosingCanonical = false;
+
+  /// Multi-select: ids ticked in this session, in tap order.
+  final List<String> _picked = [];
+
+  int get _room =>
+      widget.maxSelection - widget.alreadyLinked.length - _picked.length;
 
   Future<void> _pickCanonical(bool wholeSurah) async {
     final picker = widget.onPickCanonicalQuran;
@@ -201,7 +235,9 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       if (mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           const SnackBar(
-            content: Text('কুরআনের আয়াত নির্বাচন করা যায়নি। আবার চেষ্টা করুন।'),
+            content: Text(
+              'কুরআনের আয়াত নির্বাচন করা যায়নি। আবার চেষ্টা করুন।',
+            ),
           ),
         );
       }
@@ -213,47 +249,34 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   @override
   void dispose() {
     _searchController.dispose();
-    _sectionController.dispose();
     super.dispose();
   }
 
-  void _showSection(int index, int sectionCount) {
-    if (index < 0 || index >= sectionCount || index == _sectionIndex) return;
-    setState(() => _sectionIndex = index);
-    _sectionController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  void _onSectionWheel(PointerSignalEvent event, int sectionCount) {
-    if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) return;
-    final now = DateTime.now();
-    if (_lastWheelChange != null &&
-        now.difference(_lastWheelChange!) < const Duration(milliseconds: 170)) {
+  void _onResourceTap(ContentResourceOption resource) {
+    if (!widget.multiSelect) {
+      Navigator.pop(context, resource.id);
       return;
     }
-    _lastWheelChange = now;
-    _showSection(
-      _sectionIndex + (event.scrollDelta.dy > 0 ? 1 : -1),
-      sectionCount,
-    );
+    if (widget.alreadyLinked.contains(resource.id)) return;
+    setState(() {
+      if (!_picked.remove(resource.id) && _room > 0) {
+        _picked.add(resource.id);
+      }
+    });
   }
+
+  bool get _showsCanonicalQuran =>
+      widget.onPickCanonicalQuran != null &&
+      (_openSection == null ||
+          _openSection!.slug == 'quran' ||
+          _openSection!.slug == 'all');
 
   @override
   Widget build(BuildContext context) {
     final sections = _sections(widget.resources);
-    final currentSection =
-        sections[_sectionIndex.clamp(0, sections.length - 1)];
-    final visible = _filteredResources(currentSection);
-    final grouped = currentSection.isOther
-        ? <String, List<ContentResourceOption>>{currentSection.label: visible}
-        : _groupByCategory(visible);
     final query = _searchController.text.trim().toLowerCase();
-    final selected = widget.resources
-        .where((resource) => resource.id == widget.selectedId)
-        .firstOrNull;
+    final open = _openSection;
+    final browsing = open == null && query.isEmpty;
 
     return FractionallySizedBox(
       heightFactor: .92,
@@ -273,17 +296,18 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'উপকরণ লাইব্রেরি',
                               style: TextStyle(
                                 color: SukunColors.deepTide,
@@ -292,8 +316,8 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                                 fontSize: 12,
                               ),
                             ),
-                            SizedBox(height: 5),
-                            Text(
+                            const SizedBox(height: 5),
+                            const Text(
                               'উপকরণ বাছুন',
                               style: TextStyle(
                                 color: SukunColors.nightNavy,
@@ -301,12 +325,15 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                                 fontSize: 24,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              'Public Resources-এর প্রকাশিত উপকরণ, ১১৪ সূরা ও '
-                              'রুকইয়াহ আয়াত থেকে বাছুন। রোগীর মূল নির্দেশনার '
-                              'সঙ্গে মিলিয়ে সহায়ক পাঠ বা অডিও দিন।',
-                              style: TextStyle(color: SukunColors.muted),
+                              widget.multiSelect
+                                  ? 'বিভাগ খুলে যতগুলো দরকার টিক দিন, '
+                                        'তারপর একসাথে যোগ করুন।'
+                                  : 'বিভাগ খুলে উপকরণ বাছুন। রোগীর মূল '
+                                        'নির্দেশনার সঙ্গে মিলিয়ে সহায়ক পাঠ '
+                                        'বা অডিও দিন।',
+                              style: const TextStyle(color: SukunColors.muted),
                             ),
                           ],
                         ),
@@ -321,13 +348,16 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextField(
+                    key: const Key('resource-picker-search'),
                     controller: _searchController,
                     textInputAction: TextInputAction.search,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'নাম বা বিভাগ দিয়ে খুঁজুন',
+                      hintText: open == null
+                          ? 'নাম বা বিভাগ দিয়ে খুঁজুন'
+                          : '${open.label}-এ খুঁজুন',
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchController.text.isEmpty
                           ? null
@@ -341,242 +371,346 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Text(
-                        'মূল বিভাগ',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: SukunColors.nightNavy,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        key: const Key('resource-section-previous'),
-                        tooltip: 'আগের বিভাগ',
-                        onPressed: _sectionIndex == 0
-                            ? null
-                            : () => _showSection(
-                                _sectionIndex - 1,
-                                sections.length,
-                              ),
-                        icon: const Icon(Icons.chevron_left_rounded),
-                      ),
-                      Text(
-                        '${_sectionIndex + 1}/${sections.length}',
-                        style: const TextStyle(color: SukunColors.nightNavy),
-                      ),
-                      IconButton(
-                        key: const Key('resource-section-next'),
-                        tooltip: 'পরের বিভাগ',
-                        onPressed: _sectionIndex == sections.length - 1
-                            ? null
-                            : () => _showSection(
-                                _sectionIndex + 1,
-                                sections.length,
-                              ),
-                        icon: const Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 76,
-                    child: Listener(
-                      onPointerSignal: (event) =>
-                          _onSectionWheel(event, sections.length),
-                      child: ScrollConfiguration(
-                        behavior: ScrollConfiguration.of(context).copyWith(
-                          dragDevices: {
-                            PointerDeviceKind.touch,
-                            PointerDeviceKind.mouse,
-                            PointerDeviceKind.stylus,
-                          },
-                        ),
-                        child: PageView.builder(
-                          key: const Key('resource-section-carousel'),
-                          controller: _sectionController,
-                          itemCount: sections.length,
-                          onPageChanged: (index) =>
-                              setState(() => _sectionIndex = index),
-                          itemBuilder: (context, index) => _SectionCard(
-                            key: Key(
-                              'resource-section-${sections[index].slug}',
-                            ),
-                            section: sections[index],
-                            selected: index == _sectionIndex,
-                            onTap: () => _showSection(index, sections.length),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
             const Divider(height: 1),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
-                children: [
-                  if (currentSection.slug == 'official') ...[
-                    const Card(
-                      color: SukunColors.mist,
-                      child: Padding(
-                        padding: EdgeInsets.all(14),
-                        child: Text(
-                          'সুকুন লাইফ অফিসিয়াল টেমপ্লেট · শুধুমাত্র Admin Draft। '
-                          'নির্দেশনা, দিন, সংখ্যা ও সংশ্লিষ্ট প্রকাশিত উপকরণ '
-                          'মূল প্রেসক্রিপশন থেকে যাচাই করে রোগীর জন্য অনুমোদন দিন।',
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth - 32;
+                  final columns = width >= 720
+                      ? 4
+                      : width >= 460
+                      ? 3
+                      : 2;
+                  return CustomScrollView(
+                    key: const Key('resource-picker-scroll'),
+                    slivers: [
+                      if (open != null)
+                        SliverToBoxAdapter(
+                          child: _OpenSectionBar(
+                            section: open,
+                            onBack: () => setState(() => _openSection = null),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    for (final group in officialTemplateCategories) ...[
-                      if (officialPrescriptionTemplates.any(
-                        (entry) =>
-                            entry.category == group.id &&
-                            (query.isEmpty ||
-                                entry.title.toLowerCase().contains(query) ||
-                                entry.instruction.toLowerCase().contains(
-                                  query,
-                                )),
-                      )) ...[
-                        _CategoryHeader(
-                          label: group.title,
-                          count: officialPrescriptionTemplates
-                              .where(
-                                (entry) =>
-                                    entry.category == group.id &&
-                                    (query.isEmpty ||
-                                        entry.title.toLowerCase().contains(
-                                          query,
-                                        ) ||
-                                        entry.instruction
-                                            .toLowerCase()
-                                            .contains(query)),
-                              )
-                              .length,
-                        ),
-                        const SizedBox(height: 8),
-                        for (final template
-                            in officialPrescriptionTemplates.where(
-                              (entry) =>
-                                  entry.category == group.id &&
-                                  (query.isEmpty ||
-                                      entry.title.toLowerCase().contains(
-                                        query,
-                                      ) ||
-                                      entry.instruction.toLowerCase().contains(
-                                        query,
-                                      )),
-                            )) ...[
-                          _PickerCard(
-                            key: Key('official-template-${template.id}'),
-                            selected: false,
-                            enabled: true,
-                            onTap: () => Navigator.pop(
-                              context,
-                              'official-template:${template.id}',
+                      if (!widget.multiSelect &&
+                          (browsing ||
+                              (open != null && open.slug != 'official')))
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: _ClearResourceTile(
+                              selected: widget.selectedId.isEmpty,
                             ),
-                            icon: Icons.assignment_turned_in_outlined,
-                            title: template.title,
-                            subtitle: template.instruction,
-                            trailing: const Icon(Icons.chevron_right_rounded),
                           ),
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                    ],
-                  ] else ...[
-                    if (!(widget.onPickCanonicalQuran != null &&
-                        (currentSection.slug == 'quran' ||
-                            currentSection.slug == 'all'))) ...[
-                      _ClearResourceTile(selected: selected == null),
-                      const SizedBox(height: 16),
-                    ],
-                    if (widget.onPickCanonicalQuran != null &&
-                        (currentSection.slug == 'quran' ||
-                            currentSection.slug == 'all')) ...[
-                      const _CategoryHeader(
-                        label: 'কুরআনের ১১৪ সূরা ও সব আয়াত',
-                        count: 114,
-                      ),
-                      const SizedBox(height: 8),
-                      _PickerCard(
-                        key: const Key('routine-quran-ayah-entry'),
-                        selected: false,
-                        enabled: !_choosingCanonical,
-                        onTap: () => _pickCanonical(false),
-                        icon: Icons.format_list_numbered_rounded,
-                        title: '১১৪ সূরা থেকে নির্দিষ্ট আয়াত বাছুন',
-                        subtitle: 'সূরা খুলে আরবি আয়াত ও উপলব্ধ বাংলা অর্থ দেখে রুটিনে যুক্ত করুন',
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                      ),
-                      const SizedBox(height: 10),
-                      _PickerCard(
-                        key: const Key('routine-quran-surah-entry'),
-                        selected: false,
-                        enabled: !_choosingCanonical,
-                        onTap: () => _pickCanonical(true),
-                        icon: Icons.menu_book_rounded,
-                        title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
-                        subtitle:
-                            'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                      ),
-                      const SizedBox(height: 16),
-                      _ClearResourceTile(selected: selected == null),
-                      const SizedBox(height: 16),
-                    ],
-                    if (currentSection.slug == 'quran' &&
-                        widget.onPickCanonicalQuran == null &&
-                        !widget.resources.any(
-                          (item) => item.canonicalSurahNumber != null,
-                        )) ...[
-                      const _EmptyQuranResources(),
-                      const SizedBox(height: 12),
-                    ],
-                    if (visible.isEmpty &&
-                        (widget.onPickCanonicalQuran == null ||
-                            (currentSection.slug != 'quran' &&
-                                currentSection.slug != 'all')))
-                      const _EmptyResources()
-                    else
-                      for (final entry in grouped.entries) ...[
-                        _CategoryHeader(
-                          label: entry.key,
-                          count: entry.value.length,
                         ),
-                        const SizedBox(height: 8),
-                        for (final resource in entry.value) ...[
-                          _ResourceTile(
-                            resource: resource,
-                            selected: resource.id == widget.selectedId,
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        const SizedBox(height: 8),
-                      ],
-                  ],
-                ],
+                      if (_showsCanonicalQuran && query.isEmpty)
+                        ..._canonicalQuranSlivers(),
+                      if (browsing)
+                        ..._sectionGridSlivers(sections, columns)
+                      else if (open?.slug == 'official')
+                        ..._officialTemplateSlivers(query, columns)
+                      else
+                        ..._resourceGridSlivers(open, query, columns),
+                      const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                    ],
+                  );
+                },
               ),
             ),
+            if (widget.multiSelect) _multiSelectBar(context),
           ],
         ),
       ),
     );
   }
 
-  List<ContentResourceOption> _filteredResources(_PickerSection section) {
-    final query = _searchController.text.trim().toLowerCase();
-    return widget.resources
+  Widget _multiSelectBar(BuildContext context) => Material(
+    color: Colors.white,
+    child: SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: SukunColors.border)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _picked.isEmpty
+                    ? 'কিছু বাছাই হয়নি'
+                    : '${_bn(_picked.length)}টি বাছাই'
+                          '${_room <= 0 ? ' · আর যোগ করা যাবে না' : ''}',
+                style: const TextStyle(
+                  color: SukunColors.nightNavy,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (_picked.isNotEmpty)
+              TextButton(
+                onPressed: () => setState(_picked.clear),
+                child: const Text('মুছুন'),
+              ),
+            const SizedBox(width: 6),
+            FilledButton.icon(
+              key: const Key('resource-picker-add'),
+              onPressed: _picked.isEmpty
+                  ? null
+                  : () => Navigator.pop(context, List<String>.of(_picked)),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(
+                _picked.isEmpty
+                    ? 'যোগ করুন'
+                    : '${_bn(_picked.length)}টি যোগ করুন',
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  List<Widget> _canonicalQuranSlivers() => [
+    SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      sliver: SliverList.list(
+        children: [
+          const _CategoryHeader(
+            label: 'কুরআনের ১১৪ সূরা ও সব আয়াত',
+            count: 114,
+          ),
+          const SizedBox(height: 8),
+          _PickerCard(
+            key: const Key('routine-quran-ayah-entry'),
+            selected: false,
+            enabled: !_choosingCanonical,
+            onTap: () => _pickCanonical(false),
+            icon: Icons.format_list_numbered_rounded,
+            title: '১১৪ সূরা থেকে নির্দিষ্ট আয়াত বাছুন',
+            subtitle: 'সূরা খুলে আরবি আয়াত ও উপলব্ধ বাংলা অর্থ দেখে রুটিনে যুক্ত করুন',
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+          const SizedBox(height: 10),
+          _PickerCard(
+            key: const Key('routine-quran-surah-entry'),
+            selected: false,
+            enabled: !_choosingCanonical,
+            onTap: () => _pickCanonical(true),
+            icon: Icons.menu_book_rounded,
+            title: '১১৪ সূরা থেকে সম্পূর্ণ সূরা বাছুন',
+            subtitle: 'কুরআনের সম্পূর্ণ সূরাটি রুটিনের সঙ্গে যুক্ত করুন',
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+    ),
+  ];
+
+  List<Widget> _sectionGridSlivers(
+    List<_PickerSection> sections,
+    int columns,
+  ) => [
+    const SliverPadding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+      sliver: SliverToBoxAdapter(
+        child: Text(
+          'বিষয় অনুযায়ী দেখুন',
+          style: TextStyle(
+            color: SukunColors.nightNavy,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+      ),
+    ),
+    SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverGrid.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          mainAxisExtent: 140,
+        ),
+        itemCount: sections.length,
+        itemBuilder: (context, index) {
+          final section = sections[index];
+          return _SectionTile(
+            key: Key('resource-section-${section.slug}'),
+            section: section,
+            picked: widget.multiSelect
+                ? _picked
+                      .where(
+                        (id) => widget.resources.any(
+                          (r) => r.id == id && section.matches(r),
+                        ),
+                      )
+                      .length
+                : 0,
+            onTap: () => setState(() => _openSection = section),
+          );
+        },
+      ),
+    ),
+  ];
+
+  List<Widget> _officialTemplateSlivers(String query, int columns) {
+    final templates = officialPrescriptionTemplates
+        .where(
+          (entry) =>
+              query.isEmpty ||
+              entry.title.toLowerCase().contains(query) ||
+              entry.instruction.toLowerCase().contains(query),
+        )
+        .toList(growable: false);
+    return [
+      const SliverPadding(
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+        sliver: SliverToBoxAdapter(
+          child: Card(
+            color: SukunColors.mist,
+            child: Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                'সুকুন লাইফ অফিসিয়াল টেমপ্লেট · শুধুমাত্র Admin Draft। '
+                'নির্দেশনা, দিন, সংখ্যা ও সংশ্লিষ্ট প্রকাশিত উপকরণ '
+                'মূল প্রেসক্রিপশন থেকে যাচাই করে রোগীর জন্য অনুমোদন দিন।',
+              ),
+            ),
+          ),
+        ),
+      ),
+      for (final group in officialTemplateCategories)
+        if (templates.any((t) => t.category == group.id)) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: _CategoryHeader(
+                label: group.title,
+                count: templates.where((t) => t.category == group.id).length,
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverGrid.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                mainAxisExtent: 156,
+              ),
+              itemCount: templates.where((t) => t.category == group.id).length,
+              itemBuilder: (context, index) {
+                final template = templates
+                    .where((t) => t.category == group.id)
+                    .elementAt(index);
+                return _ItemTile(
+                  key: Key('official-template-${template.id}'),
+                  icon: Icons.assignment_turned_in_outlined,
+                  title: template.title,
+                  subtitle: template.instruction,
+                  enabled: true,
+                  state: _TileState.idle,
+                  onTap: () => Navigator.pop(
+                    context,
+                    'official-template:${template.id}',
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+    ];
+  }
+
+  List<Widget> _resourceGridSlivers(
+    _PickerSection? section,
+    String query,
+    int columns,
+  ) {
+    final visible = widget.resources
         .where((resource) {
-          if (!section.matches(resource)) return false;
+          if (section != null && !section.matches(resource)) return false;
           if (query.isEmpty) return true;
           return resourceMatchesSearch(resource, query);
         })
         .toList(growable: false);
+    final grouped = section?.isOther == true
+        ? <String, List<ContentResourceOption>>{section!.label: visible}
+        : _groupByCategory(visible);
+    if (section?.slug == 'quran' &&
+        widget.onPickCanonicalQuran == null &&
+        !widget.resources.any((item) => item.canonicalSurahNumber != null)) {
+      return const [
+        SliverPadding(
+          padding: EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(child: _EmptyQuranResources()),
+        ),
+      ];
+    }
+    if (visible.isEmpty) {
+      return const [SliverToBoxAdapter(child: _EmptyResources())];
+    }
+    return [
+      for (final entry in grouped.entries) ...[
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: _CategoryHeader(label: entry.key, count: entry.value.length),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 148,
+            ),
+            itemCount: entry.value.length,
+            itemBuilder: (context, index) {
+              final resource = entry.value[index];
+              final linked = widget.alreadyLinked.contains(resource.id);
+              final picked = _picked.contains(resource.id);
+              final state = linked
+                  ? _TileState.linked
+                  : picked || resource.id == widget.selectedId
+                  ? _TileState.selected
+                  : _TileState.idle;
+              final full = widget.multiSelect && _room <= 0 && !picked;
+              return _ItemTile(
+                key: Key('resource-item-${resource.id}'),
+                icon: _iconForType(resource.type),
+                title: resource.displayTitle,
+                subtitle: !resource.isLinkable
+                    ? _unavailableReason(resource)
+                    : resource.isEditorialRuqyahExcerpt
+                    ? 'সম্পাদিত পাঠ · পূর্ণ যাচাইকৃত আয়াত নয়'
+                    : _displayType(resource.type),
+                meta: [
+                  if (resource.status != 'published')
+                    _displayStatus(resource.status),
+                  if (resource.visibility != 'public')
+                    _displayVisibility(resource.visibility),
+                ],
+                enabled: resource.isLinkable && !linked && !full,
+                locked: !resource.isLinkable,
+                checkbox: widget.multiSelect,
+                state: state,
+                onTap: resource.isLinkable
+                    ? () => _onResourceTap(resource)
+                    : null,
+              );
+            },
+          ),
+        ),
+      ],
+    ];
   }
 
   Map<String, List<ContentResourceOption>> _groupByCategory(
@@ -599,11 +733,11 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   List<_PickerSection> _sections(List<ContentResourceOption> resources) {
     final sections = <_PickerSection>[
       if (widget.includeOfficialTemplates)
-        const _PickerSection(
+        _PickerSection(
           slug: 'official',
           label: 'Sukun Life Official Templates',
           icon: Icons.verified_outlined,
-          count: 51,
+          count: officialPrescriptionTemplates.length,
         ),
       _PickerSection(
         slug: 'all',
@@ -642,6 +776,11 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   }
 }
 
+String _bn(int value) {
+  const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return '$value'.split('').map((d) => digits[int.parse(d)]).join();
+}
+
 class _PickerSection {
   const _PickerSection({
     required this.slug,
@@ -667,56 +806,261 @@ class _PickerSection {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
+/// A library-style section card: icon, name and how many items it holds.
+class _SectionTile extends StatelessWidget {
+  const _SectionTile({
     super.key,
     required this.section,
-    required this.selected,
+    required this.picked,
     required this.onTap,
   });
 
   final _PickerSection section;
-  final bool selected;
+  final int picked;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-      child: Material(
-        color: selected ? SukunColors.mist : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected ? SukunColors.sukunBlue : SukunColors.border,
-                width: selected ? 1.5 : 1,
-              ),
+    final active = picked > 0;
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: active ? SukunColors.sukunBlue : SukunColors.border,
+              width: active ? 1.5 : 1,
             ),
-            child: Row(
-              children: [
-                Icon(section.icon, color: SukunColors.deepTide, size: 22),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    section.label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: SukunColors.nightNavy,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: SukunColors.mist,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(section.icon, color: SukunColors.deepTide),
+                    ),
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: Text(
+                        section.label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: SukunColors.nightNavy,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_bn(section.count)}টি',
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(color: SukunColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (active)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SukunColors.sukunBlue,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: Text(
+                      _bn(picked),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OpenSectionBar extends StatelessWidget {
+  const _OpenSectionBar({required this.section, required this.onBack});
+
+  final _PickerSection section;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 10, 16, 0),
+    child: Row(
+      children: [
+        IconButton(
+          key: const Key('resource-section-back'),
+          tooltip: 'সব বিভাগ',
+          onPressed: onBack,
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: SukunColors.nightNavy,
+          ),
+        ),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: SukunColors.mist,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(section.icon, color: SukunColors.deepTide, size: 19),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            section.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: SukunColors.nightNavy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Text(
+          '${_bn(section.count)}টি',
+          style: const TextStyle(color: SukunColors.muted),
+        ),
+      ],
+    ),
+  );
+}
+
+enum _TileState { idle, selected, linked }
+
+/// One library item in the grid. In multi-select mode it carries a round
+/// check in the corner, the same tap that reading the library uses.
+class _ItemTile extends StatelessWidget {
+  const _ItemTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.enabled,
+    required this.state,
+    required this.onTap,
+    this.meta = const [],
+    this.locked = false,
+    this.checkbox = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<String> meta;
+  final bool enabled;
+  final bool locked;
+  final bool checkbox;
+  final _TileState state;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlighted = state != _TileState.idle;
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: highlighted,
+      enabled: enabled,
+      child: Material(
+        color: highlighted ? SukunColors.mist : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            padding: const EdgeInsets.fromLTRB(12, 12, 10, 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: highlighted ? SukunColors.sukunBlue : SukunColors.border,
+                width: highlighted ? 1.5 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: highlighted ? Colors.white : SukunColors.mist,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: SukunColors.deepTide, size: 20),
+                    ),
+                    const Spacer(),
+                    if (locked)
+                      const Icon(
+                        Icons.lock_outline_rounded,
+                        color: SukunColors.muted,
+                        size: 20,
+                      )
+                    else if (state == _TileState.linked)
+                      const _LinkedMark()
+                    else if (checkbox || state == _TileState.selected)
+                      _CheckMark(checked: state == _TileState.selected),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: SukunColors.nightNavy,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Text(
-                  '${section.count}',
-                  style: const TextStyle(color: SukunColors.nightNavy),
+                  state == _TileState.linked
+                      ? 'আগেই যুক্ত আছে'
+                      : [
+                          subtitle,
+                          ...meta,
+                        ].where((s) => s.isNotEmpty).join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SukunColors.muted,
+                    height: 1.25,
+                  ),
                 ),
               ],
             ),
@@ -725,6 +1069,49 @@ class _SectionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CheckMark extends StatelessWidget {
+  const _CheckMark({required this.checked});
+
+  final bool checked;
+
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 150),
+    width: 24,
+    height: 24,
+    decoration: BoxDecoration(
+      color: checked ? SukunColors.sukunBlue : Colors.white,
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: checked ? SukunColors.sukunBlue : SukunColors.border,
+        width: 1.5,
+      ),
+    ),
+    child: checked
+        ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+        : null,
+  );
+}
+
+class _LinkedMark extends StatelessWidget {
+  const _LinkedMark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 24,
+    height: 24,
+    decoration: const BoxDecoration(
+      color: SukunColors.softBlue,
+      shape: BoxShape.circle,
+    ),
+    child: const Icon(
+      Icons.link_rounded,
+      size: 15,
+      color: SukunColors.deepTide,
+    ),
+  );
 }
 
 class _CategoryHeader extends StatelessWidget {
@@ -774,42 +1161,6 @@ class _ClearResourceTile extends StatelessWidget {
   );
 }
 
-class _ResourceTile extends StatelessWidget {
-  const _ResourceTile({required this.resource, required this.selected});
-
-  final ContentResourceOption resource;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PickerCard(
-      selected: selected,
-      enabled: resource.isLinkable,
-      onTap: resource.isLinkable
-          ? () => Navigator.pop(context, resource.id)
-          : null,
-      icon: _iconForType(resource.type),
-      title: resource.displayTitle,
-      subtitle: !resource.isLinkable
-          ? _unavailableReason(resource)
-          : resource.isEditorialRuqyahExcerpt
-          ? 'সম্পাদিত পাঠ · পূর্ণ যাচাইকৃত আয়াত নয়'
-          : '',
-      meta: [
-        if (resource.status != 'published')
-          _MetaBadge(label: _displayStatus(resource.status)),
-        if (resource.visibility != 'public')
-          _MetaBadge(label: _displayVisibility(resource.visibility)),
-      ],
-      trailing: selected
-          ? const _SelectedMark()
-          : resource.isLinkable
-          ? const Icon(Icons.chevron_right_rounded, color: SukunColors.muted)
-          : const Icon(Icons.lock_outline_rounded, color: SukunColors.muted),
-    );
-  }
-}
-
 class _PickerCard extends StatelessWidget {
   const _PickerCard({
     super.key,
@@ -819,7 +1170,6 @@ class _PickerCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    this.meta = const [],
     this.trailing,
   });
 
@@ -829,7 +1179,6 @@ class _PickerCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final List<Widget> meta;
   final Widget? trailing;
 
   @override
@@ -889,10 +1238,6 @@ class _PickerCard extends StatelessWidget {
                               ?.copyWith(color: SukunColors.muted),
                         ),
                       ],
-                      if (meta.isNotEmpty) ...[
-                        const SizedBox(height: 9),
-                        Wrap(spacing: 6, runSpacing: 6, children: meta),
-                      ],
                     ],
                   ),
                 ),
@@ -905,26 +1250,6 @@ class _PickerCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MetaBadge extends StatelessWidget {
-  const _MetaBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF1F5F7),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Text(
-      label,
-      style: Theme.of(context).textTheme.labelSmall
-          ?.copyWith(color: SukunColors.muted, fontWeight: FontWeight.w600),
-    ),
-  );
 }
 
 class _SelectedMark extends StatelessWidget {

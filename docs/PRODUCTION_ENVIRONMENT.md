@@ -13,6 +13,23 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-12: admin-set routines listed first (Production)
+
+- Applied `supabase/migrations/20261112090000_my_admin_assigned_routines.sql`
+  as remote version `20261112211036` (`my_admin_assigned_routines_20261112`):
+  one read-only SECURITY DEFINER function `my_admin_assigned_routine_ids()`
+  that returns only the caller's own routine ids an admin created (from the
+  existing `personal_routine.delegated_*` audit actions). No table, RLS or
+  data changes; no audit detail is exposed.
+- Verified before applying: the function did not exist, the columns it reads
+  exist, and both admin routine functions log the matched actions. Dry run in
+  a rolled-back transaction: a user saw only their own admin-set routine (not
+  their self-made one, not another user's); `anon` cannot execute. After
+  applying: function present, `anon` cannot execute, `authenticated` can, no
+  dry-run rows left. Production had no admin-set routines yet, so the list is
+  empty until an admin imports one. The client falls back to an empty list if
+  the call fails.
+
 ### 2026-11-10: default reminder name per care template (Production)
 
 - Applied `supabase/migrations/20261110150000_care_template_notification_title.sql`

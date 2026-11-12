@@ -13,11 +13,8 @@ void main() {
       expect(routineHubInitialTab(initialTab: 'today'), RoutineHubTab.today);
     });
 
-    test('?tab=progress now opens the Progress tab', () {
-      expect(
-        routineHubInitialTab(initialTab: 'progress'),
-        RoutineHubTab.progress,
-      );
+    test('?tab=progress opens Today, where progress now lives', () {
+      expect(routineHubInitialTab(initialTab: 'progress'), RoutineHubTab.today);
     });
 
     test('old ?tab=assigned links land on My Routines', () {
@@ -35,7 +32,7 @@ void main() {
     });
   });
 
-  testWidgets('tab switch shows Today, My Routines and Progress', (
+  testWidgets('hub has two tabs: Today\'s amal and My Routines', (
     tester,
   ) async {
     var selected = RoutineHubTab.today;
@@ -51,12 +48,51 @@ void main() {
         ),
       ),
     );
-    expect(find.text('আজ'), findsOneWidget);
+    expect(RoutineHubTab.values, [
+      RoutineHubTab.today,
+      RoutineHubTab.myRoutines,
+    ]);
+    expect(find.text('আজকের আমল'), findsOneWidget);
     expect(find.text('আমার রুটিন'), findsOneWidget);
-    expect(find.text('অগ্রগতি'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('routine-hub-tab-progress')));
+    expect(find.text('অগ্রগতি'), findsNothing);
+    // Today's amal sits on the left.
+    expect(
+      tester.getCenter(find.text('আজকের আমল')).dx,
+      lessThan(tester.getCenter(find.text('আমার রুটিন')).dx),
+    );
+    await tester.tap(find.byKey(const Key('routine-hub-tab-myRoutines')));
     await tester.pump();
-    expect(selected, RoutineHubTab.progress);
+    expect(selected, RoutineHubTab.myRoutines);
+  });
+
+  test('admin-set routines come first, active before paused', () {
+    final ordered = orderRoutinesForHub(
+      const [
+        {'id': 'own-paused', 'is_active': false},
+        {'id': 'own-1', 'is_active': true},
+        {'id': 'admin-paused', 'is_active': false},
+        {'id': 'admin-1', 'is_active': true},
+      ],
+      const {'admin-1', 'admin-paused'},
+    );
+    expect(ordered.assigned.map((r) => r['id']), ['admin-1', 'admin-paused']);
+    expect(ordered.own.map((r) => r['id']), ['own-1', 'own-paused']);
+  });
+
+  test('streak counts back from today, or from yesterday if not yet done', () {
+    final today = DateTime(2026, 11, 12);
+    expect(
+      routineStreakDays({'2026-11-12', '2026-11-11', '2026-11-10'}, today),
+      3,
+    );
+    expect(routineStreakDays({'2026-11-11', '2026-11-10'}, today), 2);
+    expect(routineStreakDays({'2026-11-10'}, today), 0);
+    expect(routineStreakDays(const {}, today), 0);
+    // Month boundary.
+    expect(
+      routineStreakDays({'2026-12-01', '2026-11-30'}, DateTime(2026, 12, 1)),
+      2,
+    );
   });
 
   test('schedules and outcomes read as Bangla, never raw values', () {
