@@ -13,6 +13,21 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-13: raqi staff role (Production)
+
+- Applied `20261113115900_app_role_raqi.sql` as remote version
+  `20261112223902` and `20261113120000_raqi_staff_role.sql` as
+  `20261112224031`. See `docs/RAQI_STAFF_ROLE.md`.
+- Verified before applying in a rolled-back transaction on Production (after
+  the enum value was committed): a Gmail added by the Super Admin became a
+  raqi on first sign-in, listed the 4 patients and read the 51 templates,
+  and got `42501` for saving a template and adding staff; a member got
+  `42501`. After applying: 18 policies use `private.is_care_staff()`,
+  `staff_members` has RLS on and 0 rows, `anon` cannot run the new RPCs.
+- Deployed `send-notification` **v5** (was v4, identical to the repository):
+  only the role check changed to Super Admin or raqi; `verify_jwt` stays off
+  as before (the function checks the bearer token itself).
+
 ### 2026-11-13: ghusl calendar and detox days (Production)
 
 - Applied `supabase/migrations/20261113090000_ghusl_calendar_detox_days.sql` as

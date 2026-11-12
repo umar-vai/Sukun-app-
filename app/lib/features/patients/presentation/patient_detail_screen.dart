@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
@@ -540,18 +541,21 @@ class _PatientActionBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              key: const Key('patient-detail-add-prescription'),
-              onPressed: onAddPrescription,
-              icon: const Icon(Icons.note_add_outlined),
-              label: const FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text('প্রেসক্রিপশন'),
+          // Prescriptions are the main admin's; a raqi sets reminders only.
+          if (!isRaqiSession(context)) ...[
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('patient-detail-add-prescription'),
+                onPressed: onAddPrescription,
+                icon: const Icon(Icons.note_add_outlined),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('প্রেসক্রিপশন'),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
+            const SizedBox(width: 10),
+          ],
           Expanded(
             flex: 2,
             child: FilledButton.icon(

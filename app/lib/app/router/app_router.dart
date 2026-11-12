@@ -49,6 +49,7 @@ import 'package:sukun_life/features/patients/presentation/patient_detail_screen.
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/patients/presentation/admin_all_users_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_templates_admin_screen.dart';
+import 'package:sukun_life/features/patients/presentation/admin_staff_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
@@ -107,14 +108,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               isSharedUserRoute)) {
         return '/login';
       }
-      if (isAdminRoute && !session.isSuperAdmin) {
+      if (isAdminRoute && !session.isStaff) {
         return session.isPatient ? '/patient/home' : '/';
       }
+      if (isAdminRoute && session.isRaqi && isSuperAdminOnlyPath(path)) {
+        return '/admin/dashboard';
+      }
       if (isPatientRoute && !session.isPatient) {
-        return session.isSuperAdmin ? '/admin/dashboard' : '/';
+        return session.isStaff ? '/admin/dashboard' : '/';
       }
       if (isSharedUserRoute && !session.isMember && !session.isPatient) {
-        return session.isSuperAdmin ? '/admin/dashboard' : '/login';
+        return session.isStaff ? '/admin/dashboard' : '/login';
       }
       if (session.isPatient && session.requiresCredentialChange) {
         return isCredentialRoute ? null : '/patient/change-password';
@@ -125,15 +129,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isPatient) {
         return '/patient/home';
       }
-      if ((isLoginRoute || isSignupRoute || isOtpRoute) &&
-          session.isSuperAdmin) {
+      if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isStaff) {
         return '/admin/dashboard';
       }
       if ((isLoginRoute || isSignupRoute || isOtpRoute) && session.isMember) {
         return '/';
       }
       if (path == '/' && session.isPatient) return '/patient/home';
-      if (path == '/' && session.isSuperAdmin) return '/admin/dashboard';
+      if (path == '/' && session.isStaff) return '/admin/dashboard';
       return null;
     },
     routes: [
@@ -430,6 +433,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/admin/staff',
+            builder: (context, state) => const AdminStaffScreen(),
+          ),
+          GoRoute(
             path: '/admin/care-templates',
             builder: (context, state) => const CareTemplatesAdminScreen(),
           ),
@@ -600,7 +607,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => context.go(
-              session?.isSuperAdmin == true
+              session?.isStaff == true
                   ? '/admin/dashboard'
                   : session?.isPatient == true
                   ? '/patient/home'
@@ -619,7 +626,20 @@ AppSession? _patientSession(AppSession? session) =>
     session?.isPatient == true ? session : null;
 
 AppSession? _adminSession(AppSession? session) =>
-    session?.isSuperAdmin == true ? session : null;
+    session?.isStaff == true ? session : null;
+
+/// Admin areas only the main admin may open; a raqi is sent home. The
+/// database refuses these actions for a raqi as well.
+bool isSuperAdminOnlyPath(String path) =>
+    path.startsWith('/admin/content') ||
+    path.startsWith('/admin/library') ||
+    path.startsWith('/admin/care-templates') ||
+    path.startsWith('/admin/routine-templates') ||
+    path.startsWith('/admin/announcements') ||
+    path.startsWith('/admin/staff') ||
+    path == '/admin/patients/new' ||
+    path.contains('/prescriptions/') ||
+    path.endsWith('/actions/suggest');
 
 class _SessionLanding extends ConsumerWidget {
   const _SessionLanding({required this.sessionState});

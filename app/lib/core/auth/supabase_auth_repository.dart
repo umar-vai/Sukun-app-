@@ -63,6 +63,11 @@ final class SupabaseAuthRepository implements AuthRepository {
         .select('display_name,requires_credential_change')
         .eq('id', userId)
         .maybeSingle();
+    // A Gmail/phone the main admin added as a raqi becomes one on sign-in.
+    // Failure is harmless: roles are still read from the server below.
+    try {
+      await _client.rpc('claim_staff_membership');
+    } catch (_) {}
     final roleRows = await _client
         .from('user_roles')
         .select('role')
@@ -73,6 +78,8 @@ final class SupabaseAuthRepository implements AuthRepository {
 
     final role = roles.contains(UserRole.superAdmin)
         ? UserRole.superAdmin
+        : roles.contains(UserRole.raqi)
+        ? UserRole.raqi
         : roles.contains(UserRole.patient)
         ? UserRole.patient
         : roles.contains(UserRole.member)

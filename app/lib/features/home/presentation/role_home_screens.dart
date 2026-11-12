@@ -5,6 +5,7 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
+import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/home/presentation/public_welcome_screen.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
@@ -66,6 +67,8 @@ class AdminHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
     final textTheme = Theme.of(context).textTheme;
+    // A raqi sees patient work only; the database enforces the same.
+    final raqi = isRaqiSession(context);
     return AdminScaffold(
       title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
       selectedIndex: 0,
@@ -107,7 +110,7 @@ class AdminHomeScreen extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              'অ্যাডমিন',
+                              raqi ? 'রাকি' : 'অ্যাডমিন',
                               style: textTheme.labelMedium?.copyWith(
                                 color: const Color(0xFF9FD6F0),
                                 fontWeight: FontWeight.w700,
@@ -150,11 +153,12 @@ class AdminHomeScreen extends StatelessWidget {
                       primary: true,
                       onTap: () => context.go('/admin/users'),
                     ),
-                    _QuickTile(
-                      icon: Icons.person_add_alt_1_outlined,
-                      label: copy?.addPatient ?? 'নতুন রোগী যোগ করুন',
-                      onTap: () => context.go('/admin/patients/new'),
-                    ),
+                    if (!raqi)
+                      _QuickTile(
+                        icon: Icons.person_add_alt_1_outlined,
+                        label: copy?.addPatient ?? 'নতুন রোগী যোগ করুন',
+                        onTap: () => context.go('/admin/patients/new'),
+                      ),
                     _QuickTile(
                       icon: Icons.alarm_add_rounded,
                       label: 'রুটিন ও অগ্রগতি',
@@ -177,39 +181,46 @@ class AdminHomeScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: SukunSpace.sectionLarge),
-              SukunSectionHeader(
-                title: 'পরিচালনা',
-                action: TextButton(
-                  onPressed: () => context.push('/resources'),
-                  child: const Text('সবার লাইব্রেরি'),
+              if (!raqi) ...[
+                const SizedBox(height: SukunSpace.sectionLarge),
+                SukunSectionHeader(
+                  title: 'পরিচালনা',
+                  action: TextButton(
+                    onPressed: () => context.push('/resources'),
+                    child: const Text('সবার লাইব্রেরি'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: SukunSpace.md),
-              _AdminLinkGroup(
-                children: [
-                  _AdminLinkRow(
-                    icon: Icons.fact_check_outlined,
-                    title: 'সুকুন অফিসিয়াল টেমপ্লেট',
-                    onTap: () => context.go('/admin/care-templates'),
-                  ),
-                  _AdminLinkRow(
-                    icon: Icons.edit_note_outlined,
-                    title: copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
-                    onTap: () => context.go('/admin/content'),
-                  ),
-                  _AdminLinkRow(
-                    icon: Icons.playlist_add_check_rounded,
-                    title: 'রুটিন টেমপ্লেট',
-                    onTap: () => context.go('/admin/routine-templates'),
-                  ),
-                  _AdminLinkRow(
-                    icon: Icons.campaign_outlined,
-                    title: 'সবার জন্য নোটিশ',
-                    onTap: () => context.go('/admin/announcements'),
-                  ),
-                ],
-              ),
+                const SizedBox(height: SukunSpace.md),
+                _AdminLinkGroup(
+                  children: [
+                    _AdminLinkRow(
+                      icon: Icons.fact_check_outlined,
+                      title: 'সুকুন অফিসিয়াল টেমপ্লেট',
+                      onTap: () => context.go('/admin/care-templates'),
+                    ),
+                    _AdminLinkRow(
+                      icon: Icons.edit_note_outlined,
+                      title: copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
+                      onTap: () => context.go('/admin/content'),
+                    ),
+                    _AdminLinkRow(
+                      icon: Icons.playlist_add_check_rounded,
+                      title: 'রুটিন টেমপ্লেট',
+                      onTap: () => context.go('/admin/routine-templates'),
+                    ),
+                    _AdminLinkRow(
+                      icon: Icons.campaign_outlined,
+                      title: 'সবার জন্য নোটিশ',
+                      onTap: () => context.go('/admin/announcements'),
+                    ),
+                    _AdminLinkRow(
+                      icon: Icons.groups_2_outlined,
+                      title: 'রাকি ও টিম',
+                      onTap: () => context.push('/admin/staff'),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: SukunSpace.sectionLarge),
               const SukunSectionHeader(title: 'টুলস'),
               const SizedBox(height: SukunSpace.md),

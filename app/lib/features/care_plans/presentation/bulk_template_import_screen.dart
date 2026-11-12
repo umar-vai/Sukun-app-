@@ -10,6 +10,7 @@ import 'package:sukun_life/features/care_plans/domain/official_prescription_temp
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/care_plans/presentation/care_template_editor_screen.dart';
 import 'package:sukun_life/features/care_plans/presentation/ghusl_calendar_screen.dart';
+import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:sukun_life/features/care_plans/presentation/resource_picker_sheet.dart';
 
 /// Opens the bulk picker and returns the selected rows, or null if cancelled.
@@ -37,7 +38,8 @@ Future<List<BulkImportItem>?> showBulkTemplateImport(
         showDuration: showDuration,
         confirmLabel: confirmLabel,
         templates: templates,
-        saveTemplate: saveTemplate,
+        // Only the main admin edits official templates; a raqi imports them.
+        saveTemplate: isRaqiSession(context) ? null : saveTemplate,
       ),
     ),
   );

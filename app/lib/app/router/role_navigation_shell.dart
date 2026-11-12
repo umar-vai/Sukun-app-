@@ -25,16 +25,17 @@ class RoleNavigationShell extends ConsumerWidget {
     if (!showsNavigationShell(path)) return child;
     final fullPlayerOpen = ref.watch(fullAudioPlayerOpenProvider);
 
-    final admin = session?.isSuperAdmin == true;
+    final admin = session?.isStaff == true;
+    final raqi = session?.isRaqi == true;
     final signedInUser =
         session?.isMember == true || session?.isPatient == true;
     final destinations = admin
-        ? _adminDestinations
+        ? (raqi ? _adminDestinations.take(2).toList() : _adminDestinations)
         : signedInUser
         ? sharedUserDestinations
         : _publicDestinations;
     final routes = admin
-        ? _adminRoutes
+        ? (raqi ? _adminRoutes.take(2).toList() : _adminRoutes)
         : signedInUser
         ? sharedUserRoutes
         : _publicRoutes;
@@ -137,7 +138,7 @@ String navigationParent(String path, AppSession? session) {
   if (path == '/prayer-times/settings') return '/prayer-times';
   if (path == '/settings/bengali-font') return '/settings/appearance';
   if (path.startsWith('/settings/')) {
-    return session?.isSuperAdmin == true ? '/admin/dashboard' : '/account';
+    return session?.isStaff == true ? '/admin/dashboard' : '/account';
   }
   if (path.startsWith('/admin/announcements/')) return '/admin/announcements';
   if (path.startsWith('/admin/users/')) return '/admin/users';
@@ -159,13 +160,13 @@ String navigationParent(String path, AppSession? session) {
     return session?.isPatient == true ? '/patient/resources' : '/resources';
   }
   if (path.startsWith('/patient/resources/')) return '/patient/resources';
-  if (session?.isSuperAdmin == true) return '/admin/dashboard';
+  if (session?.isStaff == true) return '/admin/dashboard';
   if (session?.isPatient == true) return '/patient/home';
   return '/';
 }
 
 int navigationIndex(String path, AppSession? session) {
-  if (session?.isSuperAdmin == true) {
+  if (session?.isStaff == true) {
     if (path.startsWith('/admin/patients') ||
         path.startsWith('/admin/users') ||
         path.startsWith('/admin/user-routines')) {
