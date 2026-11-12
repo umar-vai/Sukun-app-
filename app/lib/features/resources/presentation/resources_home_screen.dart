@@ -152,15 +152,6 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             sliver: SliverList.list(
               children: [
-                SukunPageIntro(
-                  title: 'ইসলামিক পাঠ ও অডিও',
-                  subtitle: 'কুরআন, হাদিস, দোয়া ও রুকইয়াহ',
-                  trailing: const SukunIconBadge(
-                    icon: Icons.auto_stories_outlined,
-                    size: 54,
-                  ),
-                ),
-                const SizedBox(height: 12),
                 // Admin tools stay available but quiet, so the library reads
                 // the same for staff as for patients.
                 if (ref.watch(appSessionProvider).value?.isSuperAdmin == true)
@@ -247,7 +238,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        mainAxisExtent: columns == 4 ? 118 : 124,
+                        mainAxisExtent: 68,
                       ),
                       itemCount: resourceSections.length,
                       itemBuilder: (context, index) {
@@ -343,20 +334,20 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SukunSurface(
       tone: SukunSurfaceTone.white,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          SukunIconBadge(icon: section.icon, size: 40),
-          const SizedBox(height: 8),
-          Text(
-            section.titleBn,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: SukunTypography.banglaBody(
-              textStyle: Theme.of(context).textTheme.titleSmall,
+          SukunIconBadge(icon: section.icon, size: 42),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              section.titleBn,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: SukunTypography.banglaBody(
+                textStyle: Theme.of(context).textTheme.titleSmall,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -460,19 +451,24 @@ class _QuickLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SukunSurface(
     radius: SukunRadius.tile,
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+    tone: SukunSurfaceTone.soft,
+    showBorder: false,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     onTap: onTap,
-    child: Column(
+    child: Row(
       children: [
-        SukunIconBadge(icon: icon, size: 36),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
+        Icon(icon, size: 24, color: SukunColors.deepTide),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: SukunColors.deepTide,
+            ),
+          ),
         ),
       ],
     ),

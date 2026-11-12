@@ -147,17 +147,17 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                email == null || email.isEmpty
-                                    ? 'লগইন করা অ্যাকাউন্ট'
-                                    : email,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: SukunColors.muted,
+                              if (email != null && email.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  email,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: SukunColors.muted,
+                                  ),
                                 ),
-                              ),
+                              ],
                               const SizedBox(height: 8),
                               SukunStatusPill(
                                 label: isPatient
@@ -248,12 +248,6 @@ class _UnifiedAccountScreenState extends ConsumerState<UnifiedAccountScreen> {
                         _signingOut ? 'লগআউট হচ্ছে…' : 'অ্যাকাউন্ট থেকে লগআউট',
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'আপনার অ্যাকাউন্ট ও ব্যক্তিগত তথ্য অনুমতি অনুযায়ী সুরক্ষিত থাকে।',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ),

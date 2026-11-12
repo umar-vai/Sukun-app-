@@ -186,64 +186,80 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               32,
             ),
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.displayName == null
-                              ? 'আসসালামু আলাইকুম'
-                              : 'আসসালামু আলাইকুম, ${widget.displayName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: SukunColors.muted),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'আপনার প্রতিদিনের সুকুন',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  OutlinedButton.icon(
-                    key: const Key('universal-announcements-shortcut'),
-                    onPressed: () => context.push('/announcements'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SukunColors.nightNavy,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: SukunColors.border),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      minimumSize: const Size(0, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          SukunRadius.control,
-                        ),
+              SukunSurface(
+                key: const Key('home-greeting-hero'),
+                tone: SukunSurfaceTone.soft,
+                showBorder: false,
+                radius: SukunRadius.hero,
+                padding: const EdgeInsets.fromLTRB(18, 16, 14, 18),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _todayLabel(),
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: SukunColors.deepTide,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.displayName == null
+                                ? 'আসসালামু আলাইকুম'
+                                : 'আসসালামু আলাইকুম, ${widget.displayName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: SukunColors.muted),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'আপনার প্রতিদিনের সুকুন',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      size: 19,
-                      color: Color(0xFF8A6A12),
-                    ),
-                    label: const Text(
-                      'নোটিশ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      key: const Key('universal-announcements-shortcut'),
+                      onPressed: () => context.push('/announcements'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: SukunColors.nightNavy,
+                        backgroundColor: Colors.white,
+                        side: BorderSide(color: SukunColors.border),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            SukunRadius.control,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 19,
+                        color: Color(0xFF8A6A12),
+                      ),
+                      label: const Text(
+                        'নোটিশ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (_upcoming != null) ...[
                 const SizedBox(height: SukunSpace.section),
@@ -1045,6 +1061,13 @@ class _UnifiedNextTasks extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  SukunIconBadge(
+                    icon: next == null
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.alarm_rounded,
+                    size: 36,
+                  ),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -1152,4 +1175,35 @@ class _UnifiedNextTasks extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Today in Bangla, for example "বৃহস্পতিবার, ১৩ নভেম্বর".
+String _todayLabel([DateTime? now]) {
+  const days = [
+    'সোমবার',
+    'মঙ্গলবার',
+    'বুধবার',
+    'বৃহস্পতিবার',
+    'শুক্রবার',
+    'শনিবার',
+    'রবিবার',
+  ];
+  const months = [
+    'জানুয়ারি',
+    'ফেব্রুয়ারি',
+    'মার্চ',
+    'এপ্রিল',
+    'মে',
+    'জুন',
+    'জুলাই',
+    'আগস্ট',
+    'সেপ্টেম্বর',
+    'অক্টোবর',
+    'নভেম্বর',
+    'ডিসেম্বর',
+  ];
+  const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  final date = now ?? DateTime.now();
+  final day = '${date.day}'.split('').map((d) => digits[int.parse(d)]).join();
+  return '${days[date.weekday - 1]}, $day ${months[date.month - 1]}';
 }

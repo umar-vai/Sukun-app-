@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/care_plans/domain/bulk_template_import.dart';
 import 'package:sukun_life/features/personal_routines/domain/routine_calendar.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
@@ -113,11 +114,6 @@ class TodayRoutinePanel extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'আপনার অনুমোদিত চিকিৎসা-পরিকল্পনার আজকের কাজ',
-                        style: TextStyle(color: Color(0xFFB9CCDB)),
-                      ),
                     ],
                   ),
                 ),
@@ -189,13 +185,6 @@ class TodayRoutinePanel extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'প্রতিটি আমল সম্পন্ন হলে এখানেই চিহ্নিত করুন',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: SukunColors.muted,
-                    ),
-                  ),
                   const SizedBox(height: SukunSpace.md),
                   Text(
                     '${summary.completed} টি সম্পন্ন',
@@ -210,12 +199,6 @@ class TodayRoutinePanel extends StatelessWidget {
                     '${summary.remaining} টি বাকি',
                     key: const Key('today-routine-remaining-count'),
                     style: theme.textTheme.bodyMedium,
-                  ),
-                  Text(
-                    'মোট ${summary.total} টি সক্রিয় করণীয়',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: SukunColors.muted,
-                    ),
                   ),
                 ],
               );
@@ -273,11 +256,6 @@ class TodayRoutinePanel extends StatelessWidget {
               onOpen: () => onOpen(action['id'] as String),
             ),
           ),
-        const SizedBox(height: SukunSpace.sm),
-        Text(
-          'এই অগ্রগতি শুধু নিজের সম্পন্ন করা রুটিনের হিসাব; চিকিৎসার ফলাফল নয়।',
-          style: theme.textTheme.bodySmall?.copyWith(color: SukunColors.muted),
-        ),
       ],
     );
   }
@@ -338,7 +316,7 @@ class _TodayActionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      done ? 'আজ সম্পন্ন' : 'বাকি',
+                      done ? 'আজ সম্পন্ন' : routineActionTimeLabel(action),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: done ? SukunColors.deepTide : SukunColors.muted,
                       ),
@@ -531,16 +509,6 @@ class _StreakStrip extends StatelessWidget {
                 ),
             ],
           ),
-          if (onOpenHistory != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'বিস্তারিত অগ্রগতি দেখতে চাপুন',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: SukunColors.deepTide,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -573,4 +541,24 @@ class _DayDot extends StatelessWidget {
 String _bnDigits(int value) {
   const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return '$value'.split('').map((d) => digits[int.parse(d)]).join();
+}
+
+/// When a step is due, for its row: "সকাল ৬:৩০", "ফজরের পর" or "বাকি".
+String routineActionTimeLabel(Map<String, dynamic> action) {
+  switch (action['schedule_kind']) {
+    case 'fixed':
+      final parts = (action['local_time'] as String? ?? '').split(':');
+      final hour = parts.isNotEmpty ? int.tryParse(parts[0]) : null;
+      final minute = parts.length > 1 ? int.tryParse(parts[1]) : null;
+      if (hour == null || minute == null || hour > 23 || minute > 59) {
+        return 'বাকি';
+      }
+      return ReminderClock(hour, minute).label;
+    case 'fajr':
+      return 'ফজরের পর';
+    case 'maghrib':
+      return 'মাগরিবের পর';
+    default:
+      return 'বাকি';
+  }
 }
