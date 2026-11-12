@@ -5,6 +5,7 @@ import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dar
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
+import 'package:sukun_life/features/personal_routines/domain/routine_calendar.dart';
 
 /// A display-only link to an RLS-visible patient task or owner-owned routine.
 /// This never persists or mutates clinical plans.
@@ -87,6 +88,10 @@ abstract final class HomeNextActions {
         if (routine['is_active'] == true && routine['id'] is String)
           routine['id'] as String,
     };
+    final detoxDates = routineDetoxDates([
+      for (final action in actions)
+        if (enabledRoutines.contains(action['routine_id'])) action,
+    ]);
     for (final action in actions) {
       final id = action['id'];
       final routineId = action['routine_id'];
@@ -141,6 +146,13 @@ abstract final class HomeNextActions {
           continue;
         }
       } else if (kind != 'manual' || doneToday) {
+        continue;
+      }
+      if (!routineActionRunsOn(
+        action,
+        dueAt?.toLocal() ?? now,
+        detoxDates: detoxDates,
+      )) {
         continue;
       }
 

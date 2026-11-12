@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 
 class AdminScaffold extends StatefulWidget {
@@ -78,6 +79,8 @@ class _AdminScaffoldState extends State<AdminScaffold> {
   @override
   Widget build(BuildContext context) {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    // A raqi works with patients only: Home and Patients tabs.
+    final raqi = isRaqiSession(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -90,7 +93,9 @@ class _AdminScaffoldState extends State<AdminScaffold> {
       floatingActionButton: widget.floatingActionButton,
       bottomNavigationBar: SukunBottomNavigation(
         navyEmphasis: true,
-        selectedIndex: widget.selectedIndex,
+        selectedIndex: raqi
+            ? widget.selectedIndex.clamp(0, 1)
+            : widget.selectedIndex,
         onSelected: (index) {
           // Detail screens share an active tab with their parent. A tap must
           // still return to that tab's root instead of becoming a no-op.
@@ -105,23 +110,25 @@ class _AdminScaffoldState extends State<AdminScaffold> {
           SukunNavDestination(
             icon: Icons.dashboard_outlined,
             selectedIcon: Icons.dashboard,
-            label: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+            label: copy?.adminDashboard ?? 'অ্যাডমিন হোম',
           ),
           SukunNavDestination(
             icon: Icons.people_outline,
             selectedIcon: Icons.people,
-            label: 'ব্যবহারকারী',
+            label: 'রোগী',
           ),
-          SukunNavDestination(
-            icon: Icons.library_books_outlined,
-            selectedIcon: Icons.library_books,
-            label: 'উপকরণ',
-          ),
-          const SukunNavDestination(
-            icon: Icons.campaign_outlined,
-            selectedIcon: Icons.campaign,
-            label: 'নোটিশ',
-          ),
+          if (!raqi) ...[
+            const SukunNavDestination(
+              icon: Icons.library_books_outlined,
+              selectedIcon: Icons.library_books,
+              label: 'উপকরণ',
+            ),
+            const SukunNavDestination(
+              icon: Icons.campaign_outlined,
+              selectedIcon: Icons.campaign,
+              label: 'নোটিশ',
+            ),
+          ],
         ],
       ),
     );

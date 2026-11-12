@@ -84,7 +84,6 @@ class _AppAppearanceSettingsScreenState
               size: 42,
             ),
             title: const Text('বাংলা ফন্ট'),
-            subtitle: const Text('উপলব্ধ বাংলা ফন্ট নির্বাচন করুন'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/settings/bengali-font'),
           ),
@@ -157,7 +156,6 @@ class _AppAppearanceSettingsScreenState
             size: 42,
           ),
           title: const Text('নামাজের সময় ও হিসাবপদ্ধতি'),
-          subtitle: const Text('অবস্থান ও সময় গণনার পদ্ধতি'),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.push('/prayer-times/settings'),
         ),
@@ -170,7 +168,6 @@ class _AppAppearanceSettingsScreenState
             size: 42,
           ),
           title: const Text('নোটিফিকেশন ও সমস্যা সমাধান'),
-          subtitle: const Text('অনুমতি, রোগীর কাজ ও নিজের রিমাইন্ডার'),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.push('/settings/notifications'),
         ),
@@ -257,6 +254,8 @@ class _SettingsPanel extends StatelessWidget {
   });
 
   final String title;
+
+  /// Not shown: settings panels are title-only (owner request 2026-11-12).
   final String description;
   final Widget child;
 
@@ -267,9 +266,7 @@ class _SettingsPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 5),
-        Text(description, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         child,
       ],
     ),

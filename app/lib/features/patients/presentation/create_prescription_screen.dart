@@ -402,7 +402,7 @@ class _CreatePrescriptionScreenState
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.verified_user_outlined,
                         size: 18,
                         color: SukunColors.deepTide,
@@ -700,7 +700,7 @@ class _DocumentPicker extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.description_outlined, color: SukunColors.deepTide),
+            Icon(Icons.description_outlined, color: SukunColors.deepTide),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -741,7 +741,7 @@ class _DocumentPicker extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.document_scanner_outlined,
             size: 42,
             color: SukunColors.deepTide,

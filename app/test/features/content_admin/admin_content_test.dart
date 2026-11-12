@@ -459,16 +459,32 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('আরবি লেখা *'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.dragUntilVisible(
+      find.text('বাংলা অনুবাদ *'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
     expect(find.text('বাংলা অনুবাদ *'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.dragUntilVisible(
+      find.text('সূরা *'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
     expect(find.text('সূরা *'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.dragUntilVisible(
+      find.text('অনুমোদিত তথ্যসূত্র *'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
     expect(find.text('অনুমোদিত তথ্যসূত্র *'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.dragUntilVisible(
+      find.text('অতিরিক্ত সেটিংস'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
     expect(find.text('অতিরিক্ত সেটিংস'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -420));

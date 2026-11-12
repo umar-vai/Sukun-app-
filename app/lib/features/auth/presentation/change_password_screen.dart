@@ -199,10 +199,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     padding: EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: SukunColors.deepTide,
-                        ),
+                        Icon(Icons.info_outline, color: SukunColors.deepTide),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(

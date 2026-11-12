@@ -16,6 +16,21 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
+  test('the whole accent family follows the chosen palette', () {
+    addTearDown(() => SukunColors.setPalette(SukunAccentPalette.sukunBlue));
+    expect(SukunColors.deepTide, SukunColors.brandDeepTide);
+    for (final palette in SukunAccentPalette.values) {
+      SukunColors.setPalette(palette);
+      expect(SukunColors.sukunBlue, palette.colors.accent);
+      expect(SukunColors.deepTide, palette.colors.strong);
+      expect(SukunColors.mist, palette.colors.mist);
+      expect(SukunColors.canvas, palette.colors.canvas);
+      expect(SukunColors.border, palette.colors.border);
+    }
+    // Text and status colours never change with the palette.
+    expect(SukunColors.nightNavy, const Color(0xFF0D2B45));
+  });
+
   test('all supported palette pairs meet standard text contrast', () {
     // The approved Sukun blue remains unchanged, while its button labels
     // switch from low-contrast white to accessible Night Navy.

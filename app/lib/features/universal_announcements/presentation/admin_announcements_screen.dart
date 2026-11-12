@@ -80,7 +80,7 @@ class _AdminAnnouncementsScreenState
             104,
           ),
           children: [
-            const SukunSurface(
+            SukunSurface(
               tone: SukunSurfaceTone.soft,
               showBorder: false,
               padding: EdgeInsets.all(14),

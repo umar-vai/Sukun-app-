@@ -10,7 +10,7 @@ void main() {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
     final darkTheme = ThemeData.dark().copyWith(
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: SukunColors.sukunBlue,
         surfaceContainerLow: Color(0xFF243848),
         onSurface: Color(0xFFF2F7FA),

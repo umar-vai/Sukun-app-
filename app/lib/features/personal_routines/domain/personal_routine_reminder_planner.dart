@@ -2,6 +2,7 @@ import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
+import 'package:sukun_life/features/personal_routines/domain/routine_calendar.dart';
 
 /// Daily wall-clock reminders do not fire retroactively. In particular,
 /// choosing the phone's current minute after its :00 second has passed means
@@ -32,6 +33,10 @@ List<ReminderSchedule> planPersonalRoutineReminders({
   int maximumPending = 48,
 }) {
   final reminders = <ReminderSchedule>[];
+  final detoxDates = routineDetoxDates([
+    for (final action in actions)
+      if (activeRoutineIds.contains(action['routine_id'])) action,
+  ]);
   for (final action in actions) {
     if (action['is_active'] != true ||
         !activeRoutineIds.contains(action['routine_id'])) {
@@ -44,6 +49,7 @@ List<ReminderSchedule> planPersonalRoutineReminders({
 
     for (var day = 0; day < horizonDays; day++) {
       final date = DateTime(now.year, now.month, now.day + day);
+      if (!routineActionRunsOn(action, date, detoxDates: detoxDates)) continue;
       DateTime? time;
       if (kind == 'fixed') {
         final parts = (action['local_time'] as String? ?? '').split(':');

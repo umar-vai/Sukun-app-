@@ -187,7 +187,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                     tone: SukunSurfaceTone.soft,
                     showBorder: false,
                     padding: const EdgeInsets.all(14),
-                    child: const Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(

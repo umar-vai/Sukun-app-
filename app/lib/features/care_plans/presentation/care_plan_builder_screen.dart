@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
@@ -376,7 +377,10 @@ class _CarePlanBuilderScreenState extends ConsumerState<CarePlanBuilderScreen> {
                       _PlanSecondaryActions(
                         plan: data.plan,
                         working: _working,
-                        onGenerate: () => _generateActions(data.plan),
+                        // AI suggestions are the main admin's tool.
+                        onGenerate: isRaqiSession(context)
+                            ? null
+                            : () => _generateActions(data.plan),
                         onAdd: _bulkImport,
                         onArchive: () => _archive(data.plan),
                       ),
@@ -521,7 +525,7 @@ class _PlanSecondaryActions extends StatelessWidget {
 
   final CarePlan plan;
   final bool working;
-  final VoidCallback onGenerate;
+  final VoidCallback? onGenerate;
   final VoidCallback onAdd;
   final VoidCallback onArchive;
 
@@ -538,7 +542,7 @@ class _PlanSecondaryActions extends StatelessWidget {
             icon: const Icon(Icons.add),
             label: const Text('নতুন করণীয় যোগ করুন'),
           ),
-          if (plan.prescriptionId != null)
+          if (plan.prescriptionId != null && onGenerate != null)
             OutlinedButton.icon(
               onPressed: working ? null : onGenerate,
               icon: const Icon(Icons.auto_awesome_outlined),
@@ -790,6 +794,10 @@ String _reviewStatusLabel(ActionReviewStatus status) => switch (status) {
 };
 
 String _frequencyLabel(ActionFrequency frequency) {
+  if (frequency.type == ActionFrequencyType.dates) {
+    final kind = frequency.ghusl?.label;
+    return '${kind == null ? '' : '$kind · '}${frequency.dates.length}টি তারিখ';
+  }
   if (frequency.type == ActionFrequencyType.daily) {
     return frequency.interval == 1
         ? 'প্রতিদিন'

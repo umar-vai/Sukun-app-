@@ -154,7 +154,7 @@ class UniversalNoticePanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 10, 8, 10),
           child: Row(
             children: [
-              const Icon(Icons.campaign_outlined, color: SukunColors.deepTide),
+              Icon(Icons.campaign_outlined, color: SukunColors.deepTide),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -170,10 +170,7 @@ class UniversalNoticePanel extends StatelessWidget {
               IconButton(
                 tooltip: 'নোটিশ বন্ধ করুন',
                 onPressed: onClose,
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: SukunColors.deepTide,
-                ),
+                icon: Icon(Icons.close_rounded, color: SukunColors.deepTide),
               ),
             ],
           ),
@@ -309,7 +306,7 @@ class _UniversalNoticeCountdownState extends State<UniversalNoticeCountdown> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.timer_outlined, color: SukunColors.deepTide),
+            Icon(Icons.timer_outlined, color: SukunColors.deepTide),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -516,7 +513,6 @@ class _UniversalPushToggleState extends State<_UniversalPushToggle> {
     children: [
       SwitchListTile(
         title: const Text('সবার গুরুত্বপূর্ণ নোটিশ ফোনে পেতে চাই'),
-        subtitle: const Text('ইচ্ছামতো চালু বা বন্ধ করতে পারবেন।'),
         secondary: const Icon(Icons.notifications_active_outlined),
         value: _enabled,
         onChanged: _busy ? null : _change,

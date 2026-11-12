@@ -2,6 +2,9 @@ enum UserRole {
   guest('guest'),
   member('member'),
   patient('patient'),
+
+  /// Care staff added by the main admin: patients and reminders only.
+  raqi('raqi'),
   superAdmin('super_admin');
 
   const UserRole(this.databaseValue);

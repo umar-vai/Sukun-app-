@@ -1,5 +1,6 @@
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
+import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 
 /// A wall-clock reminder time (device local time).
 final class ReminderClock implements Comparable<ReminderClock> {
@@ -198,6 +199,14 @@ final class BulkImportItem {
   /// person's daily list). Care plans only; routines are always on.
   bool reminderEnabled = true;
 
+  /// Calendar dates for a ghusl row (b01/b02/b03), chosen per person on the
+  /// ghusl calendar. Empty for every other row (they repeat daily).
+  final Set<DateTime> calendarDates = {};
+
+  /// The ghusl calendar kind of this row, if it is one of the three baths.
+  GhuslKind? get ghuslKind =>
+      isCustom ? null : GhuslKind.forTemplate(template?.id);
+
   /// The template's own reminder name when an admin set one, else the title.
   String get defaultNotificationTitle =>
       template?.notificationTitle?.trim().isNotEmpty == true
@@ -226,16 +235,26 @@ final class BulkImportItem {
   /// Only real Sukun templates are referenced; custom rows carry none.
   String? get templateId => isCustom ? null : template?.id;
 
+  /// A calendar bath's day count is the number of chosen dates.
+  Map<String, int> get _effectiveVariables => {
+    ...variables,
+    if (ghuslKind != null && calendarDates.isNotEmpty)
+      'দিন': calendarDates.length,
+  };
+
   List<String> get missingVariables => [
     for (final variable in template?.requiredVariables ?? const <String>[])
-      if (variables[variable] == null) variable,
+      if (_effectiveVariables[variable] == null) variable,
   ];
 
   bool get needsResource =>
       (template?.requiresLinkedResource ?? false) && resourceIds.isEmpty;
 
   bool get isReady =>
-      times.isNotEmpty && missingVariables.isEmpty && !needsResource;
+      times.isNotEmpty &&
+      missingVariables.isEmpty &&
+      !needsResource &&
+      (ghuslKind == null || calendarDates.isNotEmpty);
 
   /// Adds the curated library items once the library has loaded, for rows
   /// picked before it finished (the row would otherwise stay empty).
@@ -250,6 +269,9 @@ final class BulkImportItem {
   /// Human readable reason this row blocks the import, or null.
   String? get problem {
     if (times.isEmpty) return 'অন্তত একটি সময় দিন';
+    if (ghuslKind != null && calendarDates.isEmpty) {
+      return 'ক্যালেন্ডারে তারিখ বাছুন';
+    }
     if (missingVariables.isNotEmpty) {
       return '${missingVariables.join(', ')} সংখ্যা বাছুন';
     }
@@ -261,7 +283,7 @@ final class BulkImportItem {
     final source = template;
     if (source == null) return null;
     // Numbers the admin picked read in Bangla on the patient's screen and PDF.
-    return toBanglaDigits(source.render(variables));
+    return toBanglaDigits(source.render(_effectiveVariables));
   }
 
   /// One reminder action per time. A suffix keeps titles distinct when the
@@ -281,6 +303,8 @@ final class BulkImportItem {
           officialTemplateId: templateId,
           notificationTitle: effectiveNotificationTitle,
           reminderEnabled: reminderEnabled,
+          dates: ghuslKind == null ? const {} : Set.unmodifiable(calendarDates),
+          ghusl: ghuslKind,
         ),
     ];
   }
@@ -297,6 +321,8 @@ final class BulkActionDraft {
     this.officialTemplateId,
     this.notificationTitle,
     this.reminderEnabled = true,
+    this.dates = const {},
+    this.ghusl,
   });
 
   final String title;
@@ -310,6 +336,12 @@ final class BulkActionDraft {
   /// Shown by the phone when the reminder fires.
   final String? notificationTitle;
   final bool reminderEnabled;
+
+  /// Non-empty: runs only on these local dates (ghusl calendar).
+  final Set<DateTime> dates;
+  final GhuslKind? ghusl;
+
+  List<DateTime> get sortedDates => dates.toList()..sort();
 
   List<String> get cmsResourceIds =>
       resourceIds.where((id) => !id.startsWith('quran:')).toList();
@@ -326,6 +358,9 @@ final class BulkActionDraft {
     if (officialTemplateId != null) 'official_template_id': officialTemplateId,
     if (notificationTitle != null) 'notification_title': notificationTitle,
     'local_time': time.databaseValue,
+    if (dates.isNotEmpty)
+      'active_dates': [for (final date in sortedDates) isoDate(date)],
+    'ghusl_kind': ?ghusl?.databaseValue,
     'resources': [
       for (final id in resourceIds)
         id.startsWith('quran:')

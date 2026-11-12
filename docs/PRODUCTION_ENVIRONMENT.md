@@ -13,6 +13,54 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-13: raqi staff role (Production)
+
+- Applied `20261113115900_app_role_raqi.sql` as remote version
+  `20261112223902` and `20261113120000_raqi_staff_role.sql` as
+  `20261112224031`. See `docs/RAQI_STAFF_ROLE.md`.
+- Verified before applying in a rolled-back transaction on Production (after
+  the enum value was committed): a Gmail added by the Super Admin became a
+  raqi on first sign-in, listed the 4 patients and read the 51 templates,
+  and got `42501` for saving a template and adding staff; a member got
+  `42501`. After applying: 18 policies use `private.is_care_staff()`,
+  `staff_members` has RLS on and 0 rows, `anon` cannot run the new RPCs.
+- Deployed `send-notification` **v5** (was v4, identical to the repository):
+  only the role check changed to Super Admin or raqi; `verify_jwt` stays off
+  as before (the function checks the bearer token itself).
+
+### 2026-11-13: ghusl calendar and detox days (Production)
+
+- Applied `supabase/migrations/20261113090000_ghusl_calendar_detox_days.sql` as
+  remote version `20261112223055` (`ghusl_calendar_detox_days_20261113`).
+  Adds the care plan `dates` frequency (validated by trigger
+  `plan_actions_validate_frequency`), patches the live `save_plan_action` and
+  `admin_import_user_routine_reminders` definitions in place (only the
+  allowed-type list and two inserted columns change), rewrites
+  `ensure_patient_tasks` / `ensure_patient_reminder_tasks` from their deployed
+  bodies plus dates and the detox rule (`private.detox_day_blocks`), and adds
+  nullable `personal_routine_actions.active_dates` / `ghusl_kind`.
+- Verified before applying in rolled-back transactions on Production: both
+  in-place patches matched; on a test detox day a daily action produced 0
+  tasks and the detox action 1 (including a task generated before the detox
+  was added); an invalid date was refused. After applying: patches present,
+  0 existing rows changed, `anon` still cannot run the generators,
+  `authenticated` cannot run the private helper.
+
+### 2026-11-12: admin Patients list shows only people under care (Production)
+
+- Applied `supabase/migrations/20261112230000_admin_care_recipients.sql` as
+  remote version `20261112221701` (`admin_care_recipients_20261112`): one
+  read-only SECURITY DEFINER function `admin_list_care_recipients(query,
+  limit, offset)`, Super Admin checked in the database. Without a search it
+  returns only patient accounts and members an admin set a routine for; a
+  search (name, email, phone, patient number) reaches any non-admin account.
+  No table, RLS or data change.
+- Verified before applying in a rolled-back transaction on Production: 4
+  people listed (the 4 patients), a search reached 16 accounts, a member got
+  `42501`; afterwards the function was confirmed absent. After applying:
+  `anon` cannot execute, `authenticated` can. pgTAP:
+  `supabase/tests/admin_care_recipients_test.sql`.
+
 ### 2026-11-12: admin-set routines listed first (Production)
 
 - Applied `supabase/migrations/20261112090000_my_admin_assigned_routines.sql`

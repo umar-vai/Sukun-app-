@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Profile directory for verified Super Admins.
-/// The existing profiles_select_own_or_admin RLS policy authorizes reads;
-/// no service-role key, email, phone or cross-user routine data is exposed.
+/// Admin "Patients" tab (owner request 2026-11-12).
+///
+/// Lists only people under care: patient accounts and members an admin has
+/// already set a routine for. Ordinary app users are not listed; a search
+/// (name, email, phone or patient number) reaches anyone so the admin can
+/// start care. Data comes from `admin_list_care_recipients`, which checks the
+/// Super Admin role in the database.
 class AdminAllUsersScreen extends StatefulWidget {
   const AdminAllUsersScreen({super.key});
 
@@ -15,7 +22,7 @@ class AdminAllUsersScreen extends StatefulWidget {
 
 class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
   final _searchController = TextEditingController();
-  late Future<List<Map<String, dynamic>>> _profiles = _loadProfiles();
+  late Future<List<Map<String, dynamic>>> _people = _load();
   int _page = 0;
   static const int _pageSize = 40;
   String _query = '';
@@ -26,167 +33,195 @@ class _AdminAllUsersScreenState extends State<AdminAllUsersScreen> {
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> _loadProfiles() async {
-    var query = Supabase.instance.client
-        .from('profiles')
-        .select('id,display_name,created_at');
-    final term = _query.trim();
-    if (RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(term)) {
-      query = query.eq('id', term);
-    } else if (term.isNotEmpty) {
-      query = query.ilike('display_name', '%$term%');
-    }
-    final rows = await query
-        .order('created_at', ascending: false)
-        .range(_page * _pageSize, (_page + 1) * _pageSize - 1);
-    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  Future<List<Map<String, dynamic>>> _load() async {
+    final rows = await Supabase.instance.client.rpc(
+      'admin_list_care_recipients',
+      params: {
+        'p_query': _query.trim().isEmpty ? null : _query.trim(),
+        'p_limit': _pageSize,
+        'p_offset': _page * _pageSize,
+      },
+    );
+    return [
+      for (final row in rows as List)
+        {...Map<String, dynamic>.from(row as Map), 'id': (row)['user_id']},
+    ];
   }
 
   void _reload({bool firstPage = false}) {
     setState(() {
       if (firstPage) _page = 0;
       _query = _searchController.text;
-      _profiles = _loadProfiles();
+      _people = _load();
     });
+  }
+
+  void _open(Map<String, dynamic> person) {
+    final id = person['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    context.go('/admin/user-routines?userId=${Uri.encodeComponent(id)}');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final searching = _query.trim().isNotEmpty;
     return AdminScaffold(
-      title: 'সকল ব্যবহারকারী',
+      title: 'রোগী',
       selectedIndex: 1,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/admin/patients/new'),
+        icon: const Icon(Icons.person_add_alt_1),
+        label: const Text('নতুন রোগী'),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           _reload();
-          await _profiles;
+          await _people;
         },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 90),
-          children: [
-            Text('সকল অ্যাপ ব্যবহারকারী', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 5),
-            const Text(
-              'এই তালিকায় সাধারণ ব্যবহারকারী ও রোগী অ্যাকাউন্টের Profile আছে। '
-              'রোগীর চিকিৎসাসংক্রান্ত তথ্য আলাদা সুরক্ষিত। '
-              'কোনো ব্যবহারকারীর নাম চাপলে তাঁর রুটিন ও অগ্রগতি খুলবে।',
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                SukunSpace.page,
+                SukunSpace.xs,
+                SukunSpace.page,
+                110,
+              ),
               children: [
-                FilledButton.icon(
-                  onPressed: () => context.go('/admin/user-routines'),
-                  icon: const Icon(Icons.playlist_add_check_rounded),
-                  label: const Text('রুটিন ও অগ্রগতি'),
+                SukunSearchField(
+                  controller: _searchController,
+                  hintText: 'নাম, ইমেইল, ফোন বা রোগী নম্বর',
+                  onSubmitted: (_) => _reload(firstPage: true),
+                  onClear: () {
+                    _searchController.clear();
+                    _reload(firstPage: true);
+                  },
                 ),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/admin/patients'),
-                  icon: const Icon(Icons.medical_information_outlined),
-                  label: const Text('রোগীদের আলাদা তালিকা'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/admin/library'),
-                  icon: const Icon(Icons.auto_stories_outlined),
-                  label: const Text('সবার উপকরণ'),
+                const SizedBox(height: SukunSpace.lg),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _people,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return _Message(
+                        icon: Icons.cloud_off_rounded,
+                        text: 'তালিকা আনা যাচ্ছে না',
+                        action: TextButton(
+                          onPressed: _reload,
+                          child: const Text('আবার চেষ্টা'),
+                        ),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    final people = snapshot.data!;
+                    if (people.isEmpty) {
+                      return _Message(
+                        icon: searching
+                            ? Icons.search_off_rounded
+                            : Icons.people_outline_rounded,
+                        text: searching
+                            ? 'কাউকে পাওয়া যায়নি'
+                            : 'এখনো কোনো রোগী নেই',
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 4,
+                            bottom: SukunSpace.sm,
+                          ),
+                          child: Text(
+                            searching
+                                ? 'ফলাফল · ${people.length}'
+                                : 'রোগী · ${people.length}',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: SukunColors.muted,
+                            ),
+                          ),
+                        ),
+                        for (final person in people)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: SukunSpace.sm,
+                            ),
+                            child: AdminUserDirectoryTile(
+                              user: person,
+                              onOpen: () => _open(person),
+                            ),
+                          ),
+                        if (_page > 0 || people.length >= _pageSize)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton.outlined(
+                                tooltip: 'আগের পৃষ্ঠা',
+                                onPressed: _page == 0
+                                    ? null
+                                    : () => setState(() {
+                                        _page--;
+                                        _people = _load();
+                                      }),
+                                icon: const Icon(Icons.chevron_left_rounded),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton.outlined(
+                                tooltip: 'পরের পৃষ্ঠা',
+                                onPressed: people.length < _pageSize
+                                    ? null
+                                    : () => setState(() {
+                                        _page++;
+                                        _people = _load();
+                                      }),
+                                icon: const Icon(Icons.chevron_right_rounded),
+                              ),
+                            ],
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _reload(firstPage: true),
-              decoration: InputDecoration(
-                labelText: 'নাম বা User ID',
-                hintText: 'নাম লিখে খুঁজুন',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: IconButton(
-                  tooltip: 'খুঁজুন',
-                  onPressed: () => _reload(firstPage: true),
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: _profiles,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const ListTile(
-                    leading: Icon(Icons.lock_outline_rounded),
-                    title: Text('ব্যবহারকারীর তালিকা আনা যাচ্ছে না'),
-                    subtitle: Text(
-                      'Super Admin অনুমতি ও ইন্টারনেট সংযোগ যাচাই করুন।',
-                    ),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final users = snapshot.data!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      users.isEmpty
-                          ? 'এই অনুসন্ধানে কেউ নেই'
-                          : 'ব্যবহারকারী · পৃষ্ঠা ${_page + 1} · ${users.length}টি',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    for (final user in users)
-                      AdminUserDirectoryTile(
-                        user: user,
-                        onOpen: () => context.go(
-                          '/admin/user-routines?userId=${Uri.encodeComponent(user['id'].toString())}',
-                        ),
-                      ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: _page == 0
-                              ? null
-                              : () => setState(() {
-                                  _page--;
-                                  _profiles = _loadProfiles();
-                                }),
-                          child: const Text('আগের পৃষ্ঠা'),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: users.length < _pageSize
-                              ? null
-                              : () => setState(() {
-                                  _page++;
-                                  _profiles = _loadProfiles();
-                                }),
-                          child: const Text('পরের পৃষ্ঠা'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'রুটিন সুপারিশ করতে ব্যবহারকারীর নাম চাপুন। '
-                      'প্রস্তাবিত রুটিন ব্যবহারকারী নিজে চালু না করা পর্যন্ত নিষ্ক্রিয় থাকবে।',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// A tappable directory row; its callback always uses the server-guarded
-/// Super Admin routine page, never a patient record or a privileged client API.
+class _Message extends StatelessWidget {
+  const _Message({required this.icon, required this.text, this.action});
+
+  final IconData icon;
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 48),
+    child: Column(
+      children: [
+        Icon(icon, size: 44, color: SukunColors.muted),
+        const SizedBox(height: SukunSpace.md),
+        Text(text, style: Theme.of(context).textTheme.titleMedium),
+        ?action,
+      ],
+    ),
+  );
+}
+
+/// One person row: avatar initial, name, patient number or contact, and a
+/// status pill. The callback always uses the server-guarded admin routine
+/// page, never a privileged client API.
 class AdminUserDirectoryTile extends StatelessWidget {
   const AdminUserDirectoryTile({
     super.key,
@@ -199,21 +234,70 @@ class AdminUserDirectoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final id = user['id']?.toString() ?? '';
     final name = user['display_name']?.toString().trim() ?? '';
-    return Card(
+    final code = user['patient_code']?.toString().trim() ?? '';
+    final email = user['email']?.toString().trim() ?? '';
+    final phone = user['phone']?.toString().trim() ?? '';
+    final isPatient = user['is_patient'] == true;
+    final hasRoutine = user['has_admin_routine'] == true;
+    final detail = [
+      if (code.isNotEmpty) code,
+      if (phone.isNotEmpty) phone else if (email.isNotEmpty) email,
+    ].join(' · ');
+    final shown = name.isEmpty ? 'নাম দেওয়া হয়নি' : name;
+    return SukunSurface(
+      padding: EdgeInsets.zero,
       child: ListTile(
         key: Key('admin-user-$id'),
         enabled: id.isNotEmpty,
         onTap: id.isEmpty ? null : onOpen,
-        leading: const CircleAvatar(child: Icon(Icons.person_outline_rounded)),
-        title: Text(name.isEmpty ? 'নাম দেওয়া হয়নি' : name),
-        subtitle: Text(
-          'User ID: ${id.isEmpty ? '—' : id}',
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        leading: CircleAvatar(
+          radius: 22,
+          backgroundColor: SukunColors.mist,
+          foregroundColor: SukunColors.deepTide,
+          child: Text(
+            shown.characters.first,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: SukunColors.deepTide,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        title: Text(
+          shown,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded),
+        subtitle: detail.isEmpty
+            ? null
+            : Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: SukunColors.muted,
+                ),
+              ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isPatient || hasRoutine)
+              SukunStatusPill(
+                label: isPatient ? 'রোগী' : 'রুটিন চালু',
+                tone: SukunStatusTone.brand,
+              )
+            else
+              const SukunStatusPill(label: 'নতুন'),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }

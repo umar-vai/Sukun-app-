@@ -64,8 +64,10 @@ Deno.serve(async (request) => {
     if (callerError || !caller) {
       return jsonResponse({ code: "authentication_required" }, 401);
     }
+    // Super Admins and raqis (care staff) publish plans and notify patients.
     const { data: role } = await callerClient.from("user_roles").select("role")
-      .eq("user_id", caller.id).eq("role", "super_admin").maybeSingle();
+      .eq("user_id", caller.id).in("role", ["super_admin", "raqi"]).limit(1)
+      .maybeSingle();
     if (!role) return jsonResponse({ code: "forbidden" }, 403);
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {

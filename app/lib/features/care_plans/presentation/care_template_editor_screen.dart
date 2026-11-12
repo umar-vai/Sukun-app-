@@ -256,13 +256,6 @@ class _CareTemplateEditorScreenState extends State<CareTemplateEditorScreen> {
               48,
             ),
             children: [
-              Text(
-                'সেভ করলেই পরের ইমপোর্ট থেকে নতুন লেখা, সময় ও কন্টেন্ট যাবে। '
-                'আগে ইমপোর্ট করা প্ল্যান বদলাবে না।',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: SukunColors.muted,
-                ),
-              ),
               label('বিভাগ'),
               DropdownButtonFormField<String>(
                 initialValue: _category,

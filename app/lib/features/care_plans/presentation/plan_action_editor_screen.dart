@@ -54,6 +54,9 @@ class _PlanActionEditorScreenState
   late Future<_EditorData> _data;
   CarePlan? _plan;
   ActionFrequencyType _frequencyType = ActionFrequencyType.daily;
+
+  /// Calendar dates of a ghusl action; kept as-is when the admin edits text.
+  ActionFrequency? _calendarFrequency;
   Set<int> _weekdays = {1};
   String _timeWindow = '';
   DateTime? _exactTime;
@@ -129,6 +132,9 @@ class _PlanActionEditorScreenState
     _countController.text = action.countTarget?.toString() ?? '';
     _durationController.text = action.durationMinutes?.toString() ?? '';
     _frequencyType = action.frequency.type;
+    if (action.frequency.type == ActionFrequencyType.dates) {
+      _calendarFrequency = action.frequency;
+    }
     _dailyIntervalController.text = action.frequency.interval.toString();
     _weekdays = {...action.frequency.weekdays};
     _timeWindow = action.timeWindow ?? '';
@@ -330,7 +336,7 @@ class _PlanActionEditorScreenState
                 backgroundColor: SukunColors.mist,
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(color: SukunColors.deepTide),
+                  style: TextStyle(color: SukunColors.deepTide),
                 ),
               ),
               title: Text(
@@ -443,7 +449,11 @@ class _PlanActionEditorScreenState
     }
     setState(() => _submitting = true);
     try {
-      final frequency = _frequencyType == ActionFrequencyType.daily
+      final calendar = _calendarFrequency;
+      final frequency =
+          _frequencyType == ActionFrequencyType.dates && calendar != null
+          ? calendar
+          : _frequencyType == ActionFrequencyType.daily
           ? ActionFrequency.daily(
               interval: int.parse(_dailyIntervalController.text.trim()),
             )
@@ -602,21 +612,31 @@ class _PlanActionEditorScreenState
                         title: 'কখন করবেন ও মনে করাবেন',
                       ),
                       const SizedBox(height: 8),
-                      SegmentedButton<ActionFrequencyType>(
-                        segments: const [
-                          ButtonSegment(
-                            value: ActionFrequencyType.daily,
-                            label: Text('প্রতিদিন'),
-                          ),
-                          ButtonSegment(
-                            value: ActionFrequencyType.weekly,
-                            label: Text('নির্বাচিত দিন'),
-                          ),
-                        ],
-                        selected: {_frequencyType},
-                        onSelectionChanged: (value) =>
-                            setState(() => _frequencyType = value.single),
-                      ),
+                      if (_calendarFrequency != null &&
+                          _frequencyType == ActionFrequencyType.dates)
+                        SukunStatusPill(
+                          icon: Icons.calendar_month_rounded,
+                          tone: SukunStatusTone.brand,
+                          label:
+                              '${_calendarFrequency!.ghusl?.label ?? 'ক্যালেন্ডার'}'
+                              ' · ${_calendarFrequency!.dates.length}টি তারিখ',
+                        )
+                      else
+                        SegmentedButton<ActionFrequencyType>(
+                          segments: const [
+                            ButtonSegment(
+                              value: ActionFrequencyType.daily,
+                              label: Text('প্রতিদিন'),
+                            ),
+                            ButtonSegment(
+                              value: ActionFrequencyType.weekly,
+                              label: Text('নির্বাচিত দিন'),
+                            ),
+                          ],
+                          selected: {_frequencyType},
+                          onSelectionChanged: (value) =>
+                              setState(() => _frequencyType = value.single),
+                        ),
                       if (_frequencyType == ActionFrequencyType.daily) ...[
                         const SizedBox(height: 12),
                         TextFormField(
@@ -921,7 +941,7 @@ class _EditorStepHeading extends StatelessWidget {
         width: 28,
         height: 28,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: SukunColors.mist,
           shape: BoxShape.circle,
         ),

@@ -265,7 +265,7 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                       setState(() => _asrConvention = convention),
                 ),
                 const SizedBox(height: 16),
-                const SukunSurface(
+                SukunSurface(
                   tone: SukunSurfaceTone.soft,
                   radius: 18,
                   showBorder: false,

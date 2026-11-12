@@ -35,7 +35,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
-    expect(find.text('দ্রুত কাজ শুরু করুন'), findsOneWidget);
+    expect(find.text('আজকের কাজ'), findsOneWidget);
     await tester.tap(find.text('নতুন রোগী যোগ করুন'));
     await tester.pumpAndSettle();
 
@@ -101,7 +101,7 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ব্যবহারকারীর রুটিন ও অগ্রগতি'));
+    await tester.tap(find.text('রুটিন ও অগ্রগতি'));
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,

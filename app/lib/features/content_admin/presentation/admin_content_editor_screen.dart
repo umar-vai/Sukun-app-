@@ -1034,7 +1034,7 @@ class _AdminContentEditorScreenState
     child: ExpansionTile(
       shape: const Border(),
       collapsedShape: const Border(),
-      leading: const Icon(Icons.tune_rounded, color: SukunColors.deepTide),
+      leading: Icon(Icons.tune_rounded, color: SukunColors.deepTide),
       title: const Text('অতিরিক্ত সেটিংস'),
       subtitle: const Text('কে দেখতে পারবেন এবং অন্যান্য তথ্য'),
       childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -1158,7 +1158,7 @@ class _ResourceTypeCard extends StatelessWidget {
             ],
           ),
         ),
-        const Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
+        Icon(Icons.chevron_right_rounded, color: SukunColors.deepTide),
       ],
     ),
   );

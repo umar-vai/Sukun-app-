@@ -909,7 +909,7 @@ class _SafetyNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SukunSurface(
+    return SukunSurface(
       tone: SukunSurfaceTone.warning,
       showBorder: false,
       radius: 18,
@@ -983,16 +983,16 @@ class _SuggestedActionCard extends StatelessWidget {
                     ? 'তথ্য অসম্পূর্ণ'
                     : 'AI নিশ্চয়তা ${(draft.source.confidence * 100).round()}% · যাচাই হয়নি',
                 style: draft.hasIncompleteMetadata
-                    ? const TextStyle(color: SukunColors.deepTide)
+                    ? TextStyle(color: SukunColors.deepTide)
                     : null,
               ),
               if (!draft.canImport)
-                const Text(
+                Text(
                   'কতদিন পরপর তা দরকার',
                   style: TextStyle(color: SukunColors.deepTide),
                 )
               else if (draft.source.needsReview)
-                const Text(
+                Text(
                   'যাচাই দরকার',
                   style: TextStyle(color: SukunColors.deepTide),
                 ),
@@ -1274,7 +1274,7 @@ class _SuggestedActionCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 draft.resourceDiscovery.note!,
-                style: const TextStyle(color: SukunColors.deepTide),
+                style: TextStyle(color: SukunColors.deepTide),
               ),
             ],
             if (draft.resourceMatches.isNotEmpty) ...[
@@ -1435,7 +1435,7 @@ class _GenerationUnavailable extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.edit_note_outlined,
                   size: 48,
                   color: SukunColors.deepTide,

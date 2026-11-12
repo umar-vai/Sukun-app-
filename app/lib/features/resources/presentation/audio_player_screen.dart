@@ -439,7 +439,7 @@ class _PlayerBodyState extends ConsumerState<_PlayerBody> {
                     const SizedBox(width: 5),
                     Text(
                       '${speed}x',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: SukunColors.deepTide,
                       ),

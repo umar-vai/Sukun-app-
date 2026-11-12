@@ -361,9 +361,6 @@ class _NotificationHealthSettingsScreenState
                         SwitchListTile(
                           key: const Key('patient-care-reminder-opt-in'),
                           title: const Text('অনুমোদিত চিকিৎসা পরিকল্পনা'),
-                          subtitle: const Text(
-                            'আপনার নিজের রোগী পরিকল্পনার রিমাইন্ডার',
-                          ),
                           value: _care?.enabled ?? false,
                           onChanged: _busy || _loading || _care == null
                               ? null

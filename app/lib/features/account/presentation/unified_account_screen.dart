@@ -319,13 +319,6 @@ class _AccountPanel extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text(
-                  entries[i].subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: SukunColors.muted),
-                ),
                 trailing: const Icon(
                   Icons.chevron_right_rounded,
                   size: 20,

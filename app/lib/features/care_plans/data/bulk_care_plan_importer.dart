@@ -134,12 +134,30 @@ class BulkCarePlanImporter {
     var added = 0;
     for (final item in drafts) {
       DateTime? end;
-      final days = item.durationDays;
-      if (days != null) {
-        end = start.add(Duration(days: days - 1));
-      }
-      if (planEnd != null && (end == null || end.isAfter(planEnd))) {
-        end = planEnd;
+      var frequency = const ActionFrequency.daily();
+      if (item.dates.isNotEmpty) {
+        // Ghusl calendar: only today or later, inside the plan.
+        final dates = {
+          for (final date in item.dates)
+            if (!date.isBefore(start) &&
+                (planEnd == null || !date.isAfter(planEnd)))
+              date,
+        };
+        if (dates.isEmpty) {
+          throw CarePlanWorkflowException(
+            '${item.title}: বাছাই করা সব তারিখ পার হয়ে গেছে বা পরিকল্পনার বাইরে।',
+          );
+        }
+        frequency = ActionFrequency.dates(dates, ghusl: item.ghusl);
+        end = frequency.sortedDates.last;
+      } else {
+        final days = item.durationDays;
+        if (days != null) {
+          end = start.add(Duration(days: days - 1));
+        }
+        if (planEnd != null && (end == null || end.isAfter(planEnd))) {
+          end = planEnd;
+        }
       }
       final saved = await _repository.saveAction(
         SavePlanActionInput(
@@ -147,7 +165,7 @@ class BulkCarePlanImporter {
           type: item.type,
           title: item.title,
           instruction: item.instruction,
-          frequency: const ActionFrequency.daily(),
+          frequency: frequency,
           timeWindow: item.time.timeWindow,
           exactTime: item.time.onDate(start),
           startDate: start,

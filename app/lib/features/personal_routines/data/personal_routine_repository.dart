@@ -47,7 +47,8 @@ final class PersonalRoutineRepository {
           'id,routine_id,title,notification_title,notes,resource_provider,'
           'content_item_id,external_resource_ref,schedule_kind,local_time,'
           'prayer_offset_minutes,timezone_name,prayer_city,'
-          'prayer_latitude,prayer_longitude,prayer_method,is_active',
+          'prayer_latitude,prayer_longitude,prayer_method,is_active,'
+          'active_dates,ghusl_kind',
         )
         .order('created_at', ascending: true);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();

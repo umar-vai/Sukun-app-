@@ -527,7 +527,6 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                 return Card(
                   child: ListTile(
                     title: Text(resource.titleBn ?? resource.title),
-                    subtitle: const Text('অফলাইনে রাখুন'),
                     trailing: FilledButton(
                       onPressed: library.busy || library.contains(resource.id)
                           ? null

@@ -98,12 +98,6 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(color: SukunColors.nightNavy),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'আপনার দৈনন্দিন চর্চা ও নির্ভরযোগ্য উপকরণ এক জায়গায়।',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: SukunColors.muted),
-                          ),
                           const SizedBox(height: 20),
                           LayoutBuilder(
                             builder: (context, constraints) {
@@ -220,7 +214,7 @@ class _WelcomeHero extends StatelessWidget {
             color: SukunColors.mist,
             borderRadius: BorderRadius.circular(30),
           ),
-          child: const Text(
+          child: Text(
             'আপনার শান্ত, গুছানো দিনের সঙ্গী',
             style: TextStyle(color: SukunColors.deepTide),
           ),
@@ -346,29 +340,39 @@ class _WelcomeBenefit extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: width,
     child: Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(23),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: SukunColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: SukunColors.deepTide, size: 30),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(color: SukunColors.nightNavy),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            description,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: SukunColors.muted, height: 1.55),
-          ),
-        ],
+      // Title-only card (owner request 2026-11-12); [description] is kept
+      // for screen readers.
+      child: Semantics(
+        label: description,
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: SukunColors.mist,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: SukunColors.deepTide, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: SukunColors.nightNavy,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

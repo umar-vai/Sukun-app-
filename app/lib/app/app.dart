@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/features/resources/data/quran_last_read_store.dart';
 import 'package:sukun_life/app/router/app_router.dart';
@@ -238,31 +239,51 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
       builder: (context, selectedFont, _) =>
           ValueListenableBuilder<AppDisplayPreferences>(
             valueListenable: AppDisplaySettings.instance,
-            builder: (context, display, _) => MaterialApp.router(
-              title: 'Sukun Life',
-              debugShowCheckedModeBanner: false,
-              theme: SukunTheme.light(
-                bengaliFont: selectedFont,
-                bengaliScale: display.bengaliScale,
-                accentPalette: display.accentPalette,
-              ),
-              darkTheme: SukunTheme.dark(
-                bengaliFont: selectedFont,
-                bengaliScale: display.bengaliScale,
-                accentPalette: display.accentPalette,
-              ),
-              themeMode: display.themeMode,
-              locale: const Locale('bn', 'BD'),
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              routerConfig: ref.watch(appRouterProvider),
-              builder: (context, child) => AndroidUpdateAutoPopup(
-                child: UniversalNoticeAutoPopup(
-                  child: Stack(children: [?child, const GlobalAudioDock()]),
+            builder: (context, display, _) {
+              // The accent family lives in SukunColors so every screen
+              // follows the chosen palette; repaint all widgets on change.
+              if (SukunColors.setPalette(display.accentPalette)) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => _rebuildAllWidgets(),
+                );
+              }
+              return MaterialApp.router(
+                title: 'Sukun Life',
+                debugShowCheckedModeBanner: false,
+                theme: SukunTheme.light(
+                  bengaliFont: selectedFont,
+                  bengaliScale: display.bengaliScale,
+                  accentPalette: display.accentPalette,
                 ),
-              ),
-            ),
+                darkTheme: SukunTheme.dark(
+                  bengaliFont: selectedFont,
+                  bengaliScale: display.bengaliScale,
+                  accentPalette: display.accentPalette,
+                ),
+                themeMode: display.themeMode,
+                locale: const Locale('bn', 'BD'),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                routerConfig: ref.watch(appRouterProvider),
+                builder: (context, child) => AndroidUpdateAutoPopup(
+                  child: UniversalNoticeAutoPopup(
+                    child: Stack(children: [?child, const GlobalAudioDock()]),
+                  ),
+                ),
+              );
+            },
           ),
     );
   }
+}
+
+/// Marks every mounted element dirty so widgets that read palette colours
+/// directly (not through Theme.of) repaint. State is kept.
+void _rebuildAllWidgets() {
+  void visit(Element element) {
+    element.markNeedsBuild();
+    element.visitChildren(visit);
+  }
+
+  WidgetsBinding.instance.rootElement?.visitChildren(visit);
 }

@@ -161,12 +161,20 @@ class SukunPageIntro extends StatelessWidget {
     required this.title,
     this.eyebrow,
     this.subtitle,
+    this.note,
     this.trailing,
   });
 
   final String title;
   final String? eyebrow;
+
+  /// Explanatory copy under a title. Kept for API compatibility but not
+  /// shown: the owner asked for clean, title-only headings (2026-11-12).
   final String? subtitle;
+
+  /// Live information that must stay visible (a status, an instruction the
+  /// user acts on now). Shown under the title.
+  final String? note;
   final Widget? trailing;
 
   @override
@@ -190,10 +198,10 @@ class SukunPageIntro extends StatelessWidget {
                 const SizedBox(height: 7),
               ],
               Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              if (subtitle != null) ...[
+              if (note != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  subtitle!,
+                  note!,
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: SukunColors.muted),
                 ),
@@ -212,11 +220,18 @@ class SukunSectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
+    this.note,
     this.action,
   });
 
   final String title;
+
+  /// Explanatory copy. Kept for API compatibility but not shown: headings
+  /// are title-only (owner request 2026-11-12).
   final String? subtitle;
+
+  /// Live information that must stay visible (counts, status).
+  final String? note;
   final Widget? action;
 
   @override
@@ -228,10 +243,10 @@ class SukunSectionHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: Theme.of(context).textTheme.titleLarge),
-            if (subtitle != null) ...[
+            if (note != null) ...[
               const SizedBox(height: 3),
               Text(
-                subtitle!,
+                note!,
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: SukunColors.muted),
               ),
@@ -555,7 +570,7 @@ class SukunChoiceField<T> extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                Icon(
                   Icons.keyboard_arrow_down_rounded,
                   color: SukunColors.deepTide,
                 ),

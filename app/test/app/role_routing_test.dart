@@ -86,7 +86,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('কাজের সারসংক্ষেপ'), findsWidgets);
+    expect(find.text('অ্যাডমিন হোম'), findsWidgets);
     expect(find.text('আপনার কাজের জায়গায় স্বাগতম, Admin'), findsOneWidget);
   });
 

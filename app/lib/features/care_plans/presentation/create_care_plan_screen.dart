@@ -161,7 +161,7 @@ class _CreateCarePlanScreenState extends ConsumerState<CreateCarePlanScreen> {
                       ),
                       const SizedBox(height: 20),
                       if (isNewVersion) ...[
-                        const SukunSurface(
+                        SukunSurface(
                           tone: SukunSurfaceTone.warning,
                           showBorder: false,
                           child: Row(

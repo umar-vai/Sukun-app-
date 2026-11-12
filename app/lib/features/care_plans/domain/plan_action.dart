@@ -28,16 +28,60 @@ enum ActionReviewStatus {
   }
 }
 
-enum ActionFrequencyType { daily, weekly }
+enum ActionFrequencyType { daily, weekly, dates }
+
+/// The three bath (ghusl) kinds an admin places on a calendar per patient
+/// (owner request 2026-11-12). On a detox day every other reminder and task
+/// of that person is paused; only the detox bath and its linked content run.
+enum GhuslKind {
+  nazar('nazar', 'বদনজরের গোসল', 'b01'),
+  boroi('boroi', 'বরই পাতার গোসল', 'b02'),
+  detox('detox', 'ডিটক্স গোসল', 'b03');
+
+  const GhuslKind(this.databaseValue, this.label, this.templateId);
+
+  final String databaseValue;
+  final String label;
+
+  /// The Sukun official template this calendar kind fills.
+  final String templateId;
+
+  static GhuslKind? fromDatabase(Object? value) {
+    for (final kind in values) {
+      if (kind.databaseValue == value) return kind;
+    }
+    return null;
+  }
+
+  static GhuslKind? forTemplate(String? templateId) {
+    for (final kind in values) {
+      if (kind.templateId == templateId) return kind;
+    }
+    return null;
+  }
+}
+
+/// Most calendar dates one action may carry (server limit).
+const maxActionDates = 120;
 
 class ActionFrequency {
   const ActionFrequency.daily({this.interval = 1})
     : type = ActionFrequencyType.daily,
-      weekdays = const {};
+      weekdays = const {},
+      dates = const {},
+      ghusl = null;
 
   const ActionFrequency.weekly(this.weekdays)
     : type = ActionFrequencyType.weekly,
-      interval = 1;
+      interval = 1,
+      dates = const {},
+      ghusl = null;
+
+  /// Runs only on the given calendar dates (local, time ignored).
+  const ActionFrequency.dates(this.dates, {this.ghusl})
+    : type = ActionFrequencyType.dates,
+      interval = 1,
+      weekdays = const {};
 
   factory ActionFrequency.fromJson(Map<String, dynamic> json) {
     if (json['type'] == 'weekly') {
@@ -48,12 +92,29 @@ class ActionFrequency {
           .toSet();
       return ActionFrequency.weekly(values);
     }
+    if (json['type'] == 'dates') {
+      final values = <DateTime>{};
+      for (final raw in json['dates'] as List<dynamic>? ?? const []) {
+        final parsed = DateTime.tryParse(raw.toString());
+        if (parsed != null) {
+          values.add(DateTime(parsed.year, parsed.month, parsed.day));
+        }
+      }
+      return ActionFrequency.dates(
+        values,
+        ghusl: GhuslKind.fromDatabase(json['ghusl']),
+      );
+    }
     return ActionFrequency.daily(interval: json['interval'] as int? ?? 1);
   }
 
   final ActionFrequencyType type;
   final int interval;
   final Set<int> weekdays;
+  final Set<DateTime> dates;
+  final GhuslKind? ghusl;
+
+  List<DateTime> get sortedDates => dates.toList()..sort();
 
   Map<String, dynamic> toJson() => switch (type) {
     ActionFrequencyType.daily => {'type': 'daily', 'interval': interval},
@@ -61,17 +122,30 @@ class ActionFrequency {
       'type': 'weekly',
       'weekdays': weekdays.toList()..sort(),
     },
+    ActionFrequencyType.dates => {
+      'type': 'dates',
+      'dates': [for (final date in sortedDates) isoDate(date)],
+      'ghusl': ?ghusl?.databaseValue,
+    },
   };
 
-  String get label {
-    if (type == ActionFrequencyType.daily) {
-      return interval == 1 ? 'Daily' : 'Every $interval days';
-    }
-    const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final ordered = weekdays.toList()..sort();
-    return ordered.map((day) => names[day - 1]).join(', ');
-  }
+  String get label => switch (type) {
+    ActionFrequencyType.daily =>
+      interval == 1 ? 'Daily' : 'Every $interval days',
+    ActionFrequencyType.weekly => () {
+      const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final ordered = weekdays.toList()..sort();
+      return ordered.map((day) => names[day - 1]).join(', ');
+    }(),
+    ActionFrequencyType.dates => '${dates.length} dates',
+  };
 }
+
+/// `YYYY-MM-DD` for a local calendar date.
+String isoDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-'
+    '${date.month.toString().padLeft(2, '0')}-'
+    '${date.day.toString().padLeft(2, '0')}';
 
 class LinkedResource {
   const LinkedResource({
