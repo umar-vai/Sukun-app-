@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -85,20 +84,19 @@ void main() {
     expect(resourceMatchesPickerSection(_ruqyahDua, ruqyah), isTrue);
   });
 
-  testWidgets('wheel and arrow change the visible resource section', (
-    tester,
-  ) async {
+  testWidgets('sections open as a grid and items show inside', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    String? result;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => showResourcePickerSheet(
+              onPressed: () async => result = await showResourcePickerSheet(
                 context: context,
                 resources: const [_hadith, _dua, _ruqyahAudio],
                 selectedId: '',
@@ -111,22 +109,69 @@ void main() {
     );
     await tester.tap(find.text('Open picker'));
     await tester.pumpAndSettle();
-    expect(find.text('Hadith resource'), findsOneWidget);
-
-    final carousel = find.byKey(const Key('resource-section-carousel'));
-    await tester.sendEventToBinding(
-      PointerScrollEvent(
-        position: tester.getCenter(carousel),
-        scrollDelta: const Offset(0, 120),
-      ),
-    );
-    await tester.pumpAndSettle();
+    // The first view is the library-style section grid.
+    expect(find.byKey(const Key('resource-section-hadith')), findsOneWidget);
     expect(find.text('Hadith resource'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('resource-section-next')));
+    await tester.tap(find.byKey(const Key('resource-section-hadith')));
     await tester.pumpAndSettle();
     expect(find.text('Hadith resource'), findsOneWidget);
     expect(find.text('Dua resource'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('resource-section-back')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('resource-picker-search')),
+      'dua',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Dua resource'), findsOneWidget);
+    await tester.tap(find.text('Dua resource'));
+    await tester.pumpAndSettle();
+    expect(result, 'dua-1');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('multi picker ticks several items and returns them in order', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    List<String>? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async =>
+                  result = await showResourceMultiPickerSheet(
+                    context: context,
+                    resources: const [_hadith, _dua, _ruqyahAudio],
+                    alreadyLinked: const {'hadith-1'},
+                  ),
+              child: const Text('Open multi'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open multi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resource-section-all')));
+    await tester.pumpAndSettle();
+
+    // Already linked items cannot be ticked again.
+    await tester.tap(find.byKey(const Key('resource-item-hadith-1')));
+    await tester.tap(find.byKey(const Key('resource-item-audio-1')));
+    await tester.tap(find.byKey(const Key('resource-item-dua-1')));
+    await tester.pump();
+    expect(find.text('২টি যোগ করুন'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('resource-picker-add')));
+    await tester.pumpAndSettle();
+    expect(result, ['audio-1', 'dua-1']);
     expect(tester.takeException(), isNull);
   });
 
@@ -189,7 +234,7 @@ void main() {
   testWidgets('fixed light resource picker stays readable in dark theme', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(430, 932);
+    tester.view.physicalSize = const Size(1000, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -218,6 +263,8 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open picker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resource-section-all')));
     await tester.pumpAndSettle();
 
     expect(

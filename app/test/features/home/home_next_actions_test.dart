@@ -207,4 +207,36 @@ void main() {
       'সময় নির্ধারিত নয়',
     );
   });
+
+  group('all done today', () {
+    final actions = <Map<String, dynamic>>[
+      {'id': 'a', 'routine_id': 'owned-routine', 'is_active': true},
+      {'id': 'b', 'routine_id': 'owned-routine', 'is_active': true},
+      {'id': 'paused', 'routine_id': 'paused-routine', 'is_active': true},
+    ];
+    bool allDone(Map<String, String> outcomes) => HomeNextActions.allDoneToday(
+      patientDay: null,
+      routines: routines,
+      actions: actions,
+      outcomes: outcomes,
+    );
+
+    test('true only when every active action is done', () {
+      expect(allDone({'a': 'done', 'b': 'done'}), isTrue);
+      expect(allDone({'a': 'done'}), isFalse);
+      expect(allDone({'a': 'done', 'b': 'skipped'}), isFalse);
+    });
+
+    test('nothing to do is not "all done"', () {
+      expect(
+        HomeNextActions.allDoneToday(
+          patientDay: null,
+          routines: routines,
+          actions: const [],
+          outcomes: const {},
+        ),
+        isFalse,
+      );
+    });
+  });
 }

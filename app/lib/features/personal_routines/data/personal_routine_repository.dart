@@ -22,6 +22,24 @@ final class PersonalRoutineRepository {
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
+  /// The caller's own routines that an admin set for them. Empty when the
+  /// server helper is not available yet, so the list still shows.
+  Future<Set<String>> listAdminAssignedRoutineIds() async {
+    try {
+      final rows = await client.rpc('my_admin_assigned_routine_ids');
+      if (rows is! List) return const {};
+      return {
+        for (final row in rows)
+          if (row is String)
+            row
+          else if (row is Map && row.values.firstOrNull is String)
+            row.values.first as String,
+      };
+    } catch (_) {
+      return const {};
+    }
+  }
+
   Future<List<Map<String, dynamic>>> listActions() async {
     final rows = await client
         .from('personal_routine_actions')

@@ -86,6 +86,10 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
       : _BulkTab.resources;
   String? _category;
   List<ContentResourceOption> _resources = const [];
+
+  /// Rows written by hand from a section's "নতুন যোগ করুন", for this
+  /// person only. They stay listed in their section even when unticked.
+  final List<OfficialPrescriptionTemplate> _customs = [];
   CareTemplateCatalog _catalog = CareTemplateCatalog.builtIn;
 
   /// Templates shown in the picker (inactive ones are hidden).
@@ -192,6 +196,68 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
         .showSnackBar(SnackBar(content: Text('“${saved.title}” সেভ হয়েছে।')));
   }
 
+  /// Adds (or edits) a one-off row in [category] for this person only.
+  Future<void> _addCustom(
+    String category, {
+    OfficialPrescriptionTemplate? existing,
+  }) async {
+    final categoryTitle = officialTemplateCategories
+        .firstWhere(
+          (c) => c.id == category,
+          orElse: () => officialTemplateCategories.first,
+        )
+        .title;
+    final result = await showModalBottomSheet<_CustomDraft>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (_) => _CustomItemSheet(
+        categoryTitle: categoryTitle,
+        initialTitle: existing?.title,
+        initialInstruction: existing?.title == existing?.instruction
+            ? null
+            : existing?.instruction,
+      ),
+    );
+    if (result == null || !mounted) return;
+    final draft = customBulkTemplate(
+      id:
+          existing?.id ??
+          '$bulkCustomItemIdPrefix${DateTime.now().microsecondsSinceEpoch}',
+      category: category,
+      title: result.title,
+      instruction: result.instruction,
+    );
+    setState(() {
+      final key = 'c:${draft.id}';
+      final index = _customs.indexWhere((c) => c.id == draft.id);
+      if (index >= 0) {
+        _customs[index] = draft;
+      } else {
+        _customs.add(draft);
+      }
+      final previous = _selected[key];
+      final item = BulkImportItem.custom(draft, times: previous?.times);
+      if (previous != null) {
+        item.resourceIds.addAll(previous.resourceIds);
+        item.durationDays = previous.durationDays;
+        item.notificationTitle = previous.notificationTitle;
+        item.reminderEnabled = previous.reminderEnabled;
+      }
+      _selected[key] = item;
+    });
+  }
+
+  void _toggleCustom(OfficialPrescriptionTemplate draft) {
+    setState(() {
+      final key = 'c:${draft.id}';
+      if (_selected.remove(key) == null) {
+        _selected[key] = BulkImportItem.custom(draft);
+      }
+    });
+  }
+
   void _toggleResource(ContentResourceOption resource) {
     setState(() {
       final key = 'r:${resource.id}';
@@ -201,12 +267,24 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     });
   }
 
-  void _setGroup(Iterable<OfficialPrescriptionTemplate> group, bool select) {
+  void _setGroup(
+    Iterable<OfficialPrescriptionTemplate> group,
+    bool select, [
+    Iterable<OfficialPrescriptionTemplate> customs = const [],
+  ]) {
     setState(() {
       for (final template in group) {
         final key = 't:${template.id}';
         if (select) {
           _selected.putIfAbsent(key, () => _newTemplateItem(template));
+        } else {
+          _selected.remove(key);
+        }
+      }
+      for (final draft in customs) {
+        final key = 'c:${draft.id}';
+        if (select) {
+          _selected.putIfAbsent(key, () => BulkImportItem.custom(draft));
         } else {
           _selected.remove(key);
         }
@@ -251,19 +329,24 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
     });
   }
 
-  /// Adds one more linked resource; earlier links stay.
+  /// Adds linked resources from the grid picker (several at once); earlier
+  /// links stay.
   Future<void> _pickResource(BulkImportItem item) async {
     if (item.resourceIds.length >= bulkMaxResourcesPerItem) return;
-    final id = await showResourcePickerSheet(
+    final ids = await showResourceMultiPickerSheet(
       context: context,
       resources: _resources,
-      selectedId: '',
+      alreadyLinked: item.resourceIds.toSet(),
+      maxSelection: bulkMaxResourcesPerItem,
     );
-    if (id == null || id.isEmpty || id.startsWith('official-template:')) {
-      return;
-    }
-    if (!mounted || item.resourceIds.contains(id)) return;
-    setState(() => item.resourceIds.add(id));
+    if (ids == null || ids.isEmpty || !mounted) return;
+    setState(() {
+      for (final id in ids) {
+        if (id.isEmpty || id.startsWith('official-template:')) continue;
+        if (item.resourceIds.length >= bulkMaxResourcesPerItem) break;
+        if (!item.resourceIds.contains(id)) item.resourceIds.add(id);
+      }
+    });
   }
 
   List<_LinkedResource> _linkedResources(BulkImportItem? item) => [
@@ -593,8 +676,11 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                       _matches('${t.title} ${t.instruction}'),
                 )
                 .toList(growable: false),
+            _customs
+                .where((t) => t.category == category.id)
+                .toList(growable: false),
           ),
-    ].where((group) => group.$2.isNotEmpty).toList();
+    ].where((g) => g.$2.isNotEmpty || g.$3.isNotEmpty).toList();
     return [
       SliverToBoxAdapter(
         child: _filters([
@@ -630,18 +716,65 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
             child: Text('কিছু পাওয়া যায়নি। অন্য শব্দ লিখে দেখুন।'),
           ),
         ),
-      for (final (category, templates) in groups) ...[
+      for (final (category, templates, customs) in groups) ...[
         SliverToBoxAdapter(
           child: _GroupHeader(
             title: category.title,
             subtitle: category.subtitle,
-            total: templates.length,
-            selected: templates
-                .where((t) => _selected.containsKey('t:${t.id}'))
-                .length,
-            onSelectAll: (select) => _setGroup(templates, select),
+            total: templates.length + customs.length,
+            selected:
+                templates
+                    .where((t) => _selected.containsKey('t:${t.id}'))
+                    .length +
+                customs.where((t) => _selected.containsKey('c:${t.id}')).length,
+            onSelectAll: (select) => _setGroup(templates, select, customs),
           ),
         ),
+        if (customs.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              SukunSpace.page,
+              0,
+              SukunSpace.page,
+              SukunSpace.sm,
+            ),
+            sliver: SliverList.separated(
+              itemCount: customs.length,
+              separatorBuilder: (_, _) => const SizedBox(height: SukunSpace.sm),
+              itemBuilder: (context, index) {
+                final draft = customs[index];
+                final item = _selected['c:${draft.id}'];
+                return _BulkRow(
+                  key: Key('bulk-custom-${draft.id}'),
+                  title: draft.title,
+                  subtitle: draft.instruction == draft.title
+                      ? 'নিজের যোগ করা · শুধু এখানে'
+                      : draft.instruction,
+                  badge: 'নতুন',
+                  item: item,
+                  onEditTemplate: () =>
+                      _addCustom(draft.category, existing: draft),
+                  onToggle: () => _toggleCustom(draft),
+                  onEditTime: (i) => _editTime(item!, i),
+                  onRemoveTime: (i) => setState(() => item!.times.removeAt(i)),
+                  onVariable: (_, _) {},
+                  onDuration: widget.showDuration
+                      ? (days) => setState(() => item!.durationDays = days)
+                      : null,
+                  onPickResource: () => _pickResource(item!),
+                  onRemoveResource: (id) =>
+                      setState(() => item!.resourceIds.remove(id)),
+                  linkedResources: _linkedResources(item),
+                  needsResource: draft.requiresLinkedResource,
+                  onNotificationTitle: (value) =>
+                      setState(() => item!.notificationTitle = value),
+                  onReminderEnabled: widget.showDuration
+                      ? (value) => setState(() => item!.reminderEnabled = value)
+                      : null,
+                );
+              },
+            ),
+          ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: SukunSpace.page),
           sliver: SliverList.separated(
@@ -678,6 +811,21 @@ class _BulkTemplateImportScreenState extends State<BulkTemplateImportScreen> {
                     : null,
               );
             },
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            SukunSpace.page,
+            SukunSpace.sm,
+            SukunSpace.page,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: _AddNewTile(
+              key: Key('bulk-add-new-${category.id}'),
+              label: '${category.title}-এ নতুন যোগ করুন',
+              onTap: () => _addCustom(category.id),
+            ),
           ),
         ),
       ],
@@ -807,7 +955,7 @@ class _GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final all = selected == total;
+    final all = total > 0 && selected == total;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SukunSpace.page,
@@ -835,14 +983,193 @@ class _GroupHeader extends StatelessWidget {
               ],
             ),
           ),
-          TextButton.icon(
-            onPressed: () => onSelectAll(!all),
-            icon: Icon(
-              all ? Icons.remove_done_rounded : Icons.done_all_rounded,
+          if (total > 0)
+            TextButton.icon(
+              onPressed: () => onSelectAll(!all),
+              icon: Icon(
+                all ? Icons.remove_done_rounded : Icons.done_all_rounded,
+              ),
+              label: Text(all ? 'বাদ দিন' : 'সব বাছুন'),
             ),
-            label: Text(all ? 'বাদ দিন' : 'সব বাছুন'),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+/// Dashed "+ নতুন যোগ করুন" row closing each section's list.
+class _AddNewTile extends StatelessWidget {
+  const _AddNewTile({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: SukunColors.paleBlue,
+    borderRadius: BorderRadius.circular(SukunRadius.tile),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SukunRadius.tile),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(SukunRadius.tile),
+          border: Border.all(
+            color: SukunColors.sukunBlue.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: const BoxDecoration(
+                color: SukunColors.sukunBlue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: SukunSpace.md),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: SukunColors.deepTide,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+final class _CustomDraft {
+  const _CustomDraft(this.title, this.instruction);
+
+  final String title;
+  final String instruction;
+}
+
+/// A short form for a one-off row in one section. Nothing is inferred: the
+/// writer types the name and, if they want, the instruction in their words.
+class _CustomItemSheet extends StatefulWidget {
+  const _CustomItemSheet({
+    required this.categoryTitle,
+    this.initialTitle,
+    this.initialInstruction,
+  });
+
+  final String categoryTitle;
+  final String? initialTitle;
+  final String? initialInstruction;
+
+  @override
+  State<_CustomItemSheet> createState() => _CustomItemSheetState();
+}
+
+class _CustomItemSheetState extends State<_CustomItemSheet> {
+  late final _title = TextEditingController(text: widget.initialTitle);
+  late final _instruction = TextEditingController(
+    text: widget.initialInstruction,
+  );
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _instruction.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final title = _title.text.trim();
+    if (title.isEmpty) return;
+    Navigator.of(context).pop(_CustomDraft(title, _instruction.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final editing = widget.initialTitle != null;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        SukunSpace.page,
+        0,
+        SukunSpace.page,
+        MediaQuery.viewInsetsOf(context).bottom + SukunSpace.page,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const SukunIconBadge(icon: Icons.add_task_rounded, size: 40),
+                const SizedBox(width: SukunSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        editing ? 'আইটেম এডিট' : 'নতুন যোগ করুন',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${widget.categoryTitle} · শুধু এই তালিকার জন্য, '
+                        'টেমপ্লেটে সেভ হবে না',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: SukunColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: SukunSpace.lg),
+            TextField(
+              key: const Key('bulk-custom-title'),
+              controller: _title,
+              autofocus: true,
+              maxLength: 120,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'নাম',
+                hintText: 'যেমন: সকালে মধু খাওয়া',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: SukunSpace.sm),
+            TextField(
+              key: const Key('bulk-custom-instruction'),
+              controller: _instruction,
+              minLines: 2,
+              maxLines: 5,
+              maxLength: 600,
+              decoration: const InputDecoration(
+                labelText: 'নির্দেশনা (ঐচ্ছিক)',
+                hintText: 'কী করতে হবে, নিজের ভাষায় লিখুন',
+              ),
+            ),
+            const SizedBox(height: SukunSpace.md),
+            FilledButton.icon(
+              key: const Key('bulk-custom-save'),
+              onPressed: _title.text.trim().isEmpty ? null : _save,
+              icon: const Icon(Icons.check_rounded),
+              label: Text(editing ? 'সেভ করুন' : 'যোগ করুন ও টিক দিন'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -891,10 +1218,14 @@ class _BulkRow extends StatelessWidget {
     required this.onNotificationTitle,
     this.onReminderEnabled,
     this.onEditTemplate,
+    this.badge,
   });
 
   final String title;
   final String subtitle;
+
+  /// Small tag after the title, e.g. "নতুন" for a hand-written row.
+  final String? badge;
   final BulkImportItem? item;
   final VoidCallback onToggle;
   final ValueChanged<int> onEditTime;
@@ -949,8 +1280,37 @@ class _BulkRow extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title,
+                          Text.rich(
+                            TextSpan(
+                              text: title,
+                              children: [
+                                if (badge != null)
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: SukunColors.mist,
+                                        borderRadius: BorderRadius.circular(
+                                          SukunRadius.chip,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        badge!,
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: SukunColors.deepTide,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),

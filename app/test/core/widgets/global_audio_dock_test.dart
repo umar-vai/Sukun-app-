@@ -116,11 +116,17 @@ void main() {
         of: find.byType(AudioDockPositioner),
         matching: find.byType(Align),
       );
-      expect(tester.getSize(outerAlign.first).height, 150);
-      expect(tester.getSize(find.byType(Slider)).height, 40);
+      expect(tester.getSize(outerAlign.first).height, 138);
+      expect(
+        tester.getSize(find.byKey(const Key('audio-dock-seek'))).height,
+        AudioDockSeekSlider.height,
+      );
       expect(tester.getRect(outerAlign.first).top, greaterThan(600));
 
-      await tester.drag(find.byType(Slider), const Offset(100, 0));
+      await tester.drag(
+        find.byKey(const Key('audio-dock-seek')),
+        const Offset(100, 0),
+      );
       await tester.pump();
       expect(seekTarget, isNotNull);
       expect(tester.takeException(), isNull);
@@ -166,12 +172,15 @@ void main() {
       ),
     );
 
-    expect(tester.getSize(find.byType(Slider)).height, 40);
+    expect(
+      tester.getSize(find.byKey(const Key('audio-dock-seek'))).height,
+      AudioDockSeekSlider.height,
+    );
     final outerAlign = find.descendant(
       of: find.byType(AudioDockPositioner),
       matching: find.byType(Align),
     );
-    expect(tester.getSize(outerAlign.first).height, 150);
+    expect(tester.getSize(outerAlign.first).height, 138);
     expect(tester.getRect(outerAlign.first).bottom, 746);
   });
 
@@ -313,22 +322,31 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('seek slider uses a slim rounded track', (tester) async {
+  testWidgets('seek bar is slim and seeks on tap', (tester) async {
+    Duration? target;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: AudioDockSeekSlider(
-            duration: const Duration(minutes: 10),
-            position: const Duration(minutes: 2),
-            onSeek: (_) {},
+          body: Center(
+            child: SizedBox(
+              width: 400,
+              child: AudioDockSeekSlider(
+                duration: const Duration(minutes: 10),
+                position: const Duration(minutes: 2),
+                onSeek: (value) => target = value,
+              ),
+            ),
           ),
         ),
       ),
     );
-    final theme = tester.widget<SliderTheme>(find.byType(SliderTheme).last);
-    expect(theme.data.trackHeight, 3);
-    expect(theme.data.trackShape, isA<RoundedRectSliderTrackShape>());
-    expect(tester.getSize(find.byType(Slider)).height, 40);
+    final bar = find.byKey(const Key('audio-dock-seek'));
+    expect(find.byType(Slider), findsNothing);
+    expect(tester.getSize(bar).height, AudioDockSeekSlider.height);
+    final rect = tester.getRect(bar);
+    await tester.tapAt(Offset(rect.left + rect.width / 2, rect.center.dy));
+    await tester.pump();
+    expect(target, const Duration(minutes: 5));
     expect(tester.takeException(), isNull);
   });
 

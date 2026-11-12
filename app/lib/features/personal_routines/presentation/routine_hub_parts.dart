@@ -3,27 +3,68 @@ import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 
-/// Tabs inside the Routine hub. Today comes first because it is what people
-/// open the app for every day.
-enum RoutineHubTab { today, myRoutines, progress }
+/// Tabs inside the Routine hub. "আজকের আমল" (today's list plus progress)
+/// comes first because it is what people open the app for every day.
+enum RoutineHubTab { today, myRoutines }
 
 /// Maps the `?tab=` query (and a library `resourceId`) to the first tab.
 /// `assigned` was the old "ready routines" tab; those now live inside
-/// My Routines, so old links still land in the right place.
+/// My Routines. Progress is part of Today now, so `?tab=progress` opens it.
 RoutineHubTab routineHubInitialTab({String? initialTab, String? resourceId}) {
   if (resourceId != null) return RoutineHubTab.myRoutines;
   return switch (initialTab) {
-    'progress' => RoutineHubTab.progress,
     'assigned' || 'routines' || 'mine' => RoutineHubTab.myRoutines,
     _ => RoutineHubTab.today,
   };
 }
 
 String routineHubTabLabel(RoutineHubTab tab) => switch (tab) {
-  RoutineHubTab.today => 'আজ',
+  RoutineHubTab.today => 'আজকের আমল',
   RoutineHubTab.myRoutines => 'আমার রুটিন',
-  RoutineHubTab.progress => 'অগ্রগতি',
 };
+
+/// Routines for the "আমার রুটিন" tab: ones an admin set come first, then
+/// the person's own. Within each group active routines lead; otherwise the
+/// original (creation) order is kept.
+({List<Map<String, dynamic>> assigned, List<Map<String, dynamic>> own})
+orderRoutinesForHub(
+  List<Map<String, dynamic>> routines,
+  Set<String> adminAssignedIds,
+) {
+  List<Map<String, dynamic>> activeFirst(Iterable<Map<String, dynamic>> rows) =>
+      [
+        ...rows.where((r) => r['is_active'] == true),
+        ...rows.where((r) => r['is_active'] != true),
+      ];
+  return (
+    assigned: activeFirst(
+      routines.where((r) => adminAssignedIds.contains(r['id'])),
+    ),
+    own: activeFirst(
+      routines.where((r) => !adminAssignedIds.contains(r['id'])),
+    ),
+  );
+}
+
+/// Consecutive days, ending today, with at least one completed action. If
+/// nothing is done yet today the run counts back from yesterday, so an
+/// unfinished morning does not reset the streak.
+int routineStreakDays(Set<String> doneDates, DateTime today) {
+  String key(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+  var day = DateTime(today.year, today.month, today.day);
+  if (!doneDates.contains(key(day))) {
+    day = day.subtract(const Duration(days: 1));
+  }
+  var streak = 0;
+  while (doneDates.contains(key(day))) {
+    streak++;
+    day = DateTime(day.year, day.month, day.day - 1);
+  }
+  return streak;
+}
 
 /// Calm Mist segmented switch, the same pattern as patient detail.
 class RoutineHubTabs extends StatelessWidget {

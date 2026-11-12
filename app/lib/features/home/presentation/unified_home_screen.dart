@@ -15,6 +15,7 @@ import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dar
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/personal_routines/presentation/today_routine_panel.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
@@ -113,6 +114,15 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       patientDay: day,
       planUnavailable: planUnavailable,
       personalUnavailable: personalUnavailable,
+      allDoneToday:
+          !planUnavailable &&
+          !personalUnavailable &&
+          HomeNextActions.allDoneToday(
+            patientDay: day,
+            routines: routines,
+            actions: actions,
+            outcomes: outcomes,
+          ),
       actions: HomeNextActions.select(
         now: DateTime.now(),
         patientDay: day,
@@ -973,12 +983,16 @@ class _HomeTasksData {
     this.patientDay,
     this.planUnavailable = false,
     this.personalUnavailable = false,
+    this.allDoneToday = false,
   });
 
   final List<HomeNextAction> actions;
   final PatientDay? patientDay;
   final bool planUnavailable;
   final bool personalUnavailable;
+
+  /// Everything for today is finished: Home shows the green note.
+  final bool allDoneToday;
 }
 
 class _UnifiedNextTasks extends StatelessWidget {
@@ -987,7 +1001,20 @@ class _UnifiedNextTasks extends StatelessWidget {
   final Future<_HomeTasksData> future;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => FutureBuilder<_HomeTasksData>(
+    future: future,
+    builder: (context, snapshot) {
+      if (snapshot.data?.allDoneToday == true) {
+        return TodayAllDoneCard(
+          key: const Key('home-all-done'),
+          onTap: () => context.push('/my-routines'),
+        );
+      }
+      return _nextTasksCard(context);
+    },
+  );
+
+  Widget _nextTasksCard(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return SukunSurface(
       key: const Key('home-unified-next-tasks'),

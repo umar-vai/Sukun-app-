@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/personal_routines/presentation/routine_hub_parts.dart';
 
 /// Patient/member's own active actions, using owner-filtered repository rows.
 /// An outcome of "skipped" never counts as completed.
@@ -28,6 +29,8 @@ class TodayRoutinePanel extends StatelessWidget {
     required this.onOpen,
     this.onOpenPatientToday,
     this.onOpenHistory,
+    this.history = const [],
+    this.today,
     this.busy = false,
   });
 
@@ -38,6 +41,12 @@ class TodayRoutinePanel extends StatelessWidget {
   final ValueChanged<String> onOpen;
   final VoidCallback? onOpenPatientToday;
   final VoidCallback? onOpenHistory;
+
+  /// Last days' outcome rows (`local_date`, `outcome`) for the streak strip.
+  final List<Map<String, dynamic>> history;
+
+  /// Overridable for tests; defaults to now.
+  final DateTime? today;
   final bool busy;
 
   @override
@@ -168,7 +177,7 @@ class TodayRoutinePanel extends StatelessWidget {
                     : CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'আজকের রুটিন',
+                    'আজকের আমল',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -221,6 +230,17 @@ class TodayRoutinePanel extends StatelessWidget {
             },
           ),
         ),
+        const SizedBox(height: SukunSpace.md),
+        _StreakStrip(
+          history: history,
+          today: today ?? DateTime.now(),
+          doneToday: summary.completed > 0,
+          onOpenHistory: onOpenHistory,
+        ),
+        if (summary.total > 0 && summary.remaining == 0) ...[
+          const SizedBox(height: SukunSpace.md),
+          const TodayAllDoneCard(key: Key('today-all-done')),
+        ],
         const SizedBox(height: SukunSpace.section),
         SukunSectionHeader(
           title: 'আজকের করণীয়',
@@ -246,17 +266,6 @@ class TodayRoutinePanel extends StatelessWidget {
               onOpen: () => onOpen(action['id'] as String),
             ),
           ),
-        if (onOpenHistory != null) ...[
-          const SizedBox(height: SukunSpace.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: onOpenHistory,
-              icon: const Icon(Icons.insights_outlined),
-              label: const Text('আগের দিনের অগ্রগতি দেখুন'),
-            ),
-          ),
-        ],
         const SizedBox(height: SukunSpace.sm),
         Text(
           'এই অগ্রগতি শুধু নিজের সম্পন্ন করা রুটিনের হিসাব; চিকিৎসার ফলাফল নয়।',
@@ -341,4 +350,220 @@ class _TodayActionTile extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Green "all done" note shown on Today and on Home once every active
+/// action of the day is marked complete.
+class TodayAllDoneCard extends StatelessWidget {
+  const TodayAllDoneCard({super.key, this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: SukunColors.successSoft,
+      borderRadius: BorderRadius.circular(SukunRadius.card),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SukunRadius.card),
+        child: Ink(
+          padding: const EdgeInsets.all(SukunSpace.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SukunRadius.card),
+            border: Border.all(
+              color: SukunColors.success.withValues(alpha: 0.28),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: SukunColors.success,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: SukunSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'মাশাআল্লাহ! আজকের সব আমল সম্পন্ন',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: SukunColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'আল্লাহ কবুল করুন। আগামীকাল আবার মনে করিয়ে দেওয়া হবে।',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: SukunColors.nightNavy.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Seven small day dots (filled when something was done that day) with the
+/// running streak, replacing the old separate Progress tab at a glance.
+class _StreakStrip extends StatelessWidget {
+  const _StreakStrip({
+    required this.history,
+    required this.today,
+    required this.doneToday,
+    this.onOpenHistory,
+  });
+
+  final List<Map<String, dynamic>> history;
+  final DateTime today;
+  final bool doneToday;
+  final VoidCallback? onOpenHistory;
+
+  static String _key(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = DateTime(today.year, today.month, today.day);
+    final doneDates = <String>{
+      for (final row in history)
+        if (row['outcome'] == 'done') row['local_date'].toString(),
+      if (doneToday) _key(base),
+    };
+    final streak = routineStreakDays(doneDates, base);
+    const weekdays = ['সো', 'ম', 'বু', 'বৃ', 'শু', 'শ', 'র'];
+    final days = [
+      for (var i = 6; i >= 0; i--)
+        DateTime(base.year, base.month, base.day - i),
+    ];
+    final activeDays = days.where((d) => doneDates.contains(_key(d))).length;
+    return SukunSurface(
+      key: const Key('today-streak-strip'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 12),
+      onTap: onOpenHistory,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.local_fire_department_outlined,
+                color: SukunColors.deepTide,
+                size: 20,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  streak == 0
+                      ? 'ধারাবাহিকতা শুরু করুন'
+                      : 'টানা ${_bnDigits(streak)} দিন আমল',
+                  key: const Key('today-streak-label'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                '৭ দিনে ${_bnDigits(activeDays)} দিন',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: SukunColors.muted,
+                ),
+              ),
+              if (onOpenHistory != null)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: SukunColors.muted,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final day in days)
+                Expanded(
+                  child: Column(
+                    children: [
+                      _DayDot(
+                        done: doneDates.contains(_key(day)),
+                        isToday: day == base,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        weekdays[day.weekday - 1],
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: day == base
+                              ? SukunColors.nightNavy
+                              : SukunColors.muted,
+                          fontWeight: day == base
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          if (onOpenHistory != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'বিস্তারিত অগ্রগতি দেখতে চাপুন',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: SukunColors.deepTide,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DayDot extends StatelessWidget {
+  const _DayDot({required this.done, required this.isToday});
+
+  final bool done;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 26,
+    height: 26,
+    decoration: BoxDecoration(
+      color: done ? SukunColors.sukunBlue : SukunColors.mist,
+      shape: BoxShape.circle,
+      border: isToday
+          ? Border.all(color: SukunColors.deepTide, width: 2)
+          : null,
+    ),
+    child: done
+        ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+        : null,
+  );
+}
+
+String _bnDigits(int value) {
+  const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return '$value'.split('').map((d) => digits[int.parse(d)]).join();
 }

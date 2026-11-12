@@ -151,18 +151,36 @@ const bulkDurationQuickValues = <int>[7, 14, 21, 40];
 final class BulkImportItem {
   BulkImportItem.template(this.template, {List<ReminderClock>? times})
     : resource = null,
+      isCustom = false,
       times = times ?? defaultTimesForTemplate(template!),
       variables = {},
       resourceIds = [];
 
+  /// A one-off row written for this person only, from a section's
+  /// "নতুন যোগ করুন". [draft] is never saved as a Sukun template and its
+  /// synthetic id is never sent to the server.
+  BulkImportItem.custom(
+    OfficialPrescriptionTemplate draft, {
+    List<ReminderClock>? times,
+  }) : template = draft,
+       resource = null,
+       isCustom = true,
+       times = times ?? defaultTimesForTemplate(draft),
+       variables = {},
+       resourceIds = [];
+
   BulkImportItem.resource(this.resource, {List<ReminderClock>? times})
     : template = null,
+      isCustom = false,
       times = times ?? defaultTimesForResource(resource!),
       variables = {},
       resourceIds = [resource!.id];
 
   final OfficialPrescriptionTemplate? template;
   final ContentResourceOption? resource;
+
+  /// True for a row the admin or member wrote by hand for this import.
+  final bool isCustom;
   final List<ReminderClock> times;
   final Map<String, int> variables;
 
@@ -197,14 +215,16 @@ final class BulkImportItem {
         : value;
   }
 
-  String get key =>
-      template != null ? 't:${template!.id}' : 'r:${resource!.id}';
+  String get key => template != null
+      ? '${isCustom ? 'c' : 't'}:${template!.id}'
+      : 'r:${resource!.id}';
 
   String get title => template?.title ?? resource!.displayTitle;
 
   String get actionType => template?.actionType ?? resource!.type;
 
-  String? get templateId => template?.id;
+  /// Only real Sukun templates are referenced; custom rows carry none.
+  String? get templateId => isCustom ? null : template?.id;
 
   List<String> get missingVariables => [
     for (final variable in template?.requiredVariables ?? const <String>[])
@@ -221,7 +241,7 @@ final class BulkImportItem {
   /// picked before it finished (the row would otherwise stay empty).
   void fillSuggestedResources(List<ContentResourceOption> library) {
     final source = template;
-    if (source == null || resourceIds.isNotEmpty) return;
+    if (source == null || isCustom || resourceIds.isNotEmpty) return;
     resourceIds.addAll(
       suggestResourcesForTemplate(source, library).map((r) => r.id),
     );
@@ -572,3 +592,25 @@ const _templateKeywords = <String, List<String>>{
   'u11': ['ইদরিস', 'idris'],
   'u12': ['আজমী', 'ajmi', 'azmi'],
 };
+
+/// Prefix of the synthetic id a custom row's draft template carries.
+const bulkCustomItemIdPrefix = 'custom-';
+
+/// Builds the in-memory draft for a hand-written row in [category].
+OfficialPrescriptionTemplate customBulkTemplate({
+  required String id,
+  required String category,
+  required String title,
+  required String instruction,
+  List<ReminderClock>? times,
+}) => OfficialPrescriptionTemplate(
+  id: id,
+  category: category,
+  title: title.trim(),
+  instruction: instruction.trim().isEmpty ? title.trim() : instruction.trim(),
+  actionType: actionTypeForTemplateCategory(category),
+  defaultTimes: times,
+  resourceRefs: const [],
+  // Audio still needs a linked audio before it can remind anyone.
+  requiresResource: category == 'audio',
+);

@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_settings.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
+import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 import 'package:sukun_life/features/personal_routines/domain/prayer_relative_reminder.dart';
 
 /// A display-only link to an RLS-visible patient task or owner-owned routine.
@@ -24,6 +25,38 @@ class HomeNextAction {
 }
 
 abstract final class HomeNextActions {
+  /// True when there was something to do today and all of it is finished:
+  /// every active routine action is marked done and no approved care-plan
+  /// task is still open. Home then congratulates instead of jumping to
+  /// tomorrow's first item.
+  static bool allDoneToday({
+    required PatientDay? patientDay,
+    required List<Map<String, dynamic>> routines,
+    required List<Map<String, dynamic>> actions,
+    required Map<String, String> outcomes,
+  }) {
+    final activeRoutines = <Object?>{
+      for (final routine in routines)
+        if (routine['is_active'] == true) routine['id'],
+    };
+    final todays = [
+      for (final action in actions)
+        if (action['is_active'] == true &&
+            activeRoutines.contains(action['routine_id']))
+          action,
+    ];
+    final planTasks = patientDay?.activePlan != null
+        ? patientDay!.tasks
+        : const <PatientTask>[];
+    if (todays.isEmpty && planTasks.isEmpty) return false;
+    final routinesDone = todays.every((action) {
+      final outcome = outcomes[action['id']];
+      return outcome == 'done' || outcome == 'completed';
+    });
+    final planDone = planTasks.every((task) => !task.status.canUpdate);
+    return routinesDone && planDone;
+  }
+
   static List<HomeNextAction> select({
     required DateTime now,
     required PatientDay? patientDay,
