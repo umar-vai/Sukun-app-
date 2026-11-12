@@ -70,7 +70,7 @@ class AdminHomeScreen extends StatelessWidget {
     // A raqi sees patient work only; the database enforces the same.
     final raqi = isRaqiSession(context);
     return AdminScaffold(
-      title: copy?.adminDashboard ?? 'কাজের সারসংক্ষেপ',
+      title: copy?.adminDashboard ?? 'অ্যাডমিন হোম',
       selectedIndex: 0,
       body: Align(
         alignment: Alignment.topCenter,

@@ -30,12 +30,14 @@ class RoleNavigationShell extends ConsumerWidget {
     final signedInUser =
         session?.isMember == true || session?.isPatient == true;
     final destinations = admin
-        ? (raqi ? _adminDestinations.take(2).toList() : _adminDestinations)
+        ? (raqi
+              ? [..._adminDestinations.take(2), _adminDestinations.last]
+              : _adminDestinations)
         : signedInUser
         ? sharedUserDestinations
         : _publicDestinations;
     final routes = admin
-        ? (raqi ? _adminRoutes.take(2).toList() : _adminRoutes)
+        ? (raqi ? [..._adminRoutes.take(2), _adminRoutes.last] : _adminRoutes)
         : signedInUser
         ? sharedUserRoutes
         : _publicRoutes;
@@ -131,6 +133,7 @@ bool showsNavigationShell(String path) {
     '/admin/patients',
     '/admin/content',
     '/admin/announcements',
+    '/admin/account',
   }.contains(path);
 }
 
@@ -138,7 +141,7 @@ String navigationParent(String path, AppSession? session) {
   if (path == '/prayer-times/settings') return '/prayer-times';
   if (path == '/settings/bengali-font') return '/settings/appearance';
   if (path.startsWith('/settings/')) {
-    return session?.isStaff == true ? '/admin/dashboard' : '/account';
+    return session?.isStaff == true ? '/admin/account' : '/account';
   }
   if (path.startsWith('/admin/announcements/')) return '/admin/announcements';
   if (path.startsWith('/admin/users/')) return '/admin/users';
@@ -167,6 +170,19 @@ String navigationParent(String path, AppSession? session) {
 
 int navigationIndex(String path, AppSession? session) {
   if (session?.isStaff == true) {
+    final raqi = session?.isRaqi == true;
+    if (path.startsWith('/admin/account') ||
+        path.startsWith('/admin/staff') ||
+        path.startsWith('/settings/')) {
+      return raqi ? 2 : 4;
+    }
+    if (raqi &&
+        (path.startsWith('/admin/content') ||
+            path.startsWith('/admin/library') ||
+            path.startsWith('/resources') ||
+            path.startsWith('/announcements'))) {
+      return 0;
+    }
     if (path.startsWith('/admin/patients') ||
         path.startsWith('/admin/users') ||
         path.startsWith('/admin/user-routines')) {
@@ -196,6 +212,7 @@ const _adminRoutes = [
   '/admin/users',
   '/admin/library',
   '/admin/announcements',
+  '/admin/account',
 ];
 const _publicRoutes = ['/', '/announcements'];
 
@@ -219,6 +236,11 @@ const _adminDestinations = [
     icon: Icons.campaign_outlined,
     selectedIcon: Icons.campaign,
     label: 'নোটিশ',
+  ),
+  SukunNavDestination(
+    icon: Icons.account_circle_outlined,
+    selectedIcon: Icons.account_circle,
+    label: 'অ্যাকাউন্ট',
   ),
 ];
 const _publicDestinations = [

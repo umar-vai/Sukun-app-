@@ -233,7 +233,8 @@ void main() {
         final footer = tester.widget<SukunBottomNavigation>(
           find.byType(SukunBottomNavigation),
         );
-        expect(footer.destinations, hasLength(4));
+        // Admins also have an Account tab (owner request 2026-11-12).
+        expect(footer.destinations, hasLength(session.isStaff ? 5 : 4));
         expect(tester.takeException(), isNull);
       }
       await tester.pumpWidget(const SizedBox.shrink());

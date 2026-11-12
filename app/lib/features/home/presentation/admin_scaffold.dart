@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/home/presentation/staff_access.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 
 class AdminScaffold extends StatefulWidget {
+  /// Tab index of the admin Account page.
+  static const accountIndex = 4;
+
   const AdminScaffold({
     super.key,
     required this.title,
@@ -79,10 +83,67 @@ class _AdminScaffoldState extends State<AdminScaffold> {
   @override
   Widget build(BuildContext context) {
     final copy = Localizations.of<AppLocalizations>(context, AppLocalizations);
-    // A raqi works with patients only: Home and Patients tabs.
+    // A raqi works with patients only: Home, Patients and Account tabs.
     final raqi = isRaqiSession(context);
+    final tabs = <(int, String, SukunNavDestination)>[
+      (
+        0,
+        '/admin/dashboard',
+        const SukunNavDestination(
+          icon: Icons.dashboard_outlined,
+          selectedIcon: Icons.dashboard,
+          label: 'হোম',
+        ),
+      ),
+      (
+        1,
+        '/admin/users',
+        const SukunNavDestination(
+          icon: Icons.people_outline,
+          selectedIcon: Icons.people,
+          label: 'রোগী',
+        ),
+      ),
+      if (!raqi) ...[
+        (
+          2,
+          '/admin/library',
+          const SukunNavDestination(
+            icon: Icons.library_books_outlined,
+            selectedIcon: Icons.library_books,
+            label: 'উপকরণ',
+          ),
+        ),
+        (
+          3,
+          '/admin/announcements',
+          const SukunNavDestination(
+            icon: Icons.campaign_outlined,
+            selectedIcon: Icons.campaign,
+            label: 'নোটিশ',
+          ),
+        ),
+      ],
+      (
+        AdminScaffold.accountIndex,
+        '/admin/account',
+        const SukunNavDestination(
+          icon: Icons.account_circle_outlined,
+          selectedIcon: Icons.account_circle,
+          label: 'অ্যাকাউন্ট',
+        ),
+      ),
+    ];
+    final selected = tabs.indexWhere((t) => t.$1 == widget.selectedIndex);
     return Scaffold(
       appBar: AppBar(
+        // The official logo, untouched, in the top corner of every admin page.
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: SukunLifeLogo(height: 36),
+        ),
+        leadingWidth: 64,
+        titleSpacing: 4,
         title: Text(widget.title),
         actions: [
           ...?widget.actions,
@@ -93,43 +154,11 @@ class _AdminScaffoldState extends State<AdminScaffold> {
       floatingActionButton: widget.floatingActionButton,
       bottomNavigationBar: SukunBottomNavigation(
         navyEmphasis: true,
-        selectedIndex: raqi
-            ? widget.selectedIndex.clamp(0, 1)
-            : widget.selectedIndex,
-        onSelected: (index) {
-          // Detail screens share an active tab with their parent. A tap must
-          // still return to that tab's root instead of becoming a no-op.
-          context.go(switch (index) {
-            0 => '/admin/dashboard',
-            1 => '/admin/users',
-            2 => '/admin/library',
-            _ => '/admin/announcements',
-          });
-        },
-        destinations: [
-          SukunNavDestination(
-            icon: Icons.dashboard_outlined,
-            selectedIcon: Icons.dashboard,
-            label: copy?.adminDashboard ?? 'অ্যাডমিন হোম',
-          ),
-          SukunNavDestination(
-            icon: Icons.people_outline,
-            selectedIcon: Icons.people,
-            label: 'রোগী',
-          ),
-          if (!raqi) ...[
-            const SukunNavDestination(
-              icon: Icons.library_books_outlined,
-              selectedIcon: Icons.library_books,
-              label: 'উপকরণ',
-            ),
-            const SukunNavDestination(
-              icon: Icons.campaign_outlined,
-              selectedIcon: Icons.campaign,
-              label: 'নোটিশ',
-            ),
-          ],
-        ],
+        selectedIndex: selected < 0 ? 0 : selected,
+        // Detail screens share an active tab with their parent. A tap must
+        // still return to that tab's root instead of becoming a no-op.
+        onSelected: (index) => context.go(tabs[index].$2),
+        destinations: [for (final tab in tabs) tab.$3],
       ),
     );
   }
