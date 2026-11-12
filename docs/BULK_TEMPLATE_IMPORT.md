@@ -177,3 +177,22 @@ not selectable in the PDF.
   (maximum 48 pending), refreshed whenever the app opens. Large imports still
   remind correctly but only a few days ahead at a time.
 - Web reminders only fire while the tab is open (existing limitation).
+
+## Permanent template home (2026-11-12)
+
+Owner request: the 51 templates are the "Sukun Life official templates", the
+blueprint for every import, and need their own place to edit, add and remove.
+
+- Admin home → পরিচালনা → **সুকুন অফিসিয়াল টেমপ্লেট** (`/admin/care-templates`,
+  `app/lib/features/care_plans/presentation/care_templates_admin_screen.dart`).
+- Lists every template by category with its default times and content count;
+  search and category filter. Tap to edit (same editor as the picker: title,
+  instruction, times, reminder name, ordered content links). Example: remove
+  `quran:2` from "প্রতিদিন সূরা বাকারা শ্রবণ" and later imports link only the
+  Sudais audio.
+- "নতুন টেমপ্লেট" (or the + on a category) adds one; ids follow the category
+  letter, up to 99 per category.
+- "সরান" hides a template (is_active = false, audited) after confirmation; the
+  "সরানো" tab shows removed ones with "ফিরিয়ে আনুন". Nothing is hard-deleted.
+- The import picker keeps its pencil shortcut; both save through
+  `admin_save_care_template`.

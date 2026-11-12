@@ -189,6 +189,11 @@ class AdminHomeScreen extends StatelessWidget {
               _AdminLinkGroup(
                 children: [
                   _AdminLinkRow(
+                    icon: Icons.fact_check_outlined,
+                    title: 'সুকুন অফিসিয়াল টেমপ্লেট',
+                    onTap: () => context.go('/admin/care-templates'),
+                  ),
+                  _AdminLinkRow(
                     icon: Icons.edit_note_outlined,
                     title: copy?.manageResources ?? 'উপকরণ পরিচালনা করুন',
                     onTap: () => context.go('/admin/content'),

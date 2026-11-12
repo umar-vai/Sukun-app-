@@ -48,6 +48,7 @@ import 'package:sukun_life/features/patients/presentation/create_prescription_sc
 import 'package:sukun_life/features/patients/presentation/patient_detail_screen.dart';
 import 'package:sukun_life/features/patients/presentation/patients_list_screen.dart';
 import 'package:sukun_life/features/patients/presentation/admin_all_users_screen.dart';
+import 'package:sukun_life/features/care_plans/presentation/care_templates_admin_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
@@ -427,6 +428,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => PatientProfileScreen(
               displayName: _patientSession(session)?.displayName,
             ),
+          ),
+          GoRoute(
+            path: '/admin/care-templates',
+            builder: (context, state) => const CareTemplatesAdminScreen(),
           ),
           GoRoute(
             path: '/admin/routine-templates',
