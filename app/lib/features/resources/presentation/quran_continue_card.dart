@@ -56,7 +56,7 @@ class _QuranContinueCardState extends State<QuranContinueCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'চালিয়ে পড়ুন',
+                    'Continue Reading',
                     style: textTheme.labelMedium?.copyWith(
                       color: SukunColors.deepTide,
                       fontWeight: FontWeight.w700,

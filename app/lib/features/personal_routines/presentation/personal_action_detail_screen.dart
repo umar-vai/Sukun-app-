@@ -98,7 +98,6 @@ class _PersonalActionDetailScreenState
         outcome: status,
       );
       if (!mounted) return;
-      setState(() => _load = _read());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -108,6 +107,9 @@ class _PersonalActionDetailScreenState
           ),
         ),
       );
+      // Return to today's routine, which re-reads fresh data. Home is rebuilt
+      // too, so a finished amal never shows as next again.
+      context.go('/my-routines');
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

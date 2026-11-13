@@ -52,7 +52,9 @@ abstract final class HomeNextActions {
     if (todays.isEmpty && planTasks.isEmpty) return false;
     final routinesDone = todays.every((action) {
       final outcome = outcomes[action['id']];
-      return outcome == 'done' || outcome == 'completed';
+      return outcome == 'done' ||
+          outcome == 'completed' ||
+          outcome == 'skipped';
     });
     final planDone = planTasks.every((task) => !task.status.canUpdate);
     return routinesDone && planDone;

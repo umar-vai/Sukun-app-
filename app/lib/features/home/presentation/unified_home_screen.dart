@@ -152,6 +152,13 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     }
   }
 
+  /// Opens a task screen, then re-reads today's tasks so a finished amal
+  /// never lingers as "next" when the user comes back to Home.
+  Future<void> _openAndRefresh(String route) async {
+    await context.push<void>(route);
+    if (mounted) await _refresh();
+  }
+
   Future<void> _signOut() async {
     if (_signingOut || (!widget.isSignedInMember && !widget.isPatient)) return;
     setState(() => _signingOut = true);
@@ -247,7 +254,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               ),
               if (_upcoming != null) ...[
                 const SizedBox(height: SukunSpace.section),
-                _UnifiedNextTasks(future: _upcoming!),
+                _UnifiedNextTasks(future: _upcoming!, onOpen: _openAndRefresh),
               ],
               const SizedBox(height: SukunSpace.lg),
               _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
@@ -994,9 +1001,10 @@ class _HomeTasksData {
 }
 
 class _UnifiedNextTasks extends StatelessWidget {
-  const _UnifiedNextTasks({required this.future});
+  const _UnifiedNextTasks({required this.future, required this.onOpen});
 
   final Future<_HomeTasksData> future;
+  final Future<void> Function(String route) onOpen;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<_HomeTasksData>(
@@ -1005,7 +1013,7 @@ class _UnifiedNextTasks extends StatelessWidget {
       if (snapshot.data?.allDoneToday == true) {
         return TodayAllDoneCard(
           key: const Key('home-all-done'),
-          onTap: () => context.push('/my-routines'),
+          onTap: () => onOpen('/my-routines'),
         );
       }
       return _nextTasksCard(context);
@@ -1018,7 +1026,7 @@ class _UnifiedNextTasks extends StatelessWidget {
       key: const Key('home-unified-next-tasks'),
       padding: const EdgeInsets.all(SukunSpace.page),
       radius: SukunRadius.hero,
-      onTap: () => context.push('/my-routines'),
+      onTap: () => onOpen('/my-routines'),
       child: FutureBuilder<_HomeTasksData>(
         future: future,
         builder: (context, snapshot) {
@@ -1093,13 +1101,13 @@ class _UnifiedNextTasks extends StatelessWidget {
                     Expanded(
                       child: FilledButton(
                         key: const Key('home-next-amal-open'),
-                        onPressed: () => context.push(next.route),
+                        onPressed: () => onOpen(next.route),
                         child: const Text('শুরু করুন'),
                       ),
                     ),
                     const SizedBox(width: SukunSpace.sm),
                     OutlinedButton(
-                      onPressed: () => context.push('/my-routines'),
+                      onPressed: () => onOpen('/my-routines'),
                       child: const Text('সব আমল'),
                     ),
                   ],
