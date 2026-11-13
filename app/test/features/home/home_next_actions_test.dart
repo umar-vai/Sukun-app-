@@ -221,10 +221,11 @@ void main() {
       outcomes: outcomes,
     );
 
-    test('true only when every active action is done', () {
+    test('true only when every active action is done or skipped today', () {
       expect(allDone({'a': 'done', 'b': 'done'}), isTrue);
       expect(allDone({'a': 'done'}), isFalse);
-      expect(allDone({'a': 'done', 'b': 'skipped'}), isFalse);
+      expect(allDone({'a': 'done', 'b': 'skipped'}), isTrue);
+      expect(allDone({'a': 'done', 'b': 'pending'}), isFalse);
     });
 
     test('nothing to do is not "all done"', () {

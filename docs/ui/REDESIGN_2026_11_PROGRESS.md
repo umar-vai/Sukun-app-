@@ -138,7 +138,7 @@ Tests: `test/features/personal_routines/routine_hub_redesign_test.dart` (12 test
 | Surah reader: full-surah play, per-ayah play, highlight and auto-scroll, `?ayah=` deep link, paging, reader settings, audio shortcut | Same; calmer header and verse cards (highlight colours unchanged) |
 | Source attribution | Still hidden, by the owner's decision on 9 Nov 2026 (see question log) |
 | Hadith and ayat-collection screens | English titles/labels translated to Bangla |
-| **New:** continue reading | `QuranLastReadStore` (device only, `sukun.quran.last_read`): saved on scroll, verse play, full-surah playback and the new per-verse "এখান থেকে পরে পড়ব" bookmark. "চালিয়ে পড়ুন" card on the hub and above the surah list. Cleared when the signed-in account changes |
+| **New:** continue reading | `QuranLastReadStore` (device only, `sukun.quran.last_read`): saved on scroll, verse play, full-surah playback and the new per-verse "এখান থেকে পরে পড়ব" bookmark. "Continue Reading" card on the hub and above the surah list. Cleared when the signed-in account changes |
 
 Not changed on purpose: "আজকের আয়াত" (needs an approved daily-ayah source first), the dead `QuranBrowserScreen`/`QuranSurahScreen` code (no route), the admin collections screen (library pass).
 

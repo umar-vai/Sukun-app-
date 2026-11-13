@@ -5,6 +5,21 @@ import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/personal_routines/presentation/routine_hub_parts.dart';
 
+/// Theme-aware colours for the routine screens. The brand navy/muted/deep
+/// blue tokens are tuned for light surfaces and turn unreadable on the dark
+/// theme, so each one has a lighter night counterpart.
+extension _RoutineTone on ThemeData {
+  bool get _night => brightness == Brightness.dark;
+  Color get routineAccent =>
+      _night ? const Color(0xFF6CCBF3) : SukunColors.deepTide;
+  Color get routineMuted =>
+      _night ? const Color(0xFFB4C7D4) : SukunColors.muted;
+  Color get routineStrong =>
+      _night ? colorScheme.onSurface : SukunColors.nightNavy;
+  Color get routineTrack =>
+      _night ? const Color(0xFF38505F) : SukunColors.mist;
+}
+
 /// Patient/member's own active actions, using owner-filtered repository rows.
 /// An outcome of "skipped" never counts as completed.
 class TodayRoutineSummary {
@@ -149,7 +164,7 @@ class TodayRoutinePanel extends StatelessWidget {
                             value: animated,
                             strokeWidth: 9,
                             strokeCap: StrokeCap.round,
-                            backgroundColor: SukunColors.mist,
+                            backgroundColor: theme.routineTrack,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               SukunColors.sukunBlue,
                             ),
@@ -168,7 +183,7 @@ class TodayRoutinePanel extends StatelessWidget {
                             Text(
                               'সম্পন্ন',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: SukunColors.muted,
+                                color: theme.routineMuted,
                               ),
                             ),
                           ],
@@ -193,7 +208,7 @@ class TodayRoutinePanel extends StatelessWidget {
                   Text(
                     'প্রতিটি আমল সম্পন্ন হলে এখানেই চিহ্নিত করুন',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: SukunColors.muted,
+                      color: theme.routineMuted,
                     ),
                   ),
                   const SizedBox(height: SukunSpace.md),
@@ -201,7 +216,7 @@ class TodayRoutinePanel extends StatelessWidget {
                     '${summary.completed} টি সম্পন্ন',
                     key: const Key('today-routine-completed-count'),
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: SukunColors.deepTide,
+                      color: theme.routineAccent,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -214,7 +229,7 @@ class TodayRoutinePanel extends StatelessWidget {
                   Text(
                     'মোট ${summary.total} টি সক্রিয় করণীয়',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: SukunColors.muted,
+                      color: theme.routineMuted,
                     ),
                   ),
                 ],
@@ -310,7 +325,9 @@ class _TodayActionTile extends StatelessWidget {
             onPressed: busy ? null : onToggleDone,
             icon: Icon(
               done ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-              color: done ? SukunColors.deepTide : SukunColors.nightNavy,
+              color: done
+                  ? Theme.of(context).routineAccent
+                  : Theme.of(context).routineStrong,
               size: 30,
             ),
           ),
@@ -335,7 +352,9 @@ class _TodayActionTile extends StatelessWidget {
                     Text(
                       done ? 'আজ সম্পন্ন' : 'বাকি',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: done ? SukunColors.deepTide : SukunColors.muted,
+                        color: done
+                            ? Theme.of(context).routineAccent
+                            : Theme.of(context).routineMuted,
                       ),
                     ),
                   ],
@@ -364,8 +383,12 @@ class TodayAllDoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+    final successText = night ? const Color(0xFF7FE0B5) : SukunColors.success;
     return Material(
-      color: SukunColors.successSoft,
+      color: night
+          ? SukunColors.success.withValues(alpha: 0.2)
+          : SukunColors.successSoft,
       borderRadius: BorderRadius.circular(SukunRadius.card),
       child: InkWell(
         onTap: onTap,
@@ -401,7 +424,7 @@ class TodayAllDoneCard extends StatelessWidget {
                     Text(
                       'মাশাআল্লাহ! আজকের সব আমল সম্পন্ন',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: SukunColors.success,
+                        color: successText,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -409,7 +432,7 @@ class TodayAllDoneCard extends StatelessWidget {
                     Text(
                       'আল্লাহ কবুল করুন। আগামীকাল আবার মনে করিয়ে দেওয়া হবে।',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: SukunColors.nightNavy.withValues(alpha: 0.75),
+                        color: theme.routineStrong.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -470,7 +493,7 @@ class _StreakStrip extends StatelessWidget {
             children: [
               Icon(
                 Icons.local_fire_department_outlined,
-                color: SukunColors.deepTide,
+                color: theme.routineAccent,
                 size: 20,
               ),
               const SizedBox(width: 6),
@@ -488,13 +511,13 @@ class _StreakStrip extends StatelessWidget {
               Text(
                 '৭ দিনে ${_bnDigits(activeDays)} দিন',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: SukunColors.muted,
+                  color: theme.routineMuted,
                 ),
               ),
               if (onOpenHistory != null)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: SukunColors.muted,
+                  color: theme.routineMuted,
                 ),
             ],
           ),
@@ -514,8 +537,8 @@ class _StreakStrip extends StatelessWidget {
                         weekdays[day.weekday - 1],
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: day == base
-                              ? SukunColors.nightNavy
-                              : SukunColors.muted,
+                              ? theme.routineStrong
+                              : theme.routineMuted,
                           fontWeight: day == base
                               ? FontWeight.w700
                               : FontWeight.w400,
@@ -531,7 +554,7 @@ class _StreakStrip extends StatelessWidget {
             Text(
               'বিস্তারিত অগ্রগতি দেখতে চাপুন',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: SukunColors.deepTide,
+                color: theme.routineAccent,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -553,10 +576,10 @@ class _DayDot extends StatelessWidget {
     width: 26,
     height: 26,
     decoration: BoxDecoration(
-      color: done ? SukunColors.sukunBlue : SukunColors.mist,
+      color: done ? SukunColors.sukunBlue : Theme.of(context).routineTrack,
       shape: BoxShape.circle,
       border: isToday
-          ? Border.all(color: SukunColors.deepTide, width: 2)
+          ? Border.all(color: Theme.of(context).routineAccent, width: 2)
           : null,
     ),
     child: done
