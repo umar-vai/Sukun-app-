@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/features/resources/data/quran_last_read_store.dart';
 import 'package:sukun_life/app/router/app_router.dart';
 import 'package:sukun_life/core/updates/android_update_panel.dart';
+import 'package:sukun_life/features/resources/data/cached_resources_repository.dart';
+import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
@@ -39,6 +41,15 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Warm the most-opened Islamic Resources screens in the background so
+    // they open instantly instead of showing a loader.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final resources = ref.read(resourcesRepositoryProvider);
+      if (resources is CachedResourcesRepository) {
+        unawaited(resources.warmUp());
+      }
+    });
     unawaited(BengaliFontSettings.instance.load());
     unawaited(AppDisplaySettings.instance.load());
     // Never ask permission on startup; refresh only previously opted-in alerts.

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/features/resources/data/cached_resources_repository.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/data/supabase_resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
@@ -10,7 +11,11 @@ final resourcesRepositoryProvider = Provider<ResourcesRepository>((ref) {
   if (!AppEnvironment.isSupabaseConfigured) {
     return const UnavailableResourcesRepository();
   }
-  return SupabaseResourcesRepository(Supabase.instance.client);
+  final client = Supabase.instance.client;
+  return CachedResourcesRepository(
+    SupabaseResourcesRepository(client),
+    scope: () => client.auth.currentUser?.id,
+  );
 });
 
 final class UnavailableResourcesRepository implements ResourcesRepository {
