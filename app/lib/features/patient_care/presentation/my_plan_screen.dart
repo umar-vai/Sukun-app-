@@ -138,9 +138,7 @@ class _MyPlanScreenState extends ConsumerState<MyPlanScreen> {
                   const SukunSurface(
                     tone: SukunSurfaceTone.soft,
                     showBorder: false,
-                    child: Text(
-                      'আপনার জন্য এখনো কোনো প্রেসক্রিপশন দেখানোর অনুমতি দেওয়া হয়নি।',
-                    ),
+                    child: Text('এখনো কোনো প্রেসক্রিপশন নেই'),
                   )
                 else
                   for (final prescription in data.prescriptions) ...[

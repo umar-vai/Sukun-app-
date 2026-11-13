@@ -102,14 +102,26 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                     ),
                   )
                 else
-                  for (final day in summary.days.reversed) ...[
-                    _ProgressDayTile(day: day),
-                    const SizedBox(height: 8),
-                  ],
-                const SizedBox(height: 8),
+                  SukunSurface(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      children: [
+                        for (final (i, day)
+                            in summary.days.reversed.indexed) ...[
+                          if (i > 0) const Divider(height: 1, indent: 16),
+                          _ProgressDayTile(day: day),
+                        ],
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                // Kept on purpose: progress is task completion, not a
+                // clinical result.
                 Text(
                   'এখানে শুধু কাজ করার হিসাব দেখানো হয়, চিকিৎসার ফলাফল নয়।',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: SukunColors.muted),
                 ),
               ],
             ),
@@ -193,11 +205,6 @@ class _ProgressOverview extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium
                 ?.copyWith(color: Colors.white),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'নির্বাচিত সময়ের সম্পন্ন কাজের হিসাব',
-            style: TextStyle(color: Colors.white70),
-          ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: summary.completionRate,
@@ -250,37 +257,45 @@ class _ProgressDayTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SukunSurface(
-      radius: 18,
-      padding: const EdgeInsets.all(16),
+    final theme = Theme.of(context);
+    final full = day.total > 0 && day.completed == day.total;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           SizedBox(
-            width: 58,
+            width: 64,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(_weekday(day.date), style: theme.textTheme.titleSmall),
                 Text(
-                  _weekday(day.date),
-                  style: Theme.of(context).textTheme.titleSmall,
+                  _shortDate(day.date),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SukunColors.muted,
+                  ),
                 ),
-                Text(_shortDate(day.date)),
               ],
             ),
           ),
-          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LinearProgressIndicator(value: day.completionRate),
-                const SizedBox(height: 7),
-                Text(
-                  day.total == 0
-                      ? 'কোনো কাজের হিসাব নেই'
-                      : '${day.total}টির মধ্যে ${day.completed}টি করেছেন',
-                ),
-              ],
+            child: LinearProgressIndicator(
+              value: day.completionRate,
+              minHeight: 8,
+              color: full ? SukunColors.success : null,
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 44,
+            child: Text(
+              day.total == 0 ? '–' : '${day.completed}/${day.total}',
+              textAlign: TextAlign.end,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: full ? SukunColors.success : SukunColors.nightNavy,
+              ),
             ),
           ),
         ],

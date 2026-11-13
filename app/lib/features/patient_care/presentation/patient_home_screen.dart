@@ -294,7 +294,6 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   eyebrow: _longDate(DateTime.now()),
                   title:
                       'আসসালামু আলাইকুম${widget.displayName == null ? '' : ', ${widget.displayName}'}',
-                  subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 24),
                 if (requestedTask != null &&
@@ -341,10 +340,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   const SizedBox(height: 18),
                   if (day.nextTask != null &&
                       day.nextTask!.id != highlightedTaskId) ...[
-                    const SukunSectionHeader(
-                      title: 'এখন যে কাজটি করবেন',
-                      subtitle: 'এই কাজটি দিয়ে শুরু করুন',
-                    ),
+                    const SukunSectionHeader(title: 'এখন যে কাজটি করবেন'),
                     const SizedBox(height: 10),
                     _TaskCard(
                       task: day.nextTask!,
@@ -471,7 +467,7 @@ class _TaskCard extends StatelessWidget {
     final canUpdate = task.status.canUpdate && !busy;
     return SukunSurface(
       tone: featured ? SukunSurfaceTone.soft : SukunSurfaceTone.white,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(featured ? 18 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -518,7 +514,11 @@ class _TaskCard extends StatelessWidget {
           ),
           if (task.action.instruction?.isNotEmpty == true) ...[
             const SizedBox(height: 12),
-            Text(task.action.instruction!),
+            Text(
+              task.action.instruction!,
+              maxLines: featured ? null : 2,
+              overflow: featured ? null : TextOverflow.ellipsis,
+            ),
           ],
           if (task.action.countTarget != null ||
               task.action.durationMinutes != null) ...[
@@ -572,7 +572,7 @@ class _TaskCard extends StatelessWidget {
               'মনে করাবে: ${TimeOfDay.fromDateTime(task.snoozedUntil!).format(context)}',
             ),
           ],
-          if (task.status.canUpdate) ...[
+          if (task.status.canUpdate && featured) ...[
             const SizedBox(height: 14),
             Wrap(
               spacing: 8,
@@ -590,6 +590,37 @@ class _TaskCard extends StatelessWidget {
                 TextButton(
                   onPressed: canUpdate ? onSkip : null,
                   child: const Text('আজ করব না'),
+                ),
+              ],
+            ),
+          ],
+          // Other tasks stay compact: one tap to mark done, the rest in a
+          // menu, so the list does not repeat three buttons per task.
+          if (task.status.canUpdate && !featured) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                FilledButton.tonalIcon(
+                  key: Key('task-done-${task.id}'),
+                  onPressed: canUpdate ? onDone : null,
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('করেছি'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(48, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  key: Key('task-more-${task.id}'),
+                  enabled: canUpdate,
+                  icon: const Icon(Icons.more_horiz_rounded),
+                  onSelected: (value) =>
+                      value == 'snooze' ? onSnooze() : onSkip(),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'snooze', child: Text('পরে মনে করান')),
+                    PopupMenuItem(value: 'skip', child: Text('আজ করব না')),
+                  ],
                 ),
               ],
             ),

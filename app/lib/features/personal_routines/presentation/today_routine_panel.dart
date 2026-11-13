@@ -256,6 +256,12 @@ class TodayRoutinePanel extends StatelessWidget {
               onOpen: () => onOpen(action['id'] as String),
             ),
           ),
+        const SizedBox(height: SukunSpace.sm),
+        Text(
+          'এই অগ্রগতি শুধু নিজের সম্পন্ন করা রুটিনের হিসাব; চিকিৎসার ফলাফল নয়।',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(color: SukunColors.muted),
+        ),
       ],
     );
   }
