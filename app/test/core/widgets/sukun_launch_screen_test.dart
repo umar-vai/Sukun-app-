@@ -11,7 +11,9 @@ void main() {
     expect(find.text('Faith. Care. Peace of mind.'), findsOneWidget);
 
     final image = tester.widget<Image>(find.byType(Image));
-    final provider = image.image as AssetImage;
+    // The logo is decoded at display size, so the asset is wrapped.
+    final resized = image.image as ResizeImage;
+    final provider = resized.imageProvider as AssetImage;
     expect(provider.assetName, BrandAssets.officialLogo);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
