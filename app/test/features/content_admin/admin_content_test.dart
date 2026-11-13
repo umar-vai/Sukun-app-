@@ -181,17 +181,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('কুরআনের আয়াত'), findsOneWidget);
+    expect(find.text('কুরআনের আয়াত'), findsOneWidget);
     for (final removed in const [
-      'সংরক্ষিত খসড়া',
-      'যাচাইয়ের অপেক্ষায়',
-      'আয়াতের সংগ্রহ পরিচালনা',
+      'সংরক্ষিত খসড়া',
+      'যাচাইয়ের অপেক্ষায়',
+      'আয়াতের সংগ্রহ পরিচালনা',
       'উন্নত সেটিংস',
     ]) {
       expect(find.text(removed), findsNothing);
     }
 
-    await tester.tap(find.text('কুরআনের আয়াত'));
+    await tester.tap(find.text('কুরআনের আয়াত'));
     await tester.pumpAndSettle();
     expect(find.text('যোগ করুন'), findsOneWidget);
     expect(find.text('Ayatul Kursi'), findsOneWidget);
@@ -243,6 +243,11 @@ void main() {
 
     expect(find.text('নতুন উপকরণ যোগ করুন'), findsOneWidget);
     expect(find.text('কোন ধরনের উপকরণ?'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('হাদিসের কিতাব *'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('হাদিসের কিতাব *'), findsOneWidget);
   });
 
@@ -344,7 +349,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text("কুরআনের আয়াত"));
+    await tester.tap(find.text("কুরআনের আয়াত"));
     await tester.pumpAndSettle();
 
     expect(find.text('আরবি লেখা *'), findsOneWidget);
@@ -355,8 +360,8 @@ void main() {
     for (final removed in const [
       'অনুমোদিত তথ্যসূত্র *',
       'অতিরিক্ত সেটিংস',
-      'খসড়া সংরক্ষণ করুন',
-      'যাচাইয়ের জন্য পাঠান',
+      'খসড়া সংরক্ষণ করুন',
+      'যাচাইয়ের জন্য পাঠান',
       'আগে দেখে নিন',
       'Slug',
       'Request ID',
@@ -380,15 +385,18 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) =>
-                      const AdminContentEditorScreen(contentItemId: 'content-1'),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AdminContentEditorScreen(
+                      contentItemId: 'content-1',
+                    ),
+                  ),
                 ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
@@ -407,7 +415,7 @@ void main() {
     // Source fields saved earlier are kept untouched, not dropped.
     expect(_savedInputs.single.sourceReference, 'Approved Quran 2:255');
     expect(_transitions, isEmpty);
-    expect(find.text('পরিবর্তন প্রকাশিত হয়েছে।'), findsOneWidget);
+    expect(find.text('পরিবর্তন প্রকাশিত হয়েছে।'), findsOneWidget);
   });
 }
 
@@ -445,9 +453,9 @@ final _savedInputs = <SaveContentInput>[];
 final _transitions = <String>[];
 
 final class _FakeContentAdminRepository implements ContentAdminRepository {
-  const _FakeContentAdminRepository({this.content = item});
+  const _FakeContentAdminRepository();
 
-  final AdminContentItem content;
+  AdminContentItem get content => item;
 
   static const item = AdminContentItem(
     id: 'content-1',

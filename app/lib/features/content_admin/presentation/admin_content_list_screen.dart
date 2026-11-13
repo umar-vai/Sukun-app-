@@ -140,9 +140,9 @@ class _AdminContentListScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(switch (action) {
-            _ItemAction.publish => 'উপকরণটি প্রকাশিত হয়েছে।',
-            _ItemAction.unpublish => 'উপকরণটি লুকানো হয়েছে।',
-            _ItemAction.archive => 'উপকরণটি আর্কাইভ হয়েছে।',
+            _ItemAction.publish => 'উপকরণটি প্রকাশিত হয়েছে।',
+            _ItemAction.unpublish => 'উপকরণটি লুকানো হয়েছে।',
+            _ItemAction.archive => 'উপকরণটি আর্কাইভ হয়েছে।',
           }),
         ),
       );
@@ -150,7 +150,7 @@ class _AdminContentListScreenState
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('কাজটি করা যায়নি। আবার চেষ্টা করুন।')),
+          const SnackBar(content: Text('কাজটি করা যায়নি। আবার চেষ্টা করুন।')),
         );
       }
     } finally {
@@ -199,20 +199,19 @@ class _AdminContentListScreenState
       const SukunPageIntro(
         eyebrow: 'উপকরণ',
         title: 'উপকরণ ব্যবস্থাপনা',
-        subtitle: 'ধরন বেছে নিন। নতুন যোগ করুন বা কোনোটিতে চাপ দিয়ে বদলান।',
+        subtitle: 'ধরন বেছে নিন। নতুন যোগ করুন বা কোনোটিতে চাপ দিয়ে বদলান।',
       ),
       const SizedBox(height: 18),
       if (snapshot.hasError)
         AppErrorState(
-          message: 'উপকরণগুলো আনা যায়নি। আবার চেষ্টা করুন।',
+          message: 'উপকরণগুলো আনা যায়নি। আবার চেষ্টা করুন।',
           onRetry: _refresh,
         )
       else
         LayoutBuilder(
           builder: (context, constraints) {
             final columns = constraints.maxWidth >= 310 ? 2 : 1;
-            final width =
-                (constraints.maxWidth - (columns - 1) * 12) / columns;
+            final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
             return Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -327,7 +326,7 @@ class _AdminContentListScreenState
         const AppLoadingState(label: 'উপকরণগুলো আনা হচ্ছে…')
       else if (snapshot.hasError)
         AppErrorState(
-          message: 'উপকরণগুলো আনা যায়নি। আবার চেষ্টা করুন।',
+          message: 'উপকরণগুলো আনা যায়নি। আবার চেষ্টা করুন।',
           onRetry: _refresh,
         )
       else if (items.isEmpty)
@@ -418,9 +417,8 @@ class _KindCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 count == null ? ' ' : '$countটি',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: SukunColors.muted),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: SukunColors.muted),
               ),
             ],
           ),
@@ -498,7 +496,7 @@ class _ContentCard extends StatelessWidget {
                 if (group == 'published')
                   const PopupMenuItem(
                     value: _ItemAction.unpublish,
-                    child: Text('লুকিয়ে রাখুন'),
+                    child: Text('লুকিয়ে রাখুন'),
                   ),
                 if (group != 'archived')
                   const PopupMenuItem(
@@ -514,13 +512,13 @@ class _ContentCard extends StatelessWidget {
 }
 
 String _kindLabel(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'কুরআনের আয়াত',
+  AdminResourceKind.quranAyah => 'কুরআনের আয়াত',
   AdminResourceKind.hadith => 'হাদিস',
   AdminResourceKind.quranAudio => 'কুরআন অডিও',
-  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও',
+  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও',
   AdminResourceKind.bookPdf => 'বই ও আর্টিকেল',
   AdminResourceKind.video => 'ভিডিও',
-  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
+  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
   AdminResourceKind.articleGuide => 'আর্টিকেল',
   AdminResourceKind.blog => 'ব্লগ',
 };

@@ -2,7 +2,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -68,11 +67,15 @@ class _AdminContentEditorScreenState
       repository.listContent(),
       if (_savedContentId != null) repository.getContent(_savedContentId!),
     ]);
-    return _EditorData(
+    final data = _EditorData(
       categories: results[0] as List<ContentCategory>,
       allContent: results[1] as List<AdminContentItem>,
       item: _savedContentId == null ? null : results[2] as AdminContentItem?,
     );
+    // Populate here so the Scaffold (and its Publish/Update bar) rebuilds
+    // with the resource type of an edited item.
+    if (mounted) setState(() => _populate(data.item, data.categories));
+    return data;
   }
 
   void _populate(AdminContentItem? item, List<ContentCategory> categories) {
@@ -220,13 +223,13 @@ class _AdminContentEditorScreenState
         SnackBar(
           content: Text(
             widget.contentItemId == null
-                ? 'উপকরণটি প্রকাশিত হয়েছে।'
-                : 'পরিবর্তন প্রকাশিত হয়েছে।',
+                ? 'উপকরণটি প্রকাশিত হয়েছে।'
+                : 'পরিবর্তন প্রকাশিত হয়েছে।',
           ),
         ),
       );
     } catch (error) {
-      if (mounted) _show('উপকরণটি প্রকাশ করা যায়নি। আবার চেষ্টা করুন।');
+      if (mounted) _show('উপকরণটি প্রকাশ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -436,9 +439,10 @@ class _AdminContentEditorScreenState
     padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
     children: [
       const SukunPageIntro(
-        eyebrow: 'প্রথম ধাপ',
-        title: 'কোন উপকরণ যোগ করবেন?',
-        subtitle: 'উপকরণের ধরন বেছে নিন। পরের ধাপে শুধু প্রয়োজনীয় তথ্য চাইবে।',
+        eyebrow: 'নতুন উপকরণ',
+        title: 'কোন ধরনের উপকরণ?',
+        subtitle:
+            'ধরন বেছে নিন, তারপর লিংক বা লেখা দিন। প্রকাশ চাপলেই লাইভ হবে।',
         trailing: SukunIconBadge(icon: Icons.add_box_outlined, size: 54),
       ),
       const SizedBox(height: 22),
@@ -551,11 +555,7 @@ class _AdminContentEditorScreenState
         helper: 'যেমন ১২৩৪।',
         required: true,
       ),
-      _field(
-        'grade',
-        'হাদিসের মান (ঐচ্ছিক)',
-        helper: 'যেমন সহিহ।',
-      ),
+      _field('grade', 'হাদিসের মান (ঐচ্ছিক)', helper: 'যেমন সহিহ।'),
     ],
     AdminResourceKind.quranAudio => [
       _titleField(),
@@ -564,7 +564,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
+        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
         required: true,
         url: true,
       ),
@@ -580,7 +580,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
+        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
         required: true,
         url: true,
       ),
@@ -595,7 +595,7 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'পিডিএফ লিংক *',
-        helper: 'https:// দিয়ে শুরু হওয়া পিডিএফ লিংক দিন।',
+        helper: 'https:// দিয়ে শুরু হওয়া পিডিএফ লিংক দিন।',
         required: true,
         url: true,
       ),
@@ -630,7 +630,7 @@ class _AdminContentEditorScreenState
       _field(
         'repeatCount',
         'পাঠের সংখ্যা (ঐচ্ছিক)',
-        helper: 'কতবার পড়তে হবে, জানা থাকলে দিন।',
+        helper: 'কতবার পড়তে হবে, জানা থাকলে দিন।',
         numeric: true,
       ),
     ],
@@ -683,11 +683,7 @@ class _AdminContentEditorScreenState
         lines: 12,
         required: true,
       ),
-      _field(
-        'author',
-        'লেখক (ঐচ্ছিক)',
-        helper: 'জানা থাকলে লেখকের নাম দিন।',
-      ),
+      _field('author', 'লেখক (ঐচ্ছিক)', helper: 'জানা থাকলে লেখকের নাম দিন।'),
     ],
   };
 
@@ -882,31 +878,6 @@ class _ResourceTypeCard extends StatelessWidget {
   );
 }
 
-class _SourceTextField extends StatelessWidget {
-  const _SourceTextField({
-    required this.controller,
-    required this.label,
-    required this.helper,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String helper;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        helperText: helper,
-        helperMaxLines: 3,
-      ),
-    ),
-  );
-}
-
 class _EditorData {
   const _EditorData({
     required this.categories,
@@ -932,19 +903,19 @@ String _kindTitle(AdminResourceKind kind) => switch (kind) {
 };
 
 String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'আরবি আয়াত ও বাংলা অনুবাদ',
+  AdminResourceKind.quranAyah => 'আরবি আয়াত ও বাংলা অনুবাদ',
   AdminResourceKind.hadith => 'হাদিসের লেখা ও নম্বর',
-  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও লিংক',
-  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও লিংক',
+  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও লিংক',
+  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও লিংক',
   AdminResourceKind.bookPdf => 'বই বা পিডিএফের লিংক',
   AdminResourceKind.video => 'ইউটিউব বা ভিডিওর লিংক',
-  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
+  AdminResourceKind.duaAzkar => 'আরবি দোয়া ও বাংলা অর্থ',
   AdminResourceKind.articleGuide => 'লেখা বা নির্দেশিকা',
   AdminResourceKind.blog => 'ছবি ও শিরোনামসহ ব্লগ',
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'আয়াত, অনুবাদ ও সূরা-আয়াত নম্বর দিন।',
+  AdminResourceKind.quranAyah => 'আয়াত, অনুবাদ ও সূরা-আয়াত নম্বর দিন।',
   AdminResourceKind.hadith => 'হাদিসের লেখা, কিতাব ও নম্বর দিন।',
   AdminResourceKind.quranAudio => 'শিরোনাম, সূরা ও অডিও লিংক দিন।',
   AdminResourceKind.ruqyahAudio => 'শিরোনাম, বিভাগ ও অডিও লিংক দিন।',
@@ -970,8 +941,6 @@ IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
 String? _repeatCount(String? reference) {
   if (reference == null) return null;
   return RegExp(
-    r'(?:Repeat count from approved source|অনুমোদিত তথ্যসূত্র অনুযায়ী কতবার|কতবার পড়বেন): (\d+)',
-  )
-      .firstMatch(reference)
-      ?.group(1);
+    r'(?:Repeat count from approved source|অনুমোদিত তথ্যসূত্র অনুযায়ী কতবার|কতবার পড়বেন): (\d+)',
+  ).firstMatch(reference)?.group(1);
 }
