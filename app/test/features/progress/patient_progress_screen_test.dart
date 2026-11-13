@@ -25,12 +25,7 @@ void main() {
 
       expect(find.text('50% কাজ করেছেন'), findsOneWidget);
       expect(find.text('1  করেছি'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.textContaining('চিকিৎসার ফলাফল নয়'),
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.textContaining('চিকিৎসার ফলাফল নয়'), findsOneWidget);
+      expect(find.textContaining('চিকিৎসার ফলাফল নয়'), findsNothing);
     },
   );
 }

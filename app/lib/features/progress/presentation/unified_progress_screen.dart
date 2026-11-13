@@ -285,7 +285,6 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
               ],
               const SizedBox(height: SukunSpace.lg),
               Text(
-                'এটি আপনার করা কাজের রেকর্ড, চিকিৎসার ফলাফল নয়। '
                 'নির্ধারিত সব কাজের তুলনায় সম্পন্ন হওয়ার হার এখানে দেখানো হয়নি।',
                 style: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
               ),

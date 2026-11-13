@@ -106,11 +106,6 @@ class _PatientProgressScreenState extends ConsumerState<PatientProgressScreen> {
                     _ProgressDayTile(day: day),
                     const SizedBox(height: 8),
                   ],
-                const SizedBox(height: 8),
-                Text(
-                  'এখানে শুধু কাজ করার হিসাব দেখানো হয়, চিকিৎসার ফলাফল নয়।',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
               ],
             ),
           );
