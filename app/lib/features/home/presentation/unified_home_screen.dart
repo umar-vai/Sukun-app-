@@ -254,10 +254,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
               ),
               if (_upcoming != null) ...[
                 const SizedBox(height: SukunSpace.section),
-                _UnifiedNextTasks(
-                  future: _upcoming!,
-                  onOpen: _openAndRefresh,
-                ),
+                _UnifiedNextTasks(future: _upcoming!, onOpen: _openAndRefresh),
               ],
               const SizedBox(height: SukunSpace.lg),
               _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),

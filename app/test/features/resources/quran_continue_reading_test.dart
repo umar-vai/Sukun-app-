@@ -57,7 +57,7 @@ void main() {
       const QuranLastRead(surah: 36, ayah: 12, title: 'ইয়াসিন'),
     );
     await tester.pump();
-    expect(find.text('চালিয়ে পড়ুন'), findsOneWidget);
+    expect(find.text('Continue Reading'), findsOneWidget);
     expect(find.text('ইয়াসিন'), findsOneWidget);
     await tester.tap(find.byKey(const Key('quran-continue-reading')));
     expect(opened?.ayah, 12);

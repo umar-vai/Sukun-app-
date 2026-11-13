@@ -78,60 +78,68 @@ class RoutineHubTabs extends StatelessWidget {
   final ValueChanged<RoutineHubTab> onSelected;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: SukunColors.mist,
-      borderRadius: BorderRadius.circular(SukunRadius.control + 2),
-    ),
-    child: Row(
-      children: [
-        for (final tab in RoutineHubTab.values)
-          Expanded(
-            child: Semantics(
-              selected: tab == selected,
-              button: true,
-              child: InkWell(
-                key: Key('routine-hub-tab-${tab.name}'),
-                borderRadius: BorderRadius.circular(SukunRadius.control - 2),
-                onTap: () => onSelected(tab),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  constraints: const BoxConstraints(minHeight: 42),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: tab == selected ? Colors.white : null,
-                    borderRadius: BorderRadius.circular(
-                      SukunRadius.control - 2,
-                    ),
-                    boxShadow: tab == selected
-                        ? [
-                            BoxShadow(
-                              color: SukunColors.nightNavy.withValues(
-                                alpha: 0.10,
-                              ),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    routineHubTabLabel(tab),
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: night ? const Color(0xFF243848) : SukunColors.mist,
+        borderRadius: BorderRadius.circular(SukunRadius.control + 2),
+      ),
+      child: Row(
+        children: [
+          for (final tab in RoutineHubTab.values)
+            Expanded(
+              child: Semantics(
+                selected: tab == selected,
+                button: true,
+                child: InkWell(
+                  key: Key('routine-hub-tab-${tab.name}'),
+                  borderRadius: BorderRadius.circular(SukunRadius.control - 2),
+                  onTap: () => onSelected(tab),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    constraints: const BoxConstraints(minHeight: 42),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
                       color: tab == selected
-                          ? SukunColors.nightNavy
-                          : SukunColors.muted,
-                      fontWeight: FontWeight.w600,
+                          ? (night ? const Color(0xFF3A5568) : Colors.white)
+                          : null,
+                      borderRadius: BorderRadius.circular(
+                        SukunRadius.control - 2,
+                      ),
+                      boxShadow: tab == selected
+                          ? [
+                              BoxShadow(
+                                color: SukunColors.nightNavy.withValues(
+                                  alpha: 0.10,
+                                ),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Text(
+                      routineHubTabLabel(tab),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: tab == selected
+                            ? (night ? scheme.onSurface : SukunColors.nightNavy)
+                            : (night
+                                  ? const Color(0xFFB4C7D4)
+                                  : SukunColors.muted),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 /// Human Bangla text for an action's schedule instead of raw database values.

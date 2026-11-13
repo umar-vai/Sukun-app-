@@ -360,28 +360,41 @@ class SukunFilterPill extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(999),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-        color: selected ? SukunColors.nightNavy : Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: selected ? SukunColors.nightNavy : SukunColors.border,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+    final selectedFill = night
+        ? theme.colorScheme.primary
+        : SukunColors.nightNavy;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? selectedFill
+              : (night ? theme.colorScheme.surface : Colors.white),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected
+                ? selectedFill
+                : (night ? theme.colorScheme.outline : SukunColors.border),
+          ),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: selected
+                ? (night ? theme.colorScheme.onPrimary : Colors.white)
+                : (night ? theme.colorScheme.onSurface : SukunColors.muted),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: selected ? Colors.white : SukunColors.muted,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-  );
+    );
+  }
 }
 
 class SukunSearchField extends StatelessWidget {
@@ -551,8 +564,8 @@ class SukunChoiceField<T> extends StatelessWidget {
                         selected?.title ?? placeholder,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: selected == null
-                              ? SukunColors.muted
-                              : SukunColors.nightNavy,
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       if ((selected?.description ?? helperText)

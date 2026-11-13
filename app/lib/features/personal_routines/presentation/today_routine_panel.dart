@@ -16,8 +16,7 @@ extension _RoutineTone on ThemeData {
       _night ? const Color(0xFFB4C7D4) : SukunColors.muted;
   Color get routineStrong =>
       _night ? colorScheme.onSurface : SukunColors.nightNavy;
-  Color get routineTrack =>
-      _night ? const Color(0xFF38505F) : SukunColors.mist;
+  Color get routineTrack => _night ? const Color(0xFF38505F) : SukunColors.mist;
 }
 
 /// Patient/member's own active actions, using owner-filtered repository rows.
@@ -515,10 +514,7 @@ class _StreakStrip extends StatelessWidget {
                 ),
               ),
               if (onOpenHistory != null)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: theme.routineMuted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: theme.routineMuted),
             ],
           ),
           const SizedBox(height: 12),
