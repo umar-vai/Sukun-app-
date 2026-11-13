@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -18,6 +19,11 @@ const publicApkDownloadEnabled = bool.fromEnvironment(
   defaultValue: true,
 );
 
+/// Test seam: widget tests set this to `false` so the landing does not start
+/// the manifest request (and its 9 second timer) unless a test opts in.
+@visibleForTesting
+bool? debugPublicApkDownloadOverride;
+
 Uri? approvedAndroidApkUri(String value) {
   final uri = Uri.tryParse(value.trim());
   return uri != null && isApprovedApkUri(uri) ? uri : null;
@@ -37,7 +43,8 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    _publishedRelease = publicApkDownloadEnabled
+    final enabled = debugPublicApkDownloadOverride ?? publicApkDownloadEnabled;
+    _publishedRelease = enabled
         ? _updateService
               .check(installedVersionCodeOverride: 0)
               .catchError((Object _) => null)
