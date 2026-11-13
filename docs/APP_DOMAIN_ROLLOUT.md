@@ -29,12 +29,15 @@ does not alter the public `sukunlife.com` site or the legacy internal dashboard.
 
 ## Android download gate
 
-The landing reads `ANDROID_APK_URL` at web build time from the GitHub variable
-`SUKUN_ANDROID_APK_URL`. Until there is an explicitly approved, signed,
-versioned release APK at an HTTPS URL, leave this variable empty; the page
-honestly shows that Android download is not yet available. Never publish the
-CI debug APK as a release or point the button at a placeholder file. The
-native APK/AAB packaging gate remains separate.
+The landing now reads the public `/updates/android.json` manifest at runtime
+(`ENABLE_PUBLIC_APK_DOWNLOAD` defaults to `true`) and links the `apk_url` of the
+latest enabled, approved release. Updating the manifest (see
+`docs/release/DIRECT_APK_LINK_AND_UPDATES_20261110.md`) updates the landing
+button with no web rebuild. To close the button, set `enabled` to `false` in the
+manifest, or set the GitHub variable `SUKUN_PUBLIC_APK_DOWNLOAD_ENABLED` to
+`false`. `ANDROID_APK_URL` (`SUKUN_ANDROID_APK_URL`) remains an optional
+build-time fallback. Never publish the CI debug APK as a release. When the app
+is live on Google Play, replace this button with the Play Store badge/link.
 
 ## Rollback
 

@@ -10,13 +10,18 @@ import 'package:sukun_life/core/updates/android_update_service.dart';
 /// non-HTTPS value keeps the download action closed until a signed APK exists.
 const androidApkUrl = String.fromEnvironment('ANDROID_APK_URL');
 
-// Explicitly enabled only after the first signed APK is approved and
-// published. Keeps the initial Web preview, browser tests and public landing
-// free of speculative remote download requests before the release gate.
+// The first signed APK is published and `/updates/android.json` is enabled, so
+// the landing reads that manifest by default and links the latest approved
+// build. Set ENABLE_PUBLIC_APK_DOWNLOAD=false to close the button again.
 const publicApkDownloadEnabled = bool.fromEnvironment(
   'ENABLE_PUBLIC_APK_DOWNLOAD',
-  defaultValue: false,
+  defaultValue: true,
 );
+
+/// Test seam: widget tests set this to `false` so the landing does not start
+/// the manifest request (and its 9 second timer) unless a test opts in.
+@visibleForTesting
+bool? debugPublicApkDownloadOverride;
 
 Uri? approvedAndroidApkUri(String value) {
   final uri = Uri.tryParse(value.trim());
@@ -37,7 +42,8 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    _publishedRelease = publicApkDownloadEnabled
+    final enabled = debugPublicApkDownloadOverride ?? publicApkDownloadEnabled;
+    _publishedRelease = enabled
         ? _updateService
               .check(installedVersionCodeOverride: 0)
               .catchError((Object _) => null)
