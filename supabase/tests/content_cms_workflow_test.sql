@@ -207,8 +207,8 @@ select throws_ok(
     p_request_id => '92000000-0000-4000-8000-000000000009'
   )$$,
   '55000',
-  'Published or archived content cannot be edited.',
-  'published content is immutable until explicitly unpublished'
+  'Published content can only be saved as published.',
+  'published content cannot silently fall back to a draft'
 );
 
 select lives_ok(
@@ -324,56 +324,52 @@ select lives_ok(
   'audio, video, PDF, and article publish after review'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.save_content_item(
     p_type => 'quran',
-    p_title => 'Missing source fixture',
-    p_slug => 'missing-source-fixture',
+    p_title => 'One step fixture',
+    p_slug => 'one-step-quran-fixture',
     p_visibility => 'public',
-    p_status => 'draft',
+    p_status => 'published',
     p_arabic_text => 'fixture',
     p_surah_number => 1,
     p_ayah_number => 1,
     p_request_id => '92000000-0000-4000-8000-000000000014'
   );
-  select public.transition_content_item(
-    p_content_item_id => (select id from public.content_items where slug = 'missing-source-fixture'),
-    p_transition => 'publish',
+  select public.save_content_item(
+    p_content_item_id => (select id from public.content_items where slug = 'one-step-quran-fixture'),
+    p_type => 'quran',
+    p_title => 'One step fixture edited',
+    p_slug => 'one-step-quran-fixture',
+    p_visibility => 'public',
+    p_status => 'published',
+    p_arabic_text => 'fixture edited',
+    p_surah_number => 1,
+    p_ayah_number => 1,
     p_request_id => '92000000-0000-4000-8000-000000000015'
   )$$,
-  '55000',
-  'Qur''an and Hadith must pass source verification before publishing.',
-  'canonical draft cannot bypass source verification'
+  'Super Admin adds and edits Qur''an in one step without source fields'
 );
 
-select throws_ok(
+select results_eq(
+  $$select status::text, verification_status::text, (verified_by is not null)::text
+    from public.content_items where slug = 'one-step-quran-fixture'$$,
+  $$values ('published'::text, 'verified'::text, 'true'::text)$$,
+  'one-step Qur''an is published and verified by the saving Super Admin'
+);
+
+select lives_ok(
   $$insert into public.content_items (
     type, title, slug, media_source_type, media_url, visibility, status,
     created_by, updated_by, published_at
   ) values (
-    'audio', 'Unlicensed fixture', 'unlicensed-media-fixture',
+    'audio', 'Link only fixture', 'link-only-media-fixture',
     'direct_audio_url', 'https://cdn.example.test/audio.mp3', 'public',
     'published',
     '00000000-0000-4000-8000-000000000201',
     '00000000-0000-4000-8000-000000000201', now()
   )$$,
-  '22023',
-  'Publishing external media requires a rights or licensing note.',
-  'published external media requires a rights or licensing note'
-);
-
-select lives_ok(
-  $$insert into public.content_items (
-    type, title, slug, media_source_type, media_url, rights_note,
-    visibility, status, created_by, updated_by, published_at
-  ) values (
-    'audio', 'Licensed fixture', 'licensed-media-fixture',
-    'direct_audio_url', 'https://cdn.example.test/audio.mp3',
-    'Licensed test fixture; not production content.', 'public', 'published',
-    '00000000-0000-4000-8000-000000000201',
-    '00000000-0000-4000-8000-000000000201', now()
-  )$$,
-  'published external media accepts documented rights metadata'
+  'published external media no longer needs a rights note'
 );
 
 reset role;

@@ -20,10 +20,8 @@ import 'package:sukun_life/features/care_plans/presentation/create_care_plan_scr
 import 'package:sukun_life/features/care_plans/presentation/plan_action_editor_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
-import 'package:sukun_life/features/content_admin/presentation/admin_content_collections_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_shared_library_screen.dart';
-import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 import 'package:sukun_life/features/home/presentation/role_home_screens.dart';
 import 'package:sukun_life/features/personal_routines/presentation/my_routines_screen.dart';
 import 'package:sukun_life/features/personal_routines/presentation/admin_routine_templates_screen.dart';
@@ -569,11 +567,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminContentListScreen(),
             routes: [
               GoRoute(
-                path: 'collections',
-                builder: (context, state) =>
-                    const AdminContentCollectionsScreen(),
-              ),
-              GoRoute(
                 path: 'new',
                 builder: (context, state) => AdminContentEditorScreen(
                   initialKind: state.extra is AdminResourceKind
@@ -581,11 +574,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       : null,
                 ),
               ),
+              // Old preview/review links open the one-step editor.
               GoRoute(
                 path: ':contentItemId/preview',
-                builder: (context, state) => AdminContentPreviewScreen(
-                  contentItemId: state.pathParameters['contentItemId']!,
-                ),
+                redirect: (context, state) =>
+                    '/admin/content/${state.pathParameters['contentItemId']}/edit',
               ),
               GoRoute(
                 path: ':contentItemId/edit',

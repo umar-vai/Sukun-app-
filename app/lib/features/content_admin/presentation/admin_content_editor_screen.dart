@@ -26,8 +26,6 @@ class AdminContentEditorScreen extends ConsumerStatefulWidget {
       _AdminContentEditorScreenState();
 }
 
-enum _SaveAction { draft, preview, submit }
-
 class _AdminContentEditorScreenState
     extends ConsumerState<AdminContentEditorScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -189,56 +187,46 @@ class _AdminContentEditorScreenState
     }
   }
 
-  Future<void> _save(_SaveAction action) async {
-    if (!_formKey.currentState!.validate()) return;
+  /// One step: whatever the admin saves is published (or stays published)
+  /// right away. There is no draft, review or separate verification step.
+  Future<void> _publish() async {
+    if (_saving || !_formKey.currentState!.validate()) return;
     final input = _input();
-    final error = input.validate() ?? _simpleValidationError();
+    final error =
+        _simpleValidationError() ??
+        input.validate() ??
+        input.publicationValidationError();
     if (error != null) {
       _show(error);
       return;
     }
-    if (action == _SaveAction.submit) {
-      final publicationError = input.publicationValidationError();
-      if (publicationError != null && _kind?.isCanonical == true) {
-        _show(publicationError);
-        return;
-      }
-    }
     setState(() => _saving = true);
     try {
       final repository = ref.read(contentAdminRepositoryProvider);
-      if (_initialStatus == 'published' && _savedContentId != null) {
+      if (_initialStatus == 'archived' && _savedContentId != null) {
+        // Archived resources cannot be edited until they are live again.
         await repository.transitionContent(
           contentItemId: _savedContentId!,
-          transition: 'unpublish',
+          transition: 'publish',
           requestId: const Uuid().v4(),
         );
-        _initialStatus = _kind?.isCanonical == true ? 'verified' : 'review';
+        _initialStatus = 'published';
       }
-      var item = await repository.saveContent(input);
-      _savedContentId = item.id;
-      _existingSlug = item.slug;
-      _existingType = item.type;
-      _initialStatus = item.status;
-      if (action == _SaveAction.submit) {
-        item = await repository.transitionContent(
-          contentItemId: item.id,
-          transition: 'submit',
-          requestId: const Uuid().v4(),
-        );
-        _initialStatus = item.status;
-      }
+      final item = await repository.saveContent(input);
       if (!mounted) return;
-      if (action == _SaveAction.preview) {
-        await context.push('/admin/content/${item.id}/preview');
-        if (mounted) {
-          setState(() => _data = _load());
-        }
-      } else {
-        Navigator.of(context).pop(item);
-      }
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop(item);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.contentItemId == null
+                ? 'উপকরণটি প্রকাশিত হয়েছে।'
+                : 'পরিবর্তন প্রকাশিত হয়েছে।',
+          ),
+        ),
+      );
     } catch (error) {
-      if (mounted) _show('উপকরণটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
+      if (mounted) _show('উপকরণটি প্রকাশ করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -303,7 +291,7 @@ class _AdminContentEditorScreenState
       mediaUrl: youtubeId.isEmpty ? mediaLink : null,
       youtubeVideoId: youtubeId.isEmpty ? null : youtubeId,
       visibility: _visibility,
-      status: 'draft',
+      status: 'published',
       requestId: const Uuid().v4(),
     );
   }
@@ -311,14 +299,6 @@ class _AdminContentEditorScreenState
   String? _simpleValidationError() {
     final kind = _kind;
     if (kind == null) return 'আগে উপকরণের ধরন বেছে নিন।';
-    if (kind.requiresApprovedSource && _nullable('sourceType') == null) {
-      return 'অনুমোদিত তথ্যসূত্রটি বেছে নিন।';
-    }
-    if (kind.requiresApprovedSource &&
-        (_nullable('sourceReference') == null ||
-            _nullable('sourceEdition') == null)) {
-      return 'তথ্যসূত্রের নাম ও সংস্করণের তথ্য দিন।';
-    }
     if (kind == AdminResourceKind.duaAzkar) {
       final repeatCount = _nullable('repeatCount');
       if (repeatCount != null &&
@@ -395,139 +375,6 @@ class _AdminContentEditorScreenState
     return null;
   }
 
-  Future<void> _editApprovedSource() async {
-    final sourceType = ValueNotifier<String>(
-      _nullable('sourceType') ?? 'official_dataset',
-    );
-    final reference = TextEditingController(
-      text: _controller('sourceReference').text,
-    );
-    final edition = TextEditingController(
-      text: _controller('sourceEdition').text,
-    );
-    final translation = TextEditingController(
-      text: _controller('translationSource').text,
-    );
-    final sourceUrl = TextEditingController(
-      text: _controller('sourceUrl').text,
-    );
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SukunPageIntro(
-                eyebrow: 'তথ্যসূত্র যাচাই',
-                title: 'অনুমোদিত তথ্যসূত্র',
-                subtitle:
-                    'লেখাটি কোথা থেকে নেওয়া, তা লিখুন যাতে যাচাই করা যায়।',
-              ),
-              const SizedBox(height: 20),
-              ValueListenableBuilder<String>(
-                valueListenable: sourceType,
-                builder: (context, value, _) => SukunChoiceField<String>(
-                  label: 'তথ্যসূত্রের ধরন',
-                  placeholder: 'তথ্যসূত্রের ধরন বেছে নিন',
-                  value: value,
-                  options: const [
-                    SukunChoiceOption(
-                      value: 'official_dataset',
-                      title: 'সরকারি বা যাচাই করা ডিজিটাল তথ্যসূত্র',
-                      description:
-                          'বিশ্বস্ত API বা যাচাই করা ডিজিটাল লেখার তথ্যসূত্র।',
-                      icon: Icons.dataset_outlined,
-                    ),
-                    SukunChoiceOption(
-                      value: 'licensed_publication',
-                      title: 'অনুমতি-প্রাপ্ত প্রকাশনা',
-                      description: 'ছাপা বা ডিজিটাল সংস্করণ, যা সুকুন লাইফ ব্যবহার করতে পারে।',
-                      icon: Icons.menu_book_outlined,
-                    ),
-                    SukunChoiceOption(
-                      value: 'sukun_approved_reference',
-                      title: 'সুকুন লাইফ অনুমোদিত তথ্যসূত্র',
-                      description:
-                          'সুকুন লাইফ টিম আগেই যাচাই করেছে এমন তথ্যসূত্র।',
-                      icon: Icons.verified_outlined,
-                    ),
-                  ],
-                  onChanged: (next) => sourceType.value = next,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _SourceTextField(
-                controller: reference,
-                label: 'তথ্যসূত্রের নাম বা তথ্যসূত্র *',
-                helper:
-                    'যেমন: প্রকাশনার নাম, সংকলনের রেফারেন্স বা ডেটাসেটের নাম।',
-              ),
-              _SourceTextField(
-                controller: edition,
-                label: 'প্রকাশনা বা সংস্করণ *',
-                helper: 'তথ্যসূত্রে যে সংস্করণ বা ভার্সন লেখা আছে তা লিখুন।',
-              ),
-              if (_nullable('banglaText') != null)
-                _SourceTextField(
-                  controller: translation,
-                  label: 'বাংলা অনুবাদের তথ্যসূত্র *',
-                  helper: 'অনুমোদিত বাংলা অনুবাদক বা প্রকাশনার নাম লিখুন।',
-                ),
-              _SourceTextField(
-                controller: sourceUrl,
-                label: 'তথ্যসূত্রের লিংক (ঐচ্ছিক)',
-                helper: 'তথ্যসূত্র অনলাইনে থাকলে HTTPS লিংক দিন।',
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    if (reference.text.trim().isEmpty ||
-                        edition.text.trim().isEmpty ||
-                        (_nullable('banglaText') != null &&
-                            translation.text.trim().isEmpty)) {
-                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('তথ্যসূত্রের দরকারি তথ্য পূরণ করুন।'),
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.pop(sheetContext, true);
-                  },
-                  child: const Text('এই তথ্যসূত্র ব্যবহার করুন'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (saved == true) {
-      _controller('sourceType').text = sourceType.value;
-      _controller('sourceReference').text = reference.text.trim();
-      _controller('sourceEdition').text = edition.text.trim();
-      _controller('translationSource').text = translation.text.trim();
-      _controller('sourceUrl').text = sourceUrl.text.trim();
-      if (mounted) setState(() {});
-    }
-    sourceType.dispose();
-    reference.dispose();
-    edition.dispose();
-    translation.dispose();
-    sourceUrl.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -540,28 +387,18 @@ class _AdminContentEditorScreenState
       bottomNavigationBar: _kind == null
           ? null
           : SukunBottomActionBar(
-              hint: OutlinedButton.icon(
-                key: const Key('content-editor-preview'),
-                onPressed: _saving ? null : () => _save(_SaveAction.preview),
-                icon: const Icon(Icons.visibility_outlined),
-                label: const Text('আগে দেখে নিন'),
-              ),
               children: [
-                OutlinedButton(
-                  key: const Key('content-editor-save-draft'),
-                  onPressed: _saving ? null : () => _save(_SaveAction.draft),
-                  child: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('খসড়া সংরক্ষণ করুন'),
-                  ),
-                ),
                 FilledButton.icon(
-                  key: const Key('content-editor-submit'),
-                  onPressed: _saving ? null : () => _save(_SaveAction.submit),
-                  icon: const Icon(Icons.fact_check_outlined),
-                  label: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('যাচাইয়ের জন্য পাঠান'),
+                  key: const Key('content-editor-publish'),
+                  onPressed: _saving ? null : _publish,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check_rounded),
+                  label: Text(
+                    _savedContentId == null ? 'প্রকাশ করুন' : 'আপডেট করুন',
                   ),
                 ),
               ],
@@ -638,7 +475,7 @@ class _AdminContentEditorScreenState
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
         children: [
           SukunPageIntro(
-            eyebrow: 'উপকরণের তথ্য দিন',
+            eyebrow: _savedContentId == null ? 'নতুন উপকরণ' : 'সম্পাদনা',
             title: _kindTitle(kind),
             subtitle: _kindInstruction(kind),
             trailing: SukunIconBadge(icon: _kindIcon(kind), size: 54),
@@ -650,33 +487,13 @@ class _AdminContentEditorScreenState
               child: TextButton.icon(
                 onPressed: () => setState(() => _kind = null),
                 icon: const Icon(Icons.swap_horiz_rounded),
-                label: const Text('অন্য বিভাগ বেছে নিন'),
+                label: const Text('ধরন বদলান'),
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          if (kind.isCanonical)
-            const SukunSurface(
-              tone: SukunSurfaceTone.warning,
-              showBorder: false,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.verified_user_outlined),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'অনুমোদিত তথ্যসূত্র থেকে লেখাটি হুবহু দিন। প্রকাশের আগে যাচাই করা হবে।',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 4),
           ..._fieldsFor(kind, data),
-          const SizedBox(height: 18),
-          _advancedSettings(data),
-          const SizedBox(height: 26),
-          if (_saving) const LinearProgressIndicator(),
+          _visibilityField(),
           const SizedBox(height: SukunSpace.lg),
         ],
       ),
@@ -688,11 +505,10 @@ class _AdminContentEditorScreenState
     _EditorData data,
   ) => switch (kind) {
     AdminResourceKind.quranAyah => [
-      _section('আয়াতের লেখা'),
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'অনুমোদিত তথ্যসূত্র থেকে আরবি হুবহু লিখুন।',
+        helper: 'আরবি লেখাটি হুবহু দিন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -700,20 +516,18 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা অনুবাদ *',
-        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+        helper: 'বাংলা অনুবাদ দিন।',
         lines: 6,
         required: true,
       ),
       _surahField(required: true),
       _ayahFields(required: true),
-      _approvedSourceField(),
     ],
     AdminResourceKind.hadith => [
-      _section('হাদিসের লেখা'),
       _field(
         'arabicText',
         'আরবি লেখা *',
-        helper: 'অনুমোদিত তথ্যসূত্রের আরবি হুবহু লিখুন।',
+        helper: 'আরবি লেখাটি হুবহু দিন।',
         lines: 7,
         required: true,
         rtl: true,
@@ -721,7 +535,7 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা অনুবাদ *',
-        helper: 'অনুমোদিত বাংলা অনুবাদটি পরিবর্তন না করে দিন।',
+        helper: 'বাংলা অনুবাদ দিন।',
         lines: 6,
         required: true,
       ),
@@ -734,50 +548,44 @@ class _AdminContentEditorScreenState
       _field(
         'hadithNumber',
         'হাদিস নম্বর *',
-        helper: 'তথ্যসূত্রে থাকা হাদিস নম্বরটি দিন।',
+        helper: 'যেমন ১২৩৪।',
         required: true,
       ),
-      _approvedSourceField(),
       _field(
         'grade',
         'হাদিসের মান (ঐচ্ছিক)',
-        helper: 'তথ্যসূত্রে মান উল্লেখ থাকলে তবেই লিখুন।',
+        helper: 'যেমন সহিহ।',
       ),
     ],
     AdminResourceKind.quranAudio => [
-      _section('অডিওর তথ্য'),
       _titleField(),
       _surahField(required: true),
       _ayahFields(required: false),
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'অডিওর সরাসরি HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
         required: true,
         url: true,
       ),
       _field(
         'author',
-        'কারীর নাম বা তথ্যসূত্র (ঐচ্ছিক)',
+        'কারীর নাম (ঐচ্ছিক)',
         helper: 'কারীর নাম বা প্রতিষ্ঠানের নাম জানা থাকলে লিখুন।',
       ),
-      _rightsField(),
     ],
     AdminResourceKind.ruqyahAudio => [
-      _section('রুকইয়াহ অডিও'),
       _titleField(),
       _categoryField(data, prefix: 'ruqyah-', required: true),
       _field(
         'mediaUrl',
         'অডিও লিংক *',
-        helper: 'অনুমোদিত অডিওর সরাসরি HTTPS লিংক দিন; স্টোরেজে কপি হবে না।',
+        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
         required: true,
         url: true,
       ),
-      _rightsField(),
     ],
     AdminResourceKind.bookPdf => [
-      _section('বই বা পিডিএফ'),
       _titleField(),
       _field(
         'author',
@@ -787,30 +595,26 @@ class _AdminContentEditorScreenState
       _field(
         'mediaUrl',
         'পিডিএফ লিংক *',
-        helper: 'পিডিএফের HTTPS লিংক দিন; এখানে ফাইল আপলোড হবে না।',
+        helper: 'https:// দিয়ে শুরু হওয়া পিডিএফ লিংক দিন।',
         required: true,
         url: true,
       ),
-      _rightsField(),
     ],
     AdminResourceKind.video => [
-      _section('ভিডিওর তথ্য'),
       _titleField(),
       _field(
         'mediaUrl',
         'ভিডিও লিংক *',
-        helper: 'ইউটিউব বা ভিডিওর লিংক দিন; ভিডিও বাহিরের তথ্যসূত্রেই থাকবে।',
+        helper: 'ইউটিউব বা অন্য ভিডিও লিংক দিন।',
         required: true,
         url: true,
       ),
-      _rightsField(),
     ],
     AdminResourceKind.duaAzkar => [
-      _section('দোয়া বা যিকর'),
       _field(
         'arabicText',
         'আরবি *',
-        helper: 'অনুমোদিত তথ্যসূত্র থেকে আরবি হুবহু লিখুন।',
+        helper: 'আরবি লেখাটি হুবহু দিন।',
         lines: 6,
         required: true,
         rtl: true,
@@ -818,21 +622,19 @@ class _AdminContentEditorScreenState
       _field(
         'banglaText',
         'বাংলা *',
-        helper: 'অনুমোদিত বাংলা অর্থ বা অনুবাদ লিখুন।',
+        helper: 'বাংলা অর্থ বা অনুবাদ দিন।',
         lines: 5,
         required: true,
       ),
       _categoryField(data, prefix: 'dua-azkar', required: true),
-      _approvedSourceField(),
       _field(
         'repeatCount',
         'পাঠের সংখ্যা (ঐচ্ছিক)',
-        helper: 'অনুমোদিত তথ্যসূত্রে সংখ্যা থাকলেই সেটি লিখুন।',
+        helper: 'কতবার পড়তে হবে, জানা থাকলে দিন।',
         numeric: true,
       ),
     ],
     AdminResourceKind.blog => [
-      _section('ব্লগ পোস্ট'),
       _titleField(),
       _field(
         'body',
@@ -873,7 +675,6 @@ class _AdminContentEditorScreenState
         ),
     ],
     AdminResourceKind.articleGuide => [
-      _section('লেখা বা নির্দেশিকা'),
       _titleField(),
       _field(
         'body',
@@ -884,29 +685,16 @@ class _AdminContentEditorScreenState
       ),
       _field(
         'author',
-        'লেখক বা তথ্যসূত্র (ঐচ্ছিক)',
-        helper: 'প্রযোজ্য ক্ষেত্রে লেখক বা তথ্যসূত্র উল্লেখ করুন।',
+        'লেখক (ঐচ্ছিক)',
+        helper: 'জানা থাকলে লেখকের নাম দিন।',
       ),
     ],
   };
-
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.only(top: 22, bottom: 2),
-    child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-  );
 
   Widget _titleField() => _field(
     'title',
     'শিরোনাম *',
     helper: 'সংক্ষিপ্ত ও পরিষ্কার একটি নাম লিখুন।',
-    required: true,
-  );
-
-  Widget _rightsField() => _field(
-    'rightsNote',
-    'তথ্যসূত্র ও ব্যবহারের অনুমতি *',
-    helper: 'উপকরণের তথ্যসূত্র ও ব্যবহারের অনুমতির তথ্য লিখুন।',
-    lines: 3,
     required: true,
   );
 
@@ -986,105 +774,35 @@ class _AdminContentEditorScreenState
     );
   }
 
-  Widget _approvedSourceField() {
-    final selected = _nullable('sourceReference');
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: SukunSurface(
-        tone: selected == null
-            ? SukunSurfaceTone.warning
-            : SukunSurfaceTone.soft,
-        radius: 18,
-        onTap: _editApprovedSource,
-        child: Row(
-          children: [
-            SukunIconBadge(
-              icon: selected == null
-                  ? Icons.add_moderator_outlined
-                  : Icons.verified_outlined,
-              size: 44,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'অনুমোদিত তথ্যসূত্র *',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    selected ?? 'তথ্যসূত্রের তথ্য যোগ করতে চাপ দিন।',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: SukunColors.muted),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
-          ],
+  Widget _visibilityField() => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: SukunChoiceField<String>(
+      label: 'কারা দেখতে পারবেন?',
+      placeholder: 'দর্শক বেছে নিন',
+      value: _visibility,
+      options: const [
+        SukunChoiceOption(
+          value: 'public',
+          title: 'সবাই',
+          icon: Icons.public_rounded,
         ),
-      ),
-    );
-  }
-
-  Widget _advancedSettings(_EditorData data) => SukunSurface(
-    padding: EdgeInsets.zero,
-    child: ExpansionTile(
-      shape: const Border(),
-      collapsedShape: const Border(),
-      leading: Icon(Icons.tune_rounded, color: SukunColors.deepTide),
-      title: const Text('অতিরিক্ত সেটিংস'),
-      subtitle: const Text('কে দেখতে পারবেন এবং অন্যান্য তথ্য'),
-      childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-      children: [
-        SukunChoiceField<String>(
-          label: 'কারা দেখতে পারবেন?',
-          placeholder: 'দর্শক বেছে নিন',
-          value: _visibility,
-          options: const [
-            SukunChoiceOption(
-              value: 'public',
-              title: 'সবাই',
-              description: 'অতিথি ও লগইন করা ব্যবহারকারী দেখতে পারবেন।',
-              icon: Icons.public_rounded,
-            ),
-            SukunChoiceOption(
-              value: 'patient_only',
-              title: 'লগইন করা রোগীরা',
-              description: 'শুধু সুকুন লাইফের লগইন করা রোগীরা দেখতে পারবেন।',
-              icon: Icons.person_outline_rounded,
-            ),
-            SukunChoiceOption(
-              value: 'assigned_only',
-              title: 'শুধু নির্ধারিত রোগীরা',
-              description:
-                  'পরিকল্পনায় যাদের জন্য দেওয়া আছে শুধু তাঁরা দেখতে পারবেন।',
-              icon: Icons.assignment_ind_outlined,
-            ),
-            SukunChoiceOption(
-              value: 'staff_only',
-              title: 'শুধু সুকুন লাইফের কর্মীরা',
-              description: 'এই উপকরণটি শুধু অ্যাডমিন প্যানেলে থাকবে।',
-              icon: Icons.admin_panel_settings_outlined,
-            ),
-          ],
-          onChanged: (value) => setState(() => _visibility = value),
+        SukunChoiceOption(
+          value: 'patient_only',
+          title: 'লগইন করা রোগীরা',
+          icon: Icons.person_outline_rounded,
         ),
-        _field(
-          'summary',
-          'সংক্ষিপ্ত বিবরণ (ঐচ্ছিক)',
-          helper: 'উপকরণটি কী, এক-দুই লাইনে লিখুন।',
-          lines: 3,
+        SukunChoiceOption(
+          value: 'assigned_only',
+          title: 'শুধু নির্ধারিত রোগীরা',
+          icon: Icons.assignment_ind_outlined,
         ),
-        _field(
-          'thumbnailUrl',
-          'প্রচ্ছদের ছবির লিংক (ঐচ্ছিক)',
-          helper: 'প্রচ্ছদ থাকলে তার HTTPS ছবির লিংক দিন।',
-          url: true,
+        SukunChoiceOption(
+          value: 'staff_only',
+          title: 'শুধু কর্মীরা',
+          icon: Icons.admin_panel_settings_outlined,
         ),
       ],
+      onChanged: (value) => setState(() => _visibility = value),
     ),
   );
 
@@ -1214,29 +932,27 @@ String _kindTitle(AdminResourceKind kind) => switch (kind) {
 };
 
 String _kindCardDescription(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'আরবি আয়াত ও অনুমোদিত বাংলা অনুবাদ',
-  AdminResourceKind.hadith => 'হাদিসের লেখা ও নির্ভরযোগ্য সূত্র',
-  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও',
-  AdminResourceKind.ruqyahAudio => 'অনুমোদিত রুকইয়াহ অডিও',
+  AdminResourceKind.quranAyah => 'আরবি আয়াত ও বাংলা অনুবাদ',
+  AdminResourceKind.hadith => 'হাদিসের লেখা ও নম্বর',
+  AdminResourceKind.quranAudio => 'সূরা বা আয়াতের অডিও লিংক',
+  AdminResourceKind.ruqyahAudio => 'রুকইয়াহ অডিও লিংক',
   AdminResourceKind.bookPdf => 'বই বা পিডিএফের লিংক',
   AdminResourceKind.video => 'ইউটিউব বা ভিডিওর লিংক',
-  AdminResourceKind.duaAzkar => 'অনুমোদিত দোয়া ও যিকর',
-  AdminResourceKind.articleGuide => 'পাঠযোগ্য লেখা ও নির্দেশিকা',
-  AdminResourceKind.blog => 'ছবি ও শিরোনামসহ পূর্ণ ব্লগ',
+  AdminResourceKind.duaAzkar => 'দোয়া ও যিকর',
+  AdminResourceKind.articleGuide => 'লেখা বা নির্দেশিকা',
+  AdminResourceKind.blog => 'ছবি ও শিরোনামসহ ব্লগ',
 };
 
 String _kindInstruction(AdminResourceKind kind) => switch (kind) {
-  AdminResourceKind.quranAyah => 'অনুমোদিত তথ্যসূত্র থেকে আয়াতটি হুবহু লিখুন।',
-  AdminResourceKind.hadith => 'বিশ্বস্ত হাদিসগ্রন্থ থেকে লেখা ও সূত্র দিন।',
-  AdminResourceKind.quranAudio =>
-    'অডিওর সরাসরি লিংক দিন; ফাইল এখানে আপলোড হবে না।',
-  AdminResourceKind.ruqyahAudio => 'অনুমোদিত অডিও লিংক ও রুকইয়াহর বিভাগ দিন।',
-  AdminResourceKind.bookPdf => 'পিডিএফ লিংক ও ব্যবহারের অনুমতির তথ্য দিন।',
-  AdminResourceKind.video => 'ভিডিও আপলোডের বদলে ইউটিউব বা ভিডিও লিংক দিন।',
-  AdminResourceKind.duaAzkar => 'শুধু তথ্যসূত্রে থাকা দোয়া ও পাঠের নিয়ম লিখুন।',
-  AdminResourceKind.articleGuide =>
-    'স্পষ্ট ভাষায় লেখা ও প্রয়োজনীয় তথ্যসূত্র দিন।',
-  AdminResourceKind.blog => 'শিরোনাম, লেখা ও ছবি দিয়ে ব্লগ তৈরি করুন।',
+  AdminResourceKind.quranAyah => 'আয়াত, অনুবাদ ও সূরা-আয়াত নম্বর দিন।',
+  AdminResourceKind.hadith => 'হাদিসের লেখা, কিতাব ও নম্বর দিন।',
+  AdminResourceKind.quranAudio => 'শিরোনাম, সূরা ও অডিও লিংক দিন।',
+  AdminResourceKind.ruqyahAudio => 'শিরোনাম, বিভাগ ও অডিও লিংক দিন।',
+  AdminResourceKind.bookPdf => 'শিরোনাম ও পিডিএফ লিংক দিন।',
+  AdminResourceKind.video => 'শিরোনাম ও ভিডিও লিংক দিন।',
+  AdminResourceKind.duaAzkar => 'আরবি, বাংলা ও বিভাগ দিন।',
+  AdminResourceKind.articleGuide => 'শিরোনাম ও লেখা দিন।',
+  AdminResourceKind.blog => 'শিরোনাম, লেখা ও ছবি দিন।',
 };
 
 IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
@@ -1253,7 +969,9 @@ IconData _kindIcon(AdminResourceKind kind) => switch (kind) {
 
 String? _repeatCount(String? reference) {
   if (reference == null) return null;
-  return RegExp(r'Repeat count from approved source: (\d+)')
+  return RegExp(
+    r'(?:Repeat count from approved source|অনুমোদিত তথ্যসূত্র অনুযায়ী কতবার|কতবার পড়বেন): (\d+)',
+  )
       .firstMatch(reference)
       ?.group(1);
 }

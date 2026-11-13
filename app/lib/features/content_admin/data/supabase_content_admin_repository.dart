@@ -270,11 +270,8 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
 }
 
 String _contentMutationMessage(PostgrestException error) {
-  if (error.message.contains('content_items_canonical_publication')) {
-    return "This Qur'an or Hadith resource is missing required approved-source metadata. Edit it and add the source type, source reference, edition or dataset version, and required canonical fields before publishing.";
-  }
-  if (error.message.contains('content_items_published_media_rights')) {
-    return 'External media cannot be published until its rights or licensing note is complete.';
+  if (error.message.contains('content_items_canonical')) {
+    return "This Qur'an or Hadith resource is missing its Arabic text or Hadith reference.";
   }
   return error.message;
 }
