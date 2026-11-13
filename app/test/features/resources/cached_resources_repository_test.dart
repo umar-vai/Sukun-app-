@@ -39,7 +39,7 @@ void main() {
     final inner = _CountingRepository();
     final cache = CachedResourcesRepository(
       inner,
-      scope: () => 'user-a',
+      () => 'user-a',
       now: () => now,
     );
 
@@ -55,7 +55,7 @@ void main() {
   test('a different signed-in user never sees another user cache', () async {
     var user = 'user-a';
     final inner = _CountingRepository();
-    final cache = CachedResourcesRepository(inner, scope: () => user);
+    final cache = CachedResourcesRepository(inner, () => user);
 
     await cache.browseSurahs();
     user = 'user-b';
@@ -65,7 +65,7 @@ void main() {
 
   test('failures and typed searches are never cached', () async {
     final inner = _CountingRepository();
-    final cache = CachedResourcesRepository(inner, scope: () => null);
+    final cache = CachedResourcesRepository(inner, () => null);
 
     inner.failNext = true;
     await expectLater(

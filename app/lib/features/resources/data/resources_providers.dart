@@ -14,7 +14,7 @@ final resourcesRepositoryProvider = Provider<ResourcesRepository>((ref) {
   final client = Supabase.instance.client;
   return CachedResourcesRepository(
     SupabaseResourcesRepository(client),
-    scope: () => client.auth.currentUser?.id,
+    () => client.auth.currentUser?.id,
   );
 });
 

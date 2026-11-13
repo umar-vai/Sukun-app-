@@ -16,12 +16,11 @@ import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 /// * Entries expire after [ttl], so edited content appears shortly after.
 final class CachedResourcesRepository implements ResourcesRepository {
   CachedResourcesRepository(
-    this._inner, {
-    required String? Function() scope,
+    this._inner,
+    this._scope, {
     this.ttl = const Duration(minutes: 5),
     DateTime Function()? now,
-  }) : _scope = scope,
-       _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now;
 
   final ResourcesRepository _inner;
   final String? Function() _scope;
