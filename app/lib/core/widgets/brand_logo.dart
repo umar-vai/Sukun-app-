@@ -11,9 +11,14 @@ class SukunLifeLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The source artwork is very large (3581x4219). Decode it at display size
+    // so the launch screen and headers appear instantly and use little memory.
+    final ratio = MediaQuery.devicePixelRatioOf(context);
+    final pixelHeight = (height * ratio).round();
     return Image.asset(
       BrandAssets.officialLogo,
       height: height,
+      cacheHeight: pixelHeight,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
         return Text(
