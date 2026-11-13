@@ -137,6 +137,7 @@ jobs:
           flutter analyze
           flutter test
           flutter build apk --release \
+            --target-platform android-arm,android-arm64 \
             --build-name="$BUILD_NAME" \
             --build-number="$BUILD_CODE" \
             --dart-define=APP_ENVIRONMENT=production \
@@ -149,7 +150,8 @@ jobs:
             --dart-define="ENABLE_GOOGLE_OAUTH=true" \
             --dart-define="ENABLE_MEMBER_SIGNUP=true"
           test -s build/app/outputs/flutter-apk/app-release.apk
-          # Universal release APK supports 32/64-bit devices; unlike the
+          # One APK for 32-bit and 64-bit ARM phones (x86 emulators/tablets are
+          # intentionally left out to cut the download size); unlike the
           # previous debug QA APK it uses optimized Flutter AOT compilation.
           # Enforce an initial generous ceiling and record actual bytes. Size
           # optimization decisions must be based on a measured signed artifact.

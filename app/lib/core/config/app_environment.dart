@@ -103,12 +103,6 @@ abstract final class AppEnvironment {
       publishableKey: supabasePublishableKey,
     );
 
-    if (isSupabaseConfigured) {
-      await Supabase.initialize(
-        url: supabaseUrl,
-        publishableKey: supabasePublishableKey,
-      );
-    }
     validateFirebaseRuntimeConfiguration(
       projectId: firebaseProjectId,
       messagingSenderId: firebaseMessagingSenderId,
@@ -117,9 +111,17 @@ abstract final class AppEnvironment {
       iosApiKey: firebaseIosApiKey,
       iosAppId: firebaseIosAppId,
     );
-    if (isFirebaseConfigured && Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: firebaseOptions);
-    }
+    // Supabase and Firebase do not depend on each other, so start them
+    // together to shorten the time the launch screen is visible.
+    await Future.wait<void>([
+      if (isSupabaseConfigured)
+        Supabase.initialize(
+          url: supabaseUrl,
+          publishableKey: supabasePublishableKey,
+        ),
+      if (isFirebaseConfigured && Firebase.apps.isEmpty)
+        Firebase.initializeApp(options: firebaseOptions),
+    ]);
   }
 }
 

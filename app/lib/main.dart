@@ -32,8 +32,10 @@ void main() {
 }
 
 Future<void> _initializeServices() async {
-  await initializePlatformServices();
-  await AppEnvironment.initialize();
+  await Future.wait<void>([
+    initializePlatformServices(),
+    AppEnvironment.initialize(),
+  ]);
   if (AppEnvironment.isFirebaseConfigured) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
