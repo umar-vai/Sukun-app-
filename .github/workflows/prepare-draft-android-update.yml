@@ -1,4 +1,4 @@
-name: Prepare Draft Android Update — Manual Only
+name: Publish Android Update — Manual Only
 on:
   workflow_dispatch:
     inputs:
@@ -15,13 +15,14 @@ on:
         type: string
         required: true
       approve_draft:
-        description: 'I approve a private draft release, NOT public publication'
+        description: 'I approve PUBLIC release and in-app update for all users'
         type: boolean
         required: true
         default: false
 
 permissions:
   contents: write
+  pull-requests: write
   actions: read
 concurrency:
   group: sukun-android-draft-release
@@ -29,7 +30,7 @@ concurrency:
 
 jobs:
   prepare:
-    name: Verify signed APK and prepare review-only draft
+    name: Verify signed APK, publish release and enable in-app update
     if: ${{ github.ref == 'refs/heads/main' && inputs.approve_draft == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -121,34 +122,43 @@ jobs:
           mv "$apk" candidate/SukunLife.apk
           echo "APK_SHA=$real_sha" >> "$GITHUB_ENV"
           echo "APK_BYTES=$size" >> "$GITHUB_ENV"
-      - name: Create a non-public DRAFT GitHub Release and candidate manifest
+      - name: Publish the GitHub Release and write the update feed
         shell: bash
         run: |
           set -euo pipefail
           tag="v$VERSION"
-          printf 'Sukun Life %s (%s)\nInternal testing candidate. NOT approved for general distribution.\n' \
-            "$VERSION" "$CODE" > candidate/notes.txt
+          printf 'Sukun Life %s (%s)\n' "$VERSION" "$CODE" > candidate/notes.txt
           gh release create "$tag" candidate/SukunLife.apk \
-            --draft --target "$SOURCE_SHA" \
-            --title "Sukun Life $VERSION (Internal QA candidate)" \
+            --target "$SOURCE_SHA" --latest \
+            --title "Sukun Life $VERSION" \
             --notes-file candidate/notes.txt
-          [[ "$(gh release view "$tag" --json isDraft --jq '.isDraft')" == 'true' ]]
+          [[ "$(gh release view "$tag" --json isDraft --jq '.isDraft')" == 'false' ]]
           jq -n \
             --arg version "$VERSION" --argjson code "$CODE" \
             --arg url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/SukunLife.apk" \
             --arg sha "$APK_SHA" --argjson bytes "$APK_BYTES" \
             '{schema_version:1,platform:"android",package_name:"com.sukunlife.app",enabled:true,version_code:$code,version_name:$version,min_supported_version_code:0,apk_url:$url,sha256:$sha,size_bytes:$bytes,notes_bn:"যাচাইকৃত নতুন সংস্করণ।"}' \
-            > candidate/android-manifest-REVIEW-ONLY.json
+            > candidate/android.json
+      - name: Enable in-app update (push to main, else open a pull request)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -q -B "update-feed-v$VERSION" origin/main
+          cp candidate/android.json app/web/updates/android.json
+          git add app/web/updates/android.json
+          git commit -q -m "Enable in-app update to Sukun Life $VERSION ($CODE)"
+          if git push -q origin "HEAD:main" 2>/dev/null; then
+            echo "Pushed update feed to main."
+          else
+            git push -q origin "HEAD:refs/heads/update-feed-v$VERSION"
+            gh pr create --base main --head "update-feed-v$VERSION" \
+              --title "Enable in-app update to $VERSION" \
+              --body "Merge this to show the update popup in installed apps."
+          fi
           {
-            echo '## Draft APK prepared; no public release or feed publication'
-            echo "Tag: $tag, source run: $SOURCE_RUN_ID"
-            echo "Version: $VERSION ($CODE), size: $APK_BYTES bytes, SHA256: $APK_SHA"
-            echo 'Owner must finish real-device QA, publish the draft manually, and separately review an update-feed PR.'
+            echo "## Published $VERSION ($CODE)"
+            echo "Size: $APK_BYTES bytes, SHA256: $APK_SHA"
+            echo 'Update feed written. If a pull request was opened, merge it to start the popup.'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Preserve candidate feed JSON for a later owner-reviewed pull request
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-manifest-REVIEW-ONLY
-          path: candidate/android-manifest-REVIEW-ONLY.json
-          retention-days: 14
-          if-no-files-found: error
