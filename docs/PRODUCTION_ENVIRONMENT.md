@@ -13,6 +13,27 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-13: one-step resource publishing (Production)
+
+- Owner decision: adding or editing a resource publishes it in one step; no
+  draft, review or separate verification, and no required source or
+  rights/licensing fields. Qur'an/Hadith are verified by the saving Super
+  Admin. See `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` section 12.
+- Applied `supabase/migrations/20261113150000_one_step_resource_publishing.sql`
+  as remote version `20261113092444` (`one_step_resource_publishing_20261113`):
+  `save_content_item` accepts `published` and edits published rows in place;
+  `transition_content_item` `publish` works from any unpublished state; the
+  canonical publication constraints and trigger keep only the AI-source ban
+  and the Qur'an Arabic / Hadith reference checks;
+  `content_items_published_media_rights` dropped.
+- Verified before applying in a rolled-back transaction on Production: new
+  Qur'an and Hadith published and verified in one call, a published Qur'an
+  edited in place, link-only audio published without a rights note, the
+  waiting Qur'an review row published; an AI source, a Hadith without its
+  reference and a non-admin were refused. After applying: grants unchanged
+  (`authenticated` only), no dry-run rows left. Backward compatible with the
+  deployed client, which still uses draft, submit and publish.
+
 ### 2026-11-13: raqi staff role (Production)
 
 - Applied `20261113115900_app_role_raqi.sql` as remote version

@@ -7,7 +7,6 @@ import 'package:sukun_life/features/content_admin/data/content_admin_repository.
 import 'package:sukun_life/features/content_admin/domain/admin_content.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_list_screen.dart';
 import 'package:sukun_life/features/content_admin/presentation/admin_content_editor_screen.dart';
-import 'package:sukun_life/features/content_admin/presentation/admin_content_preview_screen.dart';
 
 void main() {
   test('Ayat collection validation rejects unsafe or ambiguous input', () {
@@ -62,67 +61,40 @@ void main() {
     );
   });
 
-  test('external media validation requires rights metadata', () {
+  test('external media no longer needs a rights or licensing note', () {
     expect(
       _input(
         type: 'audio',
         mediaSourceType: 'direct_audio_url',
         mediaUrl: 'https://cdn.example.test/audio.mp3',
       ).validate(),
-      contains('rights or licensing note'),
+      isNull,
     );
     expect(
       _input(
         type: 'audio',
         mediaSourceType: 'direct_audio_url',
         mediaUrl: 'https://cdn.example.test/audio.mp3',
-        rightsNote: 'Licensed by the publisher.',
-      ).validate(),
+      ).publicationValidationError(),
       isNull,
     );
   });
 
-  test('publication validation explains missing canonical source fields', () {
-    final input = _input(
+  test('one-step publishing needs no source fields, only the Arabic text', () {
+    final withoutArabic = _input(type: 'quran', surahNumber: 25, ayahNumber: 1);
+    expect(withoutArabic.validate(), isNull);
+    expect(withoutArabic.publicationValidationError(), contains('Arabic text'));
+
+    final withoutSource = _input(
       type: 'quran',
+      arabicText: 'fixture Arabic text',
       surahNumber: 25,
       ayahNumber: 1,
-      mediaSourceType: 'direct_audio_url',
-      mediaUrl: 'https://cdn.example.test/recitation.mp3',
-      rightsNote: 'Licensed recitation.',
+      status: 'published',
     );
-
-    expect(input.validate(), isNull);
-    expect(
-      input.publicationValidationError(),
-      allOf(
-        contains('approved source format'),
-        contains('source name or reference'),
-        contains('edition or version'),
-        contains('sourced Arabic text'),
-        contains('choose Qur’an / Surah Audio'),
-      ),
-    );
+    expect(withoutSource.validate(), isNull);
+    expect(withoutSource.publicationValidationError(), isNull);
   });
-
-  test(
-    'third-party external audio cannot advance without rights clearance',
-    () {
-      final draft = _input(
-        type: 'audio',
-        mediaSourceType: 'direct_audio_url',
-        mediaUrl: 'https://files.ruqyahbd.org/audio/example.mp3',
-        rightsNote:
-            'Third-party rights not independently verified. '
-            'SOURCE LINK ONLY. No audio rehosting.',
-      );
-      expect(draft.validate(), isNull);
-      expect(
-        draft.publicationValidationError(),
-        contains('require verification'),
-      );
-    },
-  );
 
   test('publication validation accepts complete canonical metadata', () {
     final input = _input(
@@ -194,7 +166,7 @@ void main() {
     expect(generatedResourceSlug('দুআ', 'ABCDEF12-more'), 'resource-abcdef12');
   });
 
-  testWidgets('category-first CMS keeps saved drafts in their own tab', (
+  testWidgets('resource home lists only types, no review or import extras', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -209,111 +181,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('সংরক্ষিত খসড়া'), findsOneWidget);
-    expect(find.text('যাচাইয়ের অপেক্ষায়'), findsOneWidget);
     expect(find.text('কুরআনের আয়াত'), findsOneWidget);
-    expect(find.text('Ayatul Kursi'), findsNothing);
-    expect(find.text('New resource'), findsNothing);
+    for (final removed in const [
+      'সংরক্ষিত খসড়া',
+      'যাচাইয়ের অপেক্ষায়',
+      'আয়াতের সংগ্রহ পরিচালনা',
+      'উন্নত সেটিংস',
+    ]) {
+      expect(find.text(removed), findsNothing);
+    }
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('কুরআনের আয়াত'));
     await tester.pumpAndSettle();
-    expect(find.text('নতুন কুরআনের আয়াত যোগ করুন'), findsOneWidget);
+    expect(find.text('যোগ করুন'), findsOneWidget);
     expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('খসড়া'), findsWidgets);
+    // The fixture is a legacy unpublished row, so it shows as hidden.
+    expect(find.text('লুকানো'), findsWidgets);
 
     await tester.tap(find.text('প্রকাশিত'));
     await tester.pumpAndSettle();
     expect(find.text('Ayatul Kursi'), findsNothing);
-
-    await tester.tap(find.text('খসড়া').first);
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Ayatul Kursi'),
-      160,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Ayatul Kursi'), findsOneWidget);
-    expect(find.text('সব নির্বাচন'), findsOneWidget);
-
-    // The separate all-drafts selection test verifies the cross-category tab.
-  });
-
-  testWidgets('all-drafts bulk select only acts on checked draft IDs', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          contentAdminRepositoryProvider.overrideWithValue(
-            const _FakeContentAdminRepository(),
-          ),
-        ],
-        child: const MaterialApp(home: AdminContentListScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('সংরক্ষিত খসড়া'));
-    await tester.pumpAndSettle();
-    expect(find.text('সব নির্বাচন'), findsOneWidget);
-    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
-
-    await tester.tap(find.text('সব নির্বাচন'));
-    await tester.pumpAndSettle();
-    expect(find.text('1টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
-    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
-    expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
-    expect(find.text('যাচাইয়ের জন্য পাঠান (1)'), findsOneWidget);
-
-    await tester.tap(find.text('সব বাতিল'));
-    await tester.pumpAndSettle();
-    expect(find.text('0টি নির্বাচিত · 1টি দৃশ্যমান'), findsOneWidget);
-    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsNothing);
-  });
-
-  testWidgets('review queue shows selection, bulk return, archive and edit', (
-    tester,
-  ) async {
-    const reviewItem = AdminContentItem(
-      id: 'review-1',
-      type: 'article',
-      title: 'জিনের আয়াত — সূত্র যাচাই প্রয়োজন',
-      slug: 'srg2024-qur-ayat-review-1',
-      visibility: 'staff_only',
-      status: 'review',
-      verificationStatus: 'not_required',
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          contentAdminRepositoryProvider.overrideWithValue(
-            const _FakeContentAdminRepository(content: reviewItem),
-          ),
-        ],
-        child: const MaterialApp(home: AdminContentListScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('যাচাইয়ের অপেক্ষায়').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('0টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
-    expect(find.byKey(const ValueKey('review-edit-review-1')), findsOneWidget);
-    expect(find.byKey(const ValueKey('draft-select-review-1')), findsOneWidget);
-
-    await tester.tap(find.text('সব নির্বাচন'));
-    await tester.pumpAndSettle();
-    expect(find.text('1টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
-    expect(find.text('খসড়ায় ফেরত (1)'), findsOneWidget);
-    expect(find.text('ডিলিট / আর্কাইভ (1)'), findsOneWidget);
-    expect(find.text('প্রকাশ করুন (0)'), findsOneWidget);
-    expect(find.text('সম্পাদনা করুন'), findsOneWidget);
-
-    await tester.tap(find.text('সব বাতিল'));
-    await tester.pumpAndSettle();
-    expect(find.text('0টি নির্বাচিত · 1টি Review উপকরণ'), findsOneWidget);
-    expect(find.text('খসড়ায় ফেরত (1)'), findsNothing);
   });
 
   testWidgets('category card opens matching preselected editor form', (
@@ -349,16 +236,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -330));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('হাদিস'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('নতুন হাদিস যোগ করুন'));
+    await tester.tap(find.text('যোগ করুন'));
     await tester.pumpAndSettle();
 
     expect(find.text('নতুন উপকরণ যোগ করুন'), findsOneWidget);
-    expect(find.text('কোন উপকরণ যোগ করবেন?'), findsNothing);
-    expect(find.text('হাদিসের লেখা'), findsOneWidget);
+    expect(find.text('কোন ধরনের উপকরণ?'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('হাদিসের কিতাব *'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('হাদিসের কিতাব *'), findsOneWidget);
   });
 
   testWidgets('resource editor offers nine clear choices including Blog', (
@@ -441,9 +331,13 @@ void main() {
     });
   }
 
-  testWidgets('Quran form shows only human-facing required fields', (
+  testWidgets('Quran form has no source, licence or draft steps', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -459,46 +353,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('আরবি লেখা *'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('বাংলা অনুবাদ *'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.pumpAndSettle();
     expect(find.text('বাংলা অনুবাদ *'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('সূরা *'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.pumpAndSettle();
     expect(find.text('সূরা *'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('অনুমোদিত তথ্যসূত্র *'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('অনুমোদিত তথ্যসূত্র *'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('অতিরিক্ত সেটিংস'),
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('অতিরিক্ত সেটিংস'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -420));
-    await tester.pumpAndSettle();
-    expect(find.text('খসড়া সংরক্ষণ করুন'), findsOneWidget);
-    expect(find.text('যাচাইয়ের জন্য পাঠান'), findsOneWidget);
-    expect(find.text('Slug'), findsNothing);
-    expect(find.text('Request ID'), findsNothing);
-    expect(find.text('Media type'), findsNothing);
+    expect(find.text('কারা দেখতে পারবেন?'), findsOneWidget);
+    expect(find.text('প্রকাশ করুন'), findsOneWidget);
+    for (final removed in const [
+      'অনুমোদিত তথ্যসূত্র *',
+      'অতিরিক্ত সেটিংস',
+      'খসড়া সংরক্ষণ করুন',
+      'যাচাইয়ের জন্য পাঠান',
+      'আগে দেখে নিন',
+      'Slug',
+      'Request ID',
+    ]) {
+      expect(find.text(removed), findsNothing);
+    }
   });
 
-  testWidgets('canonical preview requires review before verification', (
-    tester,
-  ) async {
+  testWidgets('editing saves once and publishes immediately', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    _savedInputs.clear();
+    _transitions.clear();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -506,60 +384,38 @@ void main() {
             const _FakeContentAdminRepository(),
           ),
         ],
-        child: const MaterialApp(
-          home: AdminContentPreviewScreen(contentItemId: 'content-1'),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('যাচাইয়ের জন্য পাঠান'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-
-    expect(find.text('প্রকাশ করুন'), findsNothing);
-    expect(find.text('মূল তথ্য যাচাই করুন'), findsNothing);
-    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
-    await tester.pumpAndSettle();
-    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsOneWidget);
-    await tester.tap(
-      find.widgetWithText(FilledButton, 'যাচাইয়ের জন্য পাঠান').last,
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('resource preview explains incomplete canonical publication', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          contentAdminRepositoryProvider.overrideWithValue(
-            const _FakeContentAdminRepository(
-              content: _FakeContentAdminRepository.incompleteQuranAudio,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AdminContentEditorScreen(
+                      contentItemId: 'content-1',
+                    ),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
             ),
           ),
-        ],
-        child: const MaterialApp(
-          home: AdminContentPreviewScreen(contentItemId: 'content-2'),
         ),
       ),
     );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('যাচাইয়ের জন্য পাঠান'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
 
-    await tester.tap(find.text('যাচাইয়ের জন্য পাঠান'));
-    await tester.pump();
+    expect(find.text('আপডেট করুন'), findsOneWidget);
+    await tester.tap(find.text('আপডেট করুন'));
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('approved source format'), findsOneWidget);
-    expect(find.textContaining('choose Qur’an / Surah Audio'), findsOneWidget);
-    expect(find.text('যাচাইয়ের জন্য পাঠান?'), findsNothing);
+    expect(_savedInputs, hasLength(1));
+    expect(_savedInputs.single.status, 'published');
+    expect(_savedInputs.single.contentItemId, 'content-1');
+    // Source fields saved earlier are kept untouched, not dropped.
+    expect(_savedInputs.single.sourceReference, 'Approved Quran 2:255');
+    expect(_transitions, isEmpty);
+    expect(find.text('পরিবর্তন প্রকাশিত হয়েছে।'), findsOneWidget);
   });
 }
 
@@ -574,12 +430,13 @@ SaveContentInput _input({
   String? mediaSourceType,
   String? mediaUrl,
   String? rightsNote,
+  String status = 'draft',
 }) => SaveContentInput(
   type: type,
   title: 'Fixture',
   slug: 'fixture',
   visibility: 'staff_only',
-  status: 'draft',
+  status: status,
   requestId: 'request',
   sourceType: sourceType,
   sourceReference: sourceReference,
@@ -592,10 +449,13 @@ SaveContentInput _input({
   rightsNote: rightsNote,
 );
 
-final class _FakeContentAdminRepository implements ContentAdminRepository {
-  const _FakeContentAdminRepository({this.content = item});
+final _savedInputs = <SaveContentInput>[];
+final _transitions = <String>[];
 
-  final AdminContentItem content;
+final class _FakeContentAdminRepository implements ContentAdminRepository {
+  const _FakeContentAdminRepository();
+
+  AdminContentItem get content => item;
 
   static const item = AdminContentItem(
     id: 'content-1',
@@ -606,27 +466,12 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
     status: 'draft',
     verificationStatus: 'pending',
     arabicText: 'fixture sourced Arabic text',
+    banglaText: 'fixture Bangla translation',
     sourceType: 'licensed_publication',
     sourceReference: 'Approved Quran 2:255',
     sourceEdition: 'Approved edition',
     surahNumber: 2,
     ayahNumber: 255,
-  );
-
-  static const incompleteQuranAudio = AdminContentItem(
-    id: 'content-2',
-    type: 'quran',
-    title: 'Recitation',
-    slug: 'recitation',
-    visibility: 'public',
-    status: 'draft',
-    verificationStatus: 'pending',
-    surahNumber: 25,
-    ayahNumber: 1,
-    ayahEndNumber: 25,
-    mediaSourceType: 'direct_audio_url',
-    mediaUrl: 'https://cdn.example.test/recitation.mp3',
-    rightsNote: 'Licensed recitation.',
   );
 
   @override
@@ -665,7 +510,10 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
   }) => throw UnimplementedError();
 
   @override
-  Future<AdminContentItem> saveContent(SaveContentInput input) async => content;
+  Future<AdminContentItem> saveContent(SaveContentInput input) async {
+    _savedInputs.add(input);
+    return content;
+  }
 
   @override
   Future<ContentCategory> saveCategory({
@@ -685,5 +533,8 @@ final class _FakeContentAdminRepository implements ContentAdminRepository {
     required String transition,
     required String requestId,
     String? notes,
-  }) async => content;
+  }) async {
+    _transitions.add(transition);
+    return content;
+  }
 }

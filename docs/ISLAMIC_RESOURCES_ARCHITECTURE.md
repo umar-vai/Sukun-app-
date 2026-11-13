@@ -270,48 +270,36 @@ Examples:
 - Specific prescribed audio → `assigned_only`
 - Practitioner-only reference material → `staff_only`
 
-## 12. Reviewed publication workflow
+## 12. One-step publication workflow (owner decision, 2026-11-13)
 
-Required normal CMS lifecycle:
+The Sukun Life owner replaced the earlier draft → review → verify → publish
+lifecycle with a single step. Migration
+`supabase/migrations/20261113150000_one_step_resource_publishing.sql`.
 
 ```text
-draft
-→ Submit for Review
-→ Verify Source (Qur'an/Hadith only)
-→ Publish
-→ published
+Add or edit → Publish / Update → published
 ```
 
-Published content may be unpublished to its last reviewed state or archived.
-The server-verified Super Admin remains the final publisher, but canonical
-Qur'an and Hadith cannot bypass the explicit source-verification state.
-
-Implemented workflow constraints:
-
-- Flutter requests audited `save_content_item` and `transition_content_item`
-  database functions; RLS and a server-verified Super Admin role remain
-  authoritative.
-- Content is saved as `draft`, submitted to `review`, and then published by an
-  authorized Super Admin. Qur'an/Hadith move from `review` to `verified` before
-  they may move to `published`.
-- Published content is immutable until it is explicitly unpublished. Editing
-  first returns canonical content to `verified` and other resources to
-  `review`, so approval and publication history remain preserved.
-- Historical verification fields and records remain authoritative for
-  canonical publication and audit history.
-- `content_reviews` and `admin_audit_logs` store admin-only lifecycle history
-  separately from patient-readable content. Publish, unpublish, and archive
-  events record the responsible Super Admin and timestamp.
-- Canonical Qur'an/Hadith rejects `generative_ai` as a source even in draft form.
-  Publication still requires approved source reference and edition metadata;
-  Qur'an requires sourced Arabic text, Bangla text requires its translation
-  source, and Hadith requires collection, book, and number.
-- The editor and preview must explain missing publication metadata before the
-  publish request. Database constraints remain the final safety net, but raw
-  constraint names must not be shown in the normal admin experience.
-- A recitation-only item uses the `audio` content type and Qur'an
-  category/taxonomy. The `quran` content type represents canonical sourced text
-  and therefore requires its approved Arabic text and source metadata.
+- The editor has one action. A new resource is published on save; an edit of
+  a published resource stays published. There is no draft, review queue,
+  preview step, source sheet or rights/licensing field in the admin UI.
+- For Qur'an and Hadith, the saving Super Admin is recorded as the verifier
+  (`verified_by`, `verified_at`) at publication. The owner decided this
+  attestation replaces separate source verification; there are no required
+  source, edition, translation-source or rights fields any more.
+- Still enforced in the database: server-verified Super Admin role, audited and
+  idempotent requests, no `generative_ai` canonical source, Qur'an needs a
+  valid Surah/Ayah and its Arabic text, Hadith needs collection, book and
+  number, HTTPS-only links.
+- Existing source/rights values are kept when a resource is edited; they are
+  simply no longer asked for.
+- A resource can be hidden (unpublished) or archived from the list, and
+  published again from there. Legacy `draft`/`review`/`verified` rows show as
+  "hidden".
+- `content_reviews` and `admin_audit_logs` keep the history of every publish,
+  hide and archive.
+- A recitation-only item uses the `audio` content type; the `quran` type is
+  for Ayah text.
 
 Recommended fields:
 
@@ -335,20 +323,11 @@ Super Admin must be able to manage the Islamic Resources library from the same F
 
 Admin functions:
 
-- Create resource
-- Choose one of eight plain-language resource types first
-- Complete only the fields required for that type
-- Select an approved source through a human-readable source sheet
-- Add external audio/video/PDF URLs rather than uploading large files
-- Use collapsed Advanced settings for rare audience/presentation choices
-- Save draft
-- Preview
-- Submit for review
-- Verify canonical Qur'an/Hadith source
-- Publish
-- Unpublish
-- Archive
-- Search/filter existing resources
+- Choose a resource type, then Add
+- Fill only the fields for that type (text or link) and Publish
+- Tap a resource to edit; Update publishes the change
+- Hide, publish again or archive from the list
+- Search and filter (all, published, hidden, archived)
 - Link an existing resource to a patient's plan
 
 The admin UI must clearly distinguish canonical religious text/reference fields from ordinary editorial description fields.
@@ -424,7 +403,7 @@ Minimum first release of the Resources hub should include:
 
 ## 18. Non-negotiable rule
 
-**Qur'an/Hadith content must never be treated as generic AI-generated copy. Canonical text and references must come from approved, traceable sources with complete metadata, pass explicit source verification, and remain accountable through audit history.**
+**Qur'an/Hadith content must never be treated as generic AI-generated copy. Since 2026-11-13 the publishing Super Admin's one-step save is the verification of record (owner decision), and every publish stays accountable through audit history.**
 
 ## 19. Clinical links to the public Quran catalog (2026-10-18)
 
