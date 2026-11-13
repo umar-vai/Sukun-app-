@@ -283,11 +283,6 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: SukunSpace.lg),
-              Text(
-                'নির্ধারিত সব কাজের তুলনায় সম্পন্ন হওয়ার হার এখানে দেখানো হয়নি।',
-                style: textTheme.bodySmall?.copyWith(color: SukunColors.muted),
-              ),
             ],
           ),
         );
