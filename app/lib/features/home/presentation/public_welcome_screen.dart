@@ -10,12 +10,12 @@ import 'package:sukun_life/core/updates/android_update_service.dart';
 /// non-HTTPS value keeps the download action closed until a signed APK exists.
 const androidApkUrl = String.fromEnvironment('ANDROID_APK_URL');
 
-// Explicitly enabled only after the first signed APK is approved and
-// published. Keeps the initial Web preview, browser tests and public landing
-// free of speculative remote download requests before the release gate.
+// The first signed APK is published and `/updates/android.json` is enabled, so
+// the landing reads that manifest by default and links the latest approved
+// build. Set ENABLE_PUBLIC_APK_DOWNLOAD=false to close the button again.
 const publicApkDownloadEnabled = bool.fromEnvironment(
   'ENABLE_PUBLIC_APK_DOWNLOAD',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 Uri? approvedAndroidApkUri(String value) {
