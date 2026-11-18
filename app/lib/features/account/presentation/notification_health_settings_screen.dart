@@ -26,8 +26,7 @@ String notificationPermissionHint({
       : 'নোটিফিকেশন অনুমতি আছে। ফোনের ব্যাটারি নীতি ডেলিভারি বিলম্ব করতে পারে।';
 }
 
-String _bnDate(DateTime value) =>
-    '${value.day}/${value.month}/${value.year}';
+String _bnDate(DateTime value) => '${value.day}/${value.month}/${value.year}';
 
 /// One plain sentence for the health screen: how many prayer alarms are on
 /// the device, until when, and whether the last refresh failed.
