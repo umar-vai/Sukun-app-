@@ -57,3 +57,14 @@ Universal notices are non-clinical announcements, separate from patient notifica
 The inbox retains published notices for later reading. The prominent detail panel can be opened from the inbox or from a validated notice ID in a native push tap. An optional image is stored in a dedicated public, non-clinical Storage bucket; no patient images, prescriptions, or private links belong there. External links must use HTTPS.
 
 Native Android/iOS push is a separate opt-in FCM topic, `sukun_public_notices_v1`. The server-only sender claims publication outbox records and sends a public notice ID and title to the topic. A provider-accepted message does **not** prove delivery to every phone. The sender requires both a private cron token and the `SUKUN_UNIVERSAL_PUSH_RELEASE_READY` server gate; its GitHub schedule has a separate repository-variable gate. Keep both closed until native Firebase configuration, phone consent/topic registration, locked/background/cold-start tap, opt-out, and duplicate-send checks pass. Web browser-closed push requires a separately tested service worker/VAPID path; the Pages preview supplies the in-app inbox.
+
+## Reliable background delivery on Android (2026-11)
+
+Prayer waqt and care reminders are local alarms. On phones with aggressive power management (Honor/Huawei EMUI, Xiaomi, Oppo, Vivo, Samsung) the OS can freeze or delete them unless the user allows background activity.
+
+- A native `sukunlife/power_settings` channel (`MainActivity.kt`) reports battery-optimisation state, opens the system one-tap "allow background activity" dialog, and opens the vendor autostart or protected-apps screen when known (falls back to app settings). Nothing is granted silently. `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is declared for this; review it against Play policy before a Play Store release (the sideload build is unaffected).
+- `ReliableDeliveryCard` is shown after the user enables prayer alerts and permanently on the notification health screen.
+- Prayer alerts schedule 30 days (150 alarms) on Android instead of 14, plus a quiet "open the app to renew" notice 3 days before the last alarm. Android restores alarms after a reboot; a force stop still clears them.
+- `PrayerNotificationService.diagnostics()` records alarm count, last refresh, last failure and end date, displayed on the health screen.
+- Not done: a background job that renews the schedule without opening the app. It would need prayer calculation in a background isolate (new dependency). The renewal notice covers that gap for now.
+- Universal admin notices remain gated by `SUKUN_UNIVERSAL_PUSH_RELEASE_READY` (GitHub variable and Edge Function secret) and need `SUKUN_UNIVERSAL_BROADCAST_CRON_TOKEN`; none of these were visible in the repository's GitHub secrets and variables when checked.

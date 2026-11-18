@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.content.ComponentName
 import android.os.Environment
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import com.ryanheise.audioservice.AudioServiceActivity
@@ -27,6 +29,7 @@ import java.util.Locale
  */
 class MainActivity : AudioServiceActivity() {
     private val updateChannel = "sukunlife/app_updates"
+    private val powerChannel = "sukunlife/power_settings"
     private val apkMime = "application/vnd.android.package-archive"
     private val prefs by lazy {
         getSharedPreferences("sukun_android_updates", Context.MODE_PRIVATE)
@@ -37,6 +40,26 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, powerChannel)
+            .setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "isIgnoringBatteryOptimizations" ->
+                            result.success(isIgnoringBatteryOptimizations())
+                        "requestIgnoreBatteryOptimizations" ->
+                            result.success(requestIgnoreBatteryOptimizations())
+                        "openAutostartSettings" ->
+                            result.success(openAutostartSettings())
+                        "openAppSettings" -> result.success(openAppSettings())
+                        "manufacturer" ->
+                            result.success(Build.MANUFACTURER.lowercase(Locale.US))
+                        else -> result.notImplemented()
+                    }
+                } catch (_: Exception) {
+                    result.error("POWER_SETTINGS_UNAVAILABLE",
+                        "Unable to open the power settings.", null)
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, updateChannel)
             .setMethodCallHandler { call, result ->
                 try {
@@ -52,6 +75,80 @@ class MainActivity : AudioServiceActivity() {
                     result.error("UPDATE_UNAVAILABLE", "Unable to prepare the verified APK.", null)
                 }
             }
+    }
+
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        val power = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return power.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    /** Shows the system's own one-tap "allow background activity" dialog. */
+    private fun requestIgnoreBatteryOptimizations(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        if (isIgnoringBatteryOptimizations()) return true
+        return try {
+            startActivity(Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:$packageName")
+            ))
+            true
+        } catch (_: Exception) {
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                true
+            } catch (_: Exception) {
+                openAppSettings()
+            }
+        }
+    }
+
+    private fun openAppSettings(): Boolean = try {
+        startActivity(Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:$packageName")
+        ))
+        true
+    } catch (_: Exception) {
+        false
+    }
+
+    /**
+     * Huawei/Honor "Protected apps", Xiaomi "Autostart", Oppo/Vivo/Samsung
+     * background-run managers are vendor screens with no public API. Try the
+     * known ones, then fall back to this app's own settings page.
+     */
+    private fun openAutostartSettings(): Boolean {
+        val candidates = listOf(
+            // Huawei / Honor (EMUI, Magic UI)
+            "com.huawei.systemmanager" to "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity",
+            "com.huawei.systemmanager" to "com.huawei.systemmanager.optimize.process.ProtectActivity",
+            "com.huawei.systemmanager" to "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity",
+            // Xiaomi / Redmi / Poco
+            "com.miui.securitycenter" to "com.miui.permcenter.autostart.AutoStartManagementActivity",
+            // Oppo / Realme / OnePlus (ColorOS)
+            "com.coloros.safecenter" to "com.coloros.safecenter.permission.startup.StartupAppListActivity",
+            "com.oppo.safe" to "com.oppo.safe.permission.startup.StartupAppListActivity",
+            // Vivo / iQOO
+            "com.vivo.permissionmanager" to "com.vivo.permissionmanager.activity.BgStartUpManagerActivity",
+            "com.iqoo.secure" to "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity",
+            // Samsung
+            "com.samsung.android.lool" to "com.samsung.android.sm.battery.ui.BatteryActivity",
+            // Tecno / Infinix / itel
+            "com.transsion.phonemaster" to "com.cyin.himgr.autostart.AutoStartActivity",
+        )
+        for ((pkg, cls) in candidates) {
+            try {
+                val intent = Intent().setComponent(ComponentName(pkg, cls))
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent)
+                    return true
+                }
+            } catch (_: Exception) {
+                // Try the next vendor screen.
+            }
+        }
+        return openAppSettings()
     }
 
     @Suppress("DEPRECATION")

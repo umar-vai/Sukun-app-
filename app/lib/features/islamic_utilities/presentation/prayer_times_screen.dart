@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/features/account/presentation/reliable_delivery_guide.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
@@ -55,6 +56,7 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         await service.disable();
       }
       if (mounted) setState(() => _prayerAlerts = enabled);
+      if (enabled && mounted) unawaited(showReliableDeliveryGuide(context));
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

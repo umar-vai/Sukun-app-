@@ -38,9 +38,40 @@ class PrayerNotificationService {
 
   static const _enabledKey = 'prayer_waqt_notifications_enabled_v1';
   static const _idsKey = 'prayer_waqt_notification_ids_v1';
+  static const _lastRefreshKey = 'prayer_waqt_last_refresh_ms_v1';
+  static const _lastFailureKey = 'prayer_waqt_last_refresh_failed_v1';
+  static const _lastEndKey = 'prayer_waqt_last_scheduled_end_ms_v1';
+
+  /// Android keeps alarms across reboots, so a month of waqt (150 alarms) is
+  /// scheduled. A user who rarely opens the app still hears every prayer.
+  static const androidHorizonDays = 30;
+  static const androidMaximumPending = 5 * androidHorizonDays;
+
+  /// A reminder to open the app is scheduled this long before the last waqt
+  /// alarm, so the schedule is renewed before it runs out.
+  static const renewalLead = Duration(days: 3);
 
   Future<bool> isEnabled() async =>
       (await SharedPreferences.getInstance()).getBool(_enabledKey) ?? false;
+
+  /// What the device was last told, for the notification health screen.
+  Future<PrayerNotificationDiagnostics> diagnostics() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refreshed = prefs.getInt(_lastRefreshKey);
+    final end = prefs.getInt(_lastEndKey);
+    final ids = prefs.getStringList(_idsKey) ?? const <String>[];
+    return PrayerNotificationDiagnostics(
+      enabled: prefs.getBool(_enabledKey) ?? false,
+      scheduledCount: ids.length,
+      lastRefresh: refreshed == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(refreshed),
+      lastRefreshFailed: prefs.getBool(_lastFailureKey) ?? false,
+      scheduledUntil: end == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(end),
+    );
+  }
 
   Future<bool> enable() async {
     final settings = await settingsStore.load();
@@ -102,6 +133,22 @@ class PrayerNotificationService {
   }
 
   Future<int> _refreshOnce() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final count = await _scheduleAll();
+      await prefs.setInt(
+        _lastRefreshKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+      await prefs.setBool(_lastFailureKey, false);
+      return count;
+    } on Object {
+      await prefs.setBool(_lastFailureKey, true);
+      rethrow;
+    }
+  }
+
+  Future<int> _scheduleAll() async {
     if (!await isEnabled()) return 0;
     await local.initialize();
     if (!await local.isPermissionGranted()) {
@@ -120,8 +167,8 @@ class PrayerNotificationService {
       now: DateTime.now(),
       // iOS retains at most 64 pending notifications across every feature.
       // Reserve room for patient-care and personal-routine reminders.
-      horizonDays: ios || kIsWeb ? 3 : 14,
-      maximumPending: ios ? 12 : 70,
+      horizonDays: ios || kIsWeb ? 3 : androidHorizonDays,
+      maximumPending: ios ? 12 : androidMaximumPending,
     );
     await local.configureTimezone();
     await _cancelExisting();
@@ -132,10 +179,25 @@ class PrayerNotificationService {
         await local.schedule(reminder, precise: precise);
         ids.add(reminder.notificationId);
       }
-      await (await SharedPreferences.getInstance()).setStringList(
-        _idsKey,
-        ids.map((id) => '$id').toList(),
+      final prefs = await SharedPreferences.getInstance();
+      final renewal = planPrayerRenewalReminder(
+        reminders: reminders,
+        now: DateTime.now(),
+        lead: renewalLead,
       );
+      if (renewal != null && !ios && !kIsWeb) {
+        await local.schedule(renewal, precise: precise);
+        ids.add(renewal.notificationId);
+      }
+      if (reminders.isEmpty) {
+        await prefs.remove(_lastEndKey);
+      } else {
+        await prefs.setInt(
+          _lastEndKey,
+          reminders.last.scheduledAt.millisecondsSinceEpoch,
+        );
+      }
+      await prefs.setStringList(_idsKey, ids.map((id) => '$id').toList());
       return ids.length;
     } on Object {
       for (final id in ids) {
@@ -148,6 +210,45 @@ class PrayerNotificationService {
       rethrow;
     }
   }
+}
+
+class PrayerNotificationDiagnostics {
+  const PrayerNotificationDiagnostics({
+    required this.enabled,
+    required this.scheduledCount,
+    required this.lastRefresh,
+    required this.lastRefreshFailed,
+    required this.scheduledUntil,
+  });
+
+  final bool enabled;
+  final int scheduledCount;
+  final DateTime? lastRefresh;
+  final bool lastRefreshFailed;
+
+  /// The last prayer alarm currently on the device.
+  final DateTime? scheduledUntil;
+}
+
+/// One quiet "open the app to renew your prayer alerts" notice placed before
+/// the schedule ends. Null when the schedule is empty or already near its end.
+ReminderSchedule? planPrayerRenewalReminder({
+  required List<ReminderSchedule> reminders,
+  required DateTime now,
+  required Duration lead,
+}) {
+  if (reminders.isEmpty) return null;
+  final at = reminders.last.scheduledAt.subtract(lead);
+  if (!at.isAfter(now)) return null;
+  return ReminderSchedule(
+    notificationId: stableNotificationId('prayer:renew'),
+    taskId: 'prayer:renew',
+    actionId: 'renew',
+    title: 'নামাজের নোটিফিকেশন চালু রাখুন',
+    body: 'ওয়াক্তের নোটিফিকেশন শীঘ্রই শেষ হবে। অ্যাপটি একবার খুলুন।',
+    scheduledAt: at,
+    payload: 'prayer_time:renew',
+  );
 }
 
 const prayerNamesBn = <String, String>{
