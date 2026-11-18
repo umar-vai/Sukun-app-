@@ -10,6 +10,7 @@ import 'package:sukun_life/core/notifications/notification_coordinator.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_reminder_service.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_notification_service.dart';
+import 'package:sukun_life/features/account/presentation/reliable_delivery_guide.dart';
 
 String notificationPermissionHint({
   required bool granted,
@@ -23,6 +24,21 @@ String notificationPermissionHint({
   return isWeb
       ? 'অনুমতি আছে। ট্যাব বন্ধ অবস্থায় রিমাইন্ডারের জন্য Web Push-ও সচল থাকতে হবে।'
       : 'নোটিফিকেশন অনুমতি আছে। ফোনের ব্যাটারি নীতি ডেলিভারি বিলম্ব করতে পারে।';
+}
+
+String _bnDate(DateTime value) => '${value.day}/${value.month}/${value.year}';
+
+/// One plain sentence for the health screen: how many prayer alarms are on
+/// the device, until when, and whether the last refresh failed.
+String prayerDiagnosticsSummary(PrayerNotificationDiagnostics d) {
+  if (d.lastRefreshFailed) {
+    return 'শেষবার ওয়াক্তের অ্যালার্ম বসানো যায়নি। অ্যাপ আবার খুলুন বা সুইচটি বন্ধ করে চালু করুন।';
+  }
+  if (d.scheduledCount == 0 || d.scheduledUntil == null) {
+    return 'এখন ফোনে কোনো ওয়াক্তের অ্যালার্ম শিডিউল করা নেই। শহর ও হিসাবপদ্ধতি ঠিক আছে কি না দেখুন।';
+  }
+  return 'ফোনে ${d.scheduledCount}টি অ্যালার্ম শিডিউল করা আছে, '
+      '${_bnDate(d.scheduledUntil!)} পর্যন্ত।';
 }
 
 /// Read-only diagnostics plus explicit opt-ins routed through the existing
@@ -45,6 +61,7 @@ class _NotificationHealthSettingsScreenState
   bool? _personalEnabled;
   bool? _prayerEnabled;
   CareNotificationStatus? _care;
+  PrayerNotificationDiagnostics? _prayerDiagnostics;
   String? _notice;
 
   @override
@@ -71,6 +88,9 @@ class _NotificationHealthSettingsScreenState
       final prayerEnabled = await ref
           .read(prayerNotificationServiceProvider)
           .isEnabled();
+      final prayerDiagnostics = await ref
+          .read(prayerNotificationServiceProvider)
+          .diagnostics();
       final isPatient = ref.read(appSessionProvider).value?.isPatient == true;
       final care = isPatient
           ? await ref.read(notificationCoordinatorProvider).status()
@@ -84,6 +104,7 @@ class _NotificationHealthSettingsScreenState
         _preciseAvailable = precise;
         _personalEnabled = personal;
         _prayerEnabled = prayerEnabled;
+        _prayerDiagnostics = prayerDiagnostics;
         _care = care;
         _loading = false;
       });
@@ -185,6 +206,7 @@ class _NotificationHealthSettingsScreenState
       if (!await service.enable()) {
         throw StateError('Permission denied');
       }
+      if (mounted) unawaited(showReliableDeliveryGuide(context));
     } else {
       await service.disable();
     }
@@ -389,6 +411,14 @@ class _NotificationHealthSettingsScreenState
                             ? null
                             : (enabled) => unawaited(_togglePrayer(enabled)),
                       ),
+                      if (_prayerEnabled == true && _prayerDiagnostics != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Text(
+                            prayerDiagnosticsSummary(_prayerDiagnostics!),
+                            key: const Key('prayer-diagnostics-summary'),
+                          ),
+                        ),
                       ListTile(
                         title: const Text('শহর ও হিসাবপদ্ধতি'),
                         trailing: const Icon(Icons.chevron_right),
