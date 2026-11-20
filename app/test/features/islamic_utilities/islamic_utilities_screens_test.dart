@@ -26,9 +26,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Set up prayer times'), findsOneWidget);
-    expect(find.text('Choose settings'), findsOneWidget);
-    expect(find.text('Fajr'), findsNothing);
+    expect(find.text('নামাজের সময় সেট করুন'), findsOneWidget);
+    expect(find.text('সেটিংস বেছে নিন'), findsOneWidget);
+    expect(find.text('ফজর'), findsNothing);
   });
 
   testWidgets('configured prayer screen shows next and daily times', (
@@ -39,11 +39,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('NEXT PRAYER'), findsOneWidget);
-    expect(find.text("Today's times"), findsOneWidget);
-    expect(find.text('Fajr'), findsWidgets);
-    await tester.scrollUntilVisible(find.text('Dhaka'), 300);
-    expect(find.text('Dhaka'), findsOneWidget);
+    expect(find.text('পরবর্তী নামাজ'), findsOneWidget);
+    expect(find.text("আজকের সময়সূচি"), findsOneWidget);
+    expect(find.text('ফজর'), findsWidgets);
+    await tester.scrollUntilVisible(find.text('ঢাকা'), 300);
+    expect(find.text('ঢাকা'), findsOneWidget);
   });
 
   for (final brightness in <Brightness>[Brightness.light, Brightness.dark]) {
@@ -76,7 +76,7 @@ void main() {
             find.descendant(of: selected, matching: find.byType(Text)),
           )
           .toList();
-      expect(selectedTexts.map((text) => text.data), contains('Dhuhr'));
+      expect(selectedTexts.map((text) => text.data), contains('যোহর'));
       expect(selectedTexts.length, 2);
       for (final text in selectedTexts) {
         expect(text.style?.color, Colors.white);
@@ -112,7 +112,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Use current location'));
+    await tester.tap(find.text('বর্তমান অবস্থান ব্যবহার করুন'));
     await tester.pumpAndSettle();
 
     expect(
@@ -122,10 +122,10 @@ void main() {
       findsOneWidget,
     );
     await tester.scrollUntilVisible(
-      find.text('Or select a Bangladesh city'),
+      find.text('অথবা বাংলাদেশের একটি শহর বেছে নিন'),
       250,
     );
-    expect(find.text('Or select a Bangladesh city'), findsOneWidget);
+    expect(find.text('অথবা বাংলাদেশের একটি শহর বেছে নিন'), findsOneWidget);
   });
 
   testWidgets('Qibla keeps a bearing fallback without a compass sensor', (
@@ -140,12 +140,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('Compass sensor unavailable'),
-      250,
-    );
-    expect(find.text('Compass sensor unavailable'), findsOneWidget);
-    expect(find.textContaining('from North'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('কম্পাস সেন্সর নেই'), 250);
+    expect(find.text('কম্পাস সেন্সর নেই'), findsOneWidget);
+    expect(find.textContaining('উত্তর থেকে'), findsOneWidget);
     expect(find.textContaining('another trusted compass'), findsOneWidget);
   });
 
@@ -161,17 +158,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Calibrate the compass'), 250);
-    expect(find.text('Calibrate the compass'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('কম্পাস ঠিক করে নিন'), 250);
+    expect(find.text('কম্পাস ঠিক করে নিন'), findsOneWidget);
     expect(find.textContaining('figure-eight pattern'), findsOneWidget);
-    expect(find.textContaining('from North'), findsOneWidget);
+    expect(find.textContaining('উত্তর থেকে'), findsOneWidget);
   });
 }
 
 const _configuredSettings = PrayerUtilitySettings(
   location: UtilityLocation(
     id: 'dhaka',
-    name: 'Dhaka',
+    name: 'ঢাকা',
     latitude: 23.8103,
     longitude: 90.4125,
     timezone: 'Asia/Dhaka',
@@ -268,33 +265,33 @@ final class _FixedDhuhrSchedule implements PrayerCalculationService {
     final day = DateTime(2026, 11, 1);
     final fajr = PrayerTimeEntry(
       id: 'fajr',
-      label: 'Fajr',
+      label: 'ফজর',
       time: day.add(const Duration(hours: 5)),
     );
     final sunrise = PrayerTimeEntry(
       id: 'sunrise',
-      label: 'Sunrise',
+      label: 'সূর্যোদয়',
       time: day.add(const Duration(hours: 6)),
       isPrayer: false,
     );
     final dhuhr = PrayerTimeEntry(
       id: 'dhuhr',
-      label: 'Dhuhr',
+      label: 'যোহর',
       time: day.add(const Duration(hours: 12)),
     );
     final asr = PrayerTimeEntry(
       id: 'asr',
-      label: 'Asr',
+      label: 'আসর',
       time: day.add(const Duration(hours: 16)),
     );
     final maghrib = PrayerTimeEntry(
       id: 'maghrib',
-      label: 'Maghrib',
+      label: 'মাগরিব',
       time: day.add(const Duration(hours: 18)),
     );
     final isha = PrayerTimeEntry(
       id: 'isha',
-      label: 'Isha',
+      label: 'ইশা',
       time: day.add(const Duration(hours: 20)),
     );
     return PrayerDaySchedule(

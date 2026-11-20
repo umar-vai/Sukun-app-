@@ -100,7 +100,28 @@ class SukunSurface extends StatelessWidget {
         night ? theme.colorScheme.surfaceContainerLow : SukunColors.successSoft,
     };
     final dark = tone == SukunSurfaceTone.blue || tone == SukunSurfaceTone.navy;
-    final paddedContent = Padding(padding: padding, child: child);
+    // Dark surfaces re-theme their text and icons: Material resets the
+    // default text style, and theme text styles carry explicit Night Navy,
+    // so a plain DefaultTextStyle alone would leave text invisible on navy.
+    final themedChild = dark
+        ? Theme(
+            data: theme.copyWith(
+              textTheme: theme.textTheme.apply(
+                bodyColor: Colors.white,
+                displayColor: Colors.white,
+              ),
+              iconTheme: theme.iconTheme.copyWith(color: Colors.white),
+            ),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(color: Colors.white),
+              child: IconTheme.merge(
+                data: const IconThemeData(color: Colors.white),
+                child: child,
+              ),
+            ),
+          )
+        : child;
+    final paddedContent = Padding(padding: padding, child: themedChild);
     final content = onTap == null
         ? Material(
             color: Colors.transparent,
@@ -113,24 +134,35 @@ class SukunSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        // White cards rely on soft elevation; borders only separate tinted
-        // tones from the canvas, which keeps screens calm and uncluttered.
         border: showBorder && !dark && !night && tone != SukunSurfaceTone.white
-            ? Border.all(color: SukunColors.border.withValues(alpha: 0.55))
+            ? Border.all(color: Colors.white.withValues(alpha: 0.7))
             : null,
         boxShadow: !night && tone == SukunSurfaceTone.white
-            ? SukunShadows.card
+            ? [
+                BoxShadow(
+                  color: SukunColors.deepTide.withValues(alpha: 0.07),
+                  blurRadius: 28,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: SukunColors.nightNavy.withValues(alpha: 0.035),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ]
+            : dark && !night
+            ? [
+                BoxShadow(
+                  color: SukunColors.nightNavy.withValues(alpha: 0.22),
+                  blurRadius: 26,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 14),
+                ),
+              ]
             : null,
       ),
-      child: dark
-          ? DefaultTextStyle.merge(
-              style: const TextStyle(color: Colors.white),
-              child: IconTheme.merge(
-                data: const IconThemeData(color: Colors.white),
-                child: content,
-              ),
-            )
-          : content,
+      child: content,
     );
   }
 }
@@ -155,6 +187,8 @@ class _SurfaceInk extends StatelessWidget {
   );
 }
 
+/// Signature page header: a calm Mist panel with soft light shapes.
+/// Used at the top of most screens so every page opens the same way.
 class SukunPageIntro extends StatelessWidget {
   const SukunPageIntro({
     super.key,
@@ -179,40 +213,120 @@ class SukunPageIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (eyebrow != null) ...[
-                Text(
-                  eyebrow!.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: SukunColors.deepTide,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.15,
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+    final panel = night
+        ? theme.colorScheme.surfaceContainerLow
+        : SukunColors.mist;
+    final shape = night
+        ? Colors.white.withValues(alpha: 0.04)
+        : Colors.white.withValues(alpha: 0.6);
+    final titleColor = night ? Colors.white : SukunColors.nightNavy;
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -46,
+            top: -58,
+            child: _Blob(size: 170, color: shape),
+          ),
+          Positioned(
+            right: 64,
+            bottom: -70,
+            child: _Blob(size: 120, color: shape),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (eyebrow != null) ...[
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: SukunColors.saffron,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Flexible(
+                              child: Text(
+                                eyebrow!.toUpperCase(),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: night
+                                      ? theme.colorScheme.secondary
+                                      : SukunColors.deepTide,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      if (note != null) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          note!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: night ? Colors.white70 : SukunColors.muted,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 7),
+                if (trailing != null) ...[
+                  const SizedBox(width: 14),
+                  IconTheme.merge(
+                    data: IconThemeData(color: SukunColors.deepTide),
+                    child: trailing!,
+                  ),
+                ],
               ],
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              if (note != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  note!,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: SukunColors.muted),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-        if (trailing != null) ...[const SizedBox(width: 14), trailing!],
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _Blob extends StatelessWidget {
+  const _Blob({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
 }
 
 class SukunSectionHeader extends StatelessWidget {
@@ -242,7 +356,11 @@ class SukunSectionHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.1),
+            ),
             if (note != null) ...[
               const SizedBox(height: 3),
               Text(
@@ -742,19 +860,28 @@ class SukunBottomNavigation extends StatelessWidget {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         top: false,
-        minimum: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+        minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
         child: Container(
           height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(SukunRadius.nav),
+            borderRadius: BorderRadius.circular(26),
             border: night
                 ? Border.all(
                     color: Theme.of(context).colorScheme.outlineVariant,
                   )
                 : null,
-            boxShadow: night ? null : SukunShadows.floating,
+            boxShadow: night
+                ? null
+                : [
+                    BoxShadow(
+                      color: SukunColors.deepTide.withValues(alpha: 0.12),
+                      blurRadius: 30,
+                      spreadRadius: -6,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
           ),
           child: Row(
             children: [
@@ -798,8 +925,9 @@ class _SukunNavItem extends StatelessWidget {
     final activeBackground = navyEmphasis
         ? SukunColors.nightNavy
         : scheme.primaryContainer;
-    final activeForeground = navyEmphasis
-        ? Colors.white
+    final activeIcon = navyEmphasis ? Colors.white : scheme.onPrimaryContainer;
+    final activeLabel = navyEmphasis
+        ? SukunColors.nightNavy
         : scheme.onPrimaryContainer;
     return Semantics(
       selected: selected,
@@ -808,20 +936,27 @@ class _SukunNavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? activeBackground : Colors.transparent,
-            borderRadius: BorderRadius.circular(SukunRadius.tile),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                selected ? destination.selectedIcon : destination.icon,
-                size: 22,
-                color: selected ? activeForeground : scheme.onSurfaceVariant,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: selected ? 54 : 40,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: selected ? activeBackground : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  selected ? destination.selectedIcon : destination.icon,
+                  size: 22,
+                  color: selected ? activeIcon : scheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 3),
               FittedBox(
@@ -830,9 +965,7 @@ class _SukunNavItem extends StatelessWidget {
                   destination.label,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: selected
-                        ? activeForeground
-                        : scheme.onSurfaceVariant,
+                    color: selected ? activeLabel : scheme.onSurfaceVariant,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
@@ -960,6 +1093,93 @@ class SukunBottomActionBar extends StatelessWidget {
           ),
         ),
       ),
+    ),
+  );
+}
+
+/// Signature Deep Tide hero for primary dashboards. An optional [overlap]
+/// card floats half over the hero's lower edge.
+class SukunHeroHeader extends StatelessWidget {
+  const SukunHeroHeader({super.key, required this.greeting, this.overlap});
+
+  final Widget greeting;
+  final Widget? overlap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hero = SukunColors.deepTide;
+    final card = overlap;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: hero,
+            borderRadius: card == null
+                ? const BorderRadius.vertical(bottom: Radius.circular(32))
+                : null,
+          ),
+          child: Stack(
+            children: [
+              const Positioned(
+                right: -60,
+                top: -110,
+                child: _HeroCircle(size: 190),
+              ),
+              const Positioned(
+                left: -70,
+                top: -40,
+                child: _HeroCircle(size: 120),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(18, 8, 18, card == null ? 26 : 20),
+                child: greeting,
+              ),
+            ],
+          ),
+        ),
+        if (card != null)
+          Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 64,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: hero,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(32),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: card,
+              ),
+            ],
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _HeroCircle extends StatelessWidget {
+  const _HeroCircle({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: 0.07),
     ),
   );
 }

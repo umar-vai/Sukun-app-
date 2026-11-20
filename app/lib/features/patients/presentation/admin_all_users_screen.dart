@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
@@ -255,16 +256,15 @@ class AdminUserDirectoryTile extends StatelessWidget {
         onTap: id.isEmpty ? null : onOpen,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: SukunColors.mist,
-          foregroundColor: SukunColors.deepTide,
-          child: Text(
-            shown.characters.first,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: SukunColors.deepTide,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          radius: 21,
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.secondary,
+          child: name.isEmpty
+              ? const Icon(Icons.person_outline_rounded)
+              : Text(
+                  name.characters.first,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
         ),
         title: Text(
           shown,
@@ -274,16 +274,12 @@ class AdminUserDirectoryTile extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: detail.isEmpty
-            ? null
-            : Text(
-                detail,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: SukunColors.muted,
-                ),
-              ),
+        subtitle: Text(
+          detail.isNotEmpty ? detail : _joinedAndShortId(user, id),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(color: SukunColors.muted),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -302,3 +298,12 @@ class AdminUserDirectoryTile extends StatelessWidget {
     );
   }
 }
+
+/// Fallback subtitle when a user has no code, phone or email: when they
+/// joined and a short ID instead of the full UUID.
+String _joinedAndShortId(Map<String, dynamic> user, String id) => [
+  if (DateTime.tryParse(user['created_at']?.toString() ?? '')
+      case final joined?)
+    'যোগ দিয়েছেন ${banglaWeekdayDate(joined.toLocal())}',
+  'ID …${id.isEmpty ? '—' : id.substring(id.length > 8 ? id.length - 8 : 0)}',
+].join(' · ');

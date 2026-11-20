@@ -331,7 +331,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         )
         .eq('status', 'published')
         .eq('visibility', 'public')
-        .order('title');
+        .order('title', ascending: true);
     final resources = resourceRows
         .map((row) => ContentResourceOption.fromJson(row))
         .where((resource) => resource.isLinkable)

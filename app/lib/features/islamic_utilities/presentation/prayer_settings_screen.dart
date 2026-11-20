@@ -93,7 +93,7 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Prayer settings could not be saved. Please retry.'),
+          content: Text('নামাজের সেটিংস সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।'),
         ),
       );
     }
@@ -102,21 +102,21 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Prayer settings')),
+      appBar: AppBar(title: const Text('নামাজের সেটিংস')),
       body: _loading
-          ? const AppLoadingState(label: 'Loading settings')
+          ? const AppLoadingState(label: 'সেটিংস আনা হচ্ছে')
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               children: [
                 const SukunPageIntro(
-                  eyebrow: 'Personal preference',
-                  title: 'Set your prayer timetable',
-                  subtitle: 'Choose the location and scholarly calculation settings you follow. Nothing is selected automatically.',
+                  eyebrow: 'নিজের পছন্দ',
+                  title: 'নামাজের সময়সূচি ঠিক করুন',
+                  subtitle: 'আপনি যে অবস্থান ও হিসাব পদ্ধতি অনুসরণ করেন সেটি বেছে নিন। কিছুই নিজে থেকে বেছে নেওয়া হয় না।',
                 ),
                 const SizedBox(height: 26),
                 const SukunSectionHeader(
-                  title: 'Your location',
-                  subtitle: 'Used only for on-device calculation',
+                  title: 'আপনার অবস্থান',
+                  subtitle: 'শুধু এই ডিভাইসে হিসাবের জন্য ব্যবহৃত হয়',
                 ),
                 const SizedBox(height: 10),
                 SukunSurface(
@@ -138,14 +138,15 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _location?.name ?? 'Location not selected',
+                                  _location?.name ??
+                                      'অবস্থান বেছে নেওয়া হয়নি',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium,
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  'Stored privately on this device',
+                                  'এই ডিভাইসেই গোপনে সংরক্ষিত',
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(color: SukunColors.muted),
                                 ),
@@ -167,22 +168,22 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                             : const Icon(Icons.near_me_rounded),
                         label: Text(
                           _locating
-                              ? 'Finding your location'
-                              : 'Use current location',
+                              ? 'আপনার অবস্থান খোঁজা হচ্ছে'
+                              : 'বর্তমান অবস্থান ব্যবহার করুন',
                         ),
                       ),
                       const SizedBox(height: 12),
                       SukunChoiceField<UtilityLocation>(
-                        label: 'Or select a Bangladesh city',
-                        placeholder: 'Select a Bangladesh city',
-                        sheetTitle: 'Choose a city',
+                        label: 'অথবা বাংলাদেশের একটি শহর বেছে নিন',
+                        placeholder: 'শহর বেছে নিন',
+                        sheetTitle: 'শহর বেছে নিন',
                         value: _manualSelection,
                         options: [
                           for (final city in manualBangladeshCities)
                             SukunChoiceOption(
                               value: city,
                               title: city.name,
-                              description: 'Bangladesh · Asia/Dhaka',
+                              description: 'বাংলাদেশ · Asia/Dhaka',
                               icon: Icons.location_city_rounded,
                             ),
                         ],
@@ -207,7 +208,7 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                                   onPressed: () => ref
                                       .read(utilityLocationGatewayProvider)
                                       .openAppSettings(),
-                                  child: const Text('Open app settings'),
+                                  child: const Text('অ্যাপের সেটিংস খুলুন'),
                                 ),
                               if (_locationFailure!.failure ==
                                   LocationAccessFailure.serviceDisabled)
@@ -215,7 +216,7 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                                   onPressed: () => ref
                                       .read(utilityLocationGatewayProvider)
                                       .openLocationSettings(),
-                                  child: const Text('Open location settings'),
+                                  child: const Text('লোকেশন সেটিংস খুলুন'),
                                 ),
                             ],
                           ),
@@ -226,14 +227,14 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                 ),
                 const SizedBox(height: 26),
                 const SukunSectionHeader(
-                  title: 'Calculation preferences',
-                  subtitle: 'Choose the convention you personally follow',
+                  title: 'হিসাবের পদ্ধতি',
+                  subtitle: 'আপনি যে নিয়ম অনুসরণ করেন সেটি বেছে নিন',
                 ),
                 const SizedBox(height: 10),
                 SukunChoiceField<PrayerCalculationMethodOption>(
-                  label: 'Calculation method',
-                  placeholder: 'Choose a method',
-                  sheetTitle: 'Calculation method',
+                  label: 'হিসাব পদ্ধতি',
+                  placeholder: 'পদ্ধতি বেছে নিন',
+                  sheetTitle: 'হিসাব পদ্ধতি',
                   value: _method,
                   options: [
                     for (final method in PrayerCalculationMethodOption.values)
@@ -248,9 +249,9 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                 ),
                 const SizedBox(height: 12),
                 SukunChoiceField<AsrConvention>(
-                  label: 'Asr convention',
-                  placeholder: 'Choose an Asr convention',
-                  sheetTitle: 'Asr convention',
+                  label: 'আসরের মাযহাব',
+                  placeholder: 'আসরের মাযহাব বেছে নিন',
+                  sheetTitle: 'আসরের মাযহাব',
                   value: _asrConvention,
                   options: [
                     for (final convention in AsrConvention.values)
@@ -280,7 +281,7 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'These preferences affect this utility only. They never change a care plan or prescribed reminder.',
+                          'এই পছন্দ শুধু নামাজের সময়ের জন্য। এটি কখনো কেয়ার প্ল্যান বা নির্ধারিত রিমাইন্ডার বদলায় না।',
                         ),
                       ),
                     ],
@@ -296,7 +297,9 @@ class _PrayerSettingsScreenState extends ConsumerState<PrayerSettingsScreen> {
                       ? _save
                       : null,
                   icon: const Icon(Icons.check),
-                  label: Text(_saving ? 'Saving' : 'Save prayer settings'),
+                  label: Text(
+                    _saving ? 'সংরক্ষণ হচ্ছে' : 'নামাজের সেটিংস সংরক্ষণ করুন',
+                  ),
                 ),
               ],
             ),

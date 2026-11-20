@@ -38,12 +38,12 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Qibla direction')),
+      appBar: AppBar(title: const Text('কিবলার দিক')),
       body: FutureBuilder<PrayerUtilitySettings>(
         future: _settings,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Preparing Qibla direction');
+            return const AppLoadingState(label: 'কিবলার দিক নির্ণয় হচ্ছে');
           }
           if (snapshot.hasError) {
             return AppErrorState(
@@ -92,17 +92,17 @@ class _QiblaSetupRequired extends StatelessWidget {
               const SukunIconBadge(icon: Icons.location_off_outlined, size: 58),
               const SizedBox(height: 16),
               Text(
-                'Location needed',
+                'অবস্থান প্রয়োজন',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               const Text(
-                'Choose your location in Prayer settings to calculate the Qibla bearing.',
+                'কিবলার দিক হিসাব করতে নামাজের সেটিংসে আপনার অবস্থান বেছে নিন।',
               ),
               const SizedBox(height: 18),
               FilledButton(
                 onPressed: onConfigure,
-                child: const Text('Open prayer settings'),
+                child: const Text('নামাজের সেটিংস খুলুন'),
               ),
             ],
           ),
@@ -116,7 +116,7 @@ String _qiblaInstruction(CompassReading reading) {
   if (reading.calibrationState == CompassCalibrationState.unavailable) {
     return 'ব্রাউজারে কম্পাস সেন্সর পাওয়া যাচ্ছে না। নিচের কোণটি উত্তর দিক থেকে মেপে কিবলা নির্ধারণ করুন।';
   }
-  return 'Keep your phone flat and turn slowly until the marker points straight ahead.';
+  return 'ফোন সমতলে রেখে ধীরে ঘুরুন, যতক্ষণ না চিহ্নটি সোজা সামনে নির্দেশ করে।';
 }
 
 class _QiblaView extends StatelessWidget {
@@ -137,8 +137,8 @@ class _QiblaView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
       children: [
         SukunPageIntro(
-          eyebrow: 'Direction from $locationName',
-          title: 'Face the Qibla',
+          eyebrow: '$locationName থেকে দিক',
+          title: 'কিবলামুখী হোন',
           note: _qiblaInstruction(reading),
         ),
         const SizedBox(height: 24),
@@ -155,7 +155,7 @@ class _QiblaView extends StatelessWidget {
               const SizedBox(height: 18),
               Center(
                 child: Semantics(
-                  label: 'Qibla bearing ${bearing.round()} degrees from north',
+                  label: 'উত্তর থেকে কিবলার দিক ${bearing.round()} ডিগ্রি',
                   child: SizedBox.square(
                     dimension: 274,
                     child: Stack(
@@ -205,11 +205,11 @@ class _QiblaView extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineLarge
                     ?.copyWith(color: Colors.white),
               ),
-              const Text('from North', style: TextStyle(color: Colors.white70)),
+              const Text('উত্তর থেকে', style: TextStyle(color: Colors.white70)),
               if (reading.heading != null) ...[
                 const SizedBox(height: 7),
                 Text(
-                  'Phone heading ${reading.heading!.round()}°',
+                  'ফোনের দিক ${reading.heading!.round()}°',
                   style: const TextStyle(color: Colors.white70),
                 ),
               ],
@@ -234,7 +234,7 @@ class _QiblaView extends StatelessWidget {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Hold the phone flat and keep it away from metal or magnetic objects. The calculated bearing remains available even when a compass sensor is unavailable.',
+                  'ফোন সমতলে ধরুন এবং ধাতব বা চুম্বকীয় জিনিস থেকে দূরে রাখুন। কম্পাস সেন্সর না থাকলেও হিসাব করা দিকটি দেখা যাবে।',
                 ),
               ),
             ],
@@ -255,20 +255,20 @@ class _CalibrationCard extends StatelessWidget {
     final (icon, title, message, color) = switch (reading.calibrationState) {
       CompassCalibrationState.ready => (
         Icons.check_circle_outline,
-        'Compass ready',
-        'Turn until the blue arrow points straight ahead.',
+        'কম্পাস প্রস্তুত',
+        'নীল তীরটি সোজা সামনে না আসা পর্যন্ত ঘুরুন।',
         SukunColors.success,
       ),
       CompassCalibrationState.needsCalibration => (
         Icons.screen_rotation_alt_outlined,
-        'Calibrate the compass',
-        'Move the phone slowly in a figure-eight pattern, then hold it flat.',
+        'কম্পাস ঠিক করে নিন',
+        'ফোনটি ধীরে ধীরে ইংরেজি ৮ এর মতো করে (figure-eight pattern) ঘোরান, তারপর সমতলে ধরুন।',
         SukunColors.saffron,
       ),
       CompassCalibrationState.unavailable => (
         Icons.explore_off_outlined,
-        'Compass sensor unavailable',
-        'Use the displayed bearing with another trusted compass.',
+        'কম্পাস সেন্সর নেই',
+        'দেখানো দিকটি অন্য একটি বিশ্বস্ত কম্পাস (another trusted compass) দিয়ে মিলিয়ে নিন।',
         SukunColors.error,
       ),
     };
