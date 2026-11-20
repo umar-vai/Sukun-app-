@@ -19,7 +19,6 @@ import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_notice_auto_popup.dart';
@@ -279,19 +278,7 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
                 routerConfig: ref.watch(appRouterProvider),
                 builder: (context, child) => AndroidUpdateAutoPopup(
                   child: UniversalNoticeAutoPopup(
-                    // One shared backdrop for every glass panel, and the
-                    // palette background behind any non-page overlay.
-                    child: BackdropGroup(
-                      child: Stack(
-                        children: [
-                          const Positioned.fill(
-                            child: SukunAmbientBackground(),
-                          ),
-                          ?child,
-                          const GlobalAudioDock(),
-                        ],
-                      ),
-                    ),
+                    child: Stack(children: [?child, const GlobalAudioDock()]),
                   ),
                 ),
               );

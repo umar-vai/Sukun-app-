@@ -9,7 +9,6 @@ import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
@@ -217,11 +216,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            // The glass bottom menu floats over the list; keep the last
-            // row reachable above it.
-            padding: EdgeInsets.only(
-              bottom: 30 + MediaQuery.paddingOf(context).bottom,
-            ),
+            padding: const EdgeInsets.only(bottom: 30),
             children: [
               SukunHeroHeader(
                 greeting: _HomeGreeting(
@@ -255,7 +250,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
+                                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -378,7 +373,6 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           ),
         ],
       ),
-      extendBody: true,
       body: content,
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: 0,
@@ -628,11 +622,14 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
       return Semantics(
         button: true,
         label: 'নামাজের সময়সূচি',
-        child: SukunGlass(
+        child: Container(
           key: const Key('home-compact-prayer'),
-          tone: SukunGlassTone.onColor,
-          blur: 16,
-          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          ),
           child: Material(
             type: MaterialType.transparency,
             child: SizedBox(height: 46, child: body),
@@ -857,48 +854,53 @@ class _HomeGreeting extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        SukunGlass(
-          tone: onDark ? SukunGlassTone.onColor : SukunGlassTone.surface,
-          blur: 14,
-          borderRadius: BorderRadius.circular(16),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              key: const Key('universal-announcements-shortcut'),
-              borderRadius: BorderRadius.circular(16),
-              onTap: onNotices,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Badge(
-                      key: const Key('notice-count-badge'),
-                      isLabelVisible: noticeCount > 0,
-                      backgroundColor: SukunColors.error,
-                      textColor: Colors.white,
-                      offset: const Offset(7, -6),
-                      label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
-                      child: Icon(
-                        Icons.notifications_none_rounded,
-                        size: 22,
-                        color: onDark
-                            ? Colors.white
-                            : theme.colorScheme.secondary,
-                      ),
+        Material(
+          color: onDark
+              ? Colors.white.withValues(alpha: 0.14)
+              : theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: onDark
+                  ? Colors.white.withValues(alpha: 0.22)
+                  : theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: InkWell(
+            key: const Key('universal-announcements-shortcut'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: onNotices,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Badge(
+                    key: const Key('notice-count-badge'),
+                    isLabelVisible: noticeCount > 0,
+                    backgroundColor: SukunColors.error,
+                    textColor: Colors.white,
+                    offset: const Offset(7, -6),
+                    label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: 22,
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'নোটিশ',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: onDark
-                            ? Colors.white
-                            : theme.colorScheme.secondary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'নোটিশ',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -923,33 +925,37 @@ class _HomeResourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SukunGlass(
+    return Material(
+      color: theme.colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-            child: Column(
-              children: [
-                SukunIconBadge(icon: icon, size: 40),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+          child: Column(
+            children: [
+              SukunIconBadge(icon: icon, size: 40),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

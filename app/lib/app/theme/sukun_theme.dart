@@ -6,7 +6,6 @@ import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
@@ -34,11 +33,7 @@ abstract final class SukunTheme {
         error: SukunColors.error,
         onError: Colors.white,
       ),
-      // Pages are transparent: every route paints the palette-tinted
-      // ambient background so glass panels have colour behind them.
-      scaffoldBackgroundColor: Colors.transparent,
-      canvasColor: SukunColors.canvas,
-      pageTransitionsTheme: sukunAmbientPageTransitions,
+      scaffoldBackgroundColor: SukunColors.canvas,
     );
     final textTheme =
         SukunTypography.withBengaliFallback(
@@ -53,7 +48,7 @@ abstract final class SukunTheme {
     final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: SukunColors.canvas,
         foregroundColor: SukunColors.nightNavy,
         centerTitle: false,
         elevation: 0,
@@ -67,17 +62,13 @@ abstract final class SukunTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        // Frosted glass card: translucent white with a bright glass edge.
-        color: Colors.white.withValues(alpha: 0.74),
+        color: SukunColors.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shadowColor: Colors.transparent,
+        elevation: 2,
+        shadowColor: SukunColors.deepTide.withValues(alpha: 0.10),
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.all(
-            Radius.circular(SukunRadius.card),
-          ),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.85)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.card)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -268,7 +259,7 @@ abstract final class SukunTheme {
     double bengaliScale = 1.0,
     SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
-    // Dark mode follows the chosen palette too: the page, cards and borders
+    // Dark mode follows the chosen palette: the page, cards and borders
     // are deep blue, green or plum, not a neutral grey.
     final palette = SukunColors.active;
     final background = palette.darkBackground;
@@ -287,16 +278,10 @@ abstract final class SukunTheme {
         secondary: palette.darkAccent,
         surface: surface,
         onSurface: lightText,
-        surfaceContainerLowest: background,
         surfaceContainerLow: surfaceLow,
-        surfaceContainer: surfaceLow,
-        surfaceContainerHigh: surfaceLow,
         outline: outline,
-        outlineVariant: outline.withValues(alpha: 0.7),
       ),
-      scaffoldBackgroundColor: Colors.transparent,
-      canvasColor: background,
-      pageTransitionsTheme: sukunAmbientPageTransitions,
+      scaffoldBackgroundColor: background,
     );
     final textTheme =
         SukunTypography.withBengaliFallback(
@@ -310,32 +295,19 @@ abstract final class SukunTheme {
     final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: background,
         foregroundColor: lightText,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: textTheme.titleMedium,
       ),
       cardTheme: CardThemeData(
-        color: surface.withValues(alpha: 0.72),
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
+        color: surface,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: surface,
-        surfaceTintColor: Colors.transparent,
-      ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surface,
-        modalBackgroundColor: surface,
-        surfaceTintColor: Colors.transparent,
-      ),
+      dialogTheme: DialogThemeData(backgroundColor: surface),
+      bottomSheetTheme: BottomSheetThemeData(backgroundColor: surface),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceLow,

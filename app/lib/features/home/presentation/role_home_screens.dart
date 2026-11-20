@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -252,38 +251,34 @@ class _AdminToolTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SukunGlass(
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(16),
-      tone: SukunGlassTone.surface,
-      child: Material(
-        type: MaterialType.transparency,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: tool.onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              children: [
-                SukunIconBadge(
-                  icon: tool.icon,
-                  size: 36,
-                  backgroundColor: theme.colorScheme.surface,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tool.label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+        onTap: tool.onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              SukunIconBadge(
+                icon: tool.icon,
+                size: 36,
+                backgroundColor: theme.colorScheme.surface,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  tool.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
