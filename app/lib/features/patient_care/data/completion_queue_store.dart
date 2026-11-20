@@ -4,7 +4,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sukun_life/features/patient_care/domain/pending_task_completion.dart';
 
 abstract interface class CompletionQueueStore {
-  Future<List<PendingTaskCompletion>> readForUser(String userId);
+  /// Pending events for one patient profile of one login. Events queued for
+  /// a different profile are never returned, so switching profiles can never
+  /// move or replay one person's task under another.
+  Future<List<PendingTaskCompletion>> readForPatient(
+    String userId,
+    String patientId,
+  );
 
   Future<void> enqueue(PendingTaskCompletion event);
 
@@ -28,7 +34,10 @@ List<PendingTaskCompletion> stagePendingCompletion(
   }
   return [
     for (final item in queued)
-      if (item.userId != next.userId || item.taskId != next.taskId) item,
+      if (item.userId != next.userId ||
+          item.patientId != next.patientId ||
+          item.taskId != next.taskId)
+        item,
     next,
   ];
 }
@@ -51,11 +60,14 @@ final class SecureCompletionQueueStore implements CompletionQueueStore {
   }
 
   @override
-  Future<List<PendingTaskCompletion>> readForUser(String userId) async {
+  Future<List<PendingTaskCompletion>> readForPatient(
+    String userId,
+    String patientId,
+  ) async {
     await _lastMutation;
     final events = await _readAll();
     return events
-        .where((event) => event.userId == userId)
+        .where((event) => event.belongsTo(userId, patientId))
         .toList(growable: false);
   }
 

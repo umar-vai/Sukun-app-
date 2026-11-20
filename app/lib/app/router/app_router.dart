@@ -35,6 +35,7 @@ import 'package:sukun_life/features/home/presentation/unified_home_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_settings_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/prayer_times_screen.dart';
 import 'package:sukun_life/features/islamic_utilities/presentation/qibla_screen.dart';
+import 'package:sukun_life/features/family/presentation/profile_scope.dart';
 import 'package:sukun_life/features/patient_care/presentation/my_plan_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_home_screen.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_notifications_screen.dart';
@@ -394,16 +395,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/patient/home',
-            builder: (context, state) => UnifiedHomeScreen(
-              isPatient: true,
-              displayName: _patientSession(session)?.displayName,
+            builder: (context, state) => ProfileScoped(
+              child: UnifiedHomeScreen(
+                isPatient: true,
+                displayName: _patientSession(session)?.displayName,
+              ),
             ),
           ),
           GoRoute(
             path: '/patient/today',
-            builder: (context, state) => PatientHomeScreen(
-              displayName: _patientSession(session)?.displayName,
-              openTaskId: state.uri.queryParameters['task'],
+            builder: (context, state) => ProfileScoped(
+              child: PatientHomeScreen(
+                displayName: _patientSession(session)?.displayName,
+                openTaskId: state.uri.queryParameters['task'],
+              ),
             ),
           ),
           GoRoute(
@@ -412,7 +417,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/patient/plan',
-            builder: (context, state) => const MyPlanScreen(),
+            builder: (context, state) =>
+                const ProfileScoped(child: MyPlanScreen()),
           ),
           GoRoute(
             path: '/patient/resources',
@@ -427,11 +433,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/patient/notifications',
-            builder: (context, state) => const PatientNotificationsScreen(),
+            builder: (context, state) =>
+                const ProfileScoped(child: PatientNotificationsScreen()),
           ),
           GoRoute(
             path: '/patient/progress',
-            builder: (context, state) => const PatientProgressScreen(),
+            builder: (context, state) =>
+                const ProfileScoped(child: PatientProgressScreen()),
           ),
           GoRoute(
             path: '/patient/resources/:resourceId',
@@ -441,8 +449,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/patient/profile',
-            builder: (context, state) => PatientProfileScreen(
-              displayName: _patientSession(session)?.displayName,
+            builder: (context, state) => ProfileScoped(
+              child: PatientProfileScreen(
+                displayName: _patientSession(session)?.displayName,
+              ),
             ),
           ),
           GoRoute(

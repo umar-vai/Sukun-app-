@@ -27,12 +27,12 @@ void main() {
 
       expect(updated.status, PatientTaskStatus.completed);
       expect(updated.isPendingSync, isTrue);
-      expect(await store.readForUser('user-1'), hasLength(1));
+      expect(await store.readForPatient('user-1', 'patient-1'), hasLength(1));
 
       remote.retryableFailure = false;
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
 
-      expect(await store.readForUser('user-1'), isEmpty);
+      expect(await store.readForPatient('user-1', 'patient-1'), isEmpty);
       expect(remote.submitted.map((event) => event.clientEventId), [
         'event-1',
         'event-1',
@@ -56,10 +56,10 @@ void main() {
       ..retryableFailure = false
       ..submitted.clear();
 
-    await coordinator.flush('user-2');
+    await coordinator.flush('user-2', 'patient-1');
 
     expect(remote.submitted, isEmpty);
-    expect(await store.readForUser('user-1'), hasLength(1));
+    expect(await store.readForPatient('user-1', 'patient-1'), hasLength(1));
   });
   test(
     'offline snooze followed by Done only replays the latest task event',
@@ -92,17 +92,20 @@ void main() {
       expect(updated.status, PatientTaskStatus.completed);
       expect(updated.isPendingSync, isTrue);
       expect(
-        (await store.readForUser('user-1')).map((event) => event.clientEventId),
+        (await store.readForPatient(
+          'user-1',
+          'patient-1',
+        )).map((event) => event.clientEventId),
         ['event-done'],
       );
       remote
         ..submitted.clear()
         ..retryableFailure = false;
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
       expect(remote.submitted.map((event) => event.clientEventId), [
         'event-done',
       ]);
-      expect(await store.readForUser('user-1'), isEmpty);
+      expect(await store.readForPatient('user-1', 'patient-1'), isEmpty);
     },
   );
 
@@ -128,17 +131,17 @@ void main() {
           snoozedUntil: occurredAt.add(const Duration(minutes: 15)),
         );
       }
-      expect(await store.readForUser('user-1'), hasLength(1));
-      expect(await store.readForUser('user-2'), hasLength(1));
+      expect(await store.readForPatient('user-1', 'patient-1'), hasLength(1));
+      expect(await store.readForPatient('user-2', 'patient-1'), hasLength(1));
 
       remote
         ..submitted.clear()
         ..retryableFailure = false;
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
 
       expect(remote.submitted.map((event) => event.userId), ['user-1']);
-      expect(await store.readForUser('user-1'), isEmpty);
-      expect(await store.readForUser('user-2'), hasLength(1));
+      expect(await store.readForPatient('user-1', 'patient-1'), isEmpty);
+      expect(await store.readForPatient('user-2', 'patient-1'), hasLength(1));
     },
   );
 
@@ -186,12 +189,15 @@ void main() {
         }
       };
 
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
       expect(remote.submitted.map((event) => event.clientEventId), [
         'event-first',
       ]);
       expect(
-        (await store.readForUser('user-1')).map((event) => event.clientEventId),
+        (await store.readForPatient(
+          'user-1',
+          'patient-1',
+        )).map((event) => event.clientEventId),
         ['event-new'],
       );
     },
@@ -229,13 +235,13 @@ void main() {
         }
       };
 
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
 
       expect(remote.submitted.map((e) => e.taskId), [
         'task-rejected',
         'task-valid',
       ]);
-      expect(await store.readForUser('user-1'), isEmpty);
+      expect(await store.readForPatient('user-1', 'patient-1'), isEmpty);
     },
   );
 
@@ -261,10 +267,10 @@ void main() {
           ),
         );
       }
-      await coordinator.flush('user-1');
+      await coordinator.flush('user-1', 'patient-1');
 
       expect(remote.submitted.map((e) => e.taskId), ['task-offline']);
-      expect(await store.readForUser('user-1'), hasLength(2));
+      expect(await store.readForPatient('user-1', 'patient-1'), hasLength(2));
     },
   );
 }
@@ -317,8 +323,11 @@ final class _MemoryCompletionQueueStore implements CompletionQueueStore {
   }
 
   @override
-  Future<List<PendingTaskCompletion>> readForUser(String userId) async =>
-      events.where((event) => event.userId == userId).toList();
+  Future<List<PendingTaskCompletion>> readForPatient(
+    String userId,
+    String patientId,
+  ) async =>
+      events.where((event) => event.belongsTo(userId, patientId)).toList();
 
   @override
   Future<void> remove(String userId, String clientEventId) async {

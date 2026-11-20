@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_repository.dart';
 import 'package:sukun_life/features/patient_care/data/completion_queue_store.dart';
 import 'package:sukun_life/features/patient_care/data/supabase_patient_care_repository.dart';
@@ -22,6 +23,7 @@ final patientCareRepositoryProvider = Provider<PatientCareRepository>((ref) {
       store: SecureCompletionQueueStore(),
       remote: SupabaseTaskCompletionRemote(client),
     ),
+    ref.watch(activePatientIdReaderProvider),
   );
 });
 

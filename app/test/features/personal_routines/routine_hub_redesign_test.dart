@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/patient_care/presentation/patient_scaffold.dart';
@@ -237,8 +238,14 @@ void main() {
 
   testWidgets('patient today page highlights the Routine tab', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: PatientScaffold(title: 'আজ', selectedIndex: 3, body: SizedBox()),
+      const ProviderScope(
+        child: MaterialApp(
+          home: PatientScaffold(
+            title: 'আজ',
+            selectedIndex: 3,
+            body: SizedBox(),
+          ),
+        ),
       ),
     );
     final nav = tester.widget<SukunBottomNavigation>(
