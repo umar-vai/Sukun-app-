@@ -882,8 +882,8 @@ class SukunBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onSelected;
   final Widget? leadingAction;
 
-  /// Admin mode marks the active tab in Night Navy so staff always know
-  /// they are in the management area, not the patient experience.
+  /// Admin mode marks the active tab with a solid palette-strong pill so
+  /// staff always know they are in the management area.
   final bool navyEmphasis;
 
   @override
@@ -954,12 +954,14 @@ class _SukunNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Admin mode marks the active tab in the palette's strong tone, so the
+    // management area still follows the chosen colour theme.
     final activeBackground = navyEmphasis
-        ? SukunColors.nightNavy
+        ? SukunColors.deepTide
         : scheme.primaryContainer;
     final activeIcon = navyEmphasis ? Colors.white : scheme.onPrimaryContainer;
     final activeLabel = navyEmphasis
-        ? SukunColors.nightNavy
+        ? SukunColors.deepTide
         : scheme.onPrimaryContainer;
     return Semantics(
       selected: selected,
