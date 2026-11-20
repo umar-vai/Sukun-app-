@@ -420,7 +420,9 @@ begin
 end $$;
 
 -- 4d. mark_patient_notification_opened: opens an event of any accessible
---     profile.
+--     profile. Whitespace tolerant on purpose: the Production body matched
+--     the repository text but differs in line endings or spacing, which broke an
+--     exact text match in the first Production dry run (2026-11-20).
 do $$
 declare
   def text;
@@ -429,20 +431,20 @@ declare
     'public.mark_patient_notification_opened(uuid)'::regprocedure;
 begin
   def := pg_get_functiondef(fn);
-  new_def := replace(
+  new_def := regexp_replace(
     def,
-    'caller_patient_id := (select private.current_patient_id());
-  if caller_patient_id is null or p_notification_id is null then
-    return false;
-  end if;',
-    'if p_notification_id is null then
-    return false;
-  end if;');
-  new_def := replace(
+    'caller_patient_id\s*:=\s*\(\s*select\s+private\.current_patient_id\(\)\s*\)\s*;'
+    '\s*if\s+caller_patient_id\s+is\s+null\s+or\s+p_notification_id\s+is\s+null\s+then'
+    '\s*return\s+false\s*;\s*end\s+if\s*;',
+    'if p_notification_id is null then return false; end if;',
+    'i');
+  new_def := regexp_replace(
     new_def,
-    'and ne.patient_id = caller_patient_id',
-    'and (select private.can_access_patient(ne.patient_id))');
-  if new_def = def or new_def ilike '%current_patient_id%' then
+    'and\s+ne\.patient_id\s*=\s*caller_patient_id',
+    'and (select private.can_access_patient(ne.patient_id))',
+    'i');
+  if new_def = def or new_def ilike '%current_patient_id%'
+     or new_def not ilike '%can_access_patient(ne.patient_id)%' then
     raise exception 'Could not patch mark_patient_notification_opened';
   end if;
   execute new_def;
