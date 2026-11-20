@@ -7,7 +7,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Self-hosted, user-initiated APK updates; Android installation remains user-approved. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Prayer waqt and amal reminders must ring on time. Android 13+ grants
+         USE_EXACT_ALARM at install; older versions use the user-approved
+         SCHEDULE_EXACT_ALARM. Review USE_EXACT_ALARM against Play policy
+         before a Play Store release (the sideload build is unaffected). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Lets the user approve one system dialog so prayer and care alarms are
          not frozen by battery optimisation. Never granted silently. -->

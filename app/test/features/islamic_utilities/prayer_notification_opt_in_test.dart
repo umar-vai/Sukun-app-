@@ -90,6 +90,27 @@ void main() {
     expect(gateway.scheduled, isEmpty);
   });
 
+  test(
+    'refresh never cancels delivered waqt notices or leaves a gap',
+    () async {
+      final gateway = _FakeGateway();
+      final service = PrayerNotificationService(
+        local: gateway,
+        calculator: AdhanPrayerCalculationService(),
+        settingsStore: const _StoredPrayerSettings(settings),
+      );
+      expect(await service.enable(), isTrue);
+      // Every earlier alarm has already been delivered and sits in the tray.
+      gateway.pending = <int>{};
+      gateway.cancelled.clear();
+
+      await service.refresh();
+
+      expect(gateway.cancelled, isEmpty);
+      expect(gateway.scheduled, isNotEmpty);
+    },
+  );
+
   test('missing city prevents permission prompts and scheduling', () async {
     final gateway = _FakeGateway();
     final service = PrayerNotificationService(
@@ -141,6 +162,12 @@ class _FakeGateway implements LocalNotificationsGateway {
 
   @override
   Future<String> configureTimezone() async => 'Asia/Dhaka';
+
+  /// Null mimics a platform that cannot report pending alarms.
+  Set<int>? pending;
+
+  @override
+  Future<Set<int>?> pendingNotificationIds() async => pending;
 
   @override
   Future<void> schedule(

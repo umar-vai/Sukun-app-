@@ -823,11 +823,15 @@ class SukunNavDestination {
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+
+  /// Unread count shown on the icon; hidden at zero.
+  final int badgeCount;
 }
 
 class SukunBottomNavigation extends StatelessWidget {
@@ -932,7 +936,9 @@ class _SukunNavItem extends StatelessWidget {
     return Semantics(
       selected: selected,
       button: true,
-      label: destination.label,
+      label: destination.badgeCount > 0
+          ? '${destination.label}, ${destination.badgeCount}টি নতুন'
+          : destination.label,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
@@ -952,10 +958,20 @@ class _SukunNavItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  selected ? destination.selectedIcon : destination.icon,
-                  size: 22,
-                  color: selected ? activeIcon : scheme.onSurfaceVariant,
+                child: Badge(
+                  isLabelVisible: destination.badgeCount > 0,
+                  backgroundColor: SukunColors.error,
+                  textColor: Colors.white,
+                  label: Text(
+                    destination.badgeCount > 9
+                        ? '9+'
+                        : '${destination.badgeCount}',
+                  ),
+                  child: Icon(
+                    selected ? destination.selectedIcon : destination.icon,
+                    size: 22,
+                    color: selected ? activeIcon : scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               const SizedBox(height: 3),

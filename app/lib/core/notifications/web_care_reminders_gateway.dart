@@ -31,6 +31,9 @@ final class WebCareRemindersGateway implements LocalNotificationsGateway {
   Future<bool> canSchedulePrecisely() async => false;
 
   @override
+  Future<Set<int>?> pendingNotificationIds() async => _scheduled.keys.toSet();
+
+  @override
   Future<String> configureTimezone() async => DateTime.now().timeZoneName;
 
   @override

@@ -29,18 +29,8 @@ List<ReminderSchedule> planCareReminders({
   final reminders = <ReminderSchedule>[];
   for (final task in tasks) {
     final action = task.action;
-    if (!task.status.canUpdate ||
-        action.reviewStatus != ActionReviewStatus.approved ||
-        !action.reminderEnabled ||
-        action.exactTime == null ||
-        task.scheduledAt == null) {
-      continue;
-    }
-
-    final scheduledAt =
-        task.status == PatientTaskStatus.snoozed && task.snoozedUntil != null
-        ? task.snoozedUntil!
-        : _patientLocalExactTime(task);
+    final scheduledAt = careReminderTime(task);
+    if (scheduledAt == null) continue;
     if (!scheduledAt.isAfter(now)) continue;
 
     reminders.add(
@@ -62,6 +52,22 @@ List<ReminderSchedule> planCareReminders({
     (left, right) => left.scheduledAt.compareTo(right.scheduledAt),
   );
   return List.unmodifiable(reminders.take(maximumPending));
+}
+
+/// When an open, approved care task's reminder rings, or null when the task
+/// has no reminder. Shared by alarm planning and the in-app amal list.
+DateTime? careReminderTime(PatientTask task) {
+  final action = task.action;
+  if (!task.status.canUpdate ||
+      action.reviewStatus != ActionReviewStatus.approved ||
+      !action.reminderEnabled ||
+      action.exactTime == null ||
+      task.scheduledAt == null) {
+    return null;
+  }
+  return task.status == PatientTaskStatus.snoozed && task.snoozedUntil != null
+      ? task.snoozedUntil!
+      : _patientLocalExactTime(task);
 }
 
 ReminderSchedule planSnoozeReminder({
@@ -95,4 +101,17 @@ int stableNotificationId(String value) {
     hash = (hash * 0x01000193) & 0x7fffffff;
   }
   return hash == 0 ? 1 : hash;
+}
+
+/// IDs to cancel when [next] replaces [previous]. Scheduling an ID again
+/// replaces its alarm in place, so only IDs that are no longer wanted are
+/// cancelled, and only while still pending: cancelling an already delivered
+/// ID would also wipe the visible notification from the tray.
+Set<int> staleReminderIds({
+  required Iterable<int> previous,
+  required Set<int> next,
+  Set<int>? pending,
+}) {
+  final stale = previous.toSet().difference(next);
+  return pending == null ? stale : stale.intersection(pending);
 }

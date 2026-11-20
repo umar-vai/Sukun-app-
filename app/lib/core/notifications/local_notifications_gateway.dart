@@ -66,6 +66,10 @@ abstract interface class LocalNotificationsGateway {
   Future<String> configureTimezone();
   Future<void> schedule(ReminderSchedule reminder, {required bool precise});
   Future<void> cancel(int notificationId);
+
+  /// IDs the OS still holds as scheduled (not yet delivered), or null when
+  /// the platform cannot report them.
+  Future<Set<int>?> pendingNotificationIds();
   Future<void> showRemote({
     required String title,
     required String body,
@@ -260,6 +264,16 @@ final class PluginLocalNotificationsGateway
 
   @override
   Future<void> cancel(int notificationId) => _plugin.cancel(id: notificationId);
+
+  @override
+  Future<Set<int>?> pendingNotificationIds() async {
+    try {
+      final pending = await _plugin.pendingNotificationRequests();
+      return {for (final request in pending) request.id};
+    } on Object {
+      return null;
+    }
+  }
 
   @override
   Future<void> showRemote({

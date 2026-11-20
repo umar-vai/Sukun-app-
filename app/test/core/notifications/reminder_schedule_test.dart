@@ -4,6 +4,14 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 
 void main() {
+  test('stale IDs exclude replaced and already delivered reminders', () {
+    expect(
+      staleReminderIds(previous: [1, 2, 3, 4], next: {2}, pending: {3, 2}),
+      {3},
+    );
+    expect(staleReminderIds(previous: [1, 2], next: {2}), {1});
+  });
+
   final now = DateTime(2026, 10, 2, 8);
 
   test('schedules only approved reminder actions with an exact time', () {

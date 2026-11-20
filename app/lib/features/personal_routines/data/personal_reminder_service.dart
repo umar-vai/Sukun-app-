@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/core/notifications/local_notifications_gateway.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
+import 'package:sukun_life/core/notifications/reminder_schedule.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/data/prayer_calculation_service.dart';
 import 'package:sukun_life/features/islamic_utilities/data/utility_preferences_store.dart';
@@ -114,32 +115,41 @@ class PersonalReminderService {
       settings: settings,
       now: DateTime.now(),
     );
-    // Never cancel clinician-prescribed care reminders: only cancel IDs
-    // stored under this owner-specific personal namespace.
-    await cancelOwner(owner);
+    // Never cancel clinician-prescribed care reminders: only IDs stored
+    // under this owner-specific personal namespace are ever cancelled.
+    final prefs = await SharedPreferences.getInstance();
+    final previous = (prefs.getStringList(_idsKey(owner)) ?? const <String>[])
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
     final precise = await local.canSchedulePrecisely();
     final ids = <int>[];
     try {
+      // Replace alarms in place instead of cancelling the set first, which
+      // left a gap and wiped delivered reminders from the tray.
       for (final reminder in scheduled) {
         await local.schedule(reminder, precise: precise);
         ids.add(reminder.notificationId);
       }
-      await (await SharedPreferences.getInstance()).setStringList(
-        _idsKey(owner),
-        ids.map((id) => id.toString()).toList(),
-      );
-      return ids.length;
     } on Object {
-      // Do not leave a partially scheduled batch behind when an OS/plugin
-      // request fails after one or more alarms have already been installed.
-      for (final id in ids) {
-        try {
-          await local.cancel(id);
-        } on Object {
-          // The original scheduling error is the actionable failure.
-        }
-      }
+      // Keep installed alarms and remember every ID that may exist.
+      await prefs.setStringList(_idsKey(owner), [
+        for (final id in {...previous, ...ids}) id.toString(),
+      ]);
       rethrow;
     }
+    await prefs.setStringList(
+      _idsKey(owner),
+      ids.map((id) => id.toString()).toList(),
+    );
+    final stale = staleReminderIds(
+      previous: previous,
+      next: ids.toSet(),
+      pending: await local.pendingNotificationIds(),
+    );
+    for (final id in stale) {
+      await local.cancel(id);
+    }
+    return ids.length;
   }
 }

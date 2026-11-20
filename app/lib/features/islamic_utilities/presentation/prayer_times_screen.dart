@@ -6,6 +6,7 @@ import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
+import 'package:sukun_life/core/notifications/precise_alarm_warning.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/account/presentation/reliable_delivery_guide.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
@@ -300,6 +301,8 @@ class _PrayerScheduleView extends StatelessWidget {
               onChanged: alertsBusy ? null : onToggleAlerts,
             ),
           ),
+          if (prayerAlerts)
+            const PreciseAlarmWarning(margin: EdgeInsets.only(top: 10)),
           const SizedBox(height: 24),
           const SukunSectionHeader(
             title: "আজকের সময়সূচি",

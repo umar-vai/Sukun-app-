@@ -17,6 +17,7 @@ import 'package:sukun_life/features/patient_care/data/patient_care_providers.dar
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
+import 'package:sukun_life/features/notice_center/data/notice_center_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
@@ -43,7 +44,8 @@ class UnifiedHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<UnifiedHomeScreen> createState() => _UnifiedHomeScreenState();
 }
 
-class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
+class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
+    with WidgetsBindingObserver {
   late Future<_PrayerSummary?> _prayer;
   Future<_HomeTasksData>? _upcoming;
   bool _signingOut = false;
@@ -51,9 +53,24 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _prayer = _readPrayer();
     if (widget.isSignedInMember || widget.isPatient) {
       _upcoming = _readUpcoming();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // A reminder may have rung while the app was in the background.
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(noticeCenterProvider);
     }
   }
 
@@ -144,6 +161,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       _prayer = prayer;
       _upcoming = upcoming;
     });
+    ref.invalidate(noticeCenterProvider);
     try {
       await prayer;
       if (upcoming != null) await upcoming;
@@ -175,8 +193,22 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     }
   }
 
+  Future<void> _openNotices(NoticeCenterSummary? summary) async {
+    // Open the section that has something new; amal comes first.
+    final notices =
+        summary != null &&
+        summary.amalCount == 0 &&
+        summary.unseenNoticeCount > 0;
+    await context.push<void>(
+      notices ? '/announcements?section=notices' : '/announcements',
+    );
+    if (mounted) await _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final noticeSummary = ref.watch(noticeCenterProvider).value;
+    final noticeCount = noticeSummary?.total ?? 0;
     final content = Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -192,6 +224,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                 greeting: _HomeGreeting(
                   displayName: widget.displayName,
                   onDark: true,
+                  noticeCount: noticeCount,
+                  onNotices: () => unawaited(_openNotices(noticeSummary)),
                 ),
                 overlap: _upcoming == null
                     ? null
@@ -344,8 +378,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         },
         destinations: widget.isSignedInMember || widget.isPatient
             ? sharedUserDestinations
-            : const [
-                SukunNavDestination(
+            : [
+                const SukunNavDestination(
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home,
                   label: 'হোম',
@@ -354,6 +388,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   icon: Icons.campaign_outlined,
                   selectedIcon: Icons.campaign,
                   label: 'নোটিশ',
+                  badgeCount: noticeCount,
                 ),
               ],
       ),
@@ -943,10 +978,19 @@ class _HomeTasksData {
 }
 
 class _HomeGreeting extends StatelessWidget {
-  const _HomeGreeting({required this.displayName, this.onDark = false});
+  const _HomeGreeting({
+    required this.displayName,
+    required this.onNotices,
+    this.onDark = false,
+    this.noticeCount = 0,
+  });
 
   final String? displayName;
   final bool onDark;
+
+  /// Unread notices and due amal reminders; the badge is hidden at zero.
+  final int noticeCount;
+  final VoidCallback onNotices;
 
   @override
   Widget build(BuildContext context) {
@@ -1006,41 +1050,26 @@ class _HomeGreeting extends StatelessWidget {
           child: InkWell(
             key: const Key('universal-announcements-shortcut'),
             borderRadius: BorderRadius.circular(16),
-            onTap: () => context.push('/announcements'),
+            onTap: onNotices,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(
-                        Icons.notifications_none_rounded,
-                        size: 22,
-                        color: onDark
-                            ? Colors.white
-                            : theme.colorScheme.secondary,
-                      ),
-                      Positioned(
-                        right: 1,
-                        top: 1,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: SukunColors.saffron,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: onDark
-                                  ? SukunColors.deepTide
-                                  : theme.colorScheme.surface,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Badge(
+                    key: const Key('notice-count-badge'),
+                    isLabelVisible: noticeCount > 0,
+                    backgroundColor: SukunColors.error,
+                    textColor: Colors.white,
+                    offset: const Offset(7, -6),
+                    label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: 22,
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Text(

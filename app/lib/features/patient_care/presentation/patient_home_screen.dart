@@ -8,6 +8,7 @@ import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
+import 'package:sukun_life/core/notifications/precise_alarm_warning.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
@@ -298,6 +299,12 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
                 const SizedBox(height: 16),
+                PreciseAlarmWarning(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  onGranted: () => unawaited(
+                    ref.read(notificationCoordinatorProvider).syncIfEnabled(),
+                  ),
+                ),
                 if (requestedTask != null &&
                     requestedTask.action.linkedResources.length +
                             verifiedQuranLinksForAction(requestedTask.action)
