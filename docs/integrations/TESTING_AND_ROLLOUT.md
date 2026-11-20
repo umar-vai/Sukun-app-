@@ -60,3 +60,13 @@ staging schema was confirmed unchanged (47 migrations, no `care_templates`, no `
   user creation in `provision.ts` was not exercised.
 - Production must be checked the same way before applying: the 5 drifted migrations suggest
   environments differ, 
+
+## Production apply file
+
+`docs/integrations/production_apply.sql` (built by `scripts/integrations/build_apply.sh`) applies the five
+migrations in ONE transaction: lock timeout, pre-flight checks, the migrations, post-checks that abort and roll
+everything back if a routine has no profile or a patient does not see exactly one profile, then COMMIT and a
+record in `supabase_migrations.schema_migrations`. A second run refuses (family_accounts already exists).
+Verified locally on a database built from the earlier migrations: applied once, the new and the related existing
+SQL tests passed afterwards, and a repeat run was refused. After the owner applies it, record the result in
+`docs/PRODUCTION_ENVIRONMENT.md`.
