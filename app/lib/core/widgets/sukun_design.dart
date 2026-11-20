@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 
 const sukunPagePadding = EdgeInsets.symmetric(horizontal: 20);
 
@@ -131,34 +130,6 @@ class SukunSurface extends StatelessWidget {
             child: paddedContent,
           )
         : _SurfaceInk(onTap: onTap!, radius: radius, child: paddedContent);
-    if (!dark) {
-      // Light panels are frosted glass in both Light and Dark mode.
-      final glassTone = tone == SukunSurfaceTone.white
-          ? SukunGlassTone.surface
-          : SukunGlassTone.accent;
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(radius),
-          boxShadow: night
-              ? null
-              : [
-                  BoxShadow(
-                    color: SukunColors.deepTide.withValues(alpha: 0.06),
-                    blurRadius: 26,
-                    spreadRadius: -8,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-        ),
-        child: SukunGlass(
-          borderRadius: BorderRadius.circular(radius),
-          tone: glassTone,
-          tint: tone == SukunSurfaceTone.white ? null : color,
-          showBorder: showBorder || tone == SukunSurfaceTone.white,
-          child: content,
-        ),
-      );
-    }
     return DecoratedBox(
       decoration: BoxDecoration(
         color: color,
@@ -251,94 +222,94 @@ class SukunPageIntro extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.04)
         : Colors.white.withValues(alpha: 0.6);
     final titleColor = night ? Colors.white : SukunColors.nightNavy;
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      child: SukunGlass(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: panel,
         borderRadius: BorderRadius.circular(28),
-        tone: SukunGlassTone.accent,
-        tint: panel,
-        child: Stack(
-          children: [
-            Positioned(
-              right: -46,
-              top: -58,
-              child: _Blob(size: 170, color: shape),
-            ),
-            Positioned(
-              right: 64,
-              bottom: -70,
-              child: _Blob(size: 120, color: shape),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (eyebrow != null) ...[
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: const BoxDecoration(
-                                  color: SukunColors.saffron,
-                                  shape: BoxShape.circle,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -46,
+            top: -58,
+            child: _Blob(size: 170, color: shape),
+          ),
+          Positioned(
+            right: 64,
+            bottom: -70,
+            child: _Blob(size: 120, color: shape),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (eyebrow != null) ...[
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: SukunColors.saffron,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Flexible(
+                              child: Text(
+                                eyebrow!.toUpperCase(),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: night
+                                      ? theme.colorScheme.secondary
+                                      : SukunColors.deepTide,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
                                 ),
                               ),
-                              const SizedBox(width: 7),
-                              Flexible(
-                                child: Text(
-                                  eyebrow!.toUpperCase(),
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: night
-                                        ? theme.colorScheme.secondary
-                                        : SukunColors.deepTide,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                        ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      if (note != null) ...[
+                        const SizedBox(height: 5),
                         Text(
-                          title,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: titleColor,
-                            fontWeight: FontWeight.w700,
-                            height: 1.25,
+                          note!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: night ? Colors.white70 : SukunColors.muted,
                           ),
                         ),
-                        if (note != null) ...[
-                          const SizedBox(height: 5),
-                          Text(
-                            note!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: night ? Colors.white70 : SukunColors.muted,
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
+                    ],
                   ),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 14),
-                    IconTheme.merge(
-                      data: IconThemeData(color: SukunColors.deepTide),
-                      child: trailing!,
-                    ),
-                  ],
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 14),
+                  IconTheme.merge(
+                    data: IconThemeData(color: SukunColors.deepTide),
+                    child: trailing!,
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -889,48 +860,49 @@ class SukunBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final night = Theme.of(context).brightness == Brightness.dark;
-    // A floating iOS style glass bar: page content scrolls behind it and is
-    // seen blurred through the frost.
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: (night ? Colors.black : SukunColors.deepTide).withValues(
-                alpha: night ? 0.30 : 0.12,
-              ),
-              blurRadius: 30,
-              spreadRadius: -6,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: SukunGlass(
-          borderRadius: BorderRadius.circular(26),
-          blur: 26,
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        child: Container(
+          height: 70,
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
-          child: SizedBox(
-            height: 58,
-            child: Row(
-              children: [
-                if (leadingAction != null) ...[
-                  SizedBox(width: 46, child: leadingAction),
-                  const SizedBox(width: 3),
-                ],
-                for (var index = 0; index < destinations.length; index++)
-                  Expanded(
-                    child: _SukunNavItem(
-                      destination: destinations[index],
-                      selected: index == selectedIndex,
-                      navyEmphasis: navyEmphasis && !night,
-                      onTap: () => onSelected(index),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(26),
+            border: night
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  )
+                : null,
+            boxShadow: night
+                ? null
+                : [
+                    BoxShadow(
+                      color: SukunColors.deepTide.withValues(alpha: 0.12),
+                      blurRadius: 30,
+                      spreadRadius: -6,
+                      offset: const Offset(0, 10),
                     ),
-                  ),
+                  ],
+          ),
+          child: Row(
+            children: [
+              if (leadingAction != null) ...[
+                SizedBox(width: 46, child: leadingAction),
+                const SizedBox(width: 3),
               ],
-            ),
+              for (var index = 0; index < destinations.length; index++)
+                Expanded(
+                  child: _SukunNavItem(
+                    destination: destinations[index],
+                    selected: index == selectedIndex,
+                    navyEmphasis: navyEmphasis && !night,
+                    onTap: () => onSelected(index),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

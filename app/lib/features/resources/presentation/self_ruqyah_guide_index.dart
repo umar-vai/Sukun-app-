@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 
@@ -220,7 +219,7 @@ class SelfRuqyahGuideIndex extends StatelessWidget {
         for (final item in items)
           Padding(
             padding: const EdgeInsets.only(bottom: 9),
-            child: SukunGlassCard(
+            child: Card(
               margin: EdgeInsets.zero,
               clipBehavior: Clip.antiAlias,
               child: ListTile(
@@ -257,7 +256,7 @@ class _NavigationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SukunGlassCard(
+    return Card(
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: InkWell(

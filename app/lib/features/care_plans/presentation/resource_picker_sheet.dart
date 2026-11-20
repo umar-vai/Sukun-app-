@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
@@ -571,7 +570,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       SliverPadding(
         padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
         sliver: SliverToBoxAdapter(
-          child: SukunGlassCard(
+          child: Card(
             color: SukunColors.mist,
             child: Padding(
               padding: EdgeInsets.all(14),
@@ -823,87 +822,82 @@ class _SectionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = picked > 0;
-    return SukunGlass(
+    return Material(
+      color: Colors.white,
       borderRadius: BorderRadius.circular(18),
-      tone: SukunGlassTone.surface,
-      child: Material(
-        type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Ink(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: active ? SukunColors.sukunBlue : SukunColors.border,
-                width: active ? 1.5 : 1,
-              ),
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: active ? SukunColors.sukunBlue : SukunColors.border,
+              width: active ? 1.5 : 1,
             ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: SukunColors.mist,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Icon(section.icon, color: SukunColors.deepTide),
-                      ),
-                      const SizedBox(height: 8),
-                      Flexible(
-                        child: Text(
-                          section.label,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                color: SukunColors.nightNavy,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${_bn(section.count)}টি',
-                        style: Theme.of(context).textTheme.labelSmall
-                            ?.copyWith(color: SukunColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
-                if (active)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: SukunColors.sukunBlue,
-                        borderRadius: BorderRadius.circular(99),
+                        color: SukunColors.mist,
+                        borderRadius: BorderRadius.circular(15),
                       ),
+                      child: Icon(section.icon, color: SukunColors.deepTide),
+                    ),
+                    const SizedBox(height: 8),
+                    Flexible(
                       child: Text(
-                        _bn(picked),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                        section.label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: SukunColors.nightNavy,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_bn(section.count)}টি',
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(color: SukunColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (active)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SukunColors.sukunBlue,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: Text(
+                      _bn(picked),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -295,7 +294,7 @@ class _ResourceReferenceTile extends StatelessWidget {
     if (audioResource != null && AudioLibraryActions.supports(audioResource)) {
       trailing = AudioLibraryActions(resource: audioResource, compact: true);
     }
-    return SukunGlassCard(
+    return Card(
       child: ListTile(
         leading: Icon(
           provider == 'quran'

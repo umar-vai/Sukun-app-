@@ -10,7 +10,6 @@
 // Never point this entrypoint at a real Supabase project.
 
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/app/app.dart';
 import 'package:sukun_life/app/theme/sukun_theme.dart';
@@ -111,87 +110,77 @@ class _PreviewSwitcherState extends State<_PreviewSwitcher> {
       bottom: 96,
       child: Theme(
         data: theme,
-        child: SukunGlass(
+        child: Material(
+          color: scheme.surface,
+          elevation: 6,
           borderRadius: BorderRadius.circular(16),
-          tone: SukunGlassTone.surface,
-          child: Material(
-            type: MaterialType.transparency,
-            elevation: 6,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_open) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                    child: Text(
-                      'প্রিভিউ: কে হিসেবে দেখবেন?',
-                      style: textStyle.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_open) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                  child: Text(
+                    'প্রিভিউ: কে হিসেবে দেখবেন?',
+                    style: textStyle.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 12,
                     ),
                   ),
-                  option('রোগী (SL-1001)', previewPatient),
-                  option('Super Admin', previewAdmin),
-                  option('সদস্য', previewMember),
-                  option('অতিথি (লগআউট)', null),
-                  InkWell(
-                    onTap: PreviewBackend.resetSampleData,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.restart_alt,
-                            size: 18,
-                            color: scheme.error,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'নমুনা ডেটা শুরু থেকে',
-                            style: textStyle.copyWith(color: scheme.error),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                ],
+                ),
+                option('রোগী (SL-1001)', previewPatient),
+                option('Super Admin', previewAdmin),
+                option('সদস্য', previewMember),
+                option('অতিথি (লগআউট)', null),
                 InkWell(
-                  onTap: () => setState(() => _open = !_open),
+                  onTap: PreviewBackend.resetSampleData,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.visibility_outlined,
-                          size: 18,
-                          color: scheme.primary,
-                        ),
-                        const SizedBox(width: 8),
+                        Icon(Icons.restart_alt, size: 18, color: scheme.error),
+                        const SizedBox(width: 10),
                         Text(
-                          _busy
-                              ? 'অপেক্ষা করুন…'
-                              : 'প্রিভিউ: ${_currentLabel()}',
-                          style: textStyle.copyWith(color: scheme.primary),
+                          'নমুনা ডেটা শুরু থেকে',
+                          style: textStyle.copyWith(color: scheme.error),
                         ),
                       ],
                     ),
                   ),
                 ),
+                const Divider(height: 1),
               ],
-            ),
+              InkWell(
+                onTap: () => setState(() => _open = !_open),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 18,
+                        color: scheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _busy ? 'অপেক্ষা করুন…' : 'প্রিভিউ: ${_currentLabel()}',
+                        style: textStyle.copyWith(color: scheme.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -130,7 +129,7 @@ class _FortyDayChallengeScreenState
                 'এই চ্যালেঞ্জ চিকিৎসার বিকল্প বা রোগ নির্ণয়ের পদ্ধতি নয়।',
               ),
               const SizedBox(height: 14),
-              SukunGlassCard(
+              Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: eligible
@@ -313,7 +312,7 @@ class _FortyDayChallengeScreenState
                       for (var i = 0; i < fortyDayStages.length; i++)
                         SizedBox(
                           width: width,
-                          child: SukunGlassCard(
+                          child: Card(
                             clipBehavior: Clip.antiAlias,
                             margin: EdgeInsets.zero,
                             child: Padding(

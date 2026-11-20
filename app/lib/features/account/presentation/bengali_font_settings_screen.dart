@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/app/theme/bengali_font_settings.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 
@@ -26,7 +25,7 @@ class BengaliFontSettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           for (final font in BengaliFontChoice.values)
-            SukunGlassCard(
+            Card(
               child: ListTile(
                 key: Key('font-choice-${font.name}'),
                 title: Text(font.label),
@@ -47,7 +46,7 @@ class BengaliFontSettingsScreen extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          const SukunGlassCard(
+          const Card(
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Text(

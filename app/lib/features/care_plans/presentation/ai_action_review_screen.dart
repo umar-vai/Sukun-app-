@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -686,59 +685,55 @@ class _ImportDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SukunGlass(
+    return Material(
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: .12),
       borderRadius: BorderRadius.circular(20),
-      tone: SukunGlassTone.surface,
-      child: Material(
-        elevation: 8,
-        shadowColor: Colors.black.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(20),
-        type: MaterialType.transparency,
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: SukunColors.border),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        selectedCount == 0
-                            ? 'কোনো করণীয় বাছাই করা হয়নি'
-                            : '$selectedCountটি বাছাই করা',
-                        style: Theme.of(context).textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'যোগ করা করণীয় খসড়া হিসেবেই থাকবে।',
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(color: SukunColors.muted),
-                      ),
-                    ],
-                  ),
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: SukunColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      selectedCount == 0
+                          ? 'কোনো করণীয় বাছাই করা হয়নি'
+                          : '$selectedCountটি বাছাই করা',
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'যোগ করা করণীয় খসড়া হিসেবেই থাকবে।',
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: SukunColors.muted),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              FilledButton.icon(
-                onPressed: onImport,
-                icon: importing
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.playlist_add_check_rounded),
-                label: Text(importing ? 'যোগ হচ্ছে…' : 'প্ল্যানে যোগ করুন'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: importing
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.playlist_add_check_rounded),
+              label: Text(importing ? 'যোগ হচ্ছে…' : 'প্ল্যানে যোগ করুন'),
+            ),
+          ],
         ),
       ),
     );

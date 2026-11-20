@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/home/presentation/admin_scaffold.dart';
 
@@ -171,7 +170,7 @@ class _AdminRoutineTemplatesScreenState
                 title: Text('এখনো কোনো প্রস্তুত রুটিন নেই'),
               ),
             for (final template in templates)
-              SukunGlassCard(
+              Card(
                 key: Key('admin-routine-template-${template['id']}'),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
