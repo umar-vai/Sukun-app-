@@ -13,6 +13,34 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-20: family accounts and CRM/ERP integration core (Production)
+
+- The owner applied `docs/integrations/production_apply.sql` in the Production SQL editor and
+  reported `APPLIED OK` (recorded here from the owner's report; this session had no Production
+  access). It runs five migrations in one transaction and registers them in
+  `supabase_migrations.schema_migrations` as versions `20261120090000` to `20261120130000`
+  (`family_accounts_20261120`, `integration_template_catalog_20261120`,
+  `crm_integration_core_20261120`, `patient_provisioning_credentials_20261120`,
+  `profile_scoped_routines_20261120`). Source files:
+  `20261120090000_family_accounts.sql`, `20261120100000_integration_template_catalog.sql`,
+  `20261120110000_crm_integration_core.sql`,
+  `20261120120000_patient_provisioning_credentials.sql`,
+  `20261120130000_profile_scoped_routines.sql`.
+- Before applying: a rolled-back dry run on Production (the first run stopped on
+  `mark_patient_notification_opened`, whose live body differs from the repository text in
+  whitespace; the patch was made whitespace tolerant and the second dry run passed). Report of the
+  final dry run: 8 patients, 51 templates, 12 routines, 0 routines without a profile, every patient
+  login sees exactly one profile.
+- What changed: new tables `family_accounts`, `family_members`, `integration_inbox`,
+  `integration_outbox` (RLS on, no app policies); 7 patient policies, 4 read helpers and 5 patient
+  RPCs patched in place to accept a family profile (new optional `p_patient_id`, omitted behaves as
+  before); `personal_routines.patient_id` (backfilled with the owner's own profile); service role only
+  `integration_*` functions. The 40 day challenge is untouched and stays one per login.
+- Compatible with the deployed app. Nothing else is live yet: the `crm-integration` Edge Function is
+  NOT deployed and its secrets are NOT set, the family profile switcher ships with a future app
+  release, and no CRM has called anything. See `docs/integrations/CRM_ERP_INTEGRATION_MASTER.md`.
+- Rollback: `docs/integrations/TESTING_AND_ROLLOUT.md`.
+
 ### 2026-11-13: one-step resource publishing (Production)
 
 - Owner decision: adding or editing a resource publishes it in one step; no
