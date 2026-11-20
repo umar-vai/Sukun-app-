@@ -1,0 +1,14 @@
+{
+  "name": "sukun-integration-contract-tools",
+  "private": true,
+  "type": "module",
+  "description": "Validates the CRM/ERP integration JSON contracts and exports the official template catalog.",
+  "scripts": {
+    "validate": "node validate_contracts.mjs",
+    "export:templates": "node export_template_catalog.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  }
+}

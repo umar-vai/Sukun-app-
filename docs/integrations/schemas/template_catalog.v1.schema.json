@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sukunlife.app/schemas/integrations/template_catalog.v1.json",
+  "title": "SukunLife official template catalog (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_version",
+    "generated_at",
+    "total_templates",
+    "sync_mode",
+    "templates"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "catalog_version": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Content hash of the whole catalog. Changes only when template content changes."
+    },
+    "catalog_last_updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_templates": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sync_mode": {
+      "enum": [
+        "full",
+        "incremental"
+      ]
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Pass as after_id to fetch the next page; null on the last page."
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/template"
+      }
+    }
+  },
+  "$defs": {
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "template_id",
+        "template_revision",
+        "category",
+        "action_type",
+        "title",
+        "instruction",
+        "parameters",
+        "default_schedule",
+        "resource_refs",
+        "requires_resource",
+        "sort_order",
+        "active",
+        "updated_at"
+      ],
+      "properties": {
+        "template_id": {
+          "type": "string",
+          "pattern": "^[a-z][0-9]{2}$",
+          "description": "Stable id. Never reused."
+        },
+        "template_revision": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "Hash of this template's content. Quote it in a prescription item to pin the snapshot."
+        },
+        "category": {
+          "enum": [
+            "amal",
+            "supplement",
+            "bath",
+            "audio",
+            "special"
+          ]
+        },
+        "action_type": {
+          "enum": [
+            "amal",
+            "supplement",
+            "bath",
+            "audio"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "instruction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "May contain {বার} {দিন} {মিনিট}. Do not edit religious wording."
+        },
+        "notification_title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 120
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "placeholder",
+              "type",
+              "required"
+            ],
+            "properties": {
+              "name": {
+                "enum": [
+                  "count",
+                  "days",
+                  "minutes"
+                ]
+              },
+              "placeholder": {
+                "enum": [
+                  "{বার}",
+                  "{দিন}",
+                  "{মিনিট}"
+                ]
+              },
+              "type": {
+                "const": "integer"
+              },
+              "required": {
+                "const": true
+              }
+            }
+          }
+        },
+        "default_schedule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reminder_times",
+            "time_basis"
+          ],
+          "properties": {
+            "reminder_times": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "maxItems": 8
+            },
+            "time_basis": {
+              "const": "patient_local"
+            }
+          },
+          "description": "A suggestion only. A prescription must still state its own reminder_times."
+        },
+        "resource_refs": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref",
+              "kind"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "content_slug",
+                  "quran_surah"
+                ]
+              }
+            }
+          }
+        },
+        "requires_resource": {
+          "type": "boolean"
+        },
+        "sort_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active": {
+          "type": "boolean",
+          "description": "false = hidden in SukunLife. Keep the record, stop offering it."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

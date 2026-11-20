@@ -1,0 +1,1902 @@
+{
+  "catalog_last_updated_at": "2026-01-01T00:00:00.000000Z",
+  "catalog_version": "sha256:b2fbabb7fb7d141738e300880a6eab49a3526f2b5ecea6b421deed28ba524294",
+  "generated_at": "2026-01-01T00:00:00.000000Z",
+  "next_cursor": null,
+  "schema_version": "1.0",
+  "sync_mode": "full",
+  "templates": [
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "06:30",
+          "17:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সকাল ও সন্ধ্যার মাসনুন আমল গুরুত্ব দিয়ে করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t033"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-001"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-002"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ayatul-kursi"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:112"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-three-kul"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-009"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-010"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-011"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-012"
+        }
+      ],
+      "sort_order": 10,
+      "template_id": "a01",
+      "template_revision": "sha256:6b2023c6ec43e52c81f7603d9611136fb61e129f45a4c00cf0aae48f66b9fc0e",
+      "title": "সকাল–সন্ধ্যার মাসনুন আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "22:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রতিদিন ঘুমানোর আগে নির্ধারিত মাসনুন আমল করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t034"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-004"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ayatul-kursi"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-006"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-006"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-007"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:112"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-three-kul"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-013"
+        }
+      ],
+      "sort_order": 20,
+      "template_id": "a02",
+      "template_revision": "sha256:addd2e12d4d40cf9a3a1aa47bb5aa22f5515cbd37b8ec3245c414995cdf2422e",
+      "title": "ঘুমের পূর্বের আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "07:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সব কাজের শুরুতে বিসমিল্লাহ বলার অভ্যাস করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t036"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-dua-022"
+        }
+      ],
+      "sort_order": 30,
+      "template_id": "a03",
+      "template_revision": "sha256:1ced5b1c4199b7a31f905e6a105e0d0b83d1f2e4113f5b8e1aeab0cd7574e759",
+      "title": "কাজের শুরুতে বিসমিল্লাহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "05:15",
+          "13:30",
+          "16:45",
+          "18:15",
+          "20:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রতি নামাজের পরে তাসবীহে ফাতেমী পড়বেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 40,
+      "template_id": "a04",
+      "template_revision": "sha256:fe7fc6b4766762df54fb4195c78ab9d866c421f72bd793cb77f3b1ae2e1a9ff8",
+      "title": "নামাজের পর তাসবীহে ফাতেমী",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "06:30",
+          "17:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সকাল ও সন্ধ্যায় মাথায়/বুকে হাত রেখে আয়াতুল কুরসি ও সূরা ফালাক–নাস {বার} বার পড়বেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ayatul-kursi"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-three-kul"
+        }
+      ],
+      "sort_order": 50,
+      "template_id": "a05",
+      "template_revision": "sha256:e0f4e38f3a648ece60b1961be93848f2f227138c12133cb1e40030bdba08b819",
+      "title": "আয়াতুল কুরসি ও ফালাক–নাস",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "20:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রতি {দিন} দিনে সূরা বাকারা এক খতম করার নির্দেশনা—পাঠ/শ্রবণ পদ্ধতি অ্যাডমিন যাচাই করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "quran_surah",
+          "ref": "quran:2"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-baqara"
+        }
+      ],
+      "sort_order": 60,
+      "template_id": "a06",
+      "template_revision": "sha256:0dc16e09bc9599d9d86ac90edd7b0821b4d9eda4015f26511989ac127e389844",
+      "title": "সূরা বাকারা খতম",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্ধারিত সূরা বাকারা তিলাওয়াত শুনবেন; কতদিন/কতবার হবে তা অ্যাডমিন লিখবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-baqara"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:2"
+        }
+      ],
+      "sort_order": 70,
+      "template_id": "a07",
+      "template_revision": "sha256:be32026ba4e372d4b05c55b7921dd198de4c710ea07230234b2622191e8d0a2c",
+      "title": "প্রতিদিন সূরা বাকারা শ্রবণ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "09:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "দৈনিক দরূদ শরীফ {বার} বার পড়বেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 80,
+      "template_id": "a08",
+      "template_revision": "sha256:9e6d69f1f8b8e72138d55ab2d5e337ddff2f3669426d8e335399ad5414e3ccfc",
+      "title": "দরূদ শরীফ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "16:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "দৈনিক ইস্তিগফার {বার} বার পড়বেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 90,
+      "template_id": "a09",
+      "template_revision": "sha256:69ba5c62e3fd031f89d76b97b42623c571ab1b495882074c238200c667d5dc78",
+      "title": "ইস্তিগফার",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "06:45"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সকালে নির্ধারিত শুরু দোয়া {বার} বার পড়বেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 100,
+      "template_id": "a10",
+      "template_revision": "sha256:03ce736625502be78747f11ee620e564eb4527cf94aba710cd8bfdb9c135e156",
+      "title": "সকালের শুরু দোয়া",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "amal",
+      "default_schedule": {
+        "reminder_times": [
+          "22:15"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সকাল, সন্ধ্যা ও ঘুমের পূর্বে নির্ধারিত শেষ দোয়া {বার} বার পড়বেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 110,
+      "template_id": "a11",
+      "template_revision": "sha256:636f0eb39585a21fded3624a6c68a2052139d6c70f72edd900ea34b098c4108e",
+      "title": "সন্ধ্যা ও ঘুমের শেষ দোয়া",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "{দিন} দিন নজর/বদনজরের গোসল করবেন। সময় ও পদ্ধতি অ্যাডমিন যাচাই করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-002"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t028"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t014"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-evil-eye"
+        }
+      ],
+      "sort_order": 220,
+      "template_id": "b01",
+      "template_revision": "sha256:4bab9a9dd74360f793083abde72df176c576cbaf1aa1b14d5efd41ba0f60baf6",
+      "title": "বদনজরের গোসল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "{দিন} দিন বরই পাতার গোসল করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t029"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-007"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t015"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-sihr-hibshi"
+        }
+      ],
+      "sort_order": 230,
+      "template_id": "b02",
+      "template_revision": "sha256:f864ffdbe44c75834ab5ca9f592dca76ab36f2c84a687248ec14ebe1f83a7bfe",
+      "title": "বরই পাতার গোসল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "{দিন} দিন ডিটক্স গোসল করবেন। গোসলের পদ্ধতি ও উপযোগিতা যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-004"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t030"
+        }
+      ],
+      "sort_order": 240,
+      "template_id": "b03",
+      "template_revision": "sha256:b438bb5cbacaf7b73486fac15c6bf730636ec86609e2bf5d6165c20294ffccfa",
+      "title": "ডিটক্স গোসল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সপ্তাহে {বার} দিন নজরের গোসল করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-002"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t028"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t014"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-evil-eye"
+        }
+      ],
+      "sort_order": 250,
+      "template_id": "b04",
+      "template_revision": "sha256:9f2a85e5dcef9454f1dbc5e7c2a2d79e2a7da5448756711d5903c885f49987df",
+      "title": "সাপ্তাহিক নজরের গোসল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রথম {দিন} দিন নজরের গোসল; পরবর্তী পর্যায়ে বরই পাতার ও ডিটক্স গোসলের দিন অ্যাডমিন পৃথকভাবে নির্ধারণ করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-002"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-004"
+        }
+      ],
+      "sort_order": 260,
+      "template_id": "b05",
+      "template_revision": "sha256:a56a131f937f214b35cee5c89920db58234eba87c1cf6f8511a7a58b21c977bb",
+      "title": "নজর → বরই পাতা → ডিটক্স",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রথম {দিন} দিন বরই পাতার গোসল; তারপর ডিটক্স ও নজরের গোসলের পর্যায় অ্যাডমিন পৃথকভাবে নির্ধারণ করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-004"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-002"
+        }
+      ],
+      "sort_order": 270,
+      "template_id": "b06",
+      "template_revision": "sha256:77b5fd780bc597a2c34496a5da9dd647199ebe4cbd77ee2f8378e43e0f7f9b4a",
+      "title": "বরই পাতা → ডিটক্স → নজর",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নজরের গোসলের আগে/পরে যাচাইকৃত বদনজরের অডিও অন্তত {মিনিট} মিনিট শুনবেন। অডিওটি আলাদাভাবে লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-evil-eye"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t014"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-002"
+        }
+      ],
+      "sort_order": 280,
+      "template_id": "b07",
+      "template_revision": "sha256:b462c523695e0ff873e77f525983f0ac06bf682b35a09d0b62805bf4be0f0f77",
+      "title": "নজরের গোসলের অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "বরই পাতার গোসলের আগে/পরে যাচাইকৃত সিহর হিবশী অডিও {মিনিট} মিনিট শুনবেন। অডিওটি আলাদাভাবে লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-sihr-hibshi"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t015"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-ghs-003"
+        }
+      ],
+      "sort_order": 290,
+      "template_id": "b08",
+      "template_revision": "sha256:39cae143296dcd4305bc079b1113704074c67e0a6cebaa8e33d4d67d060edcbb",
+      "title": "বরই পাতার গোসলের অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "bath",
+      "active": true,
+      "category": "bath",
+      "default_schedule": {
+        "reminder_times": [
+          "10:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "আরবি মাসের মাঝামাঝি গোসলের নির্দেশনা; নির্দিষ্ট তারিখ অ্যাডমিন নিশ্চিত করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t027"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t031"
+        }
+      ],
+      "sort_order": 300,
+      "template_id": "b09",
+      "template_revision": "sha256:c6e17936f5b60a36dd60b98aa5ab83aa90736448bab5a6d90421ebce3e425d8e",
+      "title": "আরবি মাসের মাঝামাঝি গোসল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "08:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "পানি প্রস্তুতের জন্য সূরা ফাতিহা, আয়াতুল কুরসি, তিন কুল এবং নির্বাচিত আয়াত পড়ার নির্দেশনা; সুনির্দিষ্ট আয়াত/পুনরাবৃত্তি প্রেসক্রিপশন অনুযায়ী যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t004"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:1"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-fatiha"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ayatul-kursi"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:112"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-three-kul"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t011"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-common-bangla"
+        }
+      ],
+      "sort_order": 120,
+      "template_id": "s01",
+      "template_revision": "sha256:0547b4ba7e344118f3caa888165cad201710d848e6f4df66f067d8eba5bbf67a",
+      "title": "রুকইয়াহ পাঠ দিয়ে পানি প্রস্তুত",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "08:15"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত সিহর, শিফা, হারক ও কিতাল আয়াতের তালিকা যাচাই করে তেল/পানি/মধু/আতরে ফুঁ দেওয়ার খসড়া নির্দেশনা।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t015"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-sihr-hibshi"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t021"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-shifa"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-shifa-sakina"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t013"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-harq"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t022"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-qital-tadmir"
+        }
+      ],
+      "sort_order": 130,
+      "template_id": "s02",
+      "template_revision": "sha256:2462ca7c81bc0f2ae61192b40186294375f4ad9e2164daa106a6432ca5764f4d",
+      "title": "নির্বাচিত সিহর/শিফা আয়াত",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "07:30",
+          "19:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্ধারিত রুকইয়াহ পানি দিনে {বার} বেলা পান করার নির্দেশনা; পরিমাণ ও স্বাস্থ্যগত উপযোগিতা দায়িত্বপ্রাপ্ত ব্যক্তি যাচাই করবেন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t004"
+        }
+      ],
+      "sort_order": 140,
+      "template_id": "s03",
+      "template_revision": "sha256:dd15f2dbaf52464127e11a97c325706a92cd663fe9ea52b299e15f0dfcb62e7c",
+      "title": "রুকইয়াহ পানি দুই বেলা",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "18:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্ধারিত পানি বাসায় স্প্রে করার নির্দেশনা; সময় ও নিয়ম অ্যাডমিন নিশ্চিত করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t004"
+        }
+      ],
+      "sort_order": 150,
+      "template_id": "s04",
+      "template_revision": "sha256:54e55a0995f93bd8f84f30cb53e2ae13194df2ce3fff9d726df8b46f78678ef4",
+      "title": "বাসায় পানি স্প্রে",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "09:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "গোসলের পানির সঙ্গে অনুমোদিত রুকইয়াহ পানি মেশানোর নির্দেশনা।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t027"
+        }
+      ],
+      "sort_order": 160,
+      "template_id": "s05",
+      "template_revision": "sha256:b37a20d8b9b5b2a3f54a1ec0563d9b78a99c4bd2dd9c6c7b5c008f02aba607c9",
+      "title": "গোসলের পানিতে মেশানো",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "07:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সকালের পানির সঙ্গে মধু মেশানোর নির্দেশনা; অ্যালার্জি ও স্বাস্থ্যগত বিষয় যাচাই করতে হবে।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-002"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t005"
+        }
+      ],
+      "sort_order": 170,
+      "template_id": "s06",
+      "template_revision": "sha256:6a021647ebe8c6ac40f2f6817f0a5b8c8e9423efd2891b02cdbb1bc4c41c4791",
+      "title": "সকালের পানিতে মধু",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "21:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্বাচিত জায়গায় (পিঠ, ঘাড়, কোমর, মাথা বা ব্যথার স্থান) তেল ব্যবহারের খসড়া; প্রয়োগের স্থান ও ত্বকের উপযোগিতা নিশ্চিত করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t006"
+        }
+      ],
+      "sort_order": 180,
+      "template_id": "s07",
+      "template_revision": "sha256:5d331a0929512f3039f73ec60bf462289cecf959bb975f32c56bb38fbbb7fc5a",
+      "title": "নির্ধারিত তেল মালিশ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "22:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রয়োজনে ও ঘুমের পূর্বে বিছানার আশপাশে আতর ব্যবহারের নির্দেশনা; সংবেদনশীলতা যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-010"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t013"
+        }
+      ],
+      "sort_order": 190,
+      "template_id": "s08",
+      "template_revision": "sha256:fccd08e90b8da9b0fa8d0cfd076ab5db6670d8dc1291dce90a3a920ce57dcc0c",
+      "title": "বিছানার আশপাশে আতর",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "20:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রেসক্রিপশন অনুযায়ী মেহেদী ব্যবহার; প্রস্তুতি ও প্রয়োগ যাচাই করতে হবে।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-013"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t016"
+        }
+      ],
+      "sort_order": 200,
+      "template_id": "s09",
+      "template_revision": "sha256:09f6892275e50ed16c05ee8d95235994946db6405789b4c748ffb7b2515e96a0",
+      "title": "মেহেদী ব্যবহারের নির্দেশনা",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "supplement",
+      "active": true,
+      "category": "supplement",
+      "default_schedule": {
+        "reminder_times": [
+          "08:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "রুকইয়াহ পানি/অন্যান্য উপকরণ প্রতি {দিন} দিন পর নতুন করে প্রস্তুত করার নির্দেশনা।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t003"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        }
+      ],
+      "sort_order": 210,
+      "template_id": "s10",
+      "template_revision": "sha256:b215ef25ffde2f10a5216aac794d7b6b1389ee00abf59c7949d3736aabaa6742",
+      "title": "প্রতি নির্ধারিত দিনে পুনঃপ্রস্তুত",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত জিনের আছরের রুকইয়াহ অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-jinn"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t012"
+        }
+      ],
+      "sort_order": 310,
+      "template_id": "u01",
+      "template_revision": "sha256:19308034b86faa7e868e80a0a588dc1641fc29defd1687c0aea38f19448aef33",
+      "title": "জিনের আছর রুকইয়াহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত আয়াতুল হারক অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-harq"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t013"
+        }
+      ],
+      "sort_order": 320,
+      "template_id": "u02",
+      "template_revision": "sha256:7cb2dd72e897af843a90eac70e5cd1e646c69564fce35be3979320fe08ed36f1",
+      "title": "আয়াতুল হারক অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত কিতাল অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-qital-tadmir"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t022"
+        }
+      ],
+      "sort_order": 330,
+      "template_id": "u03",
+      "template_revision": "sha256:a09e1a36a772a5ef92f8d98f25a08a89f71e3cc44371a41d88dff8f193adfad2",
+      "title": "কিতাল অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত শিফা–সাকিনা অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-shifa-sakina"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-shifa"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t021"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t026"
+        }
+      ],
+      "sort_order": 340,
+      "template_id": "u04",
+      "template_revision": "sha256:17c554d8a79a7b1df074327d47784d9c657e4853a905747e9dbe466bb88193b5",
+      "title": "শিফা–সাকিনা অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত খুরুজ অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-khuruj"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t024"
+        }
+      ],
+      "sort_order": 350,
+      "template_id": "u05",
+      "template_revision": "sha256:791a1da908c1d1e4730384b23ac6be1ae0ad396436d9809e917fa414566661fc",
+      "title": "খুরুজ অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত বদনজরের অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-evil-eye"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t014"
+        }
+      ],
+      "sort_order": 360,
+      "template_id": "u06",
+      "template_revision": "sha256:ae08dd5820736be12fb32ae4a40fcfe462826cbedee5dff14d12d98893885fb1",
+      "title": "বদনজর Evil Eye অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "অনুমোদিত Sihr Hibshi অডিও {মিনিট} মিনিট শুনবেন। প্রকাশিত অডিও লিংক করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-sihr-hibshi"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t015"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t016"
+        }
+      ],
+      "sort_order": 370,
+      "template_id": "u07",
+      "template_revision": "sha256:629997cfeff9b9637d119c1f3bb065e59aa4d04e9fcb3edc6927d9b9e4e74abe",
+      "title": "সিহর হিবশী অডিও",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্ধারিত আট সূরার রুকইয়াহ শুনবেন; প্রকাশিত রেকর্ডিং নির্বাচন করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-eight-surah"
+        }
+      ],
+      "sort_order": 380,
+      "template_id": "u08",
+      "template_revision": "sha256:d3346b855a623be4d7669f9e2da0d2c41a797b36722f39bef09c54194146ac50",
+      "title": "আট সূরার রুকইয়াহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রকাশিত তিন কুলের রুকইয়াহ অডিও শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-three-kul"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:112"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        }
+      ],
+      "sort_order": 390,
+      "template_id": "u09",
+      "template_revision": "sha256:aac134a0e3a08899031075b816bff4ecb34f1420ffb4f9b077c23f9a73f64d8c",
+      "title": "তিন কুল রুকইয়াহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রকাশিত আয়াতুল কুরসির রুকইয়াহ শুনবেন; পাঠক/লাইসেন্স যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ayatul-kursi"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-aml-005"
+        }
+      ],
+      "sort_order": 400,
+      "template_id": "u10",
+      "template_revision": "sha256:ed6ca0d6b5fbcf3a7926759b2515cdb7f88ba29eac3983da37e710c144393b1b",
+      "title": "আয়াতুল কুরসির রুকইয়াহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্দিষ্ট সূরা/আয়াতের অনুমোদিত তিলাওয়াত প্রকাশিত লাইব্রেরি থেকে বেছে নিন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [],
+      "sort_order": 410,
+      "template_id": "u11",
+      "template_revision": "sha256:18c547f0f710f0ada78eedd7b82edf320b02e30dfd1c1ddd2740090ba09e5425",
+      "title": "ইদরিস আবকার তিলাওয়াত",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্দিষ্ট তিন কুল/আয়াতুল কুরসির অনুমোদিত তিলাওয়াত প্রকাশিত লাইব্রেরি থেকে বেছে নিন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": true,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "sukun-ruqyahbd-ajmy"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:112"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:113"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:114"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-qur-005"
+        }
+      ],
+      "sort_order": 420,
+      "template_id": "u12",
+      "template_revision": "sha256:1eaee0e30bf871079cb2b3616024fb0587d386ad6158d4ae7ee7139381234edb",
+      "title": "আহমাদ আল আজমী তিলাওয়াত",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "audio",
+      "active": true,
+      "category": "audio",
+      "default_schedule": {
+        "reminder_times": [
+          "09:00",
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্বাচিত অডিওগুলো ধারাবাহিকভাবে প্রতিটি {মিনিট} মিনিট করে, দিনে {বার} বার শুনবেন; প্রতিটি প্রকাশিত অডিও যুক্ত করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "name": "minutes",
+          "placeholder": "{মিনিট}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": true,
+      "resource_refs": [],
+      "sort_order": 430,
+      "template_id": "u13",
+      "template_revision": "sha256:90be450f1702774cc4e38af95c5e8058887c1f7026a5570ddaecce5dd6206ab0",
+      "title": "সিরিয়াল অডিও সেশন",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "সূরা মুমতাহিনা, সূরা কাসাসের ২৪ নং আয়াত ও সূরা ফুরকানের ৭৪ নং আয়াতের প্রেসক্রিপশনে উল্লেখিত ব্যবহার যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "quran_surah",
+          "ref": "quran:60"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:28"
+        },
+        {
+          "kind": "quran_surah",
+          "ref": "quran:25"
+        }
+      ],
+      "sort_order": 440,
+      "template_id": "x01",
+      "template_revision": "sha256:a57031367051c59f768f962aaf29ad37dc7b1c4dfa03258c2a6a01fdf5cf7ceb",
+      "title": "বিয়ের জন্য বিশেষ আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "05:15",
+          "13:30",
+          "16:45",
+          "18:15",
+          "20:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "প্রতি নামাজের পরে নির্ধারিত তাসবীহ {বার} বার পাঠ; মূল নির্দেশনা যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "count",
+          "placeholder": "{বার}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 450,
+      "template_id": "x02",
+      "template_revision": "sha256:d91c1a2a7087de5fe995c76c84ac8cd8d924b84edd4c9b74f127b1dea656be2e",
+      "title": "ইয়া ফাত্তাহু তাসবীহ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "20:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "শিশুর জন্য নির্বাচিত আয়াতের পাঠ/ফুঁ দেওয়ার খসড়া; নির্দিষ্ট আয়াত ও সংখ্যা দায়িত্বপ্রাপ্ত ব্যক্তি যাচাই করবেন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c02-t005"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c04-t008"
+        }
+      ],
+      "sort_order": 460,
+      "template_id": "x03",
+      "template_revision": "sha256:988eee73e99bed9f559975951debff75c857bfcd1c9a9f24ab6ba5829e449db7",
+      "title": "শিশুর হেফাজতের আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "21:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "পরিবারের সদস্যের জন্য ব্যক্তিগতভাবে নির্ধারিত মাসনুন আমল; আসল প্রেসক্রিপশন অনুযায়ী সংশোধন করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 470,
+      "template_id": "x04",
+      "template_revision": "sha256:2e2d752df6bc8a98097d5381fb3ac26450b0a2329818e7e55ea916c9fc64253a",
+      "title": "স্বামী/স্ত্রীর সহায়ক আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "21:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "মাথায়/ব্যথার স্থানে হাত রেখে নির্দিষ্ট আয়াত পাঠের খসড়া; প্রয়োগ, সংখ্যা ও সময় যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 480,
+      "template_id": "x05",
+      "template_revision": "sha256:78bd47eacd07da2d4370cbaa1764060ba6e88c1efe57ce3089a397667fbfcd63",
+      "title": "মাথায় হাত রেখে আমল",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "07:30"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "নির্দিষ্ট যাচাইকৃত আয়াত পড়ে পানিতে ফুঁ দিয়ে পান করার খসড়া; স্বাস্থ্যগত উপযোগিতা ও পরিমাণ যাচাই করুন।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-001"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t004"
+        }
+      ],
+      "sort_order": 490,
+      "template_id": "x06",
+      "template_revision": "sha256:0da2a35827b50b5804e4e84313cbe755265d4159879909c1c5d29563eab71702",
+      "title": "পানিতে ফুঁ দিয়ে পান",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "11:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "হিজামা বা কাউন্সেলিং সম্পর্কিত অ্যাডমিন পরামর্শ; চিকিৎসা-সংশ্লিষ্ট সিদ্ধান্ত কেবল যোগ্য ব্যক্তির অনুমোদনে।",
+      "notification_title": null,
+      "parameters": [],
+      "requires_resource": false,
+      "resource_refs": [
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-sup-006"
+        },
+        {
+          "kind": "content_slug",
+          "ref": "srg2024-c03-t009"
+        }
+      ],
+      "sort_order": 500,
+      "template_id": "x07",
+      "template_revision": "sha256:31330de050e29ffdb1666449c4aaddeaca41073e8845f05385ccece5e5dc8c94",
+      "title": "হিজামা/কাউন্সেলিং পরামর্শ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    },
+    {
+      "action_type": "amal",
+      "active": true,
+      "category": "special",
+      "default_schedule": {
+        "reminder_times": [
+          "11:00"
+        ],
+        "time_basis": "patient_local"
+      },
+      "instruction": "{দিন} দিন পর অগ্রগতি জানিয়ে দায়িত্বপ্রাপ্ত পরামর্শদাতার সঙ্গে যোগাযোগ করুন।",
+      "notification_title": null,
+      "parameters": [
+        {
+          "name": "days",
+          "placeholder": "{দিন}",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "requires_resource": false,
+      "resource_refs": [],
+      "sort_order": 510,
+      "template_id": "x08",
+      "template_revision": "sha256:be51dfaf3b231d7b67dda73515a668f782b6b677291105db0978545769d44920",
+      "title": "পুনরায় পরামর্শ ও ফলোআপ",
+      "updated_at": "2026-01-01T00:00:00.000000Z"
+    }
+  ],
+  "total_templates": 51
+}

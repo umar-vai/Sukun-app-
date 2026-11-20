@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-100002",
+  "event_type": "prescription.updated",
+  "occurred_at": "2026-12-01T10:01:00Z",
+  "patient": {
+    "crm_patient_id": "CRM-P-1025",
+    "crm_customer_id": "CRM-C-884",
+    "crm_family_id": "CRM-F-1002"
+  },
+  "prescription": {
+    "crm_prescription_id": "RX-2026-001",
+    "version": 2,
+    "status": "issued",
+    "issued_at": "2026-12-01T10:00:00Z",
+    "issued_by": {
+      "crm_staff_id": "CRM-S-17",
+      "display_name": "Raqi Example"
+    },
+    "timezone": "Asia/Dhaka",
+    "start_date": "2026-11-21",
+    "end_date": "2026-12-20"
+  },
+  "items": [
+    {
+      "item_id": "L1",
+      "template_id": "a01",
+      "frequency": {
+        "type": "daily",
+        "interval": 1
+      },
+      "reminder_times": [
+        "06:30",
+        "17:30"
+      ]
+    },
+    {
+      "item_id": "L2",
+      "template_id": "a05",
+      "count": 11,
+      "frequency": {
+        "type": "daily",
+        "interval": 1
+      },
+      "reminder_times": [
+        "07:00",
+        "18:00"
+      ]
+    }
+  ]
+}

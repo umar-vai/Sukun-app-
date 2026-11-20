@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-100003",
+  "event_type": "prescription.cancelled",
+  "occurred_at": "2026-12-05T08:00:00Z",
+  "patient": {
+    "crm_patient_id": "CRM-P-1025",
+    "crm_customer_id": "CRM-C-884",
+    "crm_family_id": "CRM-F-1002"
+  },
+  "prescription": {
+    "crm_prescription_id": "RX-2026-001",
+    "version": 3,
+    "cancellation_reason": "Plan stopped by the raqi"
+  },
+  "items": []
+}
