@@ -31,3 +31,23 @@ Function after the migrations. Roll out to staging and run the fixtures first. `
    rewrites them), then `drop table public.family_members, public.family_accounts cascade;`
    and drop `private.accessible_patient_ids`, `can_access_patient`, `resolve_acting_patient`.
 4. Plans created from CRM events stay valid; they are normal care plans.
+
+## Staging dry run (2026-11-20, project `qacklgqvxvjjzsimjoip`)
+
+Run through the Supabase Management API SQL endpoint inside `BEGIN ... ROLLBACK`; afterwards the
+staging schema was confirmed unchanged (47 migrations, no `care_templates`, no `family_accounts`).
+
+- Staging is behind the repository. Of the 32 repository migrations not recorded there, 27 applied
+  cleanly in order, including all five new ones (`20261120090000` to `20261120130000`).
+- 5 older repository migrations could not be replayed because staging already holds the same
+  objects from its own `_staging` variants (`20261017113000`, `20261018012147`, `20261018022000`,
+  `20261018114921`, `20261025081703`). This is staging drift, not a defect in the new migrations;
+  the new ones ran on top of staging's real objects.
+- Checks inside the transaction: the in-place patch counts the migration asserts (7 policies, 4 read
+  helpers, 3 RPCs) held; 51 templates; `my_family_profiles()` returned exactly one profile for each
+  of the 2 patient accounts; no orphaned challenge rows.
+- Not covered: staging holds no routine or challenge rows, so the backfill ran on empty tables
+  here (it is covered by the local legacy-data check); Edge Functions were not deployed; Auth
+  user creation in `provision.ts` was not exercised.
+- Production must be checked the same way before applying: the 5 drifted migrations suggest
+  environments differ, and `20261120130000` renames primary keys by name.
