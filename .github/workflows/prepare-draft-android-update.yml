@@ -122,12 +122,74 @@ jobs:
           mv "$apk" candidate/SukunLife.apk
           echo "APK_SHA=$real_sha" >> "$GITHUB_ENV"
           echo "APK_BYTES=$size" >> "$GITHUB_ENV"
+      - name: Upload the verified APK to R2 (never overwrite)
+        shell: bash
+        env:
+          # Scoped R2 token (Object Read & Write on bucket sukun-downloads
+          # only), stored as environment secrets on android-sideload-release.
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+          # R2 rejects some newer default S3 checksum headers.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_BUCKET: sukun-downloads
+        run: |
+          set -euo pipefail
+          [[ -n "$R2_ACCOUNT_ID" && -n "$AWS_ACCESS_KEY_ID" && -n "$AWS_SECRET_ACCESS_KEY" ]] || {
+            echo '::error::Missing R2_ACCOUNT_ID, R2_ACCESS_KEY_ID or R2_SECRET_ACCESS_KEY on environment android-sideload-release'; exit 1;
+          }
+          [[ "$R2_ACCOUNT_ID" =~ ^[a-f0-9]{32}$ ]] || { echo '::error::R2_ACCOUNT_ID is not a Cloudflare account ID'; exit 1; }
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          key="android/${VERSION}/SukunLife.apk"
+          if existing=$(aws s3api head-object --endpoint-url "$endpoint" \
+                --bucket "$R2_BUCKET" --key "$key" --output json 2>candidate/head.err); then
+            # Only a rerun after a later step failed may find the object; it
+            # must be byte-identical to this verified APK.
+            [[ "$(jq -r '.Metadata.sha256 // empty' <<<"$existing")" == "$APK_SHA" &&
+               "$(jq -r '.ContentLength' <<<"$existing")" == "$APK_BYTES" ]] || {
+              echo "::error::R2 object $key already exists with different content; never overwrite"; exit 1;
+            }
+            echo "R2 object $key already holds this APK; not uploading again."
+          else
+            # Upload only after a definite 404, never after an auth or network error.
+            grep -qE '\(404\)|Not Found' candidate/head.err || { cat candidate/head.err; echo '::error::Could not check R2 for an existing object'; exit 1; }
+            aws s3api put-object --endpoint-url "$endpoint" \
+              --bucket "$R2_BUCKET" --key "$key" \
+              --body candidate/SukunLife.apk \
+              --content-type 'application/vnd.android.package-archive' \
+              --content-disposition 'attachment; filename="SukunLife.apk"' \
+              --cache-control 'public, max-age=31536000, immutable' \
+              --metadata "sha256=${APK_SHA},version-code=${CODE}" >/dev/null
+            echo "Uploaded $key to R2."
+          fi
+          echo "APK_URL=https://downloads.sukunlife.com/${key}" >> "$GITHUB_ENV"
+      - name: Verify the public download link serves this exact APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$APK_URL" == "https://downloads.sukunlife.com/android/${VERSION}/SukunLife.apk" ]]
+          for attempt in 1 2 3 4 5 6; do
+            rm -f candidate/public.apk
+            if curl -fsSL --proto '=https' --max-redirs 3 -o candidate/public.apk "$APK_URL" &&
+               [[ "$(sha256sum candidate/public.apk | awk '{print $1}')" == "$APK_SHA" ]]; then
+              echo "Public link serves the verified APK: $APK_URL"
+              rm -f candidate/public.apk
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$APK_URL does not serve the verified APK"; exit 1
       - name: Publish the GitHub Release and write the update feed
         shell: bash
         run: |
           set -euo pipefail
           tag="v$VERSION"
           printf 'Sukun Life %s (%s)\n' "$VERSION" "$CODE" > candidate/notes.txt
+          # The repository is private, so the Release is an internal archive
+          # only. Users download from downloads.sukunlife.com (R2).
           gh release create "$tag" candidate/SukunLife.apk \
             --target "$SOURCE_SHA" --latest \
             --title "Sukun Life $VERSION" \
@@ -135,30 +197,32 @@ jobs:
           [[ "$(gh release view "$tag" --json isDraft --jq '.isDraft')" == 'false' ]]
           jq -n \
             --arg version "$VERSION" --argjson code "$CODE" \
-            --arg url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/SukunLife.apk" \
+            --arg url "$APK_URL" \
             --arg sha "$APK_SHA" --argjson bytes "$APK_BYTES" \
             '{schema_version:1,platform:"android",package_name:"com.sukunlife.app",enabled:true,version_code:$code,version_name:$version,min_supported_version_code:0,apk_url:$url,sha256:$sha,size_bytes:$bytes,notes_bn:"যাচাইকৃত নতুন সংস্করণ।"}' \
             > candidate/android.json
-      - name: Enable in-app update (push to main, else open a pull request)
+      - name: Open a pull request that enables the in-app update
         shell: bash
         run: |
           set -euo pipefail
+          # A push made with GITHUB_TOKEN does not start CI, and the Pages
+          # deploy only runs after CI succeeds on a push to main, so a direct
+          # push would leave the live feed stale. A person merging this pull
+          # request makes a normal push to main, which runs CI and deploys.
+          branch="update-feed-v$VERSION"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -q -B "update-feed-v$VERSION" origin/main
+          git checkout -q -B "$branch" origin/main
           cp candidate/android.json app/web/updates/android.json
           git add app/web/updates/android.json
           git commit -q -m "Enable in-app update to Sukun Life $VERSION ($CODE)"
-          if git push -q origin "HEAD:main" 2>/dev/null; then
-            echo "Pushed update feed to main."
-          else
-            git push -q origin "HEAD:refs/heads/update-feed-v$VERSION"
-            gh pr create --base main --head "update-feed-v$VERSION" \
-              --title "Enable in-app update to $VERSION" \
-              --body "Merge this to show the update popup in installed apps."
-          fi
+          git push -q origin "HEAD:refs/heads/$branch"
+          pr_url=$(gh pr create --base main --head "$branch" \
+            --title "Enable in-app update to $VERSION" \
+            --body "Points the Android update feed at $APK_URL (SHA-256 $APK_SHA, $APK_BYTES bytes). The APK is already uploaded to R2 and verified at that link. Merge this to deploy the feed and show the update popup in installed apps. This pull request was opened with GITHUB_TOKEN, so its checks do not start on their own; merging still runs CI and the Pages deploy on main.")
           {
             echo "## Published $VERSION ($CODE)"
+            echo "APK: $APK_URL"
             echo "Size: $APK_BYTES bytes, SHA256: $APK_SHA"
-            echo 'Update feed written. If a pull request was opened, merge it to start the popup.'
+            echo "Merge $pr_url to deploy the feed and start the popup."
           } >> "$GITHUB_STEP_SUMMARY"
