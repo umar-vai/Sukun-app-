@@ -3,6 +3,8 @@
 // Routes (all under /functions/v1/crm-integration):
 //   GET  /templates            versioned official template catalog (mirror)
 //   POST /patients/link        map a SukunLife profile to CRM ids (+ family)
+//   POST /patients/provision   create the patient/login if missing and send the
+//                              one-time WhatsApp activation link (safe to repeat)
 //   POST /prescriptions        final prescription event (issue/revise/cancel)
 //   GET  /progress             authoritative adherence summary for one patient
 //   POST /outbox/dispatch      push queued progress events to the CRM
@@ -15,6 +17,7 @@
 // STATUS: contract-tested against the SQL layer locally; not yet exercised
 // against the real CRM or a deployed Edge runtime.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { provisionPatient } from "./provision.ts";
 import {
   parseKeyMap,
   signRequest,
@@ -176,6 +179,20 @@ Deno.serve(async (request) => {
         throw error;
       }
       return json(data);
+    }
+
+    if (route === "/patients/provision" && request.method === "POST") {
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        return json({ code: "invalid_json" }, 400);
+      }
+      const result = await provisionPatient(supabase, actorUserId, body, {
+        activationBaseUrl: Deno.env.get("APP_ACTIVATION_BASE_URL") ?? "",
+        getEnv: (name) => Deno.env.get(name),
+      });
+      return json(result.body, result.status);
     }
 
     if (route === "/prescriptions" && request.method === "POST") {

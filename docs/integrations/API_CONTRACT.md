@@ -45,7 +45,24 @@ Recovery from missed syncs: do a full sync (no `updated_since`) and compare `cat
 Body: `{ "sukun_patient_id": uuid, "crm_patient_id": "...", "crm_customer_id": "...?", "crm_family_id": "...?", "relationship_label": "...?" }`.
 Maps a SukunLife profile to CRM ids. `409 identity_conflict` if the CRM id already points to a
 different profile (never merged), `404 patient_not_found`.
-Creating the SukunLife patient and login is not part of v1 (see master doc section 9).
+
+
+### POST /patients/provision
+Body: `{ "request_id": uuid, "crm_patient_id", "full_name", "phone": "01XXXXXXXXX (any common spelling)", "crm_customer_id?", "crm_family_id?", "relationship_label?" }`.
+Creates the patient if the CRM id is not mapped yet, maps the ids, and sends a one-time activation
+link by WhatsApp. Safe to repeat: it never creates a second patient and never resets a password.
+A repeat call is also how you resend (the previous link stops working).
+
+- New single patient, or the first member of a new family: a login is created with a random
+  password nobody knows; `phone` is required (Bangladesh mobile).
+- A new member of an existing family (`crm_family_id` already known): a profile without its own
+  login, no link is sent (`activation.status = "no_login"`); the family login is used.
+- An account that already chose its password: `activation.status = "already_active"`, nothing changes.
+- `activation.delivery` is `sent`, `failed` or `not_configured`. The link itself is never returned.
+- Errors: `409 account_exists_for_phone`, `409 identity_conflict`, `400 invalid_phone | phone_required`.
+
+The patient opens `<app>/activate#token=...`, which calls the public `account-activate` function
+with `{token, new_password}`; the link is valid 24 hours and works once.
 
 ### POST /prescriptions
 Body: `prescription_event.v1`. Only final, confirmed prescriptions. Drafts are never sent.

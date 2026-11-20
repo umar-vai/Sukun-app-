@@ -6,6 +6,7 @@ on:
       - 'docs/integrations/**'
       - 'scripts/integrations/**'
       - 'supabase/functions/crm-integration/**'
+      - 'supabase/functions/account-activate/**'
       - '.github/workflows/integration-contracts.yml'
   workflow_dispatch:
 
@@ -32,5 +33,5 @@ jobs:
           npm install --no-audit --no-fund
           npm run validate
 
-      - name: Request signing tests
-        run: node --experimental-strip-types --test supabase/functions/crm-integration/crm_auth_test.ts
+      - name: Signing, activation and password tests
+        run: node --experimental-strip-types --test supabase/functions/crm-integration/*_test.ts supabase/functions/account-activate/*_test.ts

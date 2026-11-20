@@ -478,3 +478,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/crm-integration/deno.json"
 entrypoint = "./functions/crm-integration/index.ts"
+
+[functions.account-activate]
+enabled = true
+# Public one-time activation. The handler spends a single-use hashed token,
+# rate limits per IP, and only then uses the server-only service-role client.
+verify_jwt = false
+import_map = "./functions/account-activate/deno.json"
+entrypoint = "./functions/account-activate/index.ts"

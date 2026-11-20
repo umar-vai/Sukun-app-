@@ -1,7 +1,8 @@
 # CRM/ERP integration: master document (SukunLife side)
 
-Date: 2026-11-20. Status: backend and contracts implemented and tested locally;
-Flutter UI, account activation and live CRM verification are NOT done (see
+Date: 2026-11-20. Status: backend, contracts and WhatsApp activation logic implemented
+and tested locally; the Flutter UI is being built in a separate session
+(`claude/family-flutter-ui`); live CRM and live WhatsApp verification are NOT done (see
 section 9). Nothing here has been applied to Production.
 
 ## 1. Owner decisions this implements
@@ -28,7 +29,7 @@ never gets table access: only the signed API below.
 | Notifications | `notification_devices` already carries `installation_id` and `patient_id` per device. | Per-device profile selection needs no new table. |
 | Roles | `private.is_care_staff()` = super admin or raqi. | Integration actor is a dedicated staff service user. |
 | Gaps found | Personal routines and 40-day challenge are keyed by auth user, not by patient, so a shared login shares them across profiles. | Decision needed, flagged in section 9. Not changed. |
-| Tooling | No Flutter SDK, Supabase CLI or Docker in this environment. | SQL verified on plain PostgreSQL 16 with a Supabase stand-in (`scripts/local_db`); Edge code verified with Deno fmt/check/test. Flutter is unverified. |
+| Tooling | No Flutter SDK, Supabase CLI or Docker in this session. | SQL verified on plain PostgreSQL 16 with a Supabase stand-in (`scripts/local_db`); Edge code verified with Deno fmt/check/test. Flutter is unverified. |
 
 ## 3. What was built
 
@@ -39,6 +40,7 @@ never gets table access: only the signed API below.
 | Inbox/outbox, CRM id linking, prescription import, progress RPCs | `.../20261120110000_crm_integration_core.sql` | 61 SQL checks |
 | HMAC auth + gateway Edge Function | `supabase/functions/crm-integration/` | 9 unit tests, `deno fmt/check` clean; not deployed |
 | JSON Schemas, fixtures, validator | `docs/integrations/schemas`, `fixtures`, `scripts/integrations` | 20 contract checks; fixtures also replayed through the real SQL import |
+| One-time WhatsApp activation: tables and RPCs, `account-activate` public function, `POST /patients/provision` | `.../20261120120000_account_activation.sql`, `supabase/functions/account-activate/`, `crm-integration/provision.ts` | 28 SQL checks, 17 + 2 function unit tests (token, phone, WhatsApp request shape, passwords); delivery itself untested |
 | Local test harness | `scripts/local_db/` | used for everything above |
 
 ## 4. Architecture
@@ -73,7 +75,7 @@ All `integration_*` functions are `SECURITY DEFINER`, executable by
 | 10 | Template edited meanwhile | Plan actions copy title and instruction at import, so history is a snapshot; an old `template_revision` is accepted with a warning | result `warnings` |
 | 11 | Prescription cancelled | Active plan becomes inactive, future tasks and reminders cancelled, prescription archived, completions kept | audit `integration.prescription_cancelled` |
 | 12 | Phone number changed | Identity never uses the phone; ids only | n/a |
-| 13 | Activation code expires | NOT BUILT (section 9) | |
+| 13 | Activation link expires or is reused | Link lives 24 h, single use; any bad, used, revoked or expired token gets the same generic error; resend revokes the old link | `account_activations`, audit `integration.activation_*` |
 | 14 | Unauthorised CRM request | 401 generic answer, no detail | log line without payload |
 | 15 | Family user reads another family | RLS returns nothing; forged profile id gives 42501 | pgTAP |
 
@@ -104,8 +106,9 @@ the earlier migrations.
 
 | Item | Why | Needed from the owner |
 | --- | --- | --- |
-| One-time account activation (phase 4) | It needs an SMS or WhatsApp provider, or an agreed handover channel; none is configured, so it cannot be tested honestly | Choose the channel (SMS, WhatsApp, or a code the raqi reads out) |
-| Flutter family UI (phase 3): top-right switcher, per-profile dashboard and progress, per-device selection, offline queue per profile, reminder rescheduling on switch | No Flutter SDK in this environment; unverified UI code would break the visual gate | A Flutter-capable session, or approval to write it untested for a CI run |
+| WhatsApp provider setup | Delivery needs a WhatsApp Business account, an approved message template with one body variable (the link), and the secrets `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACTIVATION_TEMPLATE`, `APP_ACTIVATION_BASE_URL`, plus `graph.facebook.com` allowed by the environment network policy. Until set, provisioning reports `delivery: not_configured` and nothing is faked | Business account and template approval |
+| App activation screen | The web or app page at `<APP_ACTIVATION_BASE_URL>/activate#token=...` that posts `{token,new_password}` to `account-activate` | Part of the Flutter session |
+| Flutter family UI (phase 3) | Running in a separate session on branch `claude/family-flutter-ui` (owner approved) | Review its draft PR |
 | Personal routines and 40-day challenge under a shared login | They belong to the auth user, so all family profiles would share them | Decide: shared per login, or per profile |
 | Push "care plan updated" after an import | The existing send-notification path is called from the admin app | Decide whether the gateway may call it |
 | Live CRM verification | No CRM access | CRM team test run |
