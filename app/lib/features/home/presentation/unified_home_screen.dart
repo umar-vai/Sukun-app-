@@ -17,6 +17,7 @@ import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
 import 'package:sukun_life/features/personal_routines/presentation/today_routine_panel.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
+import 'package:sukun_life/features/notice_center/data/notice_center_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
@@ -43,7 +44,8 @@ class UnifiedHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<UnifiedHomeScreen> createState() => _UnifiedHomeScreenState();
 }
 
-class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
+class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
+    with WidgetsBindingObserver {
   late Future<_PrayerSummary?> _prayer;
   Future<_HomeTasksData>? _upcoming;
   bool _signingOut = false;
@@ -51,9 +53,24 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _prayer = _readPrayer();
     if (widget.isSignedInMember || widget.isPatient) {
       _upcoming = _readUpcoming();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // A reminder may have rung while the app was in the background.
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(noticeCenterProvider);
     }
   }
 
@@ -144,6 +161,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
       _prayer = prayer;
       _upcoming = upcoming;
     });
+    ref.invalidate(noticeCenterProvider);
     try {
       await prayer;
       if (upcoming != null) await upcoming;
@@ -175,8 +193,22 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
     }
   }
 
+  Future<void> _openNotices(NoticeCenterSummary? summary) async {
+    // Open the section that has something new; amal comes first.
+    final notices =
+        summary != null &&
+        summary.amalCount == 0 &&
+        summary.unseenNoticeCount > 0;
+    await context.push<void>(
+      notices ? '/announcements?section=notices' : '/announcements',
+    );
+    if (mounted) await _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final noticeSummary = ref.watch(noticeCenterProvider).value;
+    final noticeCount = noticeSummary?.total ?? 0;
     final content = Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -221,7 +253,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   const SizedBox(width: 10),
                   OutlinedButton.icon(
                     key: const Key('universal-announcements-shortcut'),
-                    onPressed: () => context.push('/announcements'),
+                    onPressed: () => unawaited(_openNotices(noticeSummary)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: SukunColors.nightNavy,
                       backgroundColor: Colors.white,
@@ -237,10 +269,18 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                         ),
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      size: 19,
-                      color: Color(0xFF8A6A12),
+                    icon: Badge(
+                      key: const Key('notice-count-badge'),
+                      isLabelVisible: noticeCount > 0,
+                      backgroundColor: SukunColors.error,
+                      textColor: Colors.white,
+                      offset: const Offset(7, -6),
+                      label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
+                      child: const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 19,
+                        color: Color(0xFF8A6A12),
+                      ),
                     ),
                     label: const Text(
                       'নোটিশ',
@@ -402,8 +442,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
         },
         destinations: widget.isSignedInMember || widget.isPatient
             ? sharedUserDestinations
-            : const [
-                SukunNavDestination(
+            : [
+                const SukunNavDestination(
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home,
                   label: 'হোম',
@@ -412,6 +452,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen> {
                   icon: Icons.campaign_outlined,
                   selectedIcon: Icons.campaign,
                   label: 'নোটিশ',
+                  badgeCount: noticeCount,
                 ),
               ],
       ),

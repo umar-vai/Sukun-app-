@@ -49,54 +49,14 @@ List<ReminderSchedule> planPersonalRoutineReminders({
 
     for (var day = 0; day < horizonDays; day++) {
       final date = DateTime(now.year, now.month, now.day + day);
-      if (!routineActionRunsOn(action, date, detoxDates: detoxDates)) continue;
-      DateTime? time;
-      if (kind == 'fixed') {
-        final parts = (action['local_time'] as String? ?? '').split(':');
-        if (parts.length < 2) continue;
-        final hour = int.tryParse(parts[0]);
-        final minute = int.tryParse(parts[1]);
-        if (hour == null ||
-            hour > 23 ||
-            hour < 0 ||
-            minute == null ||
-            minute > 59 ||
-            minute < 0) {
-          continue;
-        }
-        time = DateTime(date.year, date.month, date.day, hour, minute);
-      } else {
-        // Do not guess city or method. If the saved schedule no longer matches
-        // the device's prayer preferences, require an explicit reconfiguration.
-        if (!settings.isComplete ||
-            action['timezone_name'] != settings.location?.timezone ||
-            action['prayer_method'] != settings.calculationMethod?.id) {
-          continue;
-        }
-        final offset = action['prayer_offset_minutes'] as int? ?? 10;
-        if (offset < 0 || offset > 120) continue;
-        try {
-          time =
-              PrayerRelativeReminder(
-                anchor: kind == 'fajr'
-                    ? PrayerReminderAnchor.fajr
-                    : PrayerReminderAnchor.maghrib,
-                minutesAfter: offset,
-              ).nextOccurrence(
-                calculator: calculator,
-                settings: settings,
-                after: date.subtract(const Duration(seconds: 1)),
-              );
-        } catch (_) {
-          continue;
-        }
-        if (time.year != date.year ||
-            time.month != date.month ||
-            time.day != date.day) {
-          continue;
-        }
-      }
-
+      final time = personalReminderTimeOn(
+        action,
+        date,
+        detoxDates: detoxDates,
+        calculator: calculator,
+        settings: settings,
+      );
+      if (time == null) continue;
       if (!time.isAfter(now)) continue;
       final dateKey = '${date.year}-${date.month}-${date.day}';
       reminders.add(
@@ -116,4 +76,65 @@ List<ReminderSchedule> planPersonalRoutineReminders({
   }
   reminders.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
   return List.unmodifiable(reminders.take(maximumPending));
+}
+
+/// The reminder instant of one personal action on [date], or null when the
+/// action does not run that day or has no usable time. Shared by the alarm
+/// planner and the in-app amal reminder list so both agree on the time.
+DateTime? personalReminderTimeOn(
+  Map<String, dynamic> action,
+  DateTime date, {
+  required Set<String> detoxDates,
+  required PrayerCalculationService calculator,
+  required PrayerUtilitySettings settings,
+}) {
+  final kind = action['schedule_kind'] as String?;
+  if (!['fixed', 'fajr', 'maghrib'].contains(kind)) return null;
+  if (!routineActionRunsOn(action, date, detoxDates: detoxDates)) return null;
+  if (kind == 'fixed') {
+    final parts = (action['local_time'] as String? ?? '').split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null ||
+        hour > 23 ||
+        hour < 0 ||
+        minute == null ||
+        minute > 59 ||
+        minute < 0) {
+      return null;
+    }
+    return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+  // Do not guess city or method. If the saved schedule no longer matches
+  // the device's prayer preferences, require an explicit reconfiguration.
+  if (!settings.isComplete ||
+      action['timezone_name'] != settings.location?.timezone ||
+      action['prayer_method'] != settings.calculationMethod?.id) {
+    return null;
+  }
+  final offset = action['prayer_offset_minutes'] as int? ?? 10;
+  if (offset < 0 || offset > 120) return null;
+  final DateTime time;
+  try {
+    time =
+        PrayerRelativeReminder(
+          anchor: kind == 'fajr'
+              ? PrayerReminderAnchor.fajr
+              : PrayerReminderAnchor.maghrib,
+          minutesAfter: offset,
+        ).nextOccurrence(
+          calculator: calculator,
+          settings: settings,
+          after: date.subtract(const Duration(seconds: 1)),
+        );
+  } catch (_) {
+    return null;
+  }
+  if (time.year != date.year ||
+      time.month != date.month ||
+      time.day != date.day) {
+    return null;
+  }
+  return time;
 }

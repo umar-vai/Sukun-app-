@@ -195,7 +195,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/announcements',
-            builder: (context, state) => const UniversalAnnouncementsScreen(),
+            builder: (context, state) => UniversalAnnouncementsScreen(
+              initialSection: state.uri.queryParameters['section'],
+            ),
             routes: [
               GoRoute(
                 path: ':announcementId',

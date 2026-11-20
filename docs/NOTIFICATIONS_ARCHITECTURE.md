@@ -70,3 +70,11 @@ Prayer waqt and care reminders are local alarms. On phones with aggressive power
 - Exact timing: `USE_EXACT_ALARM` (Android 13+, granted at install) plus `SCHEDULE_EXACT_ALARM` capped at API 32. `PreciseAlarmWarning` appears on Patient Home and the prayer times screen whenever exact alarms are still unavailable, with a one-tap request. Review `USE_EXACT_ALARM` against Play policy before a Play Store release.
 - Not done: a background job that renews the schedule without opening the app. It would need prayer calculation in a background isolate (new dependency). The renewal notice covers that gap for now.
 - Universal admin notices remain gated by `SUKUN_UNIVERSAL_PUSH_RELEASE_READY` (GitHub variable and Edge Function secret) and need `SUKUN_UNIVERSAL_BROADCAST_CRON_TOKEN`; none of these were visible in the repository's GitHub secrets and variables when checked.
+
+## Notice centre and badge (2026-11-20)
+
+`/announcements` is the notice centre. Signed-in Members and Patients see two tabs; guests and staff see only the notice list.
+
+- **আমল রিমাইন্ডার**: every amal whose reminder time has passed today and is still open. Care tasks use `careReminderTime` (same rule as the phone alarm, including snooze); personal routine actions use `personalReminderTimeOn` and count only when personal reminders are enabled. The list is derived from server data (`getToday`, routine actions and today's check-ins), not from delivered notifications, because Android local alarms leave no record. A missed or dismissed notification therefore still leaves the amal here until it is done or skipped. Each item opens the same route as the notification tap, or can be marked done in place.
+- **সুকুন লাইফ নোটিশ**: published notices; ones without a seen receipt (`UniversalNoticeSeenStore`) are marked "নতুন". Opening a notice records the receipt.
+- `noticeCenterProvider` builds both counts and never throws. The home notice button shows a badge with the total (unseen notices plus pending amal); the guest bottom "নোটিশ" tab shows it too. The badge refreshes on app resume, pull to refresh and when returning from the notice centre or a task. It does not refresh on a timer while the app stays open.
