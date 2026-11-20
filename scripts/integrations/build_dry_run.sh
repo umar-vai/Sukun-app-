@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Prints a SQL script that applies the five CRM/family migrations inside one
-# transaction and ALWAYS rolls back. Paste it into the Supabase SQL editor of
-# the target project (or send it through the Management API), read the result
-# row, and nothing is kept. Use only on a database that already has every
+# transaction and ALWAYS aborts at the end (a deliberate error carrying the
+# report), so nothing is kept. Paste it into the Supabase SQL editor of the
+# target project and read the error message, which holds the report. Use only on a database that already has every
 # migration up to 20261113150000.
 #
 #   scripts/integrations/build_dry_run.sh > /tmp/dry_run.sql
@@ -69,6 +69,12 @@ begin
   end loop;
   insert into dry_report values ('patient_users_without_exactly_one_profile', bad::text);
 end $$;
-select jsonb_object_agg(k, v) as dry_run_report from dry_report;
-rollback;
+-- The script ends with an error ON PURPOSE: the error aborts the transaction, so
+-- nothing can ever be kept, and the editor shows the report inside the message.
+do $$
+declare report text;
+begin
+  select jsonb_pretty(jsonb_object_agg(k, v)) into report from dry_report;
+  raise exception 'DRY RUN FINISHED, EVERYTHING ROLLED BACK. REPORT: %', report;
+end $$;
 SQL

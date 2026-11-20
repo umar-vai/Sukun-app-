@@ -34,7 +34,12 @@ Function after the migrations. Roll out to staging and run the fixtures first. `
 
 ## Production dry run script
 
-`scripts/integrations/build_dry_run.sh > /tmp/dry_run.sql` builds one SQL file: pre-flight checks, the five migrations, read-only post-checks, then ROLLBACK, with a 3 s lock timeout. Verified on a local database built from every earlier migration. Paste it into the Production SQL editor and read the single result row; it changes nothing.
+The ready file is `docs/integrations/production_dry_run.sql` (regenerate it with
+`scripts/integrations/build_dry_run.sh > docs/integrations/production_dry_run.sql` if a migration changes).
+Paste the whole file into the Supabase SQL editor of the target project and run it. It applies the five
+migrations, reads a few counts, then stops with a deliberate error that aborts the transaction, so nothing
+is ever kept. The error text holds the report; a different error names what must be fixed first.
+Verified on a local database built from every earlier migration.
 
 ## Staging dry run (2026-11-20, project `qacklgqvxvjjzsimjoip`)
 
