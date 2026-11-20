@@ -225,7 +225,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
                   displayName: widget.displayName,
                   onDark: true,
                   noticeCount: noticeCount,
-                  onOpenNotices: () => unawaited(_openNotices(noticeSummary)),
+                  onNotices: () => unawaited(_openNotices(noticeSummary)),
                 ),
                 overlap: _upcoming == null
                     ? null
@@ -980,17 +980,17 @@ class _HomeTasksData {
 class _HomeGreeting extends StatelessWidget {
   const _HomeGreeting({
     required this.displayName,
-    required this.noticeCount,
-    required this.onOpenNotices,
+    required this.onNotices,
     this.onDark = false,
+    this.noticeCount = 0,
   });
 
   final String? displayName;
   final bool onDark;
 
-  /// Unseen notices plus pending amal reminders; no badge at zero.
+  /// Unread notices and due amal reminders; the badge is hidden at zero.
   final int noticeCount;
-  final VoidCallback onOpenNotices;
+  final VoidCallback onNotices;
 
   @override
   Widget build(BuildContext context) {
@@ -1050,54 +1050,26 @@ class _HomeGreeting extends StatelessWidget {
           child: InkWell(
             key: const Key('universal-announcements-shortcut'),
             borderRadius: BorderRadius.circular(16),
-            onTap: onOpenNotices,
+            onTap: onNotices,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(
-                        Icons.notifications_none_rounded,
-                        size: 22,
-                        color: onDark
-                            ? Colors.white
-                            : theme.colorScheme.secondary,
-                      ),
-                      if (noticeCount > 0)
-                        Positioned(
-                          right: -9,
-                          top: -7,
-                          child: Container(
-                            key: const Key('notice-count-badge'),
-                            constraints: const BoxConstraints(minWidth: 18),
-                            height: 18,
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: SukunColors.error,
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
-                                color: onDark
-                                    ? SukunColors.deepTide
-                                    : theme.colorScheme.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Text(
-                              noticeCount > 9 ? '9+' : '$noticeCount',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                  Badge(
+                    key: const Key('notice-count-badge'),
+                    isLabelVisible: noticeCount > 0,
+                    backgroundColor: SukunColors.error,
+                    textColor: Colors.white,
+                    offset: const Offset(7, -6),
+                    label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: 22,
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Text(
