@@ -20,14 +20,8 @@ do $$
 begin
   if to_regclass('public.care_templates') is null
      or to_regclass('public.staff_members') is null
-     or to_regclass('public.challenge_enrollments') is null
      or to_regclass('public.personal_routines') is null then
     raise exception 'PRE-FLIGHT FAILED: the database is missing earlier migrations.';
-  end if;
-  if not exists (select 1 from pg_constraint where conname = 'challenge_enrollments_pk')
-     or not exists (select 1 from pg_constraint where conname = 'challenge_day_checkins_pk')
-     or not exists (select 1 from pg_constraint where conname = 'challenge_checkins_enrollment_fk') then
-    raise exception 'PRE-FLIGHT FAILED: challenge constraint names differ from the repository.';
   end if;
   if to_regclass('public.family_accounts') is not null then
     raise exception 'PRE-FLIGHT FAILED: family_accounts already exists (already applied?).';
@@ -39,7 +33,7 @@ for f in \
   20261120100000_integration_template_catalog \
   20261120110000_crm_integration_core \
   20261120120000_patient_provisioning_credentials \
-  20261120130000_profile_scoped_routines_challenge; do
+  20261120130000_profile_scoped_routines; do
   echo "-- ==== $f"
   cat "supabase/migrations/$f.sql"
 done
@@ -52,12 +46,6 @@ insert into dry_report select 'routines_total', count(*)::text from public.perso
 insert into dry_report select 'routines_unassigned_but_owner_has_patient', count(*)::text
   from public.personal_routines r
   where r.patient_id is null and exists (select 1 from public.patients p where p.user_id = r.owner_user_id);
-insert into dry_report select 'enrollments_total', count(*)::text from public.challenge_enrollments;
-insert into dry_report select 'checkins_total', count(*)::text from public.challenge_day_checkins;
-insert into dry_report select 'checkins_orphaned', count(*)::text
-  from public.challenge_day_checkins c
-  where not exists (select 1 from public.challenge_enrollments e
-    where e.user_id = c.user_id and e.challenge_key = c.challenge_key and e.profile_key = c.profile_key);
 insert into dry_report select 'patients', count(*)::text from public.patients;
 do $$
 declare u record; n int; bad int := 0;

@@ -1,8 +1,8 @@
--- Routines and the 40 day challenge are per profile inside a family login.
+-- Routines are per profile inside a family login (the challenge stays shared).
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(6);
 
 insert into auth.users (id, phone) values
   ('00000000-0000-4000-8000-000000000d01', '+8801700000d01'),
@@ -33,16 +33,6 @@ select results_eq($$select patient_id from public.personal_routines where title 
 select results_eq($$select count(*) from public.personal_routines where patient_id = '10000000-0000-4000-8000-0000000da002'$$, array[1::bigint], 'the child profile sees only its own routine');
 select results_eq($$select count(*) from public.personal_routines where patient_id = '10000000-0000-4000-8000-0000000da001'$$, array[1::bigint], 'the owner profile sees only its own routine');
 select throws_ok($$insert into public.personal_routines (owner_user_id, title, patient_id) values ('00000000-0000-4000-8000-000000000d02', 'Forged', '10000000-0000-4000-8000-0000000da003')$$, '42501', null, 'a routine cannot be created for a profile of another family');
-
--- Challenge, once per profile.
-select lives_ok($$insert into public.challenge_enrollments (user_id, challenge_key, started_on, paused_days, patient_id) values ('00000000-0000-4000-8000-000000000d02', 'sukun_40_day', current_date, 0, '10000000-0000-4000-8000-0000000da002')$$, 'the child profile starts the challenge');
-select lives_ok($$insert into public.challenge_enrollments (user_id, challenge_key, started_on, paused_days) values ('00000000-0000-4000-8000-000000000d02', 'sukun_40_day', current_date, 0)$$, 'the owner profile starts its own challenge without sending a profile');
-select results_eq($$select count(*) from public.challenge_enrollments where user_id = '00000000-0000-4000-8000-000000000d02'$$, array[2::bigint], 'two independent enrollments under one login');
-select lives_ok($$insert into public.challenge_day_checkins (user_id, challenge_key, day_number, patient_id) values ('00000000-0000-4000-8000-000000000d02', 'sukun_40_day', 1, '10000000-0000-4000-8000-0000000da002')$$, 'a day is completed for the child profile');
-select results_eq($$select count(*) from public.challenge_day_checkins where patient_id = '10000000-0000-4000-8000-0000000da002'$$, array[1::bigint], 'the child has one completed day');
-select results_eq($$select count(*) from public.challenge_day_checkins where patient_id = '10000000-0000-4000-8000-0000000da001'$$, array[0::bigint], 'the owner profile progress is untouched');
-select throws_ok($$insert into public.challenge_enrollments (user_id, challenge_key, started_on, paused_days, patient_id) values ('00000000-0000-4000-8000-000000000d02', 'sukun_40_day', current_date, 0, '10000000-0000-4000-8000-0000000da003')$$, '42501', null, 'the challenge cannot be started for another family profile');
-select throws_ok($$insert into public.challenge_enrollments (user_id, challenge_key, started_on, paused_days, patient_id) values ('00000000-0000-4000-8000-000000000d02', 'sukun_40_day', current_date, 0, '10000000-0000-4000-8000-0000000da002')$$, '23505', null, 'a profile cannot be enrolled twice');
 
 select * from finish();
 rollback;

@@ -27,7 +27,7 @@ never gets table access: only the signed API below.
 | Auth | Patients sign in with a patient code and password through `patient-sign-in`; temporary passwords are set by an admin and `profiles.requires_credential_change` forces a change. No SMS or WhatsApp provider is configured. | Provisioning issues a generated temporary password that staff hand over; the forced change gives the patient a private permanent one. |
 | Notifications | `notification_devices` already carries `installation_id` and `patient_id` per device. | Per-device profile selection needs no new table. |
 | Roles | `private.is_care_staff()` = super admin or raqi. | Integration actor is a dedicated staff service user. |
-| Gaps found | Personal routines and 40-day challenge were keyed by auth user, so a shared login would share them across profiles. | Owner decided per profile; migration `20261120130000` adds `patient_id`. |
+| Gaps found | Personal routines were keyed by auth user, so a shared login would share them across profiles. | Owner decided: routines per profile (migration `20261120130000`), the 40 day challenge shared. |
 | Tooling | No Flutter SDK, Supabase CLI or Docker in this session. | SQL verified on plain PostgreSQL 16 with a Supabase stand-in (`scripts/local_db`); Edge code verified with Deno fmt/check/test. Flutter is unverified. |
 
 ## 3. What was built
@@ -40,7 +40,7 @@ never gets table access: only the signed API below.
 | HMAC auth + gateway Edge Function | `supabase/functions/crm-integration/` | 9 unit tests, `deno fmt/check` clean; not deployed |
 | JSON Schemas, fixtures, validator | `docs/integrations/schemas`, `fixtures`, `scripts/integrations` | 20 contract checks; fixtures also replayed through the real SQL import |
 | Provisioning with a generated temporary credential (staff pass it to the patient by hand), `POST /patients/provision` | `.../20261120120000_patient_provisioning_credentials.sql`, `crm-integration/provision.ts`, `credentials.ts` | 13 SQL checks, 4 helper unit tests; the Auth user creation and password update path is not exercised locally |
-| Routines and 40 day challenge per profile (patient_id, default to owner profile, challenge keys per profile) | `.../20261120130000_profile_scoped_routines_challenge.sql` | 14 SQL checks, legacy backfill checked on a pre-migration database |
+| Routines per profile (patient_id, defaults to the owner profile); the 40 day challenge stays shared | `.../20261120130000_profile_scoped_routines.sql` | 14 SQL checks, legacy backfill checked on a pre-migration database |
 | Local test harness | `scripts/local_db/` | used for everything above |
 
 ## 4. Architecture

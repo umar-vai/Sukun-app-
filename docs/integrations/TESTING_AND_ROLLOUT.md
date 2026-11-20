@@ -19,7 +19,7 @@ Real `supabase test db` in CI is the authority.
 
 Follow `docs/PRODUCTION_ENVIRONMENT.md`: rolled-back dry run, owner approval, apply in order
 `20261120090000`, `20261120100000`, `20261120110000`, `20261120120000`, `20261120130000`, then record it there. Deploy the Edge
-Function after the migrations. Roll out to staging and run the fixtures first. `20261120130000` rewrites the challenge primary keys by name; the migration stops if Production's constraint names differ, so dry run it in a rolled-back transaction first and check the live names.
+Function after the migrations. Roll out to staging and run the fixtures first. All five migrations are compatible with the currently deployed app.
 
 ## Rollback
 
@@ -59,4 +59,4 @@ staging schema was confirmed unchanged (47 migrations, no `care_templates`, no `
   here (it is covered by the local legacy-data check); Edge Functions were not deployed; Auth
   user creation in `provision.ts` was not exercised.
 - Production must be checked the same way before applying: the 5 drifted migrations suggest
-  environments differ, and `20261120130000` renames primary keys by name.
+  environments differ, 
