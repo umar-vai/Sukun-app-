@@ -6,6 +6,7 @@ import 'package:sukun_life/app/theme/app_display_settings.dart';
 import 'package:sukun_life/app/theme/sukun_accent_palette.dart';
 import 'package:sukun_life/app/theme/sukun_palette_theme.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 
 abstract final class SukunTheme {
   static ThemeData light({
@@ -33,7 +34,11 @@ abstract final class SukunTheme {
         error: SukunColors.error,
         onError: Colors.white,
       ),
-      scaffoldBackgroundColor: SukunColors.canvas,
+      // Pages are transparent: every route paints the palette-tinted
+      // ambient background so glass panels have colour behind them.
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: SukunColors.canvas,
+      pageTransitionsTheme: sukunAmbientPageTransitions,
     );
     final textTheme =
         SukunTypography.withBengaliFallback(
@@ -48,7 +53,7 @@ abstract final class SukunTheme {
     final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: SukunColors.canvas,
+        backgroundColor: Colors.transparent,
         foregroundColor: SukunColors.nightNavy,
         centerTitle: false,
         elevation: 0,
@@ -62,13 +67,17 @@ abstract final class SukunTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: SukunColors.surface,
+        // Frosted glass card: translucent white with a bright glass edge.
+        color: Colors.white.withValues(alpha: 0.74),
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
-        shadowColor: SukunColors.deepTide.withValues(alpha: 0.10),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         margin: EdgeInsets.zero,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.card)),
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(
+            Radius.circular(SukunRadius.card),
+          ),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.85)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -259,9 +268,13 @@ abstract final class SukunTheme {
     double bengaliScale = 1.0,
     SukunAccentPalette accentPalette = SukunAccentPalette.sukunBlue,
   }) {
-    const background = Color(0xFF101C28);
-    const surface = Color(0xFF1A2A38);
-    const surfaceLow = Color(0xFF243848);
+    // Dark mode follows the chosen palette too: the page, cards and borders
+    // are deep blue, green or plum, not a neutral grey.
+    final palette = SukunColors.active;
+    final background = palette.darkBackground;
+    final surface = palette.darkSurface;
+    final surfaceLow = palette.darkContainer;
+    final outline = palette.darkOutline;
     const lightText = Color(0xFFF2F7FA);
     final base = ThemeData(
       useMaterial3: true,
@@ -271,13 +284,19 @@ abstract final class SukunTheme {
         onPrimary: Colors.black,
         primaryContainer: surfaceLow,
         onPrimaryContainer: lightText,
-        secondary: Color(0xFF87CFEF),
+        secondary: palette.darkAccent,
         surface: surface,
         onSurface: lightText,
+        surfaceContainerLowest: background,
         surfaceContainerLow: surfaceLow,
-        outline: Color(0xFF536674),
+        surfaceContainer: surfaceLow,
+        surfaceContainerHigh: surfaceLow,
+        outline: outline,
+        outlineVariant: outline.withValues(alpha: 0.7),
       ),
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: background,
+      pageTransitionsTheme: sukunAmbientPageTransitions,
     );
     final textTheme =
         SukunTypography.withBengaliFallback(
@@ -291,25 +310,38 @@ abstract final class SukunTheme {
     final normalTheme = base.copyWith(
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: background,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: lightText,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: textTheme.titleMedium,
       ),
       cardTheme: CardThemeData(
-        color: surface,
+        color: surface.withValues(alpha: 0.72),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
       ),
-      dialogTheme: const DialogThemeData(backgroundColor: surface),
-      bottomSheetTheme: const BottomSheetThemeData(backgroundColor: surface),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        modalBackgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceLow,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      dividerTheme: const DividerThemeData(color: Color(0xFF485968)),
+      dividerTheme: DividerThemeData(color: outline),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: surfaceLow,
         contentTextStyle: textTheme.bodyMedium,

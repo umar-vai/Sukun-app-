@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sukun_life/core/updates/android_release.dart';
 import 'package:sukun_life/core/updates/android_update_service.dart';
@@ -111,17 +112,21 @@ class _AndroidUpdateAutoPopupState extends State<AndroidUpdateAutoPopup>
                       maxWidth: 480,
                       maxHeight: MediaQuery.sizeOf(context).height * 0.85,
                     ),
-                    child: Material(
-                      color: Theme.of(context).colorScheme.surface,
-                      elevation: 12,
+                    child: SukunGlass(
                       borderRadius: BorderRadius.circular(22),
-                      clipBehavior: Clip.antiAlias,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(22),
-                        child: AndroidUpdatePanel(
-                          release: release,
-                          service: _service,
-                          onLater: _dismiss,
+                      tone: SukunGlassTone.surface,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        elevation: 12,
+                        borderRadius: BorderRadius.circular(22),
+                        clipBehavior: Clip.antiAlias,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(22),
+                          child: AndroidUpdatePanel(
+                            release: release,
+                            service: _service,
+                            onLater: _dismiss,
+                          ),
                         ),
                       ),
                     ),

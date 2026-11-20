@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -72,53 +73,57 @@ class _UniversalNoticeDetailScreenState
           constraints: const BoxConstraints(maxWidth: 510),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Material(
+            child: SukunGlass(
               borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              color: Theme.of(context).colorScheme.surface,
-              elevation: 8,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.83,
-                ),
-                child: FutureBuilder<UniversalAnnouncement?>(
-                  future: _notice,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const SizedBox(
-                        height: 220,
-                        child: Center(child: CircularProgressIndicator()),
+              tone: SukunGlassTone.surface,
+              child: Material(
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
+                type: MaterialType.transparency,
+                elevation: 8,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.83,
+                  ),
+                  child: FutureBuilder<UniversalAnnouncement?>(
+                    future: _notice,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const SizedBox(
+                          height: 220,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snapshot.hasError || !snapshot.hasData) {
+                        return Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.info_outline, size: 40),
+                              const SizedBox(height: 12),
+                              const Text('নোটিশটি পাওয়া যায়নি অথবা মেয়াদ শেষ।'),
+                              TextButton(
+                                onPressed: _close,
+                                child: const Text('বন্ধ করুন'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return UniversalNoticePanel(
+                        notice: snapshot.data!,
+                        image: snapshot.data!.imagePath == null
+                            ? null
+                            : NetworkImage(
+                                ref
+                                    .read(announcementRepositoryProvider)
+                                    .imageUrl(snapshot.data!.imagePath!),
+                              ),
+                        onClose: _close,
                       );
-                    }
-                    if (snapshot.hasError || !snapshot.hasData) {
-                      return Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.info_outline, size: 40),
-                            const SizedBox(height: 12),
-                            const Text('নোটিশটি পাওয়া যায়নি অথবা মেয়াদ শেষ।'),
-                            TextButton(
-                              onPressed: _close,
-                              child: const Text('বন্ধ করুন'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return UniversalNoticePanel(
-                      notice: snapshot.data!,
-                      image: snapshot.data!.imagePath == null
-                          ? null
-                          : NetworkImage(
-                              ref
-                                  .read(announcementRepositoryProvider)
-                                  .imageUrl(snapshot.data!.imagePath!),
-                            ),
-                      onClose: _close,
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
             ),

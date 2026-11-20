@@ -51,6 +51,10 @@ class SukunAccentSet {
     required this.canvas,
     required this.border,
     required this.darkContainer,
+    required this.darkBackground,
+    required this.darkSurface,
+    required this.darkOutline,
+    required this.darkAccent,
   });
 
   /// Main accent (Sukun Blue in the brand palette).
@@ -77,6 +81,19 @@ class SukunAccentSet {
   /// Dark mode selected container.
   final Color darkContainer;
 
+  /// Dark mode page background, tinted with this palette so Dark mode
+  /// still reads as blue, green or plum instead of a neutral grey.
+  final Color darkBackground;
+
+  /// Dark mode card and sheet surface, tinted with this palette.
+  final Color darkSurface;
+
+  /// Dark mode borders and dividers.
+  final Color darkOutline;
+
+  /// Light accent tone for text, icons and rings on dark surfaces.
+  final Color darkAccent;
+
   static const sukunBlue = SukunAccentSet(
     accent: Color(0xFF0F9BD7),
     strong: Color(0xFF0A70A8),
@@ -86,6 +103,10 @@ class SukunAccentSet {
     canvas: Color(0xFFF3F8FB),
     border: Color(0xFFD9E8EF),
     darkContainer: Color(0xFF243848),
+    darkBackground: Color(0xFF0E1B28),
+    darkSurface: Color(0xFF172A3A),
+    darkOutline: Color(0xFF4E6577),
+    darkAccent: Color(0xFF87CFEF),
   );
 
   static const calmTeal = SukunAccentSet(
@@ -97,6 +118,10 @@ class SukunAccentSet {
     canvas: Color(0xFFF6FBF9),
     border: Color(0xFFD3E7E1),
     darkContainer: Color(0xFF253D39),
+    darkBackground: Color(0xFF0B1D1A),
+    darkSurface: Color(0xFF142D28),
+    darkOutline: Color(0xFF486A62),
+    darkAccent: Color(0xFF86DCCB),
   );
 
   static const twilightPlum = SukunAccentSet(
@@ -108,5 +133,9 @@ class SukunAccentSet {
     canvas: Color(0xFFFAF7FD),
     border: Color(0xFFE4DAEF),
     darkContainer: Color(0xFF352C42),
+    darkBackground: Color(0xFF16111F),
+    darkSurface: Color(0xFF221A2E),
+    darkOutline: Color(0xFF615478),
+    darkAccent: Color(0xFFCDB1EE),
   );
 }

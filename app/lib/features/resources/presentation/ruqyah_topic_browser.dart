@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
@@ -132,48 +133,52 @@ class RuqyahTopicBrowser extends StatelessWidget {
     required int count,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerLow,
+    return SukunGlass(
       borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: Key('ruqyah-filter-${topic.slug}'),
-        onTap: () => context.go('/resources/ruqyah/${topic.slug}'),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.5),
+      tone: SukunGlassTone.surface,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: Key('ruqyah-filter-${topic.slug}'),
+          onTap: () => context.go('/resources/ruqyah/${topic.slug}'),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              borderRadius: BorderRadius.circular(18),
             ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              Icon(_iconForTopic(topic.slug), color: scheme.primary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  topic.titleBn,
-                  style: Theme.of(context).textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+            child: Row(
+              children: [
+                Icon(_iconForTopic(topic.slug), color: scheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    topic.titleBn,
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-              Text(
-                topic.slug == 'ruqyah-self-guide'
-                    ? '৪ অধ্যায়'
-                    : topic.slug == 'ruqyah-ayat'
-                    ? 'বিষয়সমূহ'
-                    : '$count',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 19,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
+                Text(
+                  topic.slug == 'ruqyah-self-guide'
+                      ? '৪ অধ্যায়'
+                      : topic.slug == 'ruqyah-ayat'
+                      ? 'বিষয়সমূহ'
+                      : '$count',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 19,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),

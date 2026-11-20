@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
@@ -164,30 +165,34 @@ class DuaAzkarBrowseSection extends StatelessWidget {
         _empty(context)
       else
         for (final item in items) ...[
-          Material(
-            key: Key('dua-card-${item.id}'),
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
+          SukunGlass(
             borderRadius: BorderRadius.circular(18),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 6,
-              ),
-              leading: const Icon(Icons.menu_book_outlined),
-              title: Text(
-                item.titleBn?.trim().isNotEmpty == true
-                    ? item.titleBn!
-                    : item.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: SukunTypography.banglaBody(
-                  textStyle: Theme.of(context).textTheme.titleSmall,
+            tone: SukunGlassTone.surface,
+            child: Material(
+              key: Key('dua-card-${item.id}'),
+              type: MaterialType.transparency,
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
                 ),
+                leading: const Icon(Icons.menu_book_outlined),
+                title: Text(
+                  item.titleBn?.trim().isNotEmpty == true
+                      ? item.titleBn!
+                      : item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: SukunTypography.banglaBody(
+                    textStyle: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () =>
+                    context.push('/resources/${Uri.encodeComponent(item.id)}'),
               ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () =>
-                  context.push('/resources/${Uri.encodeComponent(item.id)}'),
             ),
           ),
           const SizedBox(height: 12),
@@ -213,56 +218,63 @@ class DuaAzkarBrowseSection extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerLow,
+    return SukunGlass(
       borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: key,
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.5),
+      tone: SukunGlassTone.surface,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: key,
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(13),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(icon, color: scheme.primary),
                 ),
-                child: Icon(icon, color: scheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: SukunTypography.banglaBody(
-                        textStyle: Theme.of(context).textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: SukunTypography.banglaBody(
+                          textStyle: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: scheme.onSurfaceVariant),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),
