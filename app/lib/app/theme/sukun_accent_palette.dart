@@ -83,7 +83,7 @@ class SukunAccentSet {
     mist: Color(0xFFE8F5FC),
     soft: Color(0xFFDDF2FB),
     pale: Color(0xFFF1F9FD),
-    canvas: Color(0xFFF7FBFD),
+    canvas: Color(0xFFF3F8FB),
     border: Color(0xFFD9E8EF),
     darkContainer: Color(0xFF243848),
   );

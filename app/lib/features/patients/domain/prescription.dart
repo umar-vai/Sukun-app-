@@ -8,8 +8,8 @@ enum PrescriptionVisibility {
   };
 
   String get label => switch (this) {
-    PrescriptionVisibility.patient => 'Visible to patient',
-    PrescriptionVisibility.staffOnly => 'Staff only',
+    PrescriptionVisibility.patient => 'রোগী দেখতে পারবেন',
+    PrescriptionVisibility.staffOnly => 'শুধু স্টাফ',
   };
 
   static PrescriptionVisibility fromDatabase(String? value) {

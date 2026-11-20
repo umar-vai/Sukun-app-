@@ -481,8 +481,8 @@ class _CreatePrescriptionScreenState
                           title: const Text('রোগী দেখতে পারবেন'),
                           subtitle: Text(
                             _patientVisible
-                                ? 'রোগী সংরক্ষিত মূল লেখাটি পড়তে পারবেন।'
-                                : 'মূল লেখা শুধু স্টাফ দেখবেন।',
+                                ? 'রোগী সংরক্ষিত প্রেসক্রিপশনের লেখা পড়তে পারবেন।'
+                                : 'লেখাটি শুধু স্টাফরা দেখতে পারবেন।',
                           ),
                         ),
                         const SizedBox(height: 24),

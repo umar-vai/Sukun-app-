@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -108,17 +109,17 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prayer times'),
+        title: const Text('নামাজের সময়'),
         actions: [
           IconButton(
             onPressed: () => context.push('/qibla'),
             icon: const Icon(Icons.explore_outlined),
-            tooltip: 'Open Qibla compass',
+            tooltip: 'কিবলা কম্পাস খুলুন',
           ),
           IconButton(
             onPressed: _configure,
             icon: const Icon(Icons.tune),
-            tooltip: 'Prayer settings',
+            tooltip: 'নামাজের সেটিংস',
           ),
         ],
       ),
@@ -126,12 +127,11 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const AppLoadingState(label: 'Calculating prayer times');
+            return const AppLoadingState(label: 'নামাজের সময় হিসাব হচ্ছে');
           }
           if (snapshot.hasError) {
             return AppErrorState(
-              message:
-                  'Prayer times could not be calculated. ${snapshot.error}',
+              message: 'নামাজের সময় হিসাব করা যায়নি। ${snapshot.error}',
               onRetry: _reload,
             );
           }
@@ -176,20 +176,20 @@ class _SetupRequired extends StatelessWidget {
               const SukunIconBadge(icon: Icons.schedule_outlined, size: 58),
               const SizedBox(height: 18),
               Text(
-                'Set up prayer times',
+                'নামাজের সময় সেট করুন',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text('Choose these settings before calculation:'),
+              const Text('হিসাবের আগে এগুলো বেছে নিন:'),
               const SizedBox(height: 8),
-              const Text('• Location\n• Calculation method\n• Asr convention'),
+              const Text('• অবস্থান\n• হিসাব পদ্ধতি\n• আসরের মাযহাব'),
               const SizedBox(height: 8),
-              const Text('Nothing is selected automatically.'),
+              const Text('কিছুই নিজে থেকে বেছে নেওয়া হয় না।'),
               const SizedBox(height: 18),
               FilledButton.icon(
                 onPressed: onConfigure,
                 icon: const Icon(Icons.tune),
-                label: const Text('Choose settings'),
+                label: const Text('সেটিংস বেছে নিন'),
               ),
             ],
           ),
@@ -225,7 +225,7 @@ class _PrayerScheduleView extends StatelessWidget {
         children: [
           SukunPageIntro(
             eyebrow: _longDate(schedule.date),
-            title: 'Your daily prayer rhythm',
+            title: 'আপনার দৈনিক নামাজের সময়',
             subtitle:
                 '${settings.location!.name} · ${settings.calculationMethod!.label}',
           ),
@@ -237,7 +237,7 @@ class _PrayerScheduleView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'NEXT PRAYER',
+                  'পরবর্তী নামাজ',
                   style: TextStyle(
                     color: Colors.white70,
                     fontWeight: FontWeight.w600,
@@ -259,7 +259,7 @@ class _PrayerScheduleView extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Most recent · ${schedule.currentPrayer.label}',
+                            'এখন চলছে · ${schedule.currentPrayer.label}',
                             style: const TextStyle(color: Colors.white70),
                           ),
                         ],
@@ -305,8 +305,8 @@ class _PrayerScheduleView extends StatelessWidget {
             const PreciseAlarmWarning(margin: EdgeInsets.only(top: 10)),
           const SizedBox(height: 24),
           const SukunSectionHeader(
-            title: "Today's times",
-            subtitle: 'Times follow your selected preferences',
+            title: "আজকের সময়সূচি",
+            subtitle: 'আপনার বেছে নেওয়া পদ্ধতি অনুযায়ী',
           ),
           const SizedBox(height: 10),
           SukunSurface(
@@ -352,10 +352,10 @@ class _PrayerScheduleView extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(settings.calculationMethod!.label),
-                Text('${settings.asrConvention!.label} Asr convention'),
+                Text('আসর: ${settings.asrConvention!.label}'),
                 const SizedBox(height: 10),
                 const Text(
-                  'Calculated times may differ from a local mosque timetable. Follow trusted local guidance where applicable.',
+                  'হিসাব করা সময় স্থানীয় মসজিদের সময়সূচি থেকে কিছুটা আলাদা হতে পারে। প্রয়োজনে বিশ্বস্ত স্থানীয় নির্দেশনা অনুসরণ করুন।',
                   style: TextStyle(fontSize: 12),
                 ),
               ],
@@ -365,7 +365,7 @@ class _PrayerScheduleView extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => context.push('/qibla'),
             icon: const Icon(Icons.explore_outlined),
-            label: const Text('Open Qibla direction'),
+            label: const Text('কিবলার দিক দেখুন'),
           ),
         ],
       ),
@@ -430,20 +430,4 @@ class _PrayerRow extends StatelessWidget {
 String _time(BuildContext context, DateTime value) =>
     TimeOfDay.fromDateTime(value).format(context);
 
-String _longDate(DateTime value) {
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-  return '${months[value.month - 1]} ${value.day}, ${value.year}';
-}
+String _longDate(DateTime value) => banglaWeekdayDate(value);

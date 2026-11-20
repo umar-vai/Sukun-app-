@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/precise_alarm_warning.dart';
@@ -297,9 +298,9 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                       'আসসালামু আলাইকুম${widget.displayName == null ? '' : ', ${widget.displayName}'}',
                   subtitle: 'আজ আপনার জন্য নির্ধারিত কাজগুলো এখানে রয়েছে।',
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 PreciseAlarmWarning(
-                  margin: const EdgeInsets.only(bottom: 24),
+                  margin: const EdgeInsets.only(bottom: 16),
                   onGranted: () => unawaited(
                     ref.read(notificationCoordinatorProvider).syncIfEnabled(),
                   ),
@@ -372,7 +373,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
                           ? 'আজকের সব কাজ'
                           : 'আজকের অন্য কাজ',
                       subtitle:
-                          '${day.tasks.length}টির মধ্যে ${day.completedCount}টি করেছেন',
+                          '${banglaDigits(day.tasks.length)}টির মধ্যে ${banglaDigits(day.completedCount)}টি করেছেন',
                     ),
                     const SizedBox(height: 10),
                     if (day.tasks.isEmpty)
@@ -429,7 +430,7 @@ class _DayProgress extends StatelessWidget {
                 ),
               ),
               SukunStatusPill(
-                label: '${(day.completionRatio * 100).round()}%',
+                label: '${banglaDigits((day.completionRatio * 100).round())}%',
                 tone: SukunStatusTone.brand,
               ),
             ],
@@ -443,7 +444,7 @@ class _DayProgress extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${day.tasks.length}টির মধ্যে ${day.completedCount}টি করেছেন',
+            '${banglaDigits(day.tasks.length)}টির মধ্যে ${banglaDigits(day.completedCount)}টি করেছেন',
             style: const TextStyle(color: Colors.white70),
           ),
         ],
