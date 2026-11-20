@@ -14,7 +14,7 @@ void main() {
     // The logo is decoded at display size, so the asset is wrapped.
     final resized = image.image as ResizeImage;
     final provider = resized.imageProvider as AssetImage;
-    expect(provider.assetName, BrandAssets.officialLogo);
+    expect(provider.assetName, BrandAssets.displayLogo);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 }

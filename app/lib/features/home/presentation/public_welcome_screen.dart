@@ -76,7 +76,6 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
         final canDownload = uri != null;
         final small = MediaQuery.sizeOf(context).width < 700;
         return Scaffold(
-          backgroundColor: SukunColors.canvas,
           body: SafeArea(
             child: ListView(
               children: [

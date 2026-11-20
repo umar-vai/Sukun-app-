@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/app/router/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -453,24 +454,28 @@ class _AudioDockSpeedChip extends StatelessWidget {
         child: SizedBox(
           width: 48,
           child: Center(
-            child: Material(
-              color: SukunColors.mist,
+            child: SukunGlass(
               borderRadius: BorderRadius.circular(SukunRadius.chip),
-              child: InkWell(
-                key: const Key('audio-dock-speed'),
+              tone: SukunGlassTone.surface,
+              child: Material(
+                type: MaterialType.transparency,
                 borderRadius: BorderRadius.circular(SukunRadius.chip),
-                onTap: onPressed,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      color: SukunColors.deepTide,
+                child: InkWell(
+                  key: const Key('audio-dock-speed'),
+                  borderRadius: BorderRadius.circular(SukunRadius.chip),
+                  onTap: onPressed,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: SukunColors.deepTide,
+                      ),
                     ),
                   ),
                 ),

@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 
 /** Makes platform icons from the client-supplied, unmodified Sukun Life logo. */
 public final class GenerateSukunIcons {
-    private static final Color BACKGROUND = new Color(0x0D, 0x2B, 0x45);
+    private static final Color BACKGROUND = Color.WHITE;
     private static final Map<String, Integer> ANDROID = Map.of(
         "mdpi", 48, "hdpi", 72, "xhdpi", 96, "xxhdpi", 144, "xxxhdpi", 192);
 

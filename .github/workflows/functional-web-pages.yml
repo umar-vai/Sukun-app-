@@ -413,7 +413,11 @@ jobs:
           PUBLIC_APK_DOWNLOAD_ENABLED: ${{ vars.SUKUN_PUBLIC_APK_DOWNLOAD_ENABLED }}
         run: |
           set -euo pipefail
+          # --no-web-resources-cdn serves the CanvasKit engine from our own
+          # origin instead of www.gstatic.com: one less connection before
+          # the first frame (browsers no longer share CDN caches across sites).
           flutter build web --release \
+            --no-web-resources-cdn \
             --target lib/main_web.dart \
             --base-href "$PAGES_BASE_HREF" \
             --dart-define "APP_ENVIRONMENT=$APP_ENVIRONMENT" \

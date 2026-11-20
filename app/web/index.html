@@ -4,15 +4,58 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="সুকুন লাইফ: ইসলামিক রিসোর্স ও রোগীর ব্যক্তিগত কেয়ার প্ল্যান">
+  <meta name="description" content="সুকুন লাইফ: ইসলামিক রিসোর্স ও রোগীর ব্যক্তিগত কেয়ার প্ল্যান">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0F9BD7">
   <title>Sukun Life</title>
   <link rel="icon" type="image/png" sizes="48x48" href="favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
+  <!-- Start the Poppins font connection and the app script download while
+       the page parses, instead of after the engine has started. -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="main.dart.js" as="script">
+  <link rel="preload" href="assets/assets/brand/sukunlife_logo_display.png" as="image">
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; }
+    /* Shown instantly by the browser, matching the in-app launch screen,
+       until Flutter draws its first frame. */
+    #sukun-splash {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #000; transition: opacity .25s ease;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    #sukun-splash img { height: 180px; width: auto; }
+    #sukun-splash p { color: #fff; margin: 24px 0 20px; font-size: 16px; }
+    #sukun-splash .bar {
+      width: 120px; height: 4px; border-radius: 99px;
+      background: #0A70A8; overflow: hidden; position: relative;
+    }
+    #sukun-splash .bar::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: 40%;
+      background: #0F9BD7; border-radius: 99px;
+      animation: sukun-load 1.1s ease-in-out infinite;
+    }
+    @keyframes sukun-load { from { left: -40%; } to { left: 100%; } }
+    #sukun-splash.done { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <div id="sukun-splash" aria-label="Sukun Life লোড হচ্ছে">
+    <img src="assets/assets/brand/sukunlife_logo_display.png" alt="Sukun Life">
+    <p>Faith. Care. Peace of mind.</p>
+    <div class="bar"></div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('sukun-splash');
+      if (!splash) return;
+      splash.classList.add('done');
+      setTimeout(function () { splash.remove(); }, 300);
+    });
+  </script>
   <script src="sukun-push-config.js"></script>
   <script type="module" src="sukun-web-push.js"></script>
   <script src="flutter_bootstrap.js" async></script>

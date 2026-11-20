@@ -1,16 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
-import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
@@ -218,7 +217,11 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 30),
+            // The glass bottom menu floats over the list; keep the last
+            // row reachable above it.
+            padding: EdgeInsets.only(
+              bottom: 30 + MediaQuery.paddingOf(context).bottom,
+            ),
             children: [
               SukunHeroHeader(
                 greeting: _HomeGreeting(
@@ -240,10 +243,8 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 14),
-                    _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
                     if (_showFortyDayChallenge) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       SukunSurface(
                         key: const Key('home-forty-day-challenge'),
                         tone: SukunSurfaceTone.soft,
@@ -254,7 +255,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
+                                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -340,13 +341,24 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
       appBar: AppBar(
         backgroundColor: SukunColors.deepTide,
         foregroundColor: Colors.white,
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const SukunLifeLogo(height: 30),
+        titleSpacing: 14,
+        toolbarHeight: 66,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const SukunLifeLogo(height: 30),
+            ),
+            const SizedBox(width: 10),
+            // Current and next waqt only; the full timetable opens on tap.
+            Expanded(
+              child: _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -366,6 +378,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           ),
         ],
       ),
+      extendBody: true,
       body: content,
       bottomNavigationBar: SukunBottomNavigation(
         selectedIndex: 0,
@@ -464,361 +477,169 @@ class _CompactPrayerStripState extends State<_CompactPrayerStrip> {
   }
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerLeft,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 560),
-      child: Container(
-        key: const Key('home-compact-prayer'),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: SukunColors.nightNavy,
-          borderRadius: BorderRadius.circular(SukunRadius.card),
-        ),
-        child: FutureBuilder<_PrayerSummary?>(
-          future: _future,
-          builder: (context, snapshot) {
-            final data = snapshot.hasError ? null : snapshot.data;
-            final schedule = data?.schedule;
-            if (schedule != null) _lastSchedule = schedule;
-            final current = schedule?.currentPrayer;
-            final next = schedule?.nextPrayer;
-            final sunrise = schedule?.entries
-                .where((entry) => entry.id == 'sunrise')
-                .firstOrNull;
-            final sunriseBreak =
-                schedule != null && isSunriseBreak(schedule, _now);
-            final windowEnd = schedule == null
-                ? null
-                : prayerWindowEnd(schedule, _now);
-            final windowStart = sunriseBreak ? sunrise : current;
-            final prayers = schedule?.entries
-                .where((entry) => entry.isPrayer)
-                .toList(growable: false);
-            final remaining = windowEnd?.time.difference(_now);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => FutureBuilder<_PrayerSummary?>(
+    future: _future,
+    builder: (context, snapshot) {
+      final data = snapshot.hasError ? null : snapshot.data;
+      final schedule = data?.schedule;
+      if (schedule != null) _lastSchedule = schedule;
+      final current = schedule?.currentPrayer;
+      final sunriseBreak = schedule != null && isSunriseBreak(schedule, _now);
+      final windowEnd = schedule == null
+          ? null
+          : prayerWindowEnd(schedule, _now);
+      final remaining = windowEnd?.time.difference(_now);
+      final ready =
+          snapshot.connectionState != ConnectionState.waiting &&
+          current != null &&
+          windowEnd != null &&
+          remaining != null;
+      const soft = TextStyle(
+        color: Colors.white70,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        height: 1.1,
+      );
+      const strong = TextStyle(
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        height: 1.15,
+      );
+      final Widget body;
+      if (!ready) {
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+        body = InkWell(
+          key: const Key('home-prayer-location-action'),
+          onTap: () => context.push(
+            loading ? '/prayer-times' : '/prayer-times/settings',
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
               children: [
-                Container(
-                  decoration: const BoxDecoration(color: SukunColors.navySoft),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 11,
-                  ),
-                  child: Row(
+                const Icon(
+                  Icons.mosque_outlined,
+                  size: 18,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: InkWell(
-                          key: const Key('home-prayer-location-action'),
-                          onTap: () => context.push('/prayer-times/settings'),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                size: 17,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 5),
-                              Flexible(
-                                child: Text(
-                                  data?.locationName ?? 'শহর নির্বাচন',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 16,
-                                color: Colors.white70,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 9),
-                      const Icon(
-                        Icons.calendar_month_outlined,
-                        size: 17,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 5),
+                      const Text('নামাজের সময়', style: strong, maxLines: 1),
                       Text(
-                        schedule == null
-                            ? 'নামাজের সময়'
-                            : DateFormat(
-                                'EEE, d MMM',
-                                'en',
-                              ).format(schedule.date),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        loading ? 'হিসাব হচ্ছে…' : 'শহর ও পদ্ধতি সেট করুন',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: soft,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        final nowLabel = sunriseBreak
+            ? 'বিরতি'
+            : prayerNamesForHome(current.id);
+        final nextLabel = sunriseBreak
+            ? 'যোহর'
+            : prayerNamesForHome(windowEnd.id);
+        final nextTime = MaterialLocalizations.of(context)
+            .formatTimeOfDay(TimeOfDay.fromDateTime(windowEnd.time));
+        body = InkWell(
+          onTap: () => context.push('/prayer-times'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 5, 6, 5),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('এখন', style: soft, maxLines: 1),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          nowLabel,
+                          key: const Key('home-current-prayer-name'),
+                          maxLines: 1,
+                          style: strong,
                         ),
                       ),
                     ],
                   ),
                 ),
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Padding(
-                    padding: EdgeInsets.all(18),
-                    child: Text(
-                      'নামাজের সময় হিসাব হচ্ছে…',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                else if (current == null ||
-                    next == null ||
-                    prayers == null ||
-                    windowStart == null ||
-                    windowEnd == null ||
-                    remaining == null)
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: TextButton.icon(
-                      onPressed: () => context.push('/prayer-times/settings'),
-                      icon: const Icon(Icons.location_on_outlined),
-                      label: const Text(
-                        'নামাজের সময় দেখতে শহর ও পদ্ধতি সেট করুন',
+                Container(
+                  width: 1,
+                  height: 26,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: Colors.white.withValues(alpha: 0.30),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'পরের ওয়াক্ত $nextLabel · $nextTime',
+                          key: const Key('home-next-prayer-name'),
+                          maxLines: 1,
+                          style: soft,
+                        ),
                       ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  )
-                else ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(13, 14, 13, 8),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final ringSize = constraints.maxWidth < 290
-                            ? 91.0
-                            : 112.0;
-                        return Row(
-                          children: [
-                            SizedBox(
-                              height: ringSize,
-                              width: ringSize,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  SizedBox.expand(
-                                    child: CircularProgressIndicator(
-                                      key: const Key(
-                                        'home-prayer-progress-ring',
-                                      ),
-                                      value: sunriseBreak
-                                          ? 0.0
-                                          : prayerWindowProgress(
-                                              windowStart,
-                                              windowEnd,
-                                              _now,
-                                            ),
-                                      strokeWidth: 5,
-                                      strokeCap: StrokeCap.round,
-                                      color: SukunColors.sukunBlue,
-                                      backgroundColor: const Color(0xFF36576D),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(6),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          sunriseBreak
-                                              ? 'যোহর পর্যন্ত'
-                                              : current.id == 'fajr'
-                                              ? 'ফজরের শেষ'
-                                              : 'পরের ওয়াক্ত',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFB3D5E6),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          formatPrayerCountdown(remaining),
-                                          key: const Key(
-                                            'home-next-prayer-countdown',
-                                          ),
-                                          maxLines: 1,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: ringSize < 100 ? 12 : 14,
-                                            fontWeight: FontWeight.w800,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures(),
-                                            ],
-                                          ),
-                                        ),
-                                        const Text(
-                                          'বাকি',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFB3D5E6),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'এখন',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Color(0xFFB3D5E6),
-                                    ),
-                                  ),
-                                  Text(
-                                    sunriseBreak
-                                        ? 'ওয়াক্তের বিরতি'
-                                        : prayerNamesForHome(current.id),
-                                    key: const Key('home-current-prayer-name'),
-                                    style: const TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 7),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _HomePrayerWindowTime(
-                                          title: sunriseBreak
-                                              ? 'সূর্যোদয়'
-                                              : 'শুরু',
-                                          time: windowStart.time,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: _HomePrayerWindowTime(
-                                          title: sunriseBreak ? 'যোহর' : 'শেষ',
-                                          time: windowEnd.time,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-                    child: Row(
-                      children: [
-                        for (final entry in prayers)
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 1,
-                              ),
-                              child: HomePrayerTimeChip(
-                                entry: entry,
-                                highlighted:
-                                    !sunriseBreak && entry.id == current.id,
-                                width: double.infinity,
-                                onDarkBackground: true,
-                                onTap: () => context.push('/prayer-times'),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 3),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => context.push('/qibla'),
-                          icon: const Icon(Icons.explore_outlined, size: 16),
-                          label: const Text('কিবলা'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFD2EAF6),
-                            visualDensity: VisualDensity.compact,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          formatPrayerCountdown(remaining),
+                          key: const Key('home-next-prayer-countdown'),
+                          maxLines: 1,
+                          style: strong.copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
-                        TextButton.icon(
-                          onPressed: () => context.push('/prayer-times'),
-                          icon: const Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 16,
-                          ),
-                          label: const Text('পূর্ণ সময়সূচি'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: Colors.white70,
+                ),
               ],
-            );
-          },
-        ),
-      ),
-    ),
-  );
-}
-
-class _HomePrayerWindowTime extends StatelessWidget {
-  const _HomePrayerWindowTime({required this.title, required this.time});
-
-  final String title;
-  final DateTime time;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
-    decoration: BoxDecoration(
-      color: const Color(0xFF214258),
-      borderRadius: BorderRadius.circular(11),
-      border: Border.all(color: const Color(0xFF37566B)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(color: Color(0xFFB3D5E6), fontSize: 10),
-        ),
-        const SizedBox(height: 2),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            MaterialLocalizations.of(context)
-                .formatTimeOfDay(TimeOfDay.fromDateTime(time)),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
             ),
           ),
+        );
+      }
+      return Semantics(
+        button: true,
+        label: 'নামাজের সময়সূচি',
+        child: SukunGlass(
+          key: const Key('home-compact-prayer'),
+          tone: SukunGlassTone.onColor,
+          blur: 16,
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            type: MaterialType.transparency,
+            child: SizedBox(height: 46, child: body),
+          ),
         ),
-      ],
-    ),
+      );
+    },
   );
 }
 
@@ -956,6 +777,7 @@ String _prayerLabel(String id) => switch (id) {
   'asr' => 'আসর',
   'maghrib' => 'মাগরিব',
   'isha' => 'ইশা',
+  'sunrise' => 'সূর্যোদয়',
   _ => id,
 };
 
@@ -1035,53 +857,48 @@ class _HomeGreeting extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Material(
-          color: onDark
-              ? Colors.white.withValues(alpha: 0.14)
-              : theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: onDark
-                  ? Colors.white.withValues(alpha: 0.22)
-                  : theme.colorScheme.outlineVariant,
-            ),
-          ),
-          child: InkWell(
-            key: const Key('universal-announcements-shortcut'),
-            borderRadius: BorderRadius.circular(16),
-            onTap: onNotices,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Badge(
-                    key: const Key('notice-count-badge'),
-                    isLabelVisible: noticeCount > 0,
-                    backgroundColor: SukunColors.error,
-                    textColor: Colors.white,
-                    offset: const Offset(7, -6),
-                    label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      size: 22,
-                      color: onDark
-                          ? Colors.white
-                          : theme.colorScheme.secondary,
+        SukunGlass(
+          tone: onDark ? SukunGlassTone.onColor : SukunGlassTone.surface,
+          blur: 14,
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: const Key('universal-announcements-shortcut'),
+              borderRadius: BorderRadius.circular(16),
+              onTap: onNotices,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Badge(
+                      key: const Key('notice-count-badge'),
+                      isLabelVisible: noticeCount > 0,
+                      backgroundColor: SukunColors.error,
+                      textColor: Colors.white,
+                      offset: const Offset(7, -6),
+                      label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
+                      child: Icon(
+                        Icons.notifications_none_rounded,
+                        size: 22,
+                        color: onDark
+                            ? Colors.white
+                            : theme.colorScheme.secondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'নোটিশ',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: onDark
-                          ? Colors.white
-                          : theme.colorScheme.secondary,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(width: 6),
+                    Text(
+                      'নোটিশ',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: onDark
+                            ? Colors.white
+                            : theme.colorScheme.secondary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1106,37 +923,33 @@ class _HomeResourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
+    return SukunGlass(
       borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-          child: Column(
-            children: [
-              SukunIconBadge(icon: icon, size: 40),
-              const SizedBox(height: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    height: 1.2,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+            child: Column(
+              children: [
+                SukunIconBadge(icon: icon, size: 40),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

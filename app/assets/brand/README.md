@@ -6,11 +6,15 @@ The official, client-supplied logo is stored at:
 
 The checked-in PNG is the client-supplied source file and must remain unmodified. Do not add a recreated, recolored, stretched, cropped, or AI-generated logo.
 
+`assets/brand/sukunlife_logo_display.png` is the same official artwork, only
+scaled down (543x640, no other change) for fast on-screen display. PDFs and
+launcher icons are still generated from the full-size source.
+
 ## Official browser and Android icons
 
 The full client-supplied PNG above is the **only** icon artwork source.
 `tool/branding/GenerateSukunIcons.java` places the **whole logo**, retaining
-its color and aspect ratio, onto Sukun Navy square canvases; it never edits
+its color and aspect ratio, onto white square canvases (owner request, 2026-11-20); it never edits
 this source, removes any part of the mark, or creates a new interpretation.
 
 - The Flutter Web Pages workflow generates `web/favicon.png`,

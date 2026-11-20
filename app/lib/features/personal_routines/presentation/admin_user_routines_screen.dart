@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
@@ -275,7 +276,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
                     itemBuilder: (context, index) {
                       final user = snapshot.data![index];
                       final selectedId = selected?['id'] == user['id'];
-                      return Card(
+                      return SukunGlassCard(
                         child: ListTile(
                           selected: selectedId,
                           leading: const Icon(Icons.person_outline_rounded),
@@ -305,7 +306,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
           ],
           const SizedBox(height: 18),
           if (selected != null) ...[
-            Card(
+            SukunGlassCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(

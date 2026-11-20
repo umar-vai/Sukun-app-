@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/async_states.dart';
@@ -1073,46 +1074,50 @@ class _AddNewTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: SukunColors.paleBlue,
+  Widget build(BuildContext context) => SukunGlass(
     borderRadius: BorderRadius.circular(SukunRadius.tile),
-    child: InkWell(
-      onTap: onTap,
+    tone: SukunGlassTone.surface,
+    child: Material(
+      type: MaterialType.transparency,
       borderRadius: BorderRadius.circular(SukunRadius.tile),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(SukunRadius.tile),
-          border: Border.all(
-            color: SukunColors.sukunBlue.withValues(alpha: 0.35),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: SukunColors.sukunBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SukunRadius.tile),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SukunRadius.tile),
+            border: Border.all(
+              color: SukunColors.sukunBlue.withValues(alpha: 0.35),
             ),
-            const SizedBox(width: SukunSpace.md),
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: SukunColors.deepTide,
-                  fontWeight: FontWeight.w700,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: SukunColors.sukunBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 20,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: SukunSpace.md),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: SukunColors.deepTide,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),

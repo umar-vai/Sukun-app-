@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -328,7 +329,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                   ),
                 );
               }
-              return Card(
+              return SukunGlassCard(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -378,7 +379,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             subtitle: Text('অডিও খুলে “প্লেলিস্টে যুক্ত করুন” চাপুন।'),
           ),
         for (final playlist in library.playlists)
-          Card(
+          SukunGlassCard(
             child: ExpansionTile(
               key: ValueKey(playlist.id),
               title: Text(playlist.name),
@@ -524,7 +525,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
                     title: Text('এই উপকরণ অফলাইন ডাউনলোডের জন্য অনুমোদিত নয়।'),
                   );
                 }
-                return Card(
+                return SukunGlassCard(
                   child: ListTile(
                     title: Text(resource.titleBn ?? resource.title),
                     trailing: FilledButton(
@@ -562,7 +563,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             ),
           ),
         if (library.busy) ...[
-          Card(
+          SukunGlassCard(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -585,7 +586,7 @@ class _MyMediaLibraryScreenState extends ConsumerState<MyMediaLibraryScreen> {
             subtitle: Text('অনুমোদিত অডিও বা PDF খুলে ডাউনলোড করুন।'),
           ),
         for (final item in library.items)
-          Card(
+          SukunGlassCard(
             child: ListTile(
               leading: Icon(
                 item.kind == 'audio'

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/sukun_glass.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/app_display_settings.dart';
@@ -390,7 +391,7 @@ class _RuqyahAyatLibraryState extends State<RuqyahAyatLibrary> {
                         ),
                         itemBuilder: (context, index) {
                           final section = ruqyahSections[index];
-                          return Card(
+                          return SukunGlassCard(
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
                               onTap: () => Navigator.of(context).push(
@@ -748,7 +749,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
                       if (i != null) unawaited(_changeSection(i));
                     },
                   ),
-                Card(
+                SukunGlassCard(
                   child: Padding(
                     padding: const EdgeInsets.all(18),
                     child: Column(
@@ -808,7 +809,7 @@ class _RuqyahSectionReaderState extends State<_RuqyahSectionReader> {
         : 'বাংলা অর্থ দেখুন';
     return ValueListenableBuilder<AppDisplayPreferences>(
       valueListenable: AppDisplaySettings.instance,
-      builder: (context, readingSettings, _) => Card(
+      builder: (context, readingSettings, _) => SukunGlassCard(
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
