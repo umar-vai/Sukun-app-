@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/features/progress/data/progress_repository.dart';
 import 'package:sukun_life/features/progress/data/supabase_progress_repository.dart';
 import 'package:sukun_life/features/progress/domain/adherence_summary.dart';
@@ -9,7 +10,10 @@ final progressRepositoryProvider = Provider<ProgressRepository>((ref) {
   if (!AppEnvironment.isSupabaseConfigured) {
     return const UnavailableProgressRepository();
   }
-  return SupabaseProgressRepository(Supabase.instance.client);
+  return SupabaseProgressRepository(
+    Supabase.instance.client,
+    ref.watch(activePatientIdReaderProvider),
+  );
 });
 
 final class UnavailableProgressRepository implements ProgressRepository {

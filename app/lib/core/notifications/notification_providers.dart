@@ -9,6 +9,7 @@ import 'package:sukun_life/core/notifications/notification_state_store.dart';
 import 'package:sukun_life/core/notifications/push_messaging_gateway.dart';
 import 'package:sukun_life/core/notifications/supabase_notification_repository.dart';
 import 'package:sukun_life/core/notifications/web_care_reminders_gateway.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/core/notifications/web_fcm_push_stub.dart'
     if (dart.library.html) 'package:sukun_life/core/notifications/web_fcm_push_web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -55,6 +56,7 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
     const SharedPreferencesNotificationStateStore(),
     platform: _notificationPlatform,
     onTaskOpened: ref.read(notificationTapRelayProvider).accept,
+    activePatientId: ref.read(activePatientIdReaderProvider),
   );
   ref.onDispose(coordinator.dispose);
   return coordinator;
@@ -71,6 +73,7 @@ final class UnavailableNotificationRepository
   @override
   Future<ReminderTaskWindow> getReminderTasks({
     required int horizonDays,
+    String? patientId,
   }) async => _unavailable();
 
   @override
@@ -79,6 +82,7 @@ final class UnavailableNotificationRepository
     required String platform,
     required String pushToken,
     required String timezone,
+    String? patientId,
   }) async => _unavailable();
 
   @override

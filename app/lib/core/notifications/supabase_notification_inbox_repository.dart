@@ -1,20 +1,29 @@
 import 'package:sukun_life/core/notifications/notification_inbox_repository.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// All rows are further restricted by notification_events_select_own_or_admin.
-/// Never accept a patientId from the client; the server derives ownership.
+/// All rows are further restricted by the notification_events read policy,
+/// which for a family login allows every linked profile. The selected profile
+/// narrows the list to one person; the client never gains extra access.
 final class SupabaseNotificationInboxRepository
     implements NotificationInboxRepository {
-  const SupabaseNotificationInboxRepository(this._client);
+  const SupabaseNotificationInboxRepository(
+    this._client, [
+    this._activePatientId,
+  ]);
 
   final SupabaseClient _client;
+  final ActivePatientIdReader? _activePatientId;
 
   @override
   Future<List<PatientInboxMessage>> getRecentMessages() async {
     try {
-      final rows = await _client
+      final patientId = await _activePatientId?.call();
+      var query = _client
           .from('notification_events')
-          .select('id,notification_type,status,scheduled_at,opened_at')
+          .select('id,notification_type,status,scheduled_at,opened_at');
+      if (patientId != null) query = query.eq('patient_id', patientId);
+      final rows = await query
           .inFilter('status', ['sent', 'opened'])
           .lte('scheduled_at', DateTime.now().toUtc().toIso8601String())
           .order('scheduled_at', ascending: false)

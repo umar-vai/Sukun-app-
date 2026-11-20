@@ -3,6 +3,7 @@ import 'package:sukun_life/features/patient_care/domain/patient_task.dart';
 class PendingTaskCompletion {
   const PendingTaskCompletion({
     required this.userId,
+    this.patientId,
     required this.taskId,
     required this.status,
     required this.clientEventId,
@@ -14,6 +15,7 @@ class PendingTaskCompletion {
   factory PendingTaskCompletion.fromJson(Map<String, dynamic> json) {
     return PendingTaskCompletion(
       userId: json['user_id'] as String,
+      patientId: json['patient_id'] as String?,
       taskId: json['task_id'] as String,
       status: PatientTaskStatus.fromDatabase(json['status'] as String?),
       clientEventId: json['client_event_id'] as String,
@@ -24,6 +26,11 @@ class PendingTaskCompletion {
   }
 
   final String userId;
+
+  /// The patient profile that owns the task. Null only for events queued
+  /// before family accounts existed; those belong to the account's own
+  /// profile and are matched by task ID, never applied to another task.
+  final String? patientId;
   final String taskId;
   final PatientTaskStatus status;
   final String clientEventId;
@@ -33,6 +40,7 @@ class PendingTaskCompletion {
 
   Map<String, dynamic> toJson() => {
     'user_id': userId,
+    'patient_id': patientId,
     'task_id': taskId,
     'status': status.name,
     'client_event_id': clientEventId,
@@ -40,6 +48,13 @@ class PendingTaskCompletion {
     'snoozed_until': snoozedUntil?.toUtc().toIso8601String(),
     'skip_reason': skipReason,
   };
+
+  /// Whether this event may be shown or flushed while [activePatientId] is
+  /// the selected profile. Unscoped legacy events pass because they are only
+  /// ever applied to the exact task they name.
+  bool belongsTo(String userId, String activePatientId) =>
+      this.userId == userId &&
+      (patientId == null || patientId == activePatientId);
 
   PatientTask applyTo(PatientTask task, {required bool pendingSync}) {
     return switch (status) {

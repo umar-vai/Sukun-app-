@@ -1,5 +1,6 @@
 import 'package:sukun_life/features/care_plans/domain/care_plan.dart';
 import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_repository.dart';
 import 'package:sukun_life/features/patient_care/data/task_completion_coordinator.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
@@ -9,32 +10,52 @@ import 'package:sukun_life/features/patients/domain/prescription.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final class SupabasePatientCareRepository implements PatientCareRepository {
-  SupabasePatientCareRepository(this._client, this._completionCoordinator);
+  SupabasePatientCareRepository(
+    this._client,
+    this._completionCoordinator,
+    this._activePatientId,
+  );
 
   final SupabaseClient _client;
   final TaskCompletionCoordinator _completionCoordinator;
+
+  /// The profile this device is showing. Every read below filters by it, so
+  /// a family login never mixes one profile's tasks, plan or numbers into
+  /// another's. RLS still decides what the login may read at all.
+  final ActivePatientIdReader _activePatientId;
+
+  Future<String> _requirePatientId() async {
+    final patientId = await _activePatientId();
+    if (patientId == null) {
+      throw const PatientCareException('A patient profile is required.');
+    }
+    return patientId;
+  }
 
   @override
   Future<PatientDay> getToday() async {
     final now = DateTime.now();
     final localDate = DateTime(now.year, now.month, now.day);
     final userId = _currentUserId();
+    final patientId = await _requirePatientId();
     try {
-      await _completionCoordinator.flush(userId);
+      await _completionCoordinator.flush(userId, patientId);
       await _client.rpc(
         'ensure_patient_tasks',
         params: {
           'p_local_date': _dateOnly(localDate),
           'p_timezone_offset_minutes': now.timeZoneOffset.inMinutes,
+          'p_patient_id': patientId,
         },
       );
-      final plan = await getActivePlan();
+      final plan = await _activePlanFor(patientId);
       if (plan == null) return const PatientDay(tasks: []);
       final response = await _client
           .from('task_instances')
           .select(
             '*,plan_actions!inner(*,plan_action_resources(sort_order,usage_note,content_items(id,title,title_bn,type,visibility,status,media_source_type,media_url,youtube_video_id,thumbnail_url,rights_note)),plan_action_quran_surahs(surah_number,title,sort_order))',
           )
+          .eq('patient_id', patientId)
           .eq('occurrence_date', _dateOnly(localDate))
           .eq('plan_actions.care_plan_id', plan.id)
           .order('scheduled_at', nullsFirst: false);
@@ -53,17 +74,21 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
         return left.action.sortOrder.compareTo(right.action.sortOrder);
       });
       final day = PatientDay(activePlan: plan, tasks: List.unmodifiable(tasks));
-      return await _completionCoordinator.applyPending(userId, day);
+      return await _completionCoordinator.applyPending(userId, patientId, day);
     } on PostgrestException catch (error) {
       throw PatientCareException(error.message);
     }
   }
 
   @override
-  Future<CarePlan?> getActivePlan() async {
+  Future<CarePlan?> getActivePlan() async =>
+      _activePlanFor(await _requirePatientId());
+
+  Future<CarePlan?> _activePlanFor(String patientId) async {
     final response = await _client
         .from('care_plans')
         .select()
+        .eq('patient_id', patientId)
         .eq('status', 'active')
         .maybeSingle();
     return response == null ? null : CarePlan.fromJson(response);
@@ -84,9 +109,11 @@ final class SupabasePatientCareRepository implements PatientCareRepository {
 
   @override
   Future<List<Prescription>> getVisiblePrescriptions() async {
+    final patientId = await _requirePatientId();
     final response = await _client
         .from('prescriptions')
         .select()
+        .eq('patient_id', patientId)
         .eq('visibility', 'patient')
         .order('created_at', ascending: false);
     return response.map(Prescription.fromJson).toList(growable: false);

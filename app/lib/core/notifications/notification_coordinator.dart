@@ -35,6 +35,7 @@ final class NotificationCoordinator {
     DateTime Function()? now,
     this.platform = 'unknown',
     this.onTaskOpened,
+    this.activePatientId,
   }) : _now = now ?? DateTime.now,
        assert(
          platform == 'android' ||
@@ -50,6 +51,10 @@ final class NotificationCoordinator {
   final DateTime Function() _now;
   final String platform;
   final void Function(String?)? onTaskOpened;
+
+  /// The family profile this device is showing. Null for guests and for
+  /// callers that predate family accounts.
+  final Future<String?> Function()? activePatientId;
   final List<StreamSubscription<Object?>> _subscriptions = [];
   Future<void>? _activeSync;
   bool _initialized = false;
@@ -139,6 +144,24 @@ final class NotificationCoordinator {
     return operation.whenComplete(() => _activeSync = null);
   }
 
+  /// Called after the device switches to another family profile.
+  ///
+  /// Waits for any refresh that started for the previous profile (it abandons
+  /// itself once it notices the switch), then runs a fresh one. That refresh
+  /// re-registers this installation with the new profile, schedules the new
+  /// profile's reminders and cancels the previous profile's still-pending
+  /// ones, because their IDs are no longer wanted. Reminder IDs derive from
+  /// task IDs, so nothing is scheduled twice.
+  Future<void> resyncForActiveProfile() async {
+    while (_activeSync != null) {
+      await _activeSync;
+    }
+    await syncIfEnabled();
+  }
+
+  Future<String?> _currentPatientId() async =>
+      activePatientId == null ? null : await activePatientId!();
+
   Future<void> _syncSafely() async {
     try {
       await initialize();
@@ -147,15 +170,26 @@ final class NotificationCoordinator {
       }
 
       final timezone = await _local.configureTimezone();
+      final patientId = await _currentPatientId();
       var serverWebPushRegistered = false;
       if (platform == 'web' && _push.isAvailable) {
         try {
-          serverWebPushRegistered = await _registerCurrentToken(timezone);
+          serverWebPushRegistered = await _registerCurrentToken(
+            timezone,
+            patientId,
+          );
         } on Object {
           // Keep active-tab reminders if Web Push registration fails.
         }
       }
-      final window = await _repository.getReminderTasks(horizonDays: 30);
+      final window = await _repository.getReminderTasks(
+        horizonDays: 30,
+        patientId: patientId,
+      );
+      // The person may have switched profiles while this was loading. Do not
+      // schedule the previous profile's reminders over the new profile; the
+      // refresh queued by the switch owns that work.
+      if (await _currentPatientId() != patientId) return;
       final reminders = planCareReminders(tasks: window.tasks, now: _now());
       final precise = await _local.canSchedulePrecisely();
       final previousIds = await _store.scheduledNotificationIds();
@@ -189,7 +223,7 @@ final class NotificationCoordinator {
       for (final id in stale) {
         await _local.cancel(id);
       }
-      if (platform != 'web') await _registerCurrentToken(timezone);
+      if (platform != 'web') await _registerCurrentToken(timezone, patientId);
       _lastSyncSucceeded = true;
     } on Object {
       _lastSyncSucceeded = false;
@@ -248,7 +282,7 @@ final class NotificationCoordinator {
     }
   }
 
-  Future<bool> _registerCurrentToken(String timezone) async {
+  Future<bool> _registerCurrentToken(String timezone, String? patientId) async {
     final token = await _push.getToken();
     if (token == null || token.isEmpty) return false;
     await _repository.registerDevice(
@@ -256,6 +290,7 @@ final class NotificationCoordinator {
       platform: platform,
       pushToken: token,
       timezone: timezone,
+      patientId: patientId,
     );
     return true;
   }
@@ -268,6 +303,7 @@ final class NotificationCoordinator {
         platform: platform,
         pushToken: token,
         timezone: await _local.configureTimezone(),
+        patientId: await _currentPatientId(),
       );
     } on Object {
       // A later app refresh or token event retries registration.

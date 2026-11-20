@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
@@ -41,6 +42,8 @@ final noticeCenterProvider = FutureProvider.autoDispose<NoticeCenterSummary>((
   ref,
 ) async {
   final session = ref.watch(appSessionProvider).value;
+  // Recompute for the newly selected family profile, never keep the old one.
+  ref.watch(activePatientIdProvider);
   final userId = session?.userId;
   final now = DateTime.now();
 
