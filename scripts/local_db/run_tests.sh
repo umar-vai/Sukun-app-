@@ -10,6 +10,6 @@ fail=0
 for f in "${FILES[@]}"; do
   # Tests do `create extension pgtap` and finish with rollback; drop that line.
   out=$(sed '/create extension if not exists pgtap/d' "$f" | PGOPTIONS="-c search_path=public,extensions" psql -d "$DB" -v ON_ERROR_STOP=1 -X 2>&1)
-  if echo "$out" | grep -q "^not ok\|ERROR\|TAP FAILED"; then echo "FAIL $f"; echo "$out" | grep -E "^not ok|ERROR|TAP FAILED|got|want" | head -8; fail=1; else echo "pass $f ($(echo "$out" | grep -c '^ok') checks)"; fi
+  if echo "$out" | grep -q "^not ok\|ERROR\|TAP FAILED"; then echo "FAIL $f"; echo "$out" | grep -E "^not ok|ERROR|TAP FAILED|got|want" | head -8; fail=1; else echo "pass $f ($(echo "$out" | grep -c '^ *ok') checks)"; fi
 done
 exit $fail
