@@ -9,13 +9,13 @@ import 'package:sukun_life/app/theme/sukun_tokens.dart';
 import 'package:sukun_life/core/widgets/brand_logo.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
 import 'package:sukun_life/features/islamic_utilities/data/islamic_utilities_providers.dart';
 import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dart';
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
-import 'package:sukun_life/features/personal_routines/presentation/today_routine_panel.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:sukun_life/features/notice_center/data/notice_center_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -218,192 +218,118 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              SukunSpace.page,
-              SukunSpace.sm,
-              SukunSpace.page,
-              32,
-            ),
+            padding: const EdgeInsets.only(bottom: 30),
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.displayName == null
-                              ? 'আসসালামু আলাইকুম'
-                              : 'আসসালামু আলাইকুম, ${widget.displayName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: SukunColors.muted),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'আপনার প্রতিদিনের সুকুন',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  OutlinedButton.icon(
-                    key: const Key('universal-announcements-shortcut'),
-                    onPressed: () => unawaited(_openNotices(noticeSummary)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SukunColors.nightNavy,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: SukunColors.border),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      minimumSize: const Size(0, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          SukunRadius.control,
-                        ),
-                      ),
-                    ),
-                    icon: Badge(
-                      key: const Key('notice-count-badge'),
-                      isLabelVisible: noticeCount > 0,
-                      backgroundColor: SukunColors.error,
-                      textColor: Colors.white,
-                      offset: const Offset(7, -6),
-                      label: Text(noticeCount > 9 ? '9+' : '$noticeCount'),
-                      child: const Icon(
-                        Icons.notifications_none_rounded,
-                        size: 19,
-                        color: Color(0xFF8A6A12),
-                      ),
-                    ),
-                    label: const Text(
-                      'নোটিশ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (_upcoming != null) ...[
-                const SizedBox(height: SukunSpace.section),
-                _UnifiedNextTasks(future: _upcoming!, onOpen: _openAndRefresh),
-              ],
-              const SizedBox(height: SukunSpace.lg),
-              _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
-              if (_showFortyDayChallenge) ...[
-                const SizedBox(height: 12),
-                SukunSurface(
-                  key: const Key('home-forty-day-challenge'),
-                  tone: SukunSurfaceTone.soft,
-                  onTap: () => context.push('/challenge/40-day'),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.event_available_outlined, size: 30),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.chevron_right),
-                    ],
-                  ),
+              SukunHeroHeader(
+                greeting: _HomeGreeting(
+                  displayName: widget.displayName,
+                  onDark: true,
+                  noticeCount: noticeCount,
+                  onOpenNotices: () => unawaited(_openNotices(noticeSummary)),
                 ),
-              ],
-              const SizedBox(height: SukunSpace.sectionLarge),
-              SukunSectionHeader(
-                title: 'পাঠ ও অডিও',
-                subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
-                action: TextButton(
-                  onPressed: () => context.push(
-                    widget.isPatient ? '/patient/resources' : '/resources',
-                  ),
-                  child: const Text('সব দেখুন'),
-                ),
+                overlap: _upcoming == null
+                    ? null
+                    : _UnifiedNextTasks(
+                        future: _upcoming!,
+                        isPatient: widget.isPatient,
+                        onOpen: _openAndRefresh,
+                      ),
               ),
-              const SizedBox(height: 10),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth < 300
-                      ? 2
-                      : constraints.maxWidth < 760
-                      ? 4
-                      : 8;
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisExtent: 104,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                    ),
-                    itemCount: resourceSections.length,
-                    itemBuilder: (context, index) {
-                      final item = resourceSections[index];
-                      return SukunSurface(
-                        key: Key('home-resource-${item.slug}'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 10,
-                        ),
-                        radius: SukunRadius.tile,
-                        onTap: () => context.push('/resources/${item.slug}'),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 14),
+                    _CompactPrayerStrip(prayer: _prayer, reload: _readPrayer),
+                    if (_showFortyDayChallenge) ...[
+                      const SizedBox(height: 12),
+                      SukunSurface(
+                        key: const Key('home-forty-day-challenge'),
+                        tone: SukunSurfaceTone.soft,
+                        onTap: () => context.push('/challenge/40-day'),
+                        child: const Row(
                           children: [
-                            SukunIconBadge(icon: item.icon, size: 40),
-                            const SizedBox(height: 8),
-                            Flexible(
+                            Icon(Icons.event_available_outlined, size: 30),
+                            SizedBox(width: 12),
+                            Expanded(
                               child: Text(
-                                item.titleBn,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                'রুকইয়াহ ৪০ দিনের চ্যালেঞ্জ',
+                                style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
+                            Icon(Icons.chevron_right),
                           ],
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-              if (!widget.isPatient && !widget.isSignedInMember) ...[
-                const SizedBox(height: 18),
-                SukunSurface(
-                  tone: SukunSurfaceTone.soft,
-                  onTap: () => context.push('/login'),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.health_and_safety_outlined),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
+                      ),
+                    ],
+                    const SizedBox(height: 26),
+                    SukunSectionHeader(
+                      title: 'পাঠ ও অডিও',
+                      subtitle: 'সহজে আপনার পছন্দের বিভাগে যান',
+                      action: TextButton(
+                        onPressed: () => context.push(
+                          widget.isPatient
+                              ? '/patient/resources'
+                              : '/resources',
+                        ),
+                        child: const Text('সব দেখুন'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth < 340
+                            ? 3
+                            : constraints.maxWidth < 620
+                            ? 4
+                            : 8;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                mainAxisExtent: 98,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
+                          itemCount: resourceSections.length,
+                          itemBuilder: (context, index) {
+                            final item = resourceSections[index];
+                            return _HomeResourceTile(
+                              key: Key('home-resource-${item.slug}'),
+                              icon: item.icon,
+                              label: item.titleBn,
+                              onTap: () =>
+                                  context.push('/resources/${item.slug}'),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    if (!widget.isPatient && !widget.isSignedInMember) ...[
+                      const SizedBox(height: 18),
+                      SukunSurface(
+                        tone: SukunSurfaceTone.soft,
+                        onTap: () => context.push('/login'),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.health_and_safety_outlined),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'সুকুন লাইফের রোগী? আপনার পরিকল্পনা দেখতে লগইন করুন।',
+                              ),
+                            ),
+                            Icon(Icons.chevron_right),
+                          ],
                         ),
                       ),
-                      Icon(Icons.chevron_right),
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -412,9 +338,19 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const SukunLifeLogo(height: 36),
+        backgroundColor: SukunColors.deepTide,
+        foregroundColor: Colors.white,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const SukunLifeLogo(height: 30),
+        ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
             onPressed: _signingOut
                 ? null
                 : widget.isSignedInMember || widget.isPatient
@@ -1041,164 +977,575 @@ class _HomeTasksData {
   final bool allDoneToday;
 }
 
+class _HomeGreeting extends StatelessWidget {
+  const _HomeGreeting({
+    required this.displayName,
+    required this.noticeCount,
+    required this.onOpenNotices,
+    this.onDark = false,
+  });
+
+  final String? displayName;
+  final bool onDark;
+
+  /// Unseen notices plus pending amal reminders; no badge at zero.
+  final int noticeCount;
+  final VoidCallback onOpenNotices;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final strong = onDark ? Colors.white : SukunColors.nightNavy;
+    final soft = onDark ? Colors.white70 : SukunColors.muted;
+    final accent = onDark ? SukunColors.saffron : theme.colorScheme.secondary;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                banglaWeekdayDate(DateTime.now()),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                displayName == null
+                    ? 'আসসালামু আলাইকুম'
+                    : 'আসসালামু আলাইকুম, $displayName',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(color: soft),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'আপনার প্রতিদিনের সুকুন',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: strong,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Material(
+          color: onDark
+              ? Colors.white.withValues(alpha: 0.14)
+              : theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: onDark
+                  ? Colors.white.withValues(alpha: 0.22)
+                  : theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: InkWell(
+            key: const Key('universal-announcements-shortcut'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: onOpenNotices,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        Icons.notifications_none_rounded,
+                        size: 22,
+                        color: onDark
+                            ? Colors.white
+                            : theme.colorScheme.secondary,
+                      ),
+                      if (noticeCount > 0)
+                        Positioned(
+                          right: -9,
+                          top: -7,
+                          child: Container(
+                            key: const Key('notice-count-badge'),
+                            constraints: const BoxConstraints(minWidth: 18),
+                            height: 18,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: SukunColors.error,
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: onDark
+                                    ? SukunColors.deepTide
+                                    : theme.colorScheme.surface,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Text(
+                              noticeCount > 9 ? '9+' : '$noticeCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'নোটিশ',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: onDark
+                          ? Colors.white
+                          : theme.colorScheme.secondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeResourceTile extends StatelessWidget {
+  const _HomeResourceTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+          child: Column(
+            children: [
+              SukunIconBadge(icon: icon, size: 40),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Today's overview: plan progress and the single next action, with one
+/// clear primary call to action (FINAL_UI_REFERENCE §6).
 class _UnifiedNextTasks extends StatelessWidget {
-  const _UnifiedNextTasks({required this.future, required this.onOpen});
+  const _UnifiedNextTasks({
+    required this.future,
+    required this.isPatient,
+    required this.onOpen,
+  });
 
   final Future<_HomeTasksData> future;
+  final bool isPatient;
+
+  /// Opens a route and re-reads today's tasks when the user comes back.
   final Future<void> Function(String route) onOpen;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<_HomeTasksData>(
-    future: future,
-    builder: (context, snapshot) {
-      if (snapshot.data?.allDoneToday == true) {
-        return TodayAllDoneCard(
-          key: const Key('home-all-done'),
-          onTap: () => onOpen('/my-routines'),
-        );
-      }
-      return _nextTasksCard(context);
-    },
-  );
-
-  Widget _nextTasksCard(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return SukunSurface(
-      key: const Key('home-unified-next-tasks'),
-      padding: const EdgeInsets.all(SukunSpace.page),
-      radius: SukunRadius.hero,
-      onTap: () => onOpen('/my-routines'),
-      child: FutureBuilder<_HomeTasksData>(
-        future: future,
-        builder: (context, snapshot) {
-          final waiting = snapshot.connectionState == ConnectionState.waiting;
-          final data = snapshot.data;
-          final next = data?.actions.firstOrNull;
-          final later = data == null
-              ? const <HomeNextAction>[]
-              : data.actions.skip(1).take(2).toList(growable: false);
-          final String message;
-          if (waiting) {
-            message = 'পরবর্তী আমল দেখা হচ্ছে…';
-          } else if (data == null) {
-            message = 'রুটিন খুলে আমল দেখুন।';
-          } else if (next == null) {
-            message = data.planUnavailable || data.personalUnavailable
-                ? 'রুটিন থেকে পরবর্তী আমল দেখুন।'
-                : 'এই মুহূর্তে কোনো বাকি আমল নেই।';
-          } else {
-            message = '';
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SukunColors.mist,
-                      borderRadius: BorderRadius.circular(SukunRadius.chip),
-                    ),
-                    child: Text(
-                      'আপনার পরবর্তী আমল',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: SukunColors.deepTide,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+  Widget build(BuildContext context) => SukunSurface(
+    key: const Key('home-unified-next-tasks'),
+    padding: const EdgeInsets.all(18),
+    child: FutureBuilder<_HomeTasksData>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const _TodayLoading();
+        }
+        final data = snapshot.data;
+        final day = data?.patientDay;
+        final plan = day?.activePlan;
+        final next = data?.actions.firstOrNull;
+        final later = data == null
+            ? const <HomeNextAction>[]
+            : data.actions.skip(1).take(2).toList(growable: false);
+        final hasPlan = isPatient && plan != null && day!.tasks.isNotEmpty;
+        final allDone =
+            data?.allDoneToday == true ||
+            (hasPlan && day.completedCount == day.tasks.length);
+        final theme = Theme.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (hasPlan)
+                  _ProgressRing(
+                    ratio: day.completionRatio,
+                    label:
+                        '${banglaDigits((day.completionRatio * 100).round())}%',
+                  )
+                else
+                  const SukunIconBadge(
+                    icon: Icons.self_improvement_rounded,
+                    size: 56,
                   ),
-                  const Spacer(),
-                  if (next?.dueAt != null)
-                    Text(
-                      MaterialLocalizations.of(
-                        context,
-                      ).formatTimeOfDay(TimeOfDay.fromDateTime(next!.dueAt!)),
-                      style: textTheme.labelMedium?.copyWith(
-                        color: SukunColors.muted,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        hasPlan ? 'আজকের পরিকল্পনা' : 'আজকের আমল',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: SukunColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: SukunSpace.md),
-              if (next == null)
-                Text(message, style: textTheme.bodyMedium)
-              else ...[
-                Text(
-                  next.title,
-                  key: const Key('home-next-amal-title'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
+                      const SizedBox(height: 3),
+                      Text(
+                        hasPlan ? plan.name : 'আপনার রুটিন',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (hasPlan) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${banglaDigits(day.tasks.length)}টির মধ্যে '
+                          '${banglaDigits(day.completedCount)}টি সম্পন্ন',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: SukunColors.muted,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: SukunSpace.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton(
-                        key: const Key('home-next-amal-open'),
-                        onPressed: () => onOpen(next.route),
-                        child: const Text('শুরু করুন'),
-                      ),
-                    ),
-                    const SizedBox(width: SukunSpace.sm),
-                    OutlinedButton(
-                      onPressed: () => onOpen('/my-routines'),
-                      child: const Text('সব আমল'),
-                    ),
-                  ],
-                ),
-                if (later.isNotEmpty) ...[
-                  const SizedBox(height: SukunSpace.lg),
-                  const Divider(height: 1, color: Color(0xFFEEF4F9)),
-                  for (final item in later)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFB8CCDA),
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.bodyMedium,
-                            ),
-                          ),
-                          if (item.dueAt != null)
-                            Text(
-                              MaterialLocalizations.of(context).formatTimeOfDay(
-                                TimeOfDay.fromDateTime(item.dueAt!),
-                              ),
-                              style: textTheme.bodySmall?.copyWith(
-                                color: SukunColors.muted,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
               ],
-            ],
-          );
-        },
+            ),
+            const SizedBox(height: 16),
+            if (allDone)
+              const _TodayAllDone(key: Key('home-all-done'))
+            else if (next != null) ...[
+              _NextActionRow(action: next),
+              for (final item in later) _LaterActionRow(action: item),
+            ] else
+              Text(
+                data == null
+                    ? 'রুটিন খুলে আমল দেখুন।'
+                    : data.planUnavailable || data.personalUnavailable
+                    ? 'রুটিন থেকে পরবর্তী আমল দেখুন।'
+                    : 'এই মুহূর্তে কোনো বাকি আমল নেই।',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: SukunColors.muted,
+                ),
+              ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              key: const Key('home-open-today'),
+              onPressed: () => onOpen(
+                next?.route ?? (hasPlan ? '/patient/today' : '/my-routines'),
+              ),
+              icon: Icon(
+                next == null
+                    ? Icons.checklist_rounded
+                    : Icons.play_arrow_rounded,
+              ),
+              label: Text(
+                next == null
+                    ? (hasPlan ? 'আজকের কাজ দেখুন' : 'রুটিন খুলুন')
+                    : 'শুরু করুন',
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+class _NextActionRow extends StatelessWidget {
+  const _NextActionRow({required this.action});
+
+  final HomeNextAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final due = action.dueAt;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(18),
       ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.schedule_rounded,
+              size: 21,
+              color: theme.colorScheme.secondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'পরবর্তী',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  action.title,
+                  key: const Key('home-next-amal-title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  action.origin,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SukunColors.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (due != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                banglaClock(due),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A quieter row for the next one or two actions after the main one.
+class _LaterActionRow extends StatelessWidget {
+  const _LaterActionRow({required this.action});
+
+  final HomeNextAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final due = action.dueAt;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: SukunColors.border, width: 2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              action.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+          if (due != null)
+            Text(
+              banglaClock(due),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: SukunColors.muted,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressRing extends StatelessWidget {
+  const _ProgressRing({required this.ratio, required this.label});
+
+  final double ratio;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: ratio.clamp(0.0, 1.0)),
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, _) => Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox.expand(
+              child: CircularProgressIndicator(
+                value: value,
+                strokeWidth: 6,
+                strokeCap: StrokeCap.round,
+                backgroundColor: theme.colorScheme.primaryContainer,
+              ),
+            ),
+            Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayAllDone extends StatelessWidget {
+  const _TodayAllDone({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: SukunColors.successSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_rounded, color: SukunColors.success),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'আজকের সব কাজ সম্পন্ন। আলহামদুলিল্লাহ!',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: SukunColors.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayLoading extends StatelessWidget {
+  const _TodayLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primaryContainer;
+    Widget bar(double width, double height) => Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [bar(90, 10), const SizedBox(height: 8), bar(160, 14)],
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        bar(double.infinity, 58),
+        const SizedBox(height: 10),
+        Semantics(
+          label: 'পরবর্তী আমল দেখা হচ্ছে…',
+          child: const SizedBox(height: 1),
+        ),
+      ],
     );
   }
 }

@@ -39,7 +39,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
         )
         .eq('care_plan_id', planId)
         .neq('review_status', 'rejected')
-        .order('sort_order');
+        .order('sort_order', ascending: true);
     return response.map(PlanAction.fromJson).toList(growable: false);
   }
 
@@ -53,7 +53,7 @@ final class SupabaseCarePlansRepository implements CarePlansRepository {
           'media_source_type,media_url,'
           'content_categories(id,name,name_bn,slug,sort_order)',
         )
-        .order('title');
+        .order('title', ascending: true);
     final resources = response.map(ContentResourceOption.fromJson).toList();
     // Same quran-content chapter response used by the public 114-surah screen.
     // An unavailable/incomplete provider never creates invented chapters.

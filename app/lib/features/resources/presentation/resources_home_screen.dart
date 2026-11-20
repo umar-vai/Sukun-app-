@@ -247,7 +247,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        mainAxisExtent: columns == 4 ? 118 : 124,
+                        mainAxisExtent: 84,
                       ),
                       itemCount: resourceSections.length,
                       itemBuilder: (context, index) {
@@ -341,25 +341,106 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SukunSurface(
       tone: SukunSurfaceTone.white,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      radius: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          SukunIconBadge(icon: section.icon, size: 40),
-          const SizedBox(height: 8),
-          Text(
-            section.titleBn,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: SukunTypography.banglaBody(
-              textStyle: Theme.of(context).textTheme.titleSmall,
+          SukunIconBadge(icon: section.icon, size: 46),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  section.titleBn,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: SukunTypography.banglaBody(
+                    textStyle: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  section.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: SukunColors.muted,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickLink extends StatelessWidget {
+  const _QuickLink({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: SizedBox(
+          height: 96,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+            child: Column(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: theme.colorScheme.secondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -446,35 +527,3 @@ IconData _resourceIcon(String type) => switch (type) {
 };
 
 /// Compact shortcut tile for secondary library destinations.
-class _QuickLink extends StatelessWidget {
-  const _QuickLink({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => SukunSurface(
-    radius: SukunRadius.tile,
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-    onTap: onTap,
-    child: Column(
-      children: [
-        SukunIconBadge(icon: icon, size: 36),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ],
-    ),
-  );
-}

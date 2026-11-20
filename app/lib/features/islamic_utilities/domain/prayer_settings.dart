@@ -3,26 +3,22 @@ import 'package:sukun_life/features/islamic_utilities/domain/utility_location.da
 enum PrayerCalculationMethodOption {
   karachi(
     'karachi',
-    'University of Islamic Sciences, Karachi',
-    'Fajr 18° · Isha 18°',
+    'ইউনিভার্সিটি অব ইসলামিক সায়েন্সেস, করাচি',
+    'ফজর 18° · ইশা 18°',
   ),
   muslimWorldLeague(
     'muslim_world_league',
-    'Muslim World League',
-    'Fajr 18° · Isha 17°',
+    'মুসলিম ওয়ার্ল্ড লীগ',
+    'ফজর 18° · ইশা 17°',
   ),
   ummAlQura(
     'umm_al_qura',
-    'Umm al-Qura University, Makkah',
-    'Fajr 18.5° · fixed Isha interval',
+    'উম্মুল কুরা বিশ্ববিদ্যালয়, মক্কা',
+    'ফজর ১৮.৫° · ইশা নির্দিষ্ট বিরতিতে',
   ),
-  egyptian(
-    'egyptian',
-    'Egyptian General Authority of Survey',
-    'Fajr 19.5° · Isha 17.5°',
-  ),
-  singapore('singapore', 'Singapore', 'Fajr 20° · Isha 18°'),
-  northAmerica('north_america', 'North America (ISNA)', 'Fajr 15° · Isha 15°');
+  egyptian('egyptian', 'মিশরীয় জরিপ কর্তৃপক্ষ', 'ফজর 19.5° · ইশা 17.5°'),
+  singapore('singapore', 'সিঙ্গাপুর', 'ফজর 20° · ইশা 18°'),
+  northAmerica('north_america', 'উত্তর আমেরিকা (ISNA)', 'ফজর 15° · ইশা 15°');
 
   const PrayerCalculationMethodOption(this.id, this.label, this.description);
 
@@ -39,8 +35,8 @@ enum PrayerCalculationMethodOption {
 }
 
 enum AsrConvention {
-  hanafi('hanafi', 'Hanafi', 'Later Asr time'),
-  standard('standard', 'Standard (Shafi, Maliki, Hanbali)', 'Earlier Asr time');
+  hanafi('hanafi', 'হানাফি', 'আসরের সময় একটু পরে'),
+  standard('standard', 'শাফেয়ি, মালিকি, হাম্বলি', 'আসরের সময় একটু আগে');
 
   const AsrConvention(this.id, this.label, this.description);
 

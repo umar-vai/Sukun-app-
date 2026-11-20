@@ -41,7 +41,7 @@ enum UtilityLocationSource { device, manual }
 const manualBangladeshCities = <UtilityLocation>[
   UtilityLocation(
     id: 'dhaka',
-    name: 'Dhaka',
+    name: 'ঢাকা',
     latitude: 23.8103,
     longitude: 90.4125,
     timezone: 'Asia/Dhaka',
@@ -49,7 +49,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'chattogram',
-    name: 'Chattogram',
+    name: 'চট্টগ্রাম',
     latitude: 22.3569,
     longitude: 91.7832,
     timezone: 'Asia/Dhaka',
@@ -57,7 +57,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'sylhet',
-    name: 'Sylhet',
+    name: 'সিলেট',
     latitude: 24.8949,
     longitude: 91.8687,
     timezone: 'Asia/Dhaka',
@@ -65,7 +65,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'rajshahi',
-    name: 'Rajshahi',
+    name: 'রাজশাহী',
     latitude: 24.3745,
     longitude: 88.6042,
     timezone: 'Asia/Dhaka',
@@ -73,7 +73,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'khulna',
-    name: 'Khulna',
+    name: 'খুলনা',
     latitude: 22.8456,
     longitude: 89.5403,
     timezone: 'Asia/Dhaka',
@@ -81,7 +81,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'barishal',
-    name: 'Barishal',
+    name: 'বরিশাল',
     latitude: 22.7010,
     longitude: 90.3535,
     timezone: 'Asia/Dhaka',
@@ -89,7 +89,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'rangpur',
-    name: 'Rangpur',
+    name: 'রংপুর',
     latitude: 25.7439,
     longitude: 89.2752,
     timezone: 'Asia/Dhaka',
@@ -97,7 +97,7 @@ const manualBangladeshCities = <UtilityLocation>[
   ),
   UtilityLocation(
     id: 'mymensingh',
-    name: 'Mymensingh',
+    name: 'ময়মনসিংহ',
     latitude: 24.7471,
     longitude: 90.4203,
     timezone: 'Asia/Dhaka',

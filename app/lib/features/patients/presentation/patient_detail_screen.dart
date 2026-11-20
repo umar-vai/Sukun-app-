@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/features/home/presentation/staff_access.dart';
+import 'package:sukun_life/core/widgets/sukun_bangla_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/features/care_plans/data/care_template_repository.dart';
@@ -757,7 +758,7 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
                       ),
                     ),
                     Text(
-                      '$percentage%',
+                      '${banglaDigits(percentage)}%',
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -778,7 +779,7 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$percentage% সম্পন্ন',
+                      '${banglaDigits(percentage)}% সম্পন্ন',
                       style: textTheme.bodySmall?.copyWith(
                         color: SukunColors.deepTide,
                         fontWeight: FontWeight.w600,
@@ -786,7 +787,7 @@ class _PatientProgressCardState extends ConsumerState<_PatientProgressCard> {
                     ),
                     const SizedBox(height: SukunSpace.sm),
                     Text(
-                      '${progress.completed}টি সম্পন্ন · ${progress.skipped}টি বাদ · ${progress.remaining}টি বাকি',
+                      '${banglaDigits(progress.completed)}টি সম্পন্ন · ${banglaDigits(progress.skipped)}টি বাদ · ${banglaDigits(progress.remaining)}টি বাকি',
                       style: textTheme.bodySmall?.copyWith(
                         color: SukunColors.muted,
                       ),

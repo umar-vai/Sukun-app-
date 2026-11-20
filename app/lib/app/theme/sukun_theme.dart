@@ -57,14 +57,15 @@ abstract final class SukunTheme {
         titleSpacing: SukunSpace.page,
         toolbarHeight: 64,
         titleTextStyle: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
+          fontSize: 19,
         ),
       ),
       cardTheme: CardThemeData(
         color: SukunColors.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 1.5,
-        shadowColor: SukunColors.nightNavy.withValues(alpha: 0.12),
+        elevation: 2,
+        shadowColor: SukunColors.deepTide.withValues(alpha: 0.10),
         margin: EdgeInsets.zero,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(SukunRadius.card)),
@@ -178,8 +179,14 @@ abstract final class SukunTheme {
       listTileTheme: ListTileThemeData(
         iconColor: SukunColors.deepTide,
         contentPadding: EdgeInsets.symmetric(horizontal: SukunSpace.lg),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(SukunRadius.tile)),
+        titleTextStyle: textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        subtitleTextStyle: textTheme.bodySmall?.copyWith(
+          color: SukunColors.muted,
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
       switchTheme: SwitchThemeData(
@@ -216,10 +223,21 @@ abstract final class SukunTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: SukunColors.nightNavy,
+        labelColor: SukunColors.deepTide,
         unselectedLabelColor: SukunColors.muted,
-        indicatorColor: SukunColors.deepTide,
+        labelStyle: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+        indicatorSize: TabBarIndicatorSize.label,
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: SukunColors.sukunBlue, width: 3),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+        ),
         dividerColor: SukunColors.border,
+        overlayColor: WidgetStatePropertyAll(
+          SukunColors.sukunBlue.withValues(alpha: 0.06),
+        ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: SukunColors.sukunBlue,

@@ -13,7 +13,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final entry = PrayerTimeEntry(
         id: 'fajr',
-        label: 'Fajr',
+        label: 'ফজর',
         time: DateTime(2026, 11, 1, 5, 10),
       );
       await tester.pumpWidget(
@@ -26,7 +26,7 @@ void main() {
                 HomePrayerTimeChip(
                   entry: PrayerTimeEntry(
                     id: 'dhuhr',
-                    label: 'Dhuhr',
+                    label: 'যোহর',
                     time: DateTime(2026, 11, 1, 12, 15),
                   ),
                   highlighted: false,
