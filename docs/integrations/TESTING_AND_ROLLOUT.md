@@ -32,6 +32,10 @@ Function after the migrations. Roll out to staging and run the fixtures first. `
    and drop `private.accessible_patient_ids`, `can_access_patient`, `resolve_acting_patient`.
 4. Plans created from CRM events stay valid; they are normal care plans.
 
+## Production dry run script
+
+`scripts/integrations/build_dry_run.sh > /tmp/dry_run.sql` builds one SQL file: pre-flight checks, the five migrations, read-only post-checks, then ROLLBACK, with a 3 s lock timeout. Verified on a local database built from every earlier migration. Paste it into the Production SQL editor and read the single result row; it changes nothing.
+
 ## Staging dry run (2026-11-20, project `qacklgqvxvjjzsimjoip`)
 
 Run through the Supabase Management API SQL endpoint inside `BEGIN ... ROLLBACK`; afterwards the
