@@ -18,8 +18,8 @@ Real `supabase test db` in CI is the authority.
 ## Production rollout
 
 Follow `docs/PRODUCTION_ENVIRONMENT.md`: rolled-back dry run, owner approval, apply in order
-`20261120090000`, `20261120100000`, `20261120110000`, then record it there. Deploy the Edge
-Function after the migrations. Roll out to staging and run the fixtures first.
+`20261120090000`, `20261120100000`, `20261120110000`, `20261120120000`, `20261120130000`, then record it there. Deploy the Edge
+Function after the migrations. Roll out to staging and run the fixtures first. `20261120130000` rewrites the challenge primary keys by name; the migration stops if Production's constraint names differ, so dry run it in a rolled-back transaction first and check the live names.
 
 ## Rollback
 

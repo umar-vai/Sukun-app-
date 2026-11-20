@@ -25,6 +25,14 @@ ordinary `patients` rows linked through `family_members`. No limit of five is co
   are audited. A profile cannot be moved between families silently, a profile with its own
   login cannot be linked, and the owner profile cannot be unlinked.
 
+## Routines and the 40 day challenge
+
+Per profile (owner decision). `personal_routines`, `challenge_enrollments` and `challenge_day_checkins`
+have `patient_id`; a missing value defaults to the owner's own profile, so older app versions keep
+working. Challenge keys include a generated `profile_key`; upserts use
+`on_conflict=user_id,challenge_key,profile_key`. Writes require a profile the caller may act for.
+Admin routines created for a user without a profile land on that user's own profile.
+
 ## Flutter work still to do
 
 Top-right switcher reading `my_family_profiles()`; an active-profile provider that every

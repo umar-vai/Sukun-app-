@@ -4,7 +4,7 @@
 //   GET  /templates            versioned official template catalog (mirror)
 //   POST /patients/link        map a SukunLife profile to CRM ids (+ family)
 //   POST /patients/provision   create the patient/login if missing and send the
-//                              one-time WhatsApp activation link (safe to repeat)
+//                              one-time temporary credential (safe to repeat)
 //   POST /prescriptions        final prescription event (issue/revise/cancel)
 //   GET  /progress             authoritative adherence summary for one patient
 //   POST /outbox/dispatch      push queued progress events to the CRM
@@ -188,10 +188,7 @@ Deno.serve(async (request) => {
       } catch {
         return json({ code: "invalid_json" }, 400);
       }
-      const result = await provisionPatient(supabase, actorUserId, body, {
-        activationBaseUrl: Deno.env.get("APP_ACTIVATION_BASE_URL") ?? "",
-        getEnv: (name) => Deno.env.get(name),
-      });
+      const result = await provisionPatient(supabase, actorUserId, body);
       return json(result.body, result.status);
     }
 

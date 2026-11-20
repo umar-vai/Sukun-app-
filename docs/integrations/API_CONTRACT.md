@@ -49,20 +49,24 @@ different profile (never merged), `404 patient_not_found`.
 
 ### POST /patients/provision
 Body: `{ "request_id": uuid, "crm_patient_id", "full_name", "phone": "01XXXXXXXXX (any common spelling)", "crm_customer_id?", "crm_family_id?", "relationship_label?" }`.
-Creates the patient if the CRM id is not mapped yet, maps the ids, and sends a one-time activation
-link by WhatsApp. Safe to repeat: it never creates a second patient and never resets a password.
-A repeat call is also how you resend (the previous link stops working).
+Creates the patient if the CRM id is not mapped yet, maps the ids, and returns a generated
+patient ID and temporary password. There is no automatic delivery: staff send them to the
+patient by hand (owner decision, no WhatsApp integration yet). Safe to repeat.
 
-- New single patient, or the first member of a new family: a login is created with a random
-  password nobody knows; `phone` is required (Bangladesh mobile).
-- A new member of an existing family (`crm_family_id` already known): a profile without its own
-  login, no link is sent (`activation.status = "no_login"`); the family login is used.
-- An account that already chose its password: `activation.status = "already_active"`, nothing changes.
-- `activation.delivery` is `sent`, `failed` or `not_configured`. The link itself is never returned.
-- Errors: `409 account_exists_for_phone`, `409 identity_conflict`, `400 invalid_phone | phone_required`.
+Response: `{ patient_id, created, patient_code, credentials }` where `credentials` is one of
 
-The patient opens `<app>/activate#token=...`, which calls the public `account-activate` function
-with `{token, new_password}`; the link is valid 24 hours and works once.
+| `credentials.status` | Meaning |
+| --- | --- |
+| `issued` | `login_id` and `temporary_password` are included, `must_change_password: true`. Shown ONCE: display to staff, never store or log them. |
+| `already_active` | The patient already chose a password. Nothing changed, nothing is returned. |
+| `no_login` | A family member profile. They use the family login. |
+
+Rules: a repeat call for an account that has not logged in yet issues a NEW temporary password and the
+old one stops working (this is how staff resend). An activated account's password is never reset by
+this call. The patient is forced to choose a permanent password at first login, so the CRM and staff
+never know it. A new family member (`crm_family_id` already known) gets a profile without a login.
+Errors: `409 account_exists_for_phone`, `409 identity_conflict`, `400 invalid_phone | phone_required`.
+The CRM must treat the response body as a secret (no logging, no persistence).
 
 ### POST /prescriptions
 Body: `prescription_event.v1`. Only final, confirmed prescriptions. Drafts are never sent.

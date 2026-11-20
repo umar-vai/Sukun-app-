@@ -1,9 +1,8 @@
 # CRM/ERP integration: master document (SukunLife side)
 
-Date: 2026-11-20. Status: backend, contracts and WhatsApp activation logic implemented
-and tested locally; the Flutter UI is being built in a separate session
-(`claude/family-flutter-ui`); live CRM and live WhatsApp verification are NOT done (see
-section 9). Nothing here has been applied to Production.
+Date: 2026-11-20. Status: backend, contracts, temporary-credential provisioning and per-profile
+routines/challenge implemented and tested locally; the Flutter UI is being built in a separate
+session (`claude/family-flutter-ui`); live CRM verification is NOT done (see section 9). Nothing here has been applied to Production.
 
 ## 1. Owner decisions this implements
 
@@ -25,10 +24,10 @@ never gets table access: only the signed API below.
 | Prescriptions | `prescriptions` has `source_type='imported'` and `source_external_id`; `prescription_versions` keeps versions. | CRM prescription id maps to `source_external_id`; CRM version maps to `prescription_versions.version`. |
 | Tasks | `record_task_completion` is idempotent on `client_event_id`; statuses `pending, completed, snoozed, skipped, missed, cancelled`. | Progress states are reused unchanged. |
 | Templates | `care_templates` holds the 51 official templates (admin editable, audited). Placeholders `{বার} {দিন} {মিনিট}`. | Exported as is; placeholders become declared parameters. No content edited. |
-| Auth | Patients sign in with a patient code and password through `patient-sign-in`; temporary passwords are set by an admin and `profiles.requires_credential_change` forces a change. No SMS provider is configured. | One-time activation needs a provider decision (section 9). |
+| Auth | Patients sign in with a patient code and password through `patient-sign-in`; temporary passwords are set by an admin and `profiles.requires_credential_change` forces a change. No SMS or WhatsApp provider is configured. | Provisioning issues a generated temporary password that staff hand over; the forced change gives the patient a private permanent one. |
 | Notifications | `notification_devices` already carries `installation_id` and `patient_id` per device. | Per-device profile selection needs no new table. |
 | Roles | `private.is_care_staff()` = super admin or raqi. | Integration actor is a dedicated staff service user. |
-| Gaps found | Personal routines and 40-day challenge are keyed by auth user, not by patient, so a shared login shares them across profiles. | Decision needed, flagged in section 9. Not changed. |
+| Gaps found | Personal routines and 40-day challenge were keyed by auth user, so a shared login would share them across profiles. | Owner decided per profile; migration `20261120130000` adds `patient_id`. |
 | Tooling | No Flutter SDK, Supabase CLI or Docker in this session. | SQL verified on plain PostgreSQL 16 with a Supabase stand-in (`scripts/local_db`); Edge code verified with Deno fmt/check/test. Flutter is unverified. |
 
 ## 3. What was built
@@ -40,7 +39,8 @@ never gets table access: only the signed API below.
 | Inbox/outbox, CRM id linking, prescription import, progress RPCs | `.../20261120110000_crm_integration_core.sql` | 61 SQL checks |
 | HMAC auth + gateway Edge Function | `supabase/functions/crm-integration/` | 9 unit tests, `deno fmt/check` clean; not deployed |
 | JSON Schemas, fixtures, validator | `docs/integrations/schemas`, `fixtures`, `scripts/integrations` | 20 contract checks; fixtures also replayed through the real SQL import |
-| One-time WhatsApp activation: tables and RPCs, `account-activate` public function, `POST /patients/provision` | `.../20261120120000_account_activation.sql`, `supabase/functions/account-activate/`, `crm-integration/provision.ts` | 28 SQL checks, 17 + 2 function unit tests (token, phone, WhatsApp request shape, passwords); delivery itself untested |
+| Provisioning with a generated temporary credential (staff pass it to the patient by hand), `POST /patients/provision` | `.../20261120120000_patient_provisioning_credentials.sql`, `crm-integration/provision.ts`, `credentials.ts` | 13 SQL checks, 4 helper unit tests; the Auth user creation and password update path is not exercised locally |
+| Routines and 40 day challenge per profile (patient_id, default to owner profile, challenge keys per profile) | `.../20261120130000_profile_scoped_routines_challenge.sql` | 14 SQL checks, legacy backfill checked on a pre-migration database |
 | Local test harness | `scripts/local_db/` | used for everything above |
 
 ## 4. Architecture
@@ -75,7 +75,7 @@ All `integration_*` functions are `SECURITY DEFINER`, executable by
 | 10 | Template edited meanwhile | Plan actions copy title and instruction at import, so history is a snapshot; an old `template_revision` is accepted with a warning | result `warnings` |
 | 11 | Prescription cancelled | Active plan becomes inactive, future tasks and reminders cancelled, prescription archived, completions kept | audit `integration.prescription_cancelled` |
 | 12 | Phone number changed | Identity never uses the phone; ids only | n/a |
-| 13 | Activation link expires or is reused | Link lives 24 h, single use; any bad, used, revoked or expired token gets the same generic error; resend revokes the old link | `account_activations`, audit `integration.activation_*` |
+| 13 | Temporary password is lost or not yet used | A repeat provision call issues a new one (old stops working); an activated account is never reset | audit `integration.credential_issued` |
 | 14 | Unauthorised CRM request | 401 generic answer, no detail | log line without payload |
 | 15 | Family user reads another family | RLS returns nothing; forged profile id gives 42501 | pgTAP |
 
@@ -106,9 +106,6 @@ the earlier migrations.
 
 | Item | Why | Needed from the owner |
 | --- | --- | --- |
-| WhatsApp provider setup | Delivery needs a WhatsApp Business account, an approved message template with one body variable (the link), and the secrets `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACTIVATION_TEMPLATE`, `APP_ACTIVATION_BASE_URL`, plus `graph.facebook.com` allowed by the environment network policy. Until set, provisioning reports `delivery: not_configured` and nothing is faked | Business account and template approval |
-| App activation screen | The web or app page at `<APP_ACTIVATION_BASE_URL>/activate#token=...` that posts `{token,new_password}` to `account-activate` | Part of the Flutter session |
 | Flutter family UI (phase 3) | Running in a separate session on branch `claude/family-flutter-ui` (owner approved) | Review its draft PR |
-| Personal routines and 40-day challenge under a shared login | They belong to the auth user, so all family profiles would share them | Decide: shared per login, or per profile |
 | Push "care plan updated" after an import | The existing send-notification path is called from the admin app | Decide whether the gateway may call it |
 | Live CRM verification | No CRM access | CRM team test run |

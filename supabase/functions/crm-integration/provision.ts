@@ -1,21 +1,22 @@
-// CRM-triggered patient provisioning and one-time activation.
+// CRM-triggered patient provisioning with a generated temporary credential.
+//
+// OWNER DECISION: no WhatsApp integration yet. SukunLife generates the patient
+// ID and a temporary password and returns them ONCE in this response; the CRM
+// shows them to staff, who pass them to the patient by hand. The account is
+// forced to change the password at first login.
 //
 // Safe to call again for the same crm_patient_id: it never creates a second
-// patient, never resets an activated account's password, and a repeat call
-// simply issues a fresh activation link (the old one stops working).
-// The activation token is NEVER returned to the CRM; it only travels in the
-// WhatsApp message to the patient.
+// patient and never touches an account whose owner already chose a password.
+// A repeat call for an account that has not logged in yet issues a NEW
+// temporary password (the old one stops working), which is how staff resend.
+// The response contains a secret: the CRM must show it once, never store or
+// log it. Responses are `Cache-Control: no-store`.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  buildActivationLink,
-  generateActivationToken,
   generatePatientCode,
-  generateUnknownPassword,
-  hashActivationToken,
+  generateTemporaryPassword,
   normalizeBangladeshPhone,
-  readWhatsAppConfig,
-  sendActivationWhatsApp,
-} from "./activation.ts";
+} from "./credentials.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,7 +36,6 @@ export async function provisionPatient(
   db: SupabaseClient,
   actorUserId: string,
   raw: unknown,
-  env: { activationBaseUrl: string; getEnv: (n: string) => string | undefined },
 ): Promise<Result> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return fail(400, "invalid_request");
@@ -65,6 +65,8 @@ export async function provisionPatient(
     .eq("external_id", crmPatientId)
     .maybeSingle();
   let patientId: string | null = ref?.patient_id ?? null;
+  let freshPassword: string | null = null;
+  let created = false;
 
   if (!patientId) {
     // 2a. A profile for an existing family has no login of its own.
@@ -78,25 +80,24 @@ export async function provisionPatient(
     let userId: string | null = null;
     if (!familyExists) {
       if (!phone) return fail(400, "phone_required");
-      // 2b. New login with a random password nobody knows.
-      const seed = crypto.randomUUID();
-      const { data: created, error } = await db.auth.admin.createUser({
-        email: `patient-${
-          seed.replaceAll("-", "")
-        }@patients.auth.sukunlife.invalid`,
+      // 2b. New login with a generated temporary password.
+      freshPassword = generateTemporaryPassword();
+      const seed = crypto.randomUUID().replaceAll("-", "");
+      const { data: authUser, error } = await db.auth.admin.createUser({
+        email: `patient-${seed}@patients.auth.sukunlife.invalid`,
         phone: phone.e164,
-        password: generateUnknownPassword(),
+        password: freshPassword,
         email_confirm: true,
         phone_confirm: true,
         user_metadata: { full_name: fullName, patient_phone: phone.e164 },
       });
-      if (error || !created.user) {
+      if (error || !authUser.user) {
         // 422 means the phone already has an account: report, never merge.
         return error?.status === 422
           ? fail(409, "account_exists_for_phone")
           : fail(503, "provision_failed");
       }
-      userId = created.user.id;
+      userId = authUser.user.id;
     }
 
     let patient: { id: string } | null = null;
@@ -117,6 +118,7 @@ export async function provisionPatient(
       return fail(503, "provision_failed");
     }
     patientId = patient.id;
+    created = true;
   }
 
   // 3. Map ids (and family). A conflict is reported, never merged.
@@ -134,52 +136,42 @@ export async function provisionPatient(
       : fail(503, "provision_failed");
   }
 
-  // 4. Activation link, only for an account that has not chosen a password.
-  const token = generateActivationToken();
-  const { data: issued, error: issueError } = await db.rpc(
-    "integration_issue_activation",
-    {
-      p_actor_user_id: actorUserId,
-      p_patient_id: patientId,
-      p_token_hash: await hashActivationToken(token),
-      p_phone_digits: phone?.digits ?? null,
-      p_ttl_minutes: 1440,
-    },
+  // 4. Credentials, only for an account that has not chosen its own password.
+  const { data: state, error: stateError } = await db.rpc(
+    "integration_patient_credential_state",
+    { p_actor_user_id: actorUserId, p_patient_id: patientId },
   );
-  if (issueError) return fail(503, "activation_failed");
+  if (stateError) return fail(503, "provision_failed");
 
-  const out: Record<string, unknown> = { patient_id: patientId };
-  if (issued.status !== "issued") {
-    // already_active (keeps its password) or no_login (family profile).
-    out.activation = { status: issued.status };
+  const out: Record<string, unknown> = {
+    patient_id: patientId,
+    created,
+    patient_code: state.patient_code,
+    credentials: { status: state.status },
+  };
+  if (state.status !== "needs_credentials") {
+    // already_active keeps its password; no_login uses the family login.
     return { status: 200, body: out };
   }
 
-  // The number to message: the one in this request, else the stored one.
-  let digits = phone?.digits ?? null;
-  if (!digits) {
-    const { data: p } = await db.from("patients").select("phone")
-      .eq("id", patientId).maybeSingle();
-    digits = p?.phone
-      ? normalizeBangladeshPhone(p.phone)?.digits ?? null
-      : null;
-  }
-  let delivery = "not_configured" as "sent" | "failed" | "not_configured";
-  if (digits && env.activationBaseUrl) {
-    delivery = await sendActivationWhatsApp({
-      config: readWhatsAppConfig(env.getEnv),
-      toDigits: digits,
-      link: buildActivationLink(env.activationBaseUrl, token),
+  if (!freshPassword) {
+    // Existing account that has not logged in yet: issue a new password.
+    freshPassword = generateTemporaryPassword();
+    const { error } = await db.auth.admin.updateUserById(state.user_id, {
+      password: freshPassword,
     });
+    if (error) return fail(503, "credential_failed");
   }
-  await db.rpc("integration_set_activation_delivery", {
-    p_activation_id: issued.activation_id,
-    p_status: delivery,
+  await db.rpc("integration_record_credential_issue", {
+    p_actor_user_id: actorUserId,
+    p_patient_id: patientId,
+    p_reason: created ? "created" : "resent",
   });
-  out.activation = {
+  out.credentials = {
     status: "issued",
-    delivery,
-    expires_at: issued.expires_at,
+    login_id: state.patient_code,
+    temporary_password: freshPassword,
+    must_change_password: true,
   };
   return { status: 200, body: out };
 }
