@@ -8,13 +8,21 @@ class ReminderTaskWindow {
 }
 
 abstract interface class NotificationRepository {
-  Future<ReminderTaskWindow> getReminderTasks({required int horizonDays});
+  /// [patientId] is the selected family profile; null keeps the original
+  /// single-patient behaviour.
+  Future<ReminderTaskWindow> getReminderTasks({
+    required int horizonDays,
+    String? patientId,
+  });
 
+  /// [patientId] records which profile THIS installation currently serves.
+  /// Switching profiles on one phone never touches another phone's row.
   Future<void> registerDevice({
     required String installationId,
     required String platform,
     required String pushToken,
     required String timezone,
+    String? patientId,
   });
 
   Future<void> removeDevice(String installationId);

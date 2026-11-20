@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/core/notifications/notification_inbox_repository.dart';
 import 'package:sukun_life/core/notifications/supabase_notification_inbox_repository.dart';
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final notificationInboxRepositoryProvider =
@@ -9,7 +10,10 @@ final notificationInboxRepositoryProvider =
       if (!AppEnvironment.isSupabaseConfigured) {
         return const UnavailableNotificationInboxRepository();
       }
-      return SupabaseNotificationInboxRepository(Supabase.instance.client);
+      return SupabaseNotificationInboxRepository(
+        Supabase.instance.client,
+        ref.watch(activePatientIdReaderProvider),
+      );
     });
 
 final class UnavailableNotificationInboxRepository

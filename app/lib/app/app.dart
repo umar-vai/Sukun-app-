@@ -19,6 +19,7 @@ import 'package:sukun_life/core/notifications/notification_providers.dart';
 import 'package:sukun_life/core/notifications/public_notice_tap_qa_diagnostics.dart';
 import 'package:sukun_life/core/notifications/notification_tap_relay.dart';
 import 'package:sukun_life/core/widgets/global_audio_dock.dart';
+import 'package:sukun_life/features/family/presentation/profile_scope.dart';
 import 'package:sukun_life/l10n/app_localizations.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/universal_announcements/presentation/universal_notice_auto_popup.dart';
@@ -278,7 +279,9 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
                 routerConfig: ref.watch(appRouterProvider),
                 builder: (context, child) => AndroidUpdateAutoPopup(
                   child: UniversalNoticeAutoPopup(
-                    child: Stack(children: [?child, const GlobalAudioDock()]),
+                    child: ActiveProfileEffects(
+                      child: Stack(children: [?child, const GlobalAudioDock()]),
+                    ),
                   ),
                 ),
               );

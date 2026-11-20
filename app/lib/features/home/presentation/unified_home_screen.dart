@@ -14,6 +14,7 @@ import 'package:sukun_life/features/islamic_utilities/domain/prayer_schedule.dar
 import 'package:sukun_life/features/patient_care/data/patient_care_providers.dart';
 import 'package:sukun_life/features/patient_care/domain/patient_day.dart';
 import 'package:sukun_life/features/personal_routines/data/personal_routine_repository.dart';
+import 'package:sukun_life/features/family/presentation/profile_switcher.dart';
 import 'package:sukun_life/features/home/domain/home_next_actions.dart';
 import 'package:sukun_life/features/notice_center/data/notice_center_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -356,6 +357,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
           ],
         ),
         actions: [
+          if (widget.isPatient) const ProfileSwitcherButton(onDarkBar: true),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.white),
             onPressed: _signingOut

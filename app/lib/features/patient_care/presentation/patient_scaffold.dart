@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/widgets/sukun_design.dart';
+import 'package:sukun_life/features/family/presentation/profile_switcher.dart';
 import 'package:sukun_life/app/router/shared_user_navigation.dart';
 
 class PatientScaffold extends StatelessWidget {
@@ -24,6 +25,7 @@ class PatientScaffold extends StatelessWidget {
         title: Text(title),
         actions: [
           ...?actions,
+          const ProfileSwitcherButton(),
           IconButton(
             tooltip: 'আমার বার্তা',
             onPressed: () => context.push('/patient/notifications'),

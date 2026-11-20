@@ -25,10 +25,34 @@ ordinary `patients` rows linked through `family_members`. No limit of five is co
   are audited. A profile cannot be moved between families silently, a profile with its own
   login cannot be linked, and the owner profile cannot be unlinked.
 
-## Flutter work still to do
+## Flutter side (implemented)
 
-Top-right switcher reading `my_family_profiles()`; an active-profile provider that every
-patient repository reads; passing `p_patient_id` to the generators and device registration;
-profile-keyed offline completion queue; reschedule local reminders on switch; disclosure text
-that linked profiles share patient-visible information. Existing screens keep working for
-single-patient accounts because the RPC parameter is optional.
+Code lives in `app/lib/features/family/`.
+
+- `my_family_profiles()` is read by `SupabaseFamilyProfilesRepository`. A single patient account
+  returns one row and the app behaves exactly as before.
+- `activeProfileProvider` (Riverpod `AsyncNotifier`) holds the fetched list and the selected
+  profile. The selection is stored per device and per login in `shared_preferences`, never on the
+  server. It defaults to the owner profile, and a stored id that is not in the fetched list is
+  discarded. `activePatientIdReaderProvider` is the only thing repositories use to learn the id.
+- Top-right `ProfileSwitcherButton` (Patient app bar and the patient Home bar). It is hidden when
+  there is one profile. The sheet shows name, initials avatar, relationship label, a check on the
+  current profile and the disclosure that linked profiles share patient-visible information.
+- Every patient read filters by the active `patient_id` (plan, tasks, prescriptions, progress,
+  inbox, reminder window). `ensure_patient_tasks`, `ensure_patient_reminder_tasks` and
+  `register_notification_device` receive `p_patient_id`; it is omitted when there is no profile
+  context. `record_task_completion` stays id-less by design.
+- `ProfileScoped` wraps each patient route and re-keys the subtree on a switch, so one profile's
+  numbers can never stay on screen for another.
+- The offline completion queue records `patient_id` on every event and is read per profile
+  (`readForPatient`). Events written before family accounts have no `patient_id`; they are only
+  ever applied to the exact task id they name, and the server re-checks access on submit.
+- `ActiveProfileEffects` (above the router) calls
+  `NotificationCoordinator.resyncForActiveProfile()` on a switch: it waits for any refresh that
+  started for the previous profile, re-registers this installation with the new patient id,
+  schedules the new profile's reminders and cancels the previous profile's pending ones. Reminder
+  ids come from task ids, so nothing is scheduled twice. Push payloads stay generic.
+
+Known limits: a local reminder that was already delivered for another profile still opens
+`/patient/today?task=...` for the active profile only; pending offline events for a profile are
+flushed when that profile is next opened.

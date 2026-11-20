@@ -10,6 +10,7 @@ final class SupabaseNotificationRepository implements NotificationRepository {
   @override
   Future<ReminderTaskWindow> getReminderTasks({
     required int horizonDays,
+    String? patientId,
   }) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -21,21 +22,22 @@ final class SupabaseNotificationRepository implements NotificationRepository {
           'p_start_date': _dateOnly(today),
           'p_end_date': _dateOnly(end),
           'p_timezone_offset_minutes': now.timeZoneOffset.inMinutes,
+          'p_patient_id': ?patientId,
         },
       );
-      final plan = await _client
-          .from('care_plans')
-          .select('id')
-          .eq('status', 'active')
-          .maybeSingle();
+      var planQuery = _client.from('care_plans').select('id');
+      if (patientId != null) planQuery = planQuery.eq('patient_id', patientId);
+      final plan = await planQuery.eq('status', 'active').maybeSingle();
       if (plan == null) {
         return const ReminderTaskWindow(planId: null, tasks: []);
       }
       final planId = plan['id'] as String;
-      final rows = await _client
+      var taskQuery = _client
           .from('task_instances')
           .select('*,plan_actions!inner(*)')
-          .eq('plan_actions.care_plan_id', planId)
+          .eq('plan_actions.care_plan_id', planId);
+      if (patientId != null) taskQuery = taskQuery.eq('patient_id', patientId);
+      final rows = await taskQuery
           .gte('occurrence_date', _dateOnly(today))
           .lte('occurrence_date', _dateOnly(end))
           .inFilter('status', ['pending', 'snoozed'])
@@ -57,6 +59,7 @@ final class SupabaseNotificationRepository implements NotificationRepository {
     required String platform,
     required String pushToken,
     required String timezone,
+    String? patientId,
   }) async {
     try {
       await _client.rpc(
@@ -66,6 +69,7 @@ final class SupabaseNotificationRepository implements NotificationRepository {
           'p_platform': platform,
           'p_push_token': pushToken,
           'p_timezone': timezone,
+          'p_patient_id': ?patientId,
         },
       );
     } on PostgrestException {
