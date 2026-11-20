@@ -159,18 +159,36 @@ final class NotificationCoordinator {
       final reminders = planCareReminders(tasks: window.tasks, now: _now());
       final precise = await _local.canSchedulePrecisely();
       final previousIds = await _store.scheduledNotificationIds();
-      for (final id in previousIds) {
-        await _local.cancel(id);
-      }
 
+      // Replace alarms in place, then remove only the ones no longer wanted
+      // and still pending. Cancelling everything first left a window with no
+      // reminders and wiped already delivered reminders from the tray each
+      // time Patient Home reloaded.
       final scheduledIds = <int>[];
-      if (!serverWebPushRegistered) {
-        for (final reminder in reminders) {
-          await _local.schedule(reminder, precise: precise);
-          scheduledIds.add(reminder.notificationId);
+      try {
+        if (!serverWebPushRegistered) {
+          for (final reminder in reminders) {
+            await _local.schedule(reminder, precise: precise);
+            scheduledIds.add(reminder.notificationId);
+          }
         }
+      } on Object {
+        // Keep what was installed and remember every ID that may exist.
+        await _store.setScheduledNotificationIds({
+          ...previousIds,
+          ...scheduledIds,
+        });
+        rethrow;
       }
       await _store.setScheduledNotificationIds(scheduledIds);
+      final stale = staleReminderIds(
+        previous: previousIds,
+        next: scheduledIds.toSet(),
+        pending: await _local.pendingNotificationIds(),
+      );
+      for (final id in stale) {
+        await _local.cancel(id);
+      }
       if (platform != 'web') await _registerCurrentToken(timezone);
       _lastSyncSucceeded = true;
     } on Object {

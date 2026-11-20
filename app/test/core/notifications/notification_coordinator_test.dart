@@ -477,6 +477,9 @@ final class _FakeLocalNotifications implements LocalNotificationsGateway {
   Future<String> configureTimezone() async => 'Asia/Dhaka';
 
   @override
+  Future<Set<int>?> pendingNotificationIds() async => null;
+
+  @override
   Future<void> schedule(
     ReminderSchedule reminder, {
     required bool precise,

@@ -171,15 +171,21 @@ class PrayerNotificationService {
       maximumPending: ios ? 12 : androidMaximumPending,
     );
     await local.configureTimezone();
-    await _cancelExisting();
+    final prefs = await SharedPreferences.getInstance();
+    final previous = (prefs.getStringList(_idsKey) ?? const <String>[])
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
     final precise = await local.canSchedulePrecisely();
     final ids = <int>[];
     try {
+      // Re-scheduling an ID replaces its alarm in place. Never cancel the
+      // whole set first: that left a gap with no alarms at all, and cancel()
+      // also removed an already delivered waqt notice from the tray.
       for (final reminder in reminders) {
         await local.schedule(reminder, precise: precise);
         ids.add(reminder.notificationId);
       }
-      final prefs = await SharedPreferences.getInstance();
       final renewal = planPrayerRenewalReminder(
         reminders: reminders,
         now: DateTime.now(),
@@ -198,14 +204,25 @@ class PrayerNotificationService {
         );
       }
       await prefs.setStringList(_idsKey, ids.map((id) => '$id').toList());
+      final stale = staleReminderIds(
+        previous: previous,
+        next: ids.toSet(),
+        pending: await local.pendingNotificationIds(),
+      );
+      for (final id in stale) {
+        await local.cancel(id);
+      }
       return ids.length;
     } on Object {
-      for (final id in ids) {
-        try {
-          await local.cancel(id);
-        } on Object {
-          // Preserve original scheduling failure.
-        }
+      // Keep every alarm that was installed: a partial schedule still rings
+      // on time, whereas rolling back left the user with no alerts at all.
+      // Remember all IDs that may exist so the next refresh can tidy them.
+      try {
+        await prefs.setStringList(_idsKey, [
+          for (final id in {...previous, ...ids}) '$id',
+        ]);
+      } on Object {
+        // Preserve original scheduling failure.
       }
       rethrow;
     }

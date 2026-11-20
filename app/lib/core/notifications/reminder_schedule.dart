@@ -96,3 +96,16 @@ int stableNotificationId(String value) {
   }
   return hash == 0 ? 1 : hash;
 }
+
+/// IDs to cancel when [next] replaces [previous]. Scheduling an ID again
+/// replaces its alarm in place, so only IDs that are no longer wanted are
+/// cancelled, and only while still pending: cancelling an already delivered
+/// ID would also wipe the visible notification from the tray.
+Set<int> staleReminderIds({
+  required Iterable<int> previous,
+  required Set<int> next,
+  Set<int>? pending,
+}) {
+  final stale = previous.toSet().difference(next);
+  return pending == null ? stale : stale.intersection(pending);
+}
