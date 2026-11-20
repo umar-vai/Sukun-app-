@@ -93,8 +93,8 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
             .select(_selection)
             .eq('status', 'published')
             .eq('type', 'quran')
-            .order('surah_number')
-            .order('ayah_number')
+            .order('surah_number', ascending: true)
+            .order('ayah_number', ascending: true)
             .range(offset, offset + pageSize - 1);
         ayat.addAll(response.map(ContentResource.fromJson));
         if (response.length < pageSize) break;
@@ -132,7 +132,7 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
           .eq('status', 'published')
           .eq('type', 'quran')
           .eq('surah_number', surahNumber)
-          .order('ayah_number')
+          .order('ayah_number', ascending: true)
           .limit(300);
       return response.map(ContentResource.fromJson).toList(growable: false);
     } on PostgrestException catch (error) {
@@ -183,7 +183,7 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
       if (types.isNotEmpty) {
         request = request.inFilter('type', types.toList(growable: false));
       }
-      final response = await request.order('title');
+      final response = await request.order('title', ascending: true);
       return response.map(ContentCollection.fromJson).toList(growable: false);
     } on PostgrestException catch (error) {
       throw ResourceException(error.message);
@@ -204,7 +204,7 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
           .from('content_collection_items')
           .select('sort_order,content_items($_selection)')
           .eq('collection_id', collectionId)
-          .order('sort_order');
+          .order('sort_order', ascending: true);
       final items = memberships
           .map((row) => row['content_items'])
           .whereType<Map<String, dynamic>>()

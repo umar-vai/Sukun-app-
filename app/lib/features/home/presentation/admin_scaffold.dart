@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
@@ -14,6 +15,7 @@ class AdminScaffold extends StatefulWidget {
     required this.body,
     this.floatingActionButton,
     this.actions,
+    this.heroAppBar = false,
   });
 
   final String title;
@@ -21,6 +23,9 @@ class AdminScaffold extends StatefulWidget {
   final Widget body;
   final Widget? floatingActionButton;
   final List<Widget>? actions;
+
+  /// Dashboard-style app bar that blends into a [SukunHeroHeader].
+  final bool heroAppBar;
 
   @override
   State<AdminScaffold> createState() => _AdminScaffoldState();
@@ -62,6 +67,7 @@ class _AdminScaffoldState extends State<AdminScaffold> {
     if (compact) {
       return IconButton(
         key: const Key('admin-sign-out'),
+        color: widget.heroAppBar ? Colors.white : null,
         tooltip: _signingOut ? 'লগআউট হচ্ছে…' : label,
         onPressed: _signingOut ? null : _signOut,
         icon: icon,
@@ -70,6 +76,9 @@ class _AdminScaffoldState extends State<AdminScaffold> {
 
     return TextButton.icon(
       key: const Key('admin-sign-out'),
+      style: widget.heroAppBar
+          ? TextButton.styleFrom(foregroundColor: Colors.white)
+          : null,
       onPressed: _signingOut ? null : _signOut,
       icon: icon,
       label: Text(_signingOut ? 'লগআউট হচ্ছে…' : label),
@@ -83,7 +92,16 @@ class _AdminScaffoldState extends State<AdminScaffold> {
     final raqi = isRaqiSession(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: widget.heroAppBar ? SukunColors.deepTide : null,
+        foregroundColor: widget.heroAppBar ? Colors.white : null,
         title: Text(widget.title),
+        titleTextStyle: widget.heroAppBar
+            ? Theme.of(context).appBarTheme.titleTextStyle
+                  ?.copyWith(color: Colors.white)
+            : null,
+        actionsIconTheme: widget.heroAppBar
+            ? const IconThemeData(color: Colors.white)
+            : null,
         actions: [
           ...?widget.actions,
           _logoutAction(context, copy?.signOut ?? 'বের হয়ে যান'),

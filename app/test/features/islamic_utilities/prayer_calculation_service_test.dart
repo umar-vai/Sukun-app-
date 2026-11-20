@@ -7,7 +7,7 @@ void main() {
   const settings = PrayerUtilitySettings(
     location: UtilityLocation(
       id: 'dhaka',
-      name: 'Dhaka',
+      name: 'ঢাকা',
       latitude: 23.8103,
       longitude: 90.4125,
       timezone: 'Asia/Dhaka',

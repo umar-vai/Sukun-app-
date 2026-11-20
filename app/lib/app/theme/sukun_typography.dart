@@ -114,8 +114,16 @@ abstract final class SukunTypography {
   ) {
     final family = previewBengaliFont(choice).fontFamily;
     if (family == null) return theme;
-    TextStyle? fallback(TextStyle? style) =>
-        style?.copyWith(fontFamilyFallback: [family]);
+    // Li Ador Noirrit carries its own Latin letters and digits, so it is the
+    // primary face for the whole interface (Bangla, English and numbers).
+    // Poppins stays behind it only for the few symbols it lacks.
+    final primary = choice == BengaliFontChoice.liAdorNoirrit;
+    TextStyle? fallback(TextStyle? style) => primary
+        ? style?.copyWith(
+            fontFamily: family,
+            fontFamilyFallback: [?style.fontFamily],
+          )
+        : style?.copyWith(fontFamilyFallback: [family]);
 
     return theme.copyWith(
       displayLarge: fallback(theme.displayLarge),

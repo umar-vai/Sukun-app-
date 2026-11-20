@@ -79,7 +79,7 @@ class _AdminUserRoutinesScreenState extends State<AdminUserRoutinesScreen> {
     } else if (normalized.isNotEmpty) {
       request = request.ilike('display_name', '%$normalized%');
     }
-    final rows = await request.order('display_name').limit(40);
+    final rows = await request.order('display_name', ascending: true).limit(40);
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 

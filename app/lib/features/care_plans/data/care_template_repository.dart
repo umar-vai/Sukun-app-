@@ -40,7 +40,7 @@ final class SupabaseCareTemplateRepository implements CareTemplateRepository {
       final rows = await _client
           .from('care_templates')
           .select()
-          .order('sort_order')
+          .order('sort_order', ascending: true)
           .order('id');
       final templates = [
         for (final row in rows) OfficialPrescriptionTemplate.fromJson(row),
