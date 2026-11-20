@@ -64,8 +64,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final sessionState = ref.watch(appSessionProvider);
   final session = sessionState.value;
 
-  return GoRouter(
-    initialLocation: '/',
+  // This provider rebuilds the GoRouter on every session emission (resume,
+  // token refresh, role lookup). Without carrying the current location over,
+  // a notice opened from a notification tap was reset to '/' within a second.
+  // Only keep the location while the same signed-in identity is active; the
+  // redirect below still validates it, so no guarded route can leak.
+  final memory = ref.read(_routerLocationMemoryProvider);
+  final carried = memory.value;
+  final keepLocation =
+      session != null &&
+      carried != null &&
+      carried.userId == session.userId &&
+      carried.location != '/';
+
+  final router = GoRouter(
+    initialLocation: keepLocation ? carried.location : '/',
     redirect: (context, state) {
       // Fail closed while an OAuth or restored browser session is unresolved.
       // Never construct patient/admin widgets before role verification.
@@ -613,7 +626,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ),
   );
+
+  void rememberLocation() {
+    final uri = router.routerDelegate.currentConfiguration.uri;
+    memory.value = (userId: session?.userId, location: uri.toString());
+  }
+
+  router.routerDelegate.addListener(rememberLocation);
+  ref.onDispose(() => router.routerDelegate.removeListener(rememberLocation));
+  return router;
 });
+
+/// Last visible location of the previous router instance, used only to survive
+/// a session-driven router rebuild for the same user. Scoped per container.
+final class _RouterLocationMemory {
+  ({String? userId, String location})? value;
+}
+
+final _routerLocationMemoryProvider = Provider<_RouterLocationMemory>(
+  (ref) => _RouterLocationMemory(),
+);
 
 AppSession? _patientSession(AppSession? session) =>
     session?.isPatient == true ? session : null;
