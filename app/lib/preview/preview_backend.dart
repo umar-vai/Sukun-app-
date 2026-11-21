@@ -596,6 +596,21 @@ class PreviewBackend {
         );
       case 'ensure_patient_reminder_tasks':
         return <PreviewRow>[];
+      case 'my_family_profiles':
+        // Preview accounts are single-patient: exactly one profile.
+        final own = _byId('patients', _patientIdForUser(userId));
+        if (own == null) return <PreviewRow>[];
+        return [
+          {
+            'patient_id': own['id'],
+            'full_name': own['full_name'],
+            'relationship_label': null,
+            'display_order': 0,
+            'is_primary': true,
+            'family_id': null,
+            'family_label': null,
+          },
+        ];
       case 'record_task_completion':
         final task = _byId('task_instances', p['p_task_id']);
         if (task == null) throw _Problem(404, 'Task not found');

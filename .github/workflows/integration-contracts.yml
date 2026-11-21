@@ -1,0 +1,36 @@
+name: Integration Contracts
+
+on:
+  pull_request:
+    paths:
+      - 'docs/integrations/**'
+      - 'scripts/integrations/**'
+      - 'supabase/functions/crm-integration/**'
+      - '.github/workflows/integration-contracts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: CRM contract schemas and signing
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Validate JSON Schemas and fixtures
+        working-directory: scripts/integrations
+        run: |
+          npm install --no-audit --no-fund
+          npm run validate
+
+      - name: Signing and provisioning helper tests
+        run: node --experimental-strip-types --test supabase/functions/crm-integration/*_test.ts

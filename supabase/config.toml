@@ -468,3 +468,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/approved-audio-download/deno.json"
 entrypoint = "./functions/approved-audio-download/index.ts"
+
+[functions.crm-integration]
+enabled = true
+# Called by the CRM/ERP backend, not by a signed-in user. Every route verifies an
+# HMAC signature (crm_auth.ts) or a dispatch secret inside the handler before the
+# server-only service-role client is used. Secrets: CRM_INTEGRATION_KEYS,
+# CRM_INTEGRATION_ACTOR_USER_ID, CRM_DISPATCH_SECRET, CRM_PROGRESS_WEBHOOK_*.
+verify_jwt = false
+import_map = "./functions/crm-integration/deno.json"
+entrypoint = "./functions/crm-integration/index.ts"

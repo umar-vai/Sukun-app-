@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "event_id": "7d0f9a52-3b0e-4d3e-9d55-0f6b3a1c2e10",
+  "event_type": "progress.task_completed",
+  "occurred_at": "2026-11-22T07:12:44.120Z",
+  "crm_patient_id": "CRM-P-1025",
+  "sukun_patient_id": "10000000-0000-4000-8000-000000000001",
+  "crm_prescription_id": "RX-2026-001",
+  "care_plan_id": "30000000-0000-4000-8000-000000000001",
+  "care_plan_version": 3,
+  "plan_action_id": "40000000-0000-4000-8000-000000000001",
+  "task_instance_id": "50000000-0000-4000-8000-000000000001",
+  "occurrence_date": "2026-11-22",
+  "status": "completed"
+}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sukunlife.app/schemas/integrations/progress_event.v1.json",
+  "title": "SukunLife progress event pushed to the CRM (v1)",
+  "description": "One patient task action. event_id is stable: deduplicate on it. Contains no name, phone or prescription text.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "crm_patient_id",
+    "sukun_patient_id",
+    "care_plan_id",
+    "care_plan_version",
+    "plan_action_id",
+    "task_instance_id",
+    "occurrence_date",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "enum": [
+        "progress.task_completed",
+        "progress.task_skipped",
+        "progress.task_snoozed"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "crm_patient_id": {
+      "type": "string"
+    },
+    "sukun_patient_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "crm_prescription_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "care_plan_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "care_plan_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "plan_action_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task_instance_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "occurrence_date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "skipped",
+        "snoozed"
+      ]
+    }
+  }
+}

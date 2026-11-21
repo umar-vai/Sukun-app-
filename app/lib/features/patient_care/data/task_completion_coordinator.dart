@@ -34,6 +34,9 @@ final class TaskCompletionCoordinator {
   }) async {
     final event = PendingTaskCompletion(
       userId: userId,
+      // The task's own profile, not whichever profile is selected when the
+      // network call finally happens.
+      patientId: task.patientId,
       taskId: task.id,
       status: status,
       clientEventId: clientEventId,
@@ -55,12 +58,12 @@ final class TaskCompletionCoordinator {
     }
   }
 
-  Future<void> flush(String userId) async {
-    final events = await store.readForUser(userId);
+  Future<void> flush(String userId, String patientId) async {
+    final events = await store.readForPatient(userId, patientId);
     for (final event in events) {
       // An updated action may supersede an item captured in this snapshot.
       // Avoid replaying a stale snooze after a newer completion was queued.
-      final remaining = await store.readForUser(userId);
+      final remaining = await store.readForPatient(userId, patientId);
       if (!remaining.any((item) => item.clientEventId == event.clientEventId)) {
         continue;
       }
@@ -82,8 +85,12 @@ final class TaskCompletionCoordinator {
     }
   }
 
-  Future<PatientDay> applyPending(String userId, PatientDay day) async {
-    final events = await store.readForUser(userId);
+  Future<PatientDay> applyPending(
+    String userId,
+    String patientId,
+    PatientDay day,
+  ) async {
+    final events = await store.readForPatient(userId, patientId);
     final latestByTask = <String, PendingTaskCompletion>{};
     for (final event in events) {
       final current = latestByTask[event.taskId];

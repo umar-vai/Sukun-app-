@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "crm_patient_id": "CRM-P-1025",
+  "from": "2026-11-16",
+  "to": "2026-11-22",
+  "totals": {
+    "total": 20,
+    "completed": 14,
+    "pending": 3,
+    "snoozed": 0,
+    "skipped": 2,
+    "missed": 1,
+    "adherence_percent": 70.0
+  },
+  "daily": [
+    {
+      "date": "2026-11-22",
+      "total": 3,
+      "completed": 2,
+      "skipped": 0,
+      "pending": 1
+    }
+  ]
+}

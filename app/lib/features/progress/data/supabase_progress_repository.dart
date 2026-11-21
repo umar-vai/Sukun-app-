@@ -1,14 +1,23 @@
+import 'package:sukun_life/features/family/data/family_providers.dart';
 import 'package:sukun_life/features/progress/data/progress_repository.dart';
 import 'package:sukun_life/features/progress/domain/adherence_summary.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final class SupabaseProgressRepository implements ProgressRepository {
-  const SupabaseProgressRepository(this._client);
+  const SupabaseProgressRepository(this._client, [this._activePatientId]);
 
   final SupabaseClient _client;
 
+  /// The selected family profile. Null keeps the staff/admin path unchanged.
+  final ActivePatientIdReader? _activePatientId;
+
   @override
-  Future<AdherenceSummary> getMyProgress({int days = 7}) => _load(days: days);
+  Future<AdherenceSummary> getMyProgress({int days = 7}) async {
+    // A family login can read several profiles. "My progress" must only
+    // count the selected profile, never the whole family.
+    final patientId = await _activePatientId?.call();
+    return _load(patientId: patientId, days: days);
+  }
 
   @override
   Future<AdherenceSummary> getPatientProgress(

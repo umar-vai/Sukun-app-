@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sukunlife.app/schemas/integrations/progress_summary.v1.json",
+  "title": "Progress summary returned by GET /progress (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "crm_patient_id",
+    "from",
+    "to",
+    "totals",
+    "daily"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "crm_patient_id": {
+      "type": "string"
+    },
+    "from": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "to": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "completed",
+        "pending",
+        "snoozed",
+        "skipped",
+        "missed",
+        "adherence_percent"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "completed": {
+          "type": "integer"
+        },
+        "pending": {
+          "type": "integer"
+        },
+        "snoozed": {
+          "type": "integer"
+        },
+        "skipped": {
+          "type": "integer"
+        },
+        "missed": {
+          "type": "integer"
+        },
+        "adherence_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "completed / total (cancelled excluded). null when total is 0."
+        }
+      }
+    },
+    "daily": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date",
+          "total",
+          "completed",
+          "skipped",
+          "pending"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "pending": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

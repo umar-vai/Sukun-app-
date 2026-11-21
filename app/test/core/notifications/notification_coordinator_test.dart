@@ -418,6 +418,7 @@ final class _FakeRepository implements NotificationRepository {
   @override
   Future<ReminderTaskWindow> getReminderTasks({
     required int horizonDays,
+    String? patientId,
   }) async => ReminderTaskWindow(planId: 'plan-id', tasks: tasks);
 
   @override
@@ -426,6 +427,7 @@ final class _FakeRepository implements NotificationRepository {
     required String platform,
     required String pushToken,
     required String timezone,
+    String? patientId,
   }) async {
     registeredInstallation = installationId;
     registeredToken = pushToken;
