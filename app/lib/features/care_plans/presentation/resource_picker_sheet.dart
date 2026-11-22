@@ -667,7 +667,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       return const [SliverToBoxAdapter(child: _EmptyResources())];
     }
     final categoryOpen = _openCategory;
-    if (section != null && query.isEmpty && grouped.length > 1) {
+    if (section != null &&
+        section.slug != 'all' &&
+        query.isEmpty &&
+        grouped.length > 1) {
       if (categoryOpen == null || !grouped.containsKey(categoryOpen)) {
         return [
           SliverPadding(
