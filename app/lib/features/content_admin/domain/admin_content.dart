@@ -161,6 +161,7 @@ class AdminContentItem {
     this.author,
     this.publisher,
     this.chapterNumber,
+    this.sortOrder = 0,
     this.languageCode,
     this.rightsNote,
     this.thumbnailUrl,
@@ -208,6 +209,7 @@ class AdminContentItem {
         author: json['author'] as String?,
         publisher: json['publisher'] as String?,
         chapterNumber: json['chapter_number'] as int?,
+        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
         languageCode: json['language_code'] as String?,
         rightsNote: json['rights_note'] as String?,
         thumbnailUrl: json['thumbnail_url'] as String?,
@@ -255,6 +257,9 @@ class AdminContentItem {
   final String? author;
   final String? publisher;
   final int? chapterNumber;
+
+  /// In-category display order (lower first).
+  final int sortOrder;
   final String? languageCode;
   final String? rightsNote;
   final String? thumbnailUrl;
@@ -454,6 +459,7 @@ class SaveContentInput {
     this.author,
     this.publisher,
     this.chapterNumber,
+    this.sortOrder,
     this.languageCode,
     this.rightsNote,
     this.thumbnailUrl,
@@ -494,6 +500,9 @@ class SaveContentInput {
   final String? author;
   final String? publisher;
   final int? chapterNumber;
+
+  /// When set, the display order is saved after the resource itself.
+  final int? sortOrder;
   final String? languageCode;
   final String? rightsNote;
   final String? thumbnailUrl;

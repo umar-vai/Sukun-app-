@@ -55,7 +55,7 @@ const _ruqyahDua = ContentResourceOption(
 
 void main() {
   test('Admin main sections use the public Resources taxonomy', () {
-    expect(resourceSections.length, 8);
+    expect(resourceSections.length, 10);
     final hadith = resourceSectionBySlug('hadith')!;
     final dua = resourceSectionBySlug('dua-azkar')!;
     final ruqyah = resourceSectionBySlug('ruqyah')!;

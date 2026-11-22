@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
+import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
 
 /// Distinct route pages: group index → group categories → published content.
 /// Every page displays only records provided by the authorized repository.
@@ -60,6 +61,10 @@ class DuaAzkarBrowseSection extends StatelessWidget {
     'time-based' => Icons.schedule_rounded,
     'everyday' => Icons.auto_stories_outlined,
     'support' => Icons.health_and_safety_outlined,
+    'masnun-morning-evening' => Icons.wb_twilight_rounded,
+    'masnun-sleep' => Icons.bedtime_outlined,
+    'masnun-daily' => Icons.event_repeat_rounded,
+    'masnun-needs' => Icons.volunteer_activism_outlined,
     _ => Icons.menu_book_outlined,
   };
 
@@ -81,7 +86,8 @@ class DuaAzkarBrowseSection extends StatelessWidget {
     }
     return _items(
       context,
-      resources.where((item) => item.categorySlug == category.slug).toList(),
+      resources.where((item) => item.categorySlug == category.slug).toList()
+        ..sort(compareResourcesByOrder),
     );
   }
 
@@ -185,7 +191,16 @@ class DuaAzkarBrowseSection extends StatelessWidget {
                   textStyle: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              subtitle: item.summary?.trim().isNotEmpty == true
+                  ? Text(
+                      item.summary!.trim().split('\n').first,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              trailing: item.mediaUrl?.trim().isNotEmpty == true
+                  ? const Icon(Icons.headphones_rounded, size: 20)
+                  : const Icon(Icons.chevron_right_rounded),
               onTap: () =>
                   context.push('/resources/${Uri.encodeComponent(item.id)}'),
             ),

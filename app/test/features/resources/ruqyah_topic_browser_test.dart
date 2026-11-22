@@ -6,11 +6,17 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/ruqyah_topic_browser.dart';
 
 void main() {
-  ContentResource audio(String id, String title) => ContentResource(
+  ContentResource audio(
+    String id,
+    String title, {
+    String category = 'ruqyah-lib-topic',
+    int order = 0,
+  }) => ContentResource(
     id: id,
     type: 'audio',
     title: title,
-    categorySlug: 'ruqyah-audio',
+    categorySlug: category,
+    sortOrder: order,
     visibility: 'public',
     status: 'published',
   );
@@ -23,9 +29,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final audioItems = [
-      audio('kursi', 'আয়াতুল কুরসির রুকইয়াহ'),
-      audio('qul', 'তিনকুলের রুকইয়াহ'),
-      audio('eye', 'বদনজরের রুকইয়াহ'),
+      audio('kursi', 'আয়াতুল কুরসির রুকইয়াহ', order: 20),
+      audio('qul', 'তিনকুলের রুকইয়াহ', order: 10),
+      audio('eye', 'বদনজরের রুকইয়াহ', category: 'ruqyah-lib-reciters'),
     ];
     var openAyat = 0;
     final router = GoRouter(
@@ -53,10 +59,15 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
       findsOneWidget,
     );
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
+    // Every audio item is grouped, so no "more audio" card is shown.
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-more-audio')),
+      findsNothing,
+    );
     expect(
       find.descendant(
         of: find.byKey(const Key('ruqyah-filter-ruqyah-self-guide')),
@@ -73,7 +84,7 @@ void main() {
     );
     expect(
       find.descendant(
-        of: find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
+        of: find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
         matching: find.byIcon(Icons.headphones_rounded),
       ),
       findsOneWidget,
@@ -81,17 +92,24 @@ void main() {
     expect(tester.takeException(), isNull);
 
     await tester.ensureVisible(
-      find.byKey(const Key('ruqyah-filter-ruqyah-recitation')),
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
     );
-    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-recitation')));
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')));
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,
-      '/resources/ruqyah/ruqyah-recitation',
+      '/resources/ruqyah/ruqyah-lib-topic',
     );
     expect(find.byKey(const Key('ruqyah-item-kursi')), findsOneWidget);
     expect(find.byKey(const Key('ruqyah-item-qul')), findsOneWidget);
     expect(find.byKey(const Key('ruqyah-item-eye')), findsNothing);
+    // Admin-set order: the item with order 10 comes before order 20.
+    expect(
+      tester.getTopLeft(find.byKey(const Key('ruqyah-item-qul'))).dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const Key('ruqyah-item-kursi'))).dy,
+      ),
+    );
     router.pop();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/resources/ruqyah');

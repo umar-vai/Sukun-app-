@@ -20,6 +20,27 @@ const ruqyahAudioTopics = <RuqyahBrowseTopic>[
   RuqyahBrowseTopic('ruqyah-other', 'অন্যান্য অডিও'),
 ];
 
+/// Structured audio library groups. Each maps 1:1 to a CMS category, so a
+/// Super Admin can move an item between groups from the content editor.
+const ruqyahLibraryTopics = <RuqyahBrowseTopic>[
+  RuqyahBrowseTopic('ruqyah-lib-topic', 'বিষয়ভিত্তিক রুকইয়াহ'),
+  RuqyahBrowseTopic('ruqyah-lib-reciters', 'বিভিন্ন ক্বারির সাধারণ রুকইয়াহ'),
+  RuqyahBrowseTopic('ruqyah-lib-other', 'অন্যান্য রুকইয়াহ অডিও'),
+  RuqyahBrowseTopic('ruqyah-lib-special', 'বিশেষ আয়াত, সুরা ও দোয়ার অডিও'),
+  RuqyahBrowseTopic('ruqyah-lib-hibshi', 'খালিদ আল হিবশীর বিশেষ রুকইয়াহ'),
+  RuqyahBrowseTopic('ruqyah-lib-short', 'বিকল্প ও সংক্ষিপ্ত সংস্করণ'),
+  RuqyahBrowseTopic('ruqyah-lib-more-reciters', 'আরও কিছু ক্বারির রুকইয়াহ'),
+];
+
+/// Published audio that is not yet placed in a library group.
+const ruqyahUngroupedAudioTopic = RuqyahBrowseTopic(
+  'ruqyah-more-audio',
+  'আরও অডিও',
+);
+
+bool isRuqyahLibraryCategory(String? slug) =>
+    ruqyahLibraryTopics.any((topic) => topic.slug == slug);
+
 const ruqyahMainTopics = <RuqyahBrowseTopic>[
   RuqyahBrowseTopic('all', 'সব'),
   RuqyahBrowseTopic('ruqyah-audio', 'রুকইয়াহ অডিও'),
@@ -55,6 +76,11 @@ Set<String> ruqyahBrowseTopicMembership(ContentResource resource) {
   }
 
   final slugs = <String>{'ruqyah-audio'};
+  if (isRuqyahLibraryCategory(original)) {
+    slugs.add(original);
+  } else {
+    slugs.add(ruqyahUngroupedAudioTopic.slug);
+  }
   // The imported placeholder title "jo" supplies no useful topic evidence.
   final isUnclearTitle = title.length < 5;
 
@@ -92,7 +118,7 @@ Set<String> ruqyahBrowseTopicMembership(ContentResource resource) {
   if (_mentions(title, ['খুরুজ', 'জিনা', 'কিতাল', 'তাদমির'])) {
     slugs.add('ruqyah-special');
   }
-  if (slugs.length == 1) slugs.add('ruqyah-other');
+  if (!slugs.any(_legacyAudioTopicSlugs.contains)) slugs.add('ruqyah-other');
   return slugs;
 }
 
@@ -115,12 +141,28 @@ String ruqyahPrimaryBrowseTopic(ContentResource resource) {
   return resource.type == 'audio' ? 'ruqyah-other' : 'ruqyah-self-guide';
 }
 
+final _legacyAudioTopicSlugs = {
+  for (final topic in ruqyahAudioTopics)
+    if (topic.slug != 'ruqyah-other') topic.slug,
+};
+
 List<ContentResource> resourcesForRuqyahTopic(
   List<ContentResource> authorized,
   String slug,
 ) {
   if (slug == 'all') return authorized;
-  return authorized
+  final items = authorized
       .where((resource) => ruqyahBrowseTopicMembership(resource).contains(slug))
       .toList(growable: false);
+  if (!isRuqyahLibraryCategory(slug)) return items;
+  // Library groups keep the order a Super Admin set in the CMS.
+  return [...items]..sort(compareResourcesByOrder);
+}
+
+/// Stable admin-controlled order: sort order, then title, then ID.
+int compareResourcesByOrder(ContentResource a, ContentResource b) {
+  final order = a.sortOrder.compareTo(b.sortOrder);
+  if (order != 0) return order;
+  final title = (a.titleBn ?? a.title).compareTo(b.titleBn ?? b.title);
+  return title != 0 ? title : a.id.compareTo(b.id);
 }

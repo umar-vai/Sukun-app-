@@ -121,6 +121,96 @@ const duaAzkarTaxonomy = <ResourceTaxonomyEntry>[
     slug: 'dua-azkar-distress',
     title: 'Distress',
     titleBn: 'দুশ্চিন্তা ও কষ্ট',
+  ), // Daily masnun amal: 18 groups.
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-01',
+    title: 'হিফাজতের প্রাথমিক দোয়া',
+    titleBn: 'হিফাজতের প্রাথমিক দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-02',
+    title: 'হিফাজতের প্রাথমিক আয়াত (তিনকুল)',
+    titleBn: 'হিফাজতের প্রাথমিক আয়াত (তিনকুল)',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-03',
+    title: 'উপকারী আরও কিছু আয়াত',
+    titleBn: 'উপকারী আরও কিছু আয়াত',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-04',
+    title: 'হিফাজত ও ফজিলতের আরও দোয়া',
+    titleBn: 'হিফাজত ও ফজিলতের আরও দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-05',
+    title: 'সকাল-সন্ধ্যার আরও কিছু দোয়া',
+    titleBn: 'সকাল-সন্ধ্যার আরও কিছু দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-06',
+    title: 'ফজিলতপূর্ণ আরও কিছু দোয়া',
+    titleBn: 'ফজিলতপূর্ণ আরও কিছু দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-07',
+    title: 'ঘুমের আগে: প্রাথমিক দোয়া ও আয়াত',
+    titleBn: 'ঘুমের আগে: প্রাথমিক দোয়া ও আয়াত',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-08',
+    title: 'ঘুমের আগে: তিনকুল',
+    titleBn: 'ঘুমের আগে: তিনকুল',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-09',
+    title: 'ঘুমের আগে: ফজিলতের আরও দোয়া',
+    titleBn: 'ঘুমের আগে: ফজিলতের আরও দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-10',
+    title: 'ঘুমের মাঝে সমস্যা হলে',
+    titleBn: 'ঘুমের মাঝে সমস্যা হলে',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-11',
+    title: 'ঘুম থেকে জেগে: প্রাথমিক দোয়া',
+    titleBn: 'ঘুম থেকে জেগে: প্রাথমিক দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-12',
+    title: 'ঘুম থেকে জেগে: আরও কিছু আয়াত',
+    titleBn: 'ঘুম থেকে জেগে: আরও কিছু আয়াত',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-13',
+    title: 'অন্যান্য সময়ের যিকর',
+    titleBn: 'অন্যান্য সময়ের যিকর',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-14',
+    title: 'শত্রুর ক্ষতির আশংকা করলে',
+    titleBn: 'শত্রুর ক্ষতির আশংকা করলে',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-15',
+    title: 'বিপদে বা পেরেশানির সময়',
+    titleBn: 'বিপদে বা পেরেশানির সময়',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-16',
+    title: 'ফজিলতপূর্ণ আরও কিছু আয়াত',
+    titleBn: 'ফজিলতপূর্ণ আরও কিছু আয়াত',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-17',
+    title: 'দোয়া কবুলের দোয়া',
+    titleBn: 'দোয়া কবুলের দোয়া',
+  ),
+  ResourceTaxonomyEntry(
+    slug: 'dua-azkar-ma-18',
+    title: 'দাজ্জালের ক্ষতি থেকে বাঁচতে',
+    titleBn: 'দাজ্জালের ক্ষতি থেকে বাঁচতে',
   ),
 ];
 
@@ -139,6 +229,46 @@ class DuaAzkarNavigationGroup {
 }
 
 const duaAzkarNavigationGroups = <DuaAzkarNavigationGroup>[
+  DuaAzkarNavigationGroup(
+    slug: 'masnun-morning-evening',
+    titleBn: 'সকাল-সন্ধ্যার আমল',
+    categorySlugs: [
+      'dua-azkar-ma-01',
+      'dua-azkar-ma-02',
+      'dua-azkar-ma-03',
+      'dua-azkar-ma-04',
+      'dua-azkar-ma-05',
+      'dua-azkar-ma-06',
+      'dua-azkar-ma-16',
+    ],
+  ),
+  DuaAzkarNavigationGroup(
+    slug: 'masnun-sleep',
+    titleBn: 'ঘুমের আগে ও পরে',
+    categorySlugs: [
+      'dua-azkar-ma-07',
+      'dua-azkar-ma-08',
+      'dua-azkar-ma-09',
+      'dua-azkar-ma-10',
+      'dua-azkar-ma-11',
+      'dua-azkar-ma-12',
+    ],
+  ),
+  DuaAzkarNavigationGroup(
+    slug: 'masnun-daily',
+    titleBn: 'অন্যান্য সময়ের যিকর',
+    categorySlugs: ['dua-azkar-ma-13'],
+  ),
+  DuaAzkarNavigationGroup(
+    slug: 'masnun-needs',
+    titleBn: 'বিশেষ প্রয়োজনের দোয়া',
+    categorySlugs: [
+      'dua-azkar-ma-14',
+      'dua-azkar-ma-15',
+      'dua-azkar-ma-17',
+      'dua-azkar-ma-18',
+    ],
+  ),
   DuaAzkarNavigationGroup(
     slug: 'time-based',
     titleBn: 'সময়ভিত্তিক আমল',

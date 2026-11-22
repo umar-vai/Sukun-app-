@@ -26,7 +26,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
   final String? guideGroupSlug;
 
   static String titleFor(String? slug) {
-    for (final topic in [...ruqyahMainTopics, ...ruqyahAudioTopics]) {
+    for (final topic in _allTopics) {
       if (topic.slug == slug) return topic.titleBn;
     }
     return 'রুকইয়াহ';
@@ -35,10 +35,7 @@ class RuqyahTopicBrowser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (topicSlug == null) return _index(context);
-    final known = [
-      ...ruqyahMainTopics,
-      ...ruqyahAudioTopics,
-    ].any((topic) => topic.slug == topicSlug);
+    final known = _allTopics.any((topic) => topic.slug == topicSlug);
     if (!known) {
       return const AppEmptyState(
         title: 'বিভাগ পাওয়া যায়নি',
@@ -90,6 +87,10 @@ class RuqyahTopicBrowser extends StatelessWidget {
         .where((resource) => resource.type == 'audio')
         .toList(growable: false);
     final mainOptions = <RuqyahBrowseTopic>[...ruqyahMainTopics];
+    final ungrouped = resourcesForRuqyahTopic(
+      audio,
+      ruqyahUngroupedAudioTopic.slug,
+    ).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -109,12 +110,15 @@ class RuqyahTopicBrowser extends StatelessWidget {
         ],
         const SizedBox(height: 14),
         Text(
-          'বিষয় অনুযায়ী অডিও',
+          'রুকইয়াহ অডিও লাইব্রেরি',
           style: Theme.of(context).textTheme.titleMedium
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
-        for (final topic in ruqyahAudioTopics) ...[
+        for (final topic in [
+          ...ruqyahLibraryTopics,
+          if (ungrouped > 0) ruqyahUngroupedAudioTopic,
+        ]) ...[
           _topicCard(
             context,
             topic: topic,
@@ -180,6 +184,14 @@ class RuqyahTopicBrowser extends StatelessWidget {
     );
   }
 }
+
+/// Older title-based audio topic links keep working after the library groups.
+const _allTopics = <RuqyahBrowseTopic>[
+  ...ruqyahMainTopics,
+  ...ruqyahLibraryTopics,
+  ruqyahUngroupedAudioTopic,
+  ...ruqyahAudioTopics,
+];
 
 IconData _iconForTopic(String slug) => switch (slug) {
   'ruqyah-ayat' => Icons.auto_stories_outlined,

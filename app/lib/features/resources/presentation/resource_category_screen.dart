@@ -14,6 +14,7 @@ import 'package:sukun_life/features/care_plans/domain/plan_action.dart';
 import 'package:sukun_life/features/resources/presentation/audio_player_screen.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
+import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
 import 'package:sukun_life/features/resources/presentation/resources_home_screen.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
@@ -82,7 +83,7 @@ class _ResourceCategoryScreenState
         );
     // Blog posts are articles in the same RLS-protected CMS, but have their
     // own public shelf. Exclude them from Books & Articles.
-    return items
+    final filtered = items
         .where((item) {
           final blog = isBlogResourceSlug(item.slug);
           if (widget.section.slug == 'blog') return blog;
@@ -92,6 +93,9 @@ class _ResourceCategoryScreenState
           return !blog;
         })
         .toList(growable: false);
+    // The PDF shelf keeps the order a Super Admin set in the CMS.
+    if (widget.section.slug == 'pdf') filtered.sort(compareResourcesByOrder);
+    return filtered;
   }
 
   Future<void> _refresh() async {

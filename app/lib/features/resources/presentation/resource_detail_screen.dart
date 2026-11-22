@@ -206,6 +206,12 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     transliteration: resource.transliteration,
                   ),
                 ),
+              if (_isDailyDhikr(resource))
+                _Section(
+                  label: 'পড়ার নিয়ম',
+                  value: publicResourceInstructions(resource.summary),
+                  bangla: true,
+                ),
               _Section(
                 label: 'বাংলা',
                 value: resource.banglaText,
@@ -221,6 +227,11 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
                     ? const SizedBox.shrink()
                     : _Section(label: 'অনুবাদ', value: resource.translation),
               ),
+              if (_isDailyDhikr(resource))
+                _Section(
+                  label: 'রেফারেন্স',
+                  value: _publicReference(resource.referenceText),
+                ),
               if (isBlogResourceSlug(resource.slug)) ...[
                 if (resource.thumbnailUrl?.startsWith('https://') == true)
                   Padding(
@@ -278,6 +289,21 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       },
     );
   }
+}
+
+/// Dua and amal show their reading instruction and hadith reference.
+bool _isDailyDhikr(ContentResource resource) =>
+    resource.type == 'dua' || resource.type == 'amal';
+
+/// A hadith reference, never an editor's repeat-count or review note.
+String? _publicReference(String? raw) {
+  final value = publicResourceInstructions(raw);
+  if (value == null) return null;
+  final editorNote = RegExp(
+    r'Repeat count from approved source|কতবার',
+    caseSensitive: false,
+  );
+  return editorNote.hasMatch(value) ? null : value;
 }
 
 class _Section extends StatelessWidget {
