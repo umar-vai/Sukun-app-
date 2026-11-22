@@ -15,6 +15,7 @@ final resourcesRepositoryProvider = Provider<ResourcesRepository>((ref) {
   return CachedResourcesRepository(
     SupabaseResourcesRepository(client),
     () => client.auth.currentUser?.id,
+    ttl: const Duration(minutes: 15),
   );
 });
 
