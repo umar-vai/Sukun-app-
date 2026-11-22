@@ -42,6 +42,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
         message: 'অন্য বিভাগ দেখুন।',
       );
     }
+    if (topicSlug == 'ruqyah-audio') return _audioShelves(context);
+    if (topicSlug == 'all') return _allGrouped(context);
     final items = resourcesForRuqyahTopic(resources, topicSlug!);
     if (topicSlug == 'ruqyah-self-guide') {
       return SelfRuqyahGuideIndex(
@@ -54,13 +56,8 @@ class RuqyahTopicBrowser extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (topicSlug == 'all' || topicSlug == 'ruqyah-ayat') ...[
-          OutlinedButton.icon(
-            key: const Key('ruqyah-open-ayat'),
-            onPressed: onOpenAyat,
-            icon: const Icon(Icons.menu_book_outlined),
-            label: const Text('রুকইয়াহ আয়াত পড়ুন'),
-          ),
+        if (topicSlug == 'ruqyah-ayat') ...[
+          _openAyatButton(),
           const SizedBox(height: 14),
         ],
         if (items.isEmpty)
@@ -69,28 +66,133 @@ class RuqyahTopicBrowser extends StatelessWidget {
             message: 'অন্য বিভাগ দেখুন।',
           )
         else
-          for (final resource in items)
-            Padding(
-              key: Key('ruqyah-item-${resource.id}'),
-              padding: const EdgeInsets.only(bottom: 10),
-              child: ResourceCard(
-                resource: resource,
-                onTap: () => onOpenResource(resource),
-              ),
-            ),
+          ..._itemCards(items),
       ],
     );
   }
 
-  Widget _index(BuildContext context) {
-    final audio = resources
-        .where((resource) => resource.type == 'audio')
-        .toList(growable: false);
-    final mainOptions = <RuqyahBrowseTopic>[...ruqyahMainTopics];
+  Widget _openAyatButton() => OutlinedButton.icon(
+    key: const Key('ruqyah-open-ayat'),
+    onPressed: onOpenAyat,
+    icon: const Icon(Icons.menu_book_outlined),
+    label: const Text('রুকইয়াহ আয়াত পড়ুন'),
+  );
+
+  List<Widget> _itemCards(List<ContentResource> items) => [
+    for (final resource in items)
+      Padding(
+        key: Key('ruqyah-item-${resource.id}'),
+        padding: const EdgeInsets.only(bottom: 10),
+        child: ResourceCard(
+          resource: resource,
+          onTap: () => onOpenResource(resource),
+        ),
+      ),
+  ];
+
+  List<ContentResource> get _audio => resources
+      .where((resource) => resource.type == 'audio')
+      .toList(growable: false);
+
+  /// The audio library the way RuqyahBD shows it: the main download page
+  /// groups, then "আরও কিছু অডিও", each group opening its own list.
+  Widget _audioShelves(BuildContext context) {
+    final audio = _audio;
     final ungrouped = resourcesForRuqyahTopic(
       audio,
       ruqyahUngroupedAudioTopic.slug,
     ).length;
+    final children = <Widget>[];
+    for (final shelf in ruqyahAudioShelves) {
+      final topics = [
+        for (final topic in shelf.topics)
+          if (resourcesForRuqyahTopic(audio, topic.slug).isNotEmpty) topic,
+      ];
+      if (topics.isEmpty) continue;
+      children
+        ..add(_shelfHeader(context, shelf.titleBn))
+        ..add(const SizedBox(height: 12));
+      for (final topic in topics) {
+        children
+          ..add(
+            _topicCard(
+              context,
+              topic: topic,
+              count: resourcesForRuqyahTopic(audio, topic.slug).length,
+            ),
+          )
+          ..add(const SizedBox(height: 10));
+      }
+      children.add(const SizedBox(height: 14));
+    }
+    if (ungrouped > 0) {
+      children
+        ..add(_shelfHeader(context, 'অন্যান্য'))
+        ..add(const SizedBox(height: 12))
+        ..add(
+          _topicCard(
+            context,
+            topic: ruqyahUngroupedAudioTopic,
+            count: ungrouped,
+          ),
+        );
+    }
+    if (children.isEmpty) {
+      return const AppEmptyState(
+        title: 'এই বিভাগে এখনো অডিও নেই',
+        message: 'অন্য বিভাগ দেখুন।',
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
+
+  /// Everything in one scroll, under the same headings as the index.
+  Widget _allGrouped(BuildContext context) {
+    final audio = _audio;
+    final children = <Widget>[_openAyatButton(), const SizedBox(height: 16)];
+    void addGroup(String title, List<ContentResource> items) {
+      if (items.isEmpty) return;
+      children
+        ..add(_shelfHeader(context, '$title · ${items.length}টি'))
+        ..add(const SizedBox(height: 10))
+        ..addAll(_itemCards(items))
+        ..add(const SizedBox(height: 10));
+    }
+
+    for (final topic in ruqyahLibraryTopics) {
+      addGroup(topic.titleBn, resourcesForRuqyahTopic(audio, topic.slug));
+    }
+    addGroup(
+      ruqyahUngroupedAudioTopic.titleBn,
+      resourcesForRuqyahTopic(audio, ruqyahUngroupedAudioTopic.slug),
+    );
+    addGroup(
+      'সেলফ-রুকইয়াহ গাইড',
+      resourcesForRuqyahTopic(resources, 'ruqyah-self-guide'),
+    );
+    addGroup('অন্যান্য', [
+      for (final resource in resources)
+        if (resource.type != 'audio' &&
+            !ruqyahBrowseTopicMembership(resource)
+                .contains('ruqyah-self-guide'))
+          resource,
+    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
+
+  Widget _shelfHeader(BuildContext context, String title) => Text(
+    title,
+    style: Theme.of(context).textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.w700),
+  );
+
+  Widget _index(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -100,29 +202,11 @@ class RuqyahTopicBrowser extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
-        for (final topic in mainOptions) ...[
+        for (final topic in ruqyahMainTopics) ...[
           _topicCard(
             context,
             topic: topic,
             count: resourcesForRuqyahTopic(resources, topic.slug).length,
-          ),
-          const SizedBox(height: 10),
-        ],
-        const SizedBox(height: 14),
-        Text(
-          'রুকইয়াহ অডিও লাইব্রেরি',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        for (final topic in [
-          ...ruqyahLibraryTopics,
-          if (ungrouped > 0) ruqyahUngroupedAudioTopic,
-        ]) ...[
-          _topicCard(
-            context,
-            topic: topic,
-            count: resourcesForRuqyahTopic(audio, topic.slug).length,
           ),
           const SizedBox(height: 10),
         ],

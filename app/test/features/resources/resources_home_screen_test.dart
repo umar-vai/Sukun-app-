@@ -66,64 +66,70 @@ void main() {
     expect(delegate.mainAxisExtent, lessThanOrEqualTo(124));
     expect(delegate.crossAxisCount, 2);
 
-    await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি Ayatul Kursi');
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.enterText(find.byType(TextField), 'আয়াতুল কুরসি');
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
-    expect(repository.lastQuery, 'আয়াতুল কুরসি Ayatul Kursi');
-    expect(repository.lastTypes, isEmpty);
+    // The searchable catalog is loaded once, without a server-side query.
     expect(repository.browseCalls, 1);
+    expect(repository.lastQuery, isEmpty);
+    expect(repository.lastTypes, containsAll(['dua', 'audio', 'pdf']));
+    expect(repository.lastTypes, isNot(contains('quran')));
     await tester.enterText(find.byType(TextField), '');
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
     expect(find.text('সাম্প্রতিক উপকরণ'), findsNothing);
+    expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
   });
 
-  testWidgets(
-    'new search text hides stale previous query results immediately',
-    (tester) async {
-      // Keep the search results below the category grid in the test viewport.
-      tester.view.physicalSize = const Size(390, 1500);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-      final repository = _FakeResourcesRepository();
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            resourcesRepositoryProvider.overrideWithValue(repository),
-          ],
-          child: const MaterialApp(home: ResourcesHomeScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+  testWidgets('partial words show live suggestions and related results', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1500);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final repository = _FakeResourcesRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [resourcesRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(home: ResourcesHomeScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'first search');
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
-      expect(repository.browseCalls, 1);
-      expect(find.text('Published resource'), findsOneWidget);
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'তাস');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    // Suggestions appear while still typing, before the word is complete.
+    expect(find.byKey(const Key('live-search-suggestions')), findsOneWidget);
+    expect(find.byKey(const Key('search-result-tasbih')), findsOneWidget);
+    expect(find.byKey(const Key('search-result-resource-1')), findsNothing);
+    expect(find.text('বিষয় অনুযায়ী দেখুন'), findsNothing);
 
-      await tester.enterText(find.byType(TextField), 'second search');
-      await tester.pump();
-      expect(repository.browseCalls, 1);
-      expect(find.text('Published resource'), findsNothing);
-      expect(find.text('অনুসন্ধান করা হচ্ছে…'), findsOneWidget);
+    // A different spelling of the same word still finds it, instantly.
+    await tester.enterText(find.byType(TextField), 'তাসবিহ');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('search-result-tasbih')), findsOneWidget);
+    expect(repository.browseCalls, 1);
 
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
-      expect(repository.browseCalls, 2);
-      expect(repository.lastQuery, 'second search');
-      expect(find.text('Published resource'), findsOneWidget);
+    // Type words find every item of that kind.
+    await tester.enterText(find.byType(TextField), 'অডিও');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('search-result-kursi-audio')), findsOneWidget);
+    expect(find.byKey(const Key('search-result-tasbih')), findsNothing);
+    expect(repository.browseCalls, 1);
 
-      await tester.enterText(find.byType(TextField), '');
-      await tester.pump();
-      expect(find.text('Published resource'), findsNothing);
-      expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
-      expect(repository.browseCalls, 2);
-    },
-  );
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('live-search-suggestions')), findsNothing);
+    expect(find.text('বিষয় অনুযায়ী দেখুন'), findsOneWidget);
+  });
 }
 
 final class _FakeResourcesRepository implements ResourcesRepository {
@@ -147,6 +153,23 @@ final class _FakeResourcesRepository implements ResourcesRepository {
         id: 'resource-1',
         type: 'article',
         title: 'Published resource',
+        visibility: 'public',
+        status: 'published',
+      ),
+      ContentResource(
+        id: 'tasbih',
+        type: 'dua',
+        title: 'Tasbih',
+        titleBn: 'ঘুমের আগে তাসবীহ',
+        visibility: 'public',
+        status: 'published',
+      ),
+      ContentResource(
+        id: 'kursi-audio',
+        type: 'audio',
+        title: 'Ayatul Kursi ruqyah',
+        titleBn: 'আয়াতুল কুরসির রুকইয়াহ',
+        mediaUrl: 'https://example.org/kursi.mp3',
         visibility: 'public',
         status: 'published',
       ),

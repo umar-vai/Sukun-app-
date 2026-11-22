@@ -236,6 +236,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
     expect(find.text('সেলফ-রুকইয়াহ গাইড'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-audio')));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/ruqyah/ruqyah-audio',
+    );
     await tester.ensureVisible(
       find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
     );
@@ -247,8 +253,13 @@ void main() {
       '/resources/ruqyah/ruqyah-lib-topic',
     );
     expect(find.byKey(const Key('ruqyah-item-eye')), findsOneWidget);
-    router.pop();
+    // Back from an audio group returns to the audio groups, not the index.
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/ruqyah/ruqyah-audio',
+    );
     expect(
       find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
       findsOneWidget,

@@ -457,3 +457,42 @@ Migration `20261122090000_structured_resource_library.sql` adds:
   archived. The Dua & Azkar page hides a navigation group with no published
   dua.
 
+
+## 21. RuqyahBD-style navigation, live search and template links (2026-11-23)
+
+Owner request: no empty dua groups, sub-sections inside long lists, the
+RuqyahBD navigation structure, live search, and the same navigation in the
+Admin library.
+
+- **Dua & Azkar** follows the RuqyahBD daily masnun amal index
+  (`dua.ruqyahbd.org`, checked 2026-11-23): three groups, "সকাল-সন্ধ্যার
+  আমল" (7 sub-sections), "ঘুমের আগে ও পরে" (6) and "অন্যান্য সময়ের যিকর"
+  (5: other times, enemy, distress, accepted dua, Dajjal). The older
+  "বিশেষ প্রয়োজনের দোয়া" group was merged into the third; its old link
+  still works (`duaAzkarGroupAliases`). Groups and sub-sections with no
+  published dua are never shown, which hides the three older groups
+  (সময়ভিত্তিক আমল, দৈনন্দিন মাসনূন দোয়া, সুরক্ষা ও দুশ্চিন্তার দোয়া) whose
+  items were retired by `20261123090000`. "সব দোয়া ও আযকার" lists every dua
+  under group and sub-section headings.
+- **Ruqyah** index lists the main areas only: রুকইয়াহ অডিও, রুকইয়াহ আয়াত,
+  সেলফ-রুকইয়াহ গাইড and সব উপকরণ. রুকইয়াহ অডিও opens the audio groups the
+  way `ruqyahbd.org/download` lays them out: the main page (বিষয়ভিত্তিক,
+  বিভিন্ন ক্বারির, অন্যান্য) and its second page "আরও কিছু অডিও" (বিশেষ আয়াত/সুরা/
+  দোয়া, খালিদ আল হিবশী, বিকল্প ও সংক্ষিপ্ত, আরও কিছু ক্বারি). Back from a
+  group returns to the audio groups.
+- **Live search** (`resource_search.dart`) is shared by the Resources tab,
+  the Admin library picker and the Admin content list. Part of a word
+  already matches ("তা" finds "তাসবিহ"), common Bangla spelling variants are
+  folded (ী/ি, ূ/ু, শ/ষ/স, য/জ, ণ/ন), and category, group and type words
+  ("অডিও", "পিডিএফ") match. Suggestions appear under the field while typing;
+  results can be filtered by kind. The Resources tab loads the searchable
+  catalog once per session (RLS applies, Qur'an ayat excluded; they have
+  their own reader) and filters it locally on each keystroke.
+- **Admin library picker** uses the same tree as the Resources tab
+  (`resource_library_navigation.dart`): section → group → sub-section →
+  items, with a path in the header and back one level at a time.
+- **Care templates**: `20261123120000_care_template_library_links.sql`
+  links related library dua, audio, PDFs, guide sections and Qur'an chapters
+  to 40 of the 51 templates (max 16 each; curated links first, then any
+  hand-added links; hidden or staff-only items dropped; the same recording
+  once; audited). The owner will review and trim them in the template editor.

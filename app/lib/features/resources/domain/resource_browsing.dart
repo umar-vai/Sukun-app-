@@ -214,8 +214,14 @@ const duaAzkarTaxonomy = <ResourceTaxonomyEntry>[
   ),
 ];
 
-/// Display-only grouping for the seven existing approved dua categories.
-/// Group names organize navigation, not religious claims or new source text.
+/// Display-only grouping of dua categories. Group names organize navigation,
+/// not religious claims or new source text.
+///
+/// The first three groups follow the RuqyahBD daily masnun amal index
+/// (checked 2026-11-23): "সকাল-সন্ধ্যায়", "ঘুমের আগে ও পরে" and
+/// "অন্যান্য সময়ের যিকর", in the same order with the same sub-sections.
+/// The last three hold older categories; a group with no published dua is
+/// never shown, so they stay hidden unless a Super Admin publishes into them.
 class DuaAzkarNavigationGroup {
   const DuaAzkarNavigationGroup({
     required this.slug,
@@ -257,12 +263,8 @@ const duaAzkarNavigationGroups = <DuaAzkarNavigationGroup>[
   DuaAzkarNavigationGroup(
     slug: 'masnun-daily',
     titleBn: 'অন্যান্য সময়ের যিকর',
-    categorySlugs: ['dua-azkar-ma-13'],
-  ),
-  DuaAzkarNavigationGroup(
-    slug: 'masnun-needs',
-    titleBn: 'বিশেষ প্রয়োজনের দোয়া',
     categorySlugs: [
+      'dua-azkar-ma-13',
       'dua-azkar-ma-14',
       'dua-azkar-ma-15',
       'dua-azkar-ma-17',
@@ -289,6 +291,26 @@ const duaAzkarNavigationGroups = <DuaAzkarNavigationGroup>[
     categorySlugs: ['dua-azkar-protection', 'dua-azkar-distress'],
   ),
 ];
+
+/// Older group links that were merged into another group.
+const duaAzkarGroupAliases = <String, String>{'masnun-needs': 'masnun-daily'};
+
+/// The navigation group a dua category belongs to, if any.
+DuaAzkarNavigationGroup? duaAzkarGroupForCategory(String? categorySlug) {
+  if (categorySlug == null) return null;
+  for (final group in duaAzkarNavigationGroups) {
+    if (group.categorySlugs.contains(categorySlug)) return group;
+  }
+  return null;
+}
+
+/// Bangla name of a dua category slug, if it is a known category.
+String? duaAzkarCategoryTitle(String? categorySlug) {
+  for (final entry in duaAzkarTaxonomy) {
+    if (entry.slug == categorySlug) return entry.titleBn;
+  }
+  return null;
+}
 
 const ruqyahTaxonomy = <ResourceTaxonomyEntry>[
   ResourceTaxonomyEntry(

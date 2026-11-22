@@ -58,16 +58,14 @@ void main() {
       ProviderScope(child: MaterialApp.router(routerConfig: router)),
     );
     await tester.pumpAndSettle();
+    // The index lists the main areas only, as RuqyahBD does; audio groups
+    // live one level down under "রুকইয়াহ অডিও".
+    expect(find.byKey(const Key('ruqyah-filter-ruqyah-audio')), findsOneWidget);
     expect(
       find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
-    // Every audio item is grouped, so no "more audio" card is shown.
-    expect(
-      find.byKey(const Key('ruqyah-filter-ruqyah-more-audio')),
       findsNothing,
     );
+    expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('ruqyah-filter-ruqyah-self-guide')),
@@ -82,6 +80,31 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-audio')));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/ruqyah/ruqyah-audio',
+    );
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-reciters')),
+      findsOneWidget,
+    );
+    // Groups without audio and the ungrouped card stay hidden.
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-hibshi')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('ruqyah-filter-ruqyah-more-audio')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('ruqyah-item-kursi')), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
