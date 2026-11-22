@@ -42,6 +42,7 @@ Future<List<String>?> showResourceMultiPickerSheet({
   required List<ContentResourceOption> resources,
   Set<String> alreadyLinked = const {},
   int maxSelection = 16,
+  PickCanonicalQuranReference? onPickCanonicalQuran,
 }) {
   return showModalBottomSheet<List<String>>(
     context: context,
@@ -54,6 +55,7 @@ Future<List<String>?> showResourceMultiPickerSheet({
       multiSelect: true,
       alreadyLinked: alreadyLinked,
       maxSelection: maxSelection,
+      onPickCanonicalQuran: onPickCanonicalQuran,
     ),
   );
 }
@@ -229,6 +231,14 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
           surah > 114 ||
           (parts.length == 3 && (ayah == null || ayah < 1 || ayah > 286))) {
         throw const FormatException('Invalid Quran reference');
+      }
+      if (widget.multiSelect) {
+        setState(() {
+          if (_room > 0 && !_picked.contains(reference)) {
+            _picked.add(reference);
+          }
+        });
+        return;
       }
       Navigator.pop(context, reference);
     } catch (_) {

@@ -25,6 +25,7 @@ import 'package:sukun_life/features/personal_routines/domain/prayer_relative_rem
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_reminder_planner.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
+import 'package:sukun_life/features/personal_routines/presentation/routine_quran_reference_picker.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -444,10 +445,26 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                               context: ctx,
                               resources: resources,
                               alreadyLinked: selected
-                                  .map((item) => item.contentItemId)
-                                  .whereType<String>()
+                                  .map(
+                                    (item) => item.provider == 'quran'
+                                        ? item.key
+                                        : item.contentItemId!,
+                                  )
                                   .toSet(),
                               maxSelection: 16,
+                              onPickCanonicalQuran:
+                                  (pickerContext, wholeSurah) =>
+                                      pickRoutineQuranReference(
+                                        pickerContext,
+                                        wholeSurah,
+                                        selectedReferences: selected
+                                            .where(
+                                              (item) =>
+                                                  item.provider == 'quran',
+                                            )
+                                            .map((item) => item.key)
+                                            .toSet(),
+                                      ),
                             );
                             if (ids == null || ids.isEmpty || !ctx.mounted) {
                               return;
