@@ -39,6 +39,7 @@ class ContentResource {
     this.grade,
     this.sourceUrl,
     this.rightsNote,
+    this.sortOrder = 0,
   });
 
   factory ContentResource.fromJson(Map<String, dynamic> json) {
@@ -79,6 +80,7 @@ class ContentResource {
       grade: json['grade'] as String?,
       sourceUrl: json['source_url'] as String?,
       rightsNote: json['rights_note'] as String?,
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       visibility: json['visibility'] as String,
       status: json['status'] as String,
     );
@@ -119,6 +121,9 @@ class ContentResource {
   final String? grade;
   final String? sourceUrl;
   final String? rightsNote;
+
+  /// In-category display order set by a Super Admin (lower comes first).
+  final int sortOrder;
   final String visibility;
   final String status;
 

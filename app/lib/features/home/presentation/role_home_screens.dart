@@ -69,6 +69,11 @@ class AdminHomeScreen extends StatelessWidget {
           () => context.go('/admin/content'),
         ),
         _AdminTool(
+          Icons.quiz_outlined,
+          'সেলফ ডায়াগনোসিস টেস্ট',
+          () => context.go('/admin/self-assessment'),
+        ),
+        _AdminTool(
           Icons.playlist_add_check_rounded,
           'রুটিন টেমপ্লেট',
           () => context.go('/admin/routine-templates'),

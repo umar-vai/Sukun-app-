@@ -50,6 +50,21 @@ const resourceSections = <ResourceSection>[
     categoryPrefixes: {'ruqyah'},
   ),
   ResourceSection(
+    slug: 'self-diagnosis',
+    title: 'Self-diagnosis',
+    titleBn: 'সেলফ ডায়াগনোসিস',
+    icon: Icons.fact_check_outlined,
+    types: {'guide'},
+    categoryPrefixes: {'self-diagnosis'},
+  ),
+  ResourceSection(
+    slug: 'pdf',
+    title: 'PDF',
+    titleBn: 'পিডিএফ',
+    icon: Icons.picture_as_pdf_outlined,
+    types: {'pdf'},
+  ),
+  ResourceSection(
     slug: 'books-articles',
     title: 'Books & Articles',
     titleBn: 'বই ও আর্টিকেল',

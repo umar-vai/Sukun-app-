@@ -133,6 +133,11 @@ class _AdminContentEditorScreenState
           : item.mediaUrl,
       'thumbnailUrl': item.thumbnailUrl,
       'repeatCount': _repeatCount(item.referenceText),
+      'transliteration': item.transliteration,
+      'referenceText': _repeatCount(item.referenceText) == null
+          ? item.referenceText
+          : null,
+      'sortOrder': item.sortOrder,
     };
     for (final entry in values.entries) {
       _controller(entry.key).text = entry.value?.toString() ?? '';
@@ -243,19 +248,23 @@ class _AdminContentEditorScreenState
         ? inferYoutubeVideoId(mediaLink)
         : '';
     final type = _existingType ?? kind.contentType;
+    final isDua = kind == AdminResourceKind.duaAzkar;
     final mediaSourceType = kind == AdminResourceKind.video
         ? (youtubeId.isNotEmpty ? 'youtube' : 'direct_video_url')
+        // A dua may carry its own optional recitation audio.
+        : isDua
+        ? (mediaLink == null ? null : 'direct_audio_url')
         : kind.mediaSourceType;
-    final referenceText = kind == AdminResourceKind.duaAzkar
-        ? _repeatReference()
+    final referenceText = isDua
+        ? _nullable('referenceText') ?? _repeatReference()
         : null;
     return SaveContentInput(
       contentItemId: _savedContentId,
       type: type,
       categoryId: _categoryId,
       title: title,
-      titleBn: kind == AdminResourceKind.duaAzkar
-          ? _nullable('banglaText')
+      titleBn: isDua
+          ? _nullable('titleBn') ?? _nullable('banglaText')
           : _nullable('titleBn'),
       slug:
           _existingSlug ??
@@ -270,6 +279,7 @@ class _AdminContentEditorScreenState
           : null,
       arabicText: _nullable('arabicText'),
       banglaText: _nullable('banglaText'),
+      transliteration: isDua ? _nullable('transliteration') : null,
       referenceText: referenceText,
       sourceType: _nullable('sourceType'),
       sourceReference: _nullable('sourceReference'),
@@ -295,6 +305,7 @@ class _AdminContentEditorScreenState
       youtubeVideoId: youtubeId.isEmpty ? null : youtubeId,
       visibility: _visibility,
       status: 'published',
+      sortOrder: _integer('sortOrder'),
       requestId: const Uuid().v4(),
     );
   }
@@ -318,7 +329,10 @@ class _AdminContentEditorScreenState
     AdminResourceKind.hadith =>
       '${_text('collectionName')} — Hadith ${_text('hadithNumber')}',
     AdminResourceKind.duaAzkar => _shortTitle(
-      _nullable('banglaText') ?? _nullable('arabicText') ?? 'Dua / Azkar',
+      _nullable('titleBn') ??
+          _nullable('banglaText') ??
+          _nullable('arabicText') ??
+          'Dua / Azkar',
     ),
     _ => _text('title'),
   };
@@ -497,6 +511,12 @@ class _AdminContentEditorScreenState
           ],
           const SizedBox(height: 4),
           ..._fieldsFor(kind, data),
+          _field(
+            'sortOrder',
+            'তালিকায় ক্রম',
+            helper: 'বিভাগের ভেতরে ছোট সংখ্যা আগে দেখাবে।',
+            numeric: true,
+          ),
           _visibilityField(),
           const SizedBox(height: SukunSpace.lg),
         ],
@@ -612,6 +632,11 @@ class _AdminContentEditorScreenState
     ],
     AdminResourceKind.duaAzkar => [
       _field(
+        'titleBn',
+        'শিরোনাম (ঐচ্ছিক)',
+        helper: 'না দিলে বাংলা অর্থ থেকে শিরোনাম তৈরি হবে।',
+      ),
+      _field(
         'arabicText',
         'আরবি *',
         helper: 'আরবি লেখাটি হুবহু দিন।',
@@ -626,12 +651,35 @@ class _AdminContentEditorScreenState
         lines: 5,
         required: true,
       ),
+      _field(
+        'transliteration',
+        'বাংলা উচ্চারণ (ঐচ্ছিক)',
+        helper: 'আরবির বাংলা উচ্চারণ।',
+        lines: 4,
+      ),
       _categoryField(data, prefix: 'dua-azkar', required: true),
+      _field(
+        'summary',
+        'পড়ার নিয়ম (ঐচ্ছিক)',
+        helper: 'যেমন: সকাল-সন্ধ্যায় ৩ বার।',
+        lines: 2,
+      ),
       _field(
         'repeatCount',
         'পাঠের সংখ্যা (ঐচ্ছিক)',
         helper: 'কতবার পড়তে হবে, জানা থাকলে দিন।',
         numeric: true,
+      ),
+      _field(
+        'referenceText',
+        'রেফারেন্স (ঐচ্ছিক)',
+        helper: 'হাদিসের রেফারেন্স, যেমন: তিরমিযি ৩৩৮৮।',
+      ),
+      _field(
+        'mediaUrl',
+        'অডিও লিংক (ঐচ্ছিক)',
+        helper: 'https:// দিয়ে শুরু হওয়া অডিও লিংক দিন।',
+        url: true,
       ),
     ],
     AdminResourceKind.blog => [

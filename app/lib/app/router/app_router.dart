@@ -51,6 +51,8 @@ import 'package:sukun_life/features/care_plans/presentation/care_templates_admin
 import 'package:sukun_life/features/patients/presentation/admin_staff_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_detail_screen.dart';
 import 'package:sukun_life/features/resources/presentation/resource_category_screen.dart';
+import 'package:sukun_life/features/self_assessment/presentation/self_assessment_screens.dart';
+import 'package:sukun_life/features/self_assessment/presentation/admin_self_assessment_screens.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
 import 'package:sukun_life/features/resources/presentation/resource_browse_screens.dart';
 import 'package:sukun_life/features/resources/presentation/quran_tabbed_screen.dart';
@@ -373,8 +375,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'articles-guides',
                 redirect: (_, _) => '/resources/books-articles',
               ),
+              GoRoute(
+                path: 'self-diagnosis',
+                builder: (context, state) => const SelfAssessmentHomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'test/:testSlug',
+                    builder: (context, state) => SelfAssessmentTestScreen(
+                      slug: state.pathParameters['testSlug']!,
+                    ),
+                  ),
+                ],
+              ),
               for (final slug in const [
                 'books-articles',
+                'pdf',
                 'blog',
                 'audio',
                 'video',
@@ -462,6 +477,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/care-templates',
             builder: (context, state) => const CareTemplatesAdminScreen(),
+          ),
+          GoRoute(
+            path: '/admin/self-assessment',
+            builder: (context, state) => const AdminSelfAssessmentListScreen(),
+            routes: [
+              GoRoute(
+                path: ':testId',
+                builder: (context, state) => AdminSelfAssessmentEditScreen(
+                  testId: state.pathParameters['testId']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/admin/routine-templates',
@@ -673,6 +700,7 @@ bool isSuperAdminOnlyPath(String path) =>
     path.startsWith('/admin/care-templates') ||
     path.startsWith('/admin/routine-templates') ||
     path.startsWith('/admin/announcements') ||
+    path.startsWith('/admin/self-assessment') ||
     path.startsWith('/admin/staff') ||
     path == '/admin/patients/new' ||
     path.contains('/prescriptions/') ||

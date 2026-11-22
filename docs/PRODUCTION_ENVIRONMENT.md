@@ -13,6 +13,29 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-22: structured resource library and Self-diagnosis (NOT yet applied)
+
+- Owner request: a structured Ruqyah audio library, 90 daily dua/dhikr in 18
+  groups with per-dua audio, a PDF shelf, and a Self-diagnosis area with seven
+  admin-editable self-assessment tests and the amulet disposal guide. The owner
+  confirmed permission for this content on 2026-11-22 and asked that it be
+  published directly with no source attribution in the app.
+- Migration: `supabase/migrations/20261122090000_structured_resource_library.sql`.
+  It adds `content_items.sort_order` with the Super Admin RPC
+  `set_content_item_sort_order`, the `self_assessment_tests`,
+  `self_assessment_questions` and `self_assessment_result_bands` tables (RLS:
+  guests read published tests, only a Super Admin writes; edits are audited),
+  and `private.install_resource_library`, which the migration runs once for the
+  first Super Admin. Existing audio with the same link is moved into its library
+  category, never duplicated, so care plans that link it keep working. All media
+  stays as external HTTPS links; nothing is copied into Storage.
+- Verified locally on PostgreSQL 16 with every repository migration applied:
+  `supabase/tests/structured_resource_library_test.sql` (16 checks) passes and
+  a second install adds and moves nothing.
+- To apply: run the migration on Production, then confirm in a rolled-back
+  read that 182 library rows were added or moved and seven tests exist. The app release
+  that shows the new sections must ship after this migration.
+
 ### 2026-11-20: family accounts and CRM/ERP integration core (Production)
 
 - The owner applied `docs/integrations/production_apply.sql` in the Production SQL editor and

@@ -120,7 +120,7 @@ void main() {
       find.byKey(const Key('home-prayer-location-action')),
       findsOneWidget,
     );
-    expect(resourceSections.length, 8);
+    expect(resourceSections.length, 10);
     for (final section in resourceSections) {
       expect(
         find.byKey(Key('home-resource-${section.slug}')),

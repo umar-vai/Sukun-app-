@@ -12,14 +12,30 @@ void main() {
   });
 
   test('group headings remain navigation-only and do not add content', () {
-    expect(duaAzkarNavigationGroups.length, 3);
+    // Four daily masnun amal groups, then the three original groups.
+    expect(duaAzkarNavigationGroups.length, 7);
     expect(
-      duaAzkarNavigationGroups.first.categorySlugs,
+      duaAzkarNavigationGroups
+          .firstWhere((group) => group.slug == 'time-based')
+          .categorySlugs,
       containsAll([
         'dua-azkar-morning',
         'dua-azkar-evening',
         'dua-azkar-sleep',
       ]),
     );
+  });
+
+  test('daily masnun amal covers its 18 groups in order', () {
+    final masnun = [
+      for (final group in duaAzkarNavigationGroups.take(4))
+        ...group.categorySlugs,
+    ];
+    expect(masnun.length, 18);
+    expect(masnun.toSet().length, 18);
+    expect(masnun.toSet(), {
+      for (var i = 1; i <= 18; i++) 'dua-azkar-ma-${'$i'.padLeft(2, '0')}',
+    });
+    expect(duaAzkarNavigationGroups.first.slug, 'masnun-morning-evening');
   });
 }

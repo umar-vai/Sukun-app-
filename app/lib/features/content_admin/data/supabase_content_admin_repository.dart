@@ -167,7 +167,7 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
   Future<AdminContentItem> saveContent(SaveContentInput input) async {
     final validationError = input.validate();
     if (validationError != null) throw ContentAdminException(validationError);
-    return _contentRpc('save_content_item', {
+    final saved = await _contentRpc('save_content_item', {
       'p_content_item_id': input.contentItemId,
       'p_type': input.type,
       'p_category_id': input.categoryId,
@@ -210,6 +210,17 @@ final class SupabaseContentAdminRepository implements ContentAdminRepository {
       'p_status': input.status,
       'p_request_id': input.requestId,
     });
+    final order = input.sortOrder;
+    if (order == null || order == saved.sortOrder) return saved;
+    try {
+      await _client.rpc(
+        'set_content_item_sort_order',
+        params: {'p_content_item_id': saved.id, 'p_sort_order': order},
+      );
+    } on PostgrestException catch (error) {
+      throw ContentAdminException(error.message);
+    }
+    return await getContent(saved.id) ?? saved;
   }
 
   @override

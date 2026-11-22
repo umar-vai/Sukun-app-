@@ -412,3 +412,42 @@ The public 114-surah reader is sourced through the `quran-content` Edge Function
 The 101 reviewed Ruqyah Ayat editorial excerpts already live in `content_items`; they remain linked by their existing IDs. The Admin picker now shows them under Quran and Ruqyah, with their editorial status made explicit. Its chapter catalog must contain all 114 distinct numbers before it offers canonical chapter selection. If the API is unavailable or incomplete, the picker keeps CMS resources available and clearly reports the missing chapter catalog.
 
 `plan_action_quran_surahs` is RLS scoped to a permitted plan action, writable only for a draft by a database-verified Super Admin, immutable after publication, and audited through its replacement RPC. A new draft version copied from an older approved plan retains these links for fresh review. Keep the backend migration ahead of the Flutter web deployment because patient and Admin queries include this relation.
+
+## 20. Structured resource library and Self-diagnosis (2026-11-22)
+
+Migration `20261122090000_structured_resource_library.sql` adds:
+
+- **Ruqyah audio library.** Seven CMS categories under `ruqyah`
+  (`ruqyah-lib-topic`, `-reciters`, `-other`, `-special`, `-hibshi`, `-short`,
+  `-more-reciters`). The Ruqyah page keeps the Self-Ruqyah Guide (four
+  chapters) and Ruqyah Ayat, then lists these groups. Audio that is not in a
+  group appears under "আরও অডিও". Older title-based topic links still open.
+- **Daily masnun amal.** 90 dua in 18 categories (`dua-azkar-ma-01` to `-18`)
+  shown in four navigation groups before the original three. Each dua stores
+  Arabic (`arabic_text`), pronunciation (`transliteration`), meaning
+  (`bangla_text`), reading rule (`summary`), hadith reference
+  (`reference_text`) and, where available, its audio link. The detail page
+  shows the reading rule and reference for dua and amal; editor notes are
+  still filtered out.
+- **PDF shelf.** A `pdf` Resources section lists `type = 'pdf'` items; the
+  library PDFs are in `pdf-ruqyah`.
+- **Self-diagnosis.** A `self-diagnosis` Resources section shows the published
+  self-assessment tests and the guides in `self-diagnosis-guide`. Tests live in
+  `self_assessment_tests`, `self_assessment_questions` and
+  `self_assessment_result_bands`. A `total` test sums option scores and shows
+  the band with the highest `min_score` reached. A `dimensions` test (the
+  general test) sums a score per dimension, takes the first rule in `rules`
+  whose bounds all hold, and shows the outcome with exactly those flags, or
+  `fallback_bn`. Results are guidance only; every test carries a "not a
+  medical diagnosis" note.
+- **Ordering.** `content_items.sort_order` orders items inside the library
+  groups, dua groups and the PDF shelf. A Super Admin sets it from the content
+  editor ("তালিকায় ক্রম").
+- **Admin editing.** Library items are edited in the existing content editor
+  (the dua editor now also edits title, pronunciation, reading rule,
+  reference and audio link). Tests are edited at `/admin/self-assessment`:
+  text, publish state, questions and option scores, result bands, and the
+  rule/outcome JSON for a dimension test.
+- Media stays link-based. Source attribution is not shown in the app, per the
+  owner's decision of 2026-11-22.
+

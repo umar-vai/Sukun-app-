@@ -211,7 +211,9 @@ void main() {
     );
   });
 
-  testWidgets('Ruqyah topic cards open dedicated content page', (tester) async {
+  testWidgets('Ruqyah library group cards open dedicated content page', (
+    tester,
+  ) async {
     final router = _taxonomyRouter(initialLocation: '/resources/ruqyah');
     addTearDown(router.dispose);
     await tester.pumpWidget(
@@ -223,7 +225,7 @@ void main() {
               id: 'eye',
               type: 'audio',
               title: 'বদনজরের রুকইয়াহ',
-              categorySlug: 'ruqyah-audio',
+              categorySlug: 'ruqyah-lib-topic',
               visibility: 'public',
               status: 'published',
             ),
@@ -235,20 +237,20 @@ void main() {
     expect(find.text('রুকইয়াহ আয়াত'), findsOneWidget);
     expect(find.text('সেলফ-রুকইয়াহ গাইড'), findsOneWidget);
     await tester.ensureVisible(
-      find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')));
+    await tester.tap(find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')));
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,
-      '/resources/ruqyah/ruqyah-evil-eye',
+      '/resources/ruqyah/ruqyah-lib-topic',
     );
     expect(find.byKey(const Key('ruqyah-item-eye')), findsOneWidget);
     router.pop();
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('ruqyah-filter-ruqyah-evil-eye')),
+      find.byKey(const Key('ruqyah-filter-ruqyah-lib-topic')),
       findsOneWidget,
     );
   });
