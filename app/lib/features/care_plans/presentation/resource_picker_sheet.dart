@@ -42,6 +42,7 @@ Future<List<String>?> showResourceMultiPickerSheet({
   required List<ContentResourceOption> resources,
   Set<String> alreadyLinked = const {},
   int maxSelection = 16,
+  PickCanonicalQuranReference? onPickCanonicalQuran,
 }) {
   return showModalBottomSheet<List<String>>(
     context: context,
@@ -54,6 +55,7 @@ Future<List<String>?> showResourceMultiPickerSheet({
       multiSelect: true,
       alreadyLinked: alreadyLinked,
       maxSelection: maxSelection,
+      onPickCanonicalQuran: onPickCanonicalQuran,
     ),
   );
 }
@@ -204,6 +206,7 @@ class _ResourcePickerSheet extends StatefulWidget {
 class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   final _searchController = TextEditingController();
   _PickerSection? _openSection;
+  String? _openCategory;
   bool _choosingCanonical = false;
 
   /// Multi-select: ids ticked in this session, in tap order.
@@ -229,6 +232,14 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
           surah > 114 ||
           (parts.length == 3 && (ayah == null || ayah < 1 || ayah > 286))) {
         throw const FormatException('Invalid Quran reference');
+      }
+      if (widget.multiSelect) {
+        setState(() {
+          if (_room > 0 && !_picked.contains(reference)) {
+            _picked.add(reference);
+          }
+        });
+        return;
       }
       Navigator.pop(context, reference);
     } catch (_) {
@@ -326,15 +337,6 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              widget.multiSelect
-                                  ? 'বিভাগ খুলে যতগুলো দরকার টিক দিন, '
-                                        'তারপর একসাথে যোগ করুন।'
-                                  : 'বিভাগ খুলে উপকরণ বাছুন। রোগীর মূল '
-                                        'নির্দেশনার সঙ্গে মিলিয়ে সহায়ক পাঠ '
-                                        'বা অডিও দিন।',
-                              style: const TextStyle(color: SukunColors.muted),
-                            ),
                           ],
                         ),
                       ),
@@ -391,7 +393,13 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                         SliverToBoxAdapter(
                           child: _OpenSectionBar(
                             section: open,
-                            onBack: () => setState(() => _openSection = null),
+                            onBack: () => setState(() {
+                              if (_openCategory != null) {
+                                _openCategory = null;
+                              } else {
+                                _openSection = null;
+                              }
+                            }),
                           ),
                         ),
                       if (!widget.multiSelect &&
@@ -550,7 +558,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                       )
                       .length
                 : 0,
-            onTap: () => setState(() => _openSection = section),
+            onTap: () => setState(() {
+              _openSection = section;
+              _openCategory = null;
+            }),
           );
         },
       ),
@@ -639,7 +650,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
           return resourceMatchesSearch(resource, query);
         })
         .toList(growable: false);
-    final grouped = section?.isOther == true
+    var grouped = section?.isOther == true
         ? <String, List<ContentResourceOption>>{section!.label: visible}
         : _groupByCategory(visible);
     if (section?.slug == 'quran' &&
@@ -654,6 +665,42 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     }
     if (visible.isEmpty) {
       return const [SliverToBoxAdapter(child: _EmptyResources())];
+    }
+    final categoryOpen = _openCategory;
+    if (section != null &&
+        section.slug != 'all' &&
+        query.isEmpty &&
+        grouped.length > 1) {
+      if (categoryOpen == null || !grouped.containsKey(categoryOpen)) {
+        return [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            sliver: SliverList.separated(
+              itemCount: grouped.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final entry = grouped.entries.elementAt(index);
+                final pickedHere = widget.multiSelect
+                    ? entry.value.where((r) => _picked.contains(r.id)).length
+                    : 0;
+                return _PickerCard(
+                  key: Key('resource-category-$index'),
+                  selected: pickedHere > 0,
+                  enabled: true,
+                  onTap: () => setState(() => _openCategory = entry.key),
+                  icon: Icons.folder_open_rounded,
+                  title: entry.key,
+                  subtitle: pickedHere > 0
+                      ? '${_bn(entry.value.length)}টি · ${_bn(pickedHere)}টি বাছাই'
+                      : '${_bn(entry.value.length)}টি',
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                );
+              },
+            ),
+          ),
+        ];
+      }
+      grouped = {categoryOpen: grouped[categoryOpen]!};
     }
     return [
       for (final entry in grouped.entries) ...[

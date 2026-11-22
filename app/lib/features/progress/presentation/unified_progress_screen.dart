@@ -31,9 +31,26 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
     _reload();
   }
 
+  /// Last good history per user and range, shown at once on reopen while
+  /// fresh data loads.
+  static final Map<String, List<Map<String, dynamic>>> _last = {};
+
+  String get _cacheKey {
+    try {
+      return '${Supabase.instance.client.auth.currentUser?.id ?? ''}|$_days';
+    } catch (_) {
+      return '|$_days';
+    }
+  }
+
   void _reload() {
+    final key = _cacheKey;
     _history = PersonalRoutineRepository(Supabase.instance.client)
-        .listProgress(days: _days);
+        .listProgress(days: _days)
+        .then((rows) {
+          if (!key.startsWith('|')) _last[key] = rows;
+          return rows;
+        });
   }
 
   void _changeDays(int days) {
@@ -50,16 +67,18 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
     final body = FutureBuilder<List<Map<String, dynamic>>>(
       future: _history,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        final cached = _cacheKey.startsWith('|') ? null : _last[_cacheKey];
+        if (snapshot.connectionState != ConnectionState.done &&
+            cached == null) {
           return const AppLoadingState(label: 'অগ্রগতি আনা হচ্ছে…');
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError && cached == null) {
           return AppErrorState(
             message: 'হিস্ট্রি আনা যাচ্ছে না। আবার চেষ্টা করুন।',
             onRetry: () => setState(_reload),
           );
         }
-        final records = snapshot.data ?? [];
+        final records = snapshot.data ?? cached ?? [];
         final done = records.where((row) => row['outcome'] == 'done').length;
         final skipped = records
             .where((row) => row['outcome'] == 'skipped')

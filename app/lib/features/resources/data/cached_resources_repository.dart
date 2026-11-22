@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
+import 'package:sukun_life/features/resources/domain/resource_section.dart';
 
 /// Remembers recent resource reads in memory so reopening a Qur'an, Dua,
 /// Hadith or Ruqyah screen is instant instead of showing a loader each time.
@@ -141,6 +142,19 @@ final class CachedResourcesRepository implements ResourcesRepository {
       quiet(browseSurahs()),
       quiet(browseCollections(types: ayatTypes)),
       quiet(browseTopics(types: const {'hadith'})),
+    ]);
+    // Then each Resources section's first list, with the same arguments the
+    // category screen uses, so opening a section needs no loader.
+    await Future.wait([
+      for (final section in resourceSections)
+        quiet(
+          browseResources(
+            types: section.slug == 'books-articles'
+                ? const {'book', 'book_chapter', 'pdf'}
+                : section.types,
+            categoryPrefixes: section.categoryPrefixes,
+          ),
+        ),
     ]);
   }
 }
