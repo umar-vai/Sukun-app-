@@ -814,13 +814,13 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   Widget _todayTab() => FutureBuilder<_RoutinePageData>(
     future: _data,
     builder: (context, snapshot) {
-      if (snapshot.hasError) {
+      final data = snapshot.data ?? (_uid.isEmpty ? null : _lastData[_uid]);
+      if (snapshot.hasError && data == null) {
         return AppErrorState(
           message: 'আজকের রুটিন আনা যায়নি। আবার চেষ্টা করুন।',
           onRetry: _refresh,
         );
       }
-      final data = snapshot.data;
       if (data == null) {
         return const AppLoadingState(label: 'আজকের রুটিন আনা হচ্ছে…');
       }
