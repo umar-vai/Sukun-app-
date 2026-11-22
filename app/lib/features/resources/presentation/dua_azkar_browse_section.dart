@@ -32,8 +32,9 @@ class DuaAzkarBrowseSection extends StatelessWidget {
       resources.where((item) => item.categorySlug == slug).length;
 
   DuaAzkarNavigationGroup? get _group {
+    final slug = duaAzkarGroupAliases[groupSlug] ?? groupSlug;
     for (final group in duaAzkarNavigationGroups) {
-      if (group.slug == groupSlug) return group;
+      if (group.slug == slug) return group;
     }
     return null;
   }
@@ -72,7 +73,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (groupSlug == null) return _index(context);
     if (groupSlug == 'all' && categorySlug == null) {
-      return _items(context, resources);
+      return _allGrouped(context);
     }
     if (groupSlug == 'other' && categorySlug == reviewSlug) {
       return _items(context, _unclassified);
@@ -113,7 +114,7 @@ class DuaAzkarBrowseSection extends StatelessWidget {
           key: Key('dua-group-card-${group.slug}'),
           title: group.titleBn,
           subtitle:
-              '${group.categorySlugs.length}টি বিভাগ · ${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
+              '${group.categorySlugs.where((slug) => _count(slug) > 0).length}টি বিভাগ · ${resources.where((item) => group.categorySlugs.contains(item.categorySlug)).length}টি দোয়া/আমল',
           icon: _icon(group.slug),
           onTap: () => context.go('/resources/dua-azkar/${group.slug}'),
         ),
@@ -150,9 +151,13 @@ class DuaAzkarBrowseSection extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
-          for (final category in duaAzkarTaxonomy.where(
-            (entry) => group.categorySlugs.contains(entry.slug),
-          )) ...[
+          // Same order as the group lists them; empty categories are hidden.
+          for (final category in [
+            for (final slug in group.categorySlugs)
+              ...duaAzkarTaxonomy.where(
+                (entry) => entry.slug == slug && _count(slug) > 0,
+              ),
+          ]) ...[
             _categoryCard(
               context,
               key: Key('dua-select-${category.slug}'),
@@ -167,6 +172,86 @@ class DuaAzkarBrowseSection extends StatelessWidget {
           ],
         ],
       );
+
+  /// Every dua in one scroll, but under group and category headings in
+  /// the same order as the index, so a long list stays easy to scan.
+  Widget _allGrouped(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final children = <Widget>[];
+    for (final group in duaAzkarNavigationGroups) {
+      final categories = [
+        for (final slug in group.categorySlugs)
+          if (_count(slug) > 0) slug,
+      ];
+      if (categories.isEmpty) continue;
+      children.add(
+        Padding(
+          key: Key('dua-all-group-${group.slug}'),
+          padding: const EdgeInsets.only(top: 8, bottom: 10),
+          child: Row(
+            children: [
+              Icon(_icon(group.slug), color: scheme.primary, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  group.titleBn,
+                  style: SukunTypography.banglaBody(
+                    textStyle: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      for (final slug in categories) {
+        final items =
+            resources.where((item) => item.categorySlug == slug).toList()
+              ..sort(compareResourcesByOrder);
+        children.add(
+          Padding(
+            key: Key('dua-all-category-$slug'),
+            padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
+            child: Text(
+              '${duaAzkarCategoryTitle(slug) ?? slug} · ${items.length}টি',
+              style: SukunTypography.banglaBody(
+                textStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        );
+        children.add(_items(context, items));
+      }
+      children.add(const SizedBox(height: 8));
+    }
+    if (_unclassified.isNotEmpty) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 10),
+          child: Text(
+            'অন্যান্য দোয়া',
+            style: SukunTypography.banglaBody(
+              textStyle: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+      children.add(_items(context, _unclassified));
+    }
+    if (children.isEmpty) return _empty(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
 
   Widget _items(BuildContext context, List<ContentResource> items) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -32,6 +32,21 @@ const ruqyahLibraryTopics = <RuqyahBrowseTopic>[
   RuqyahBrowseTopic('ruqyah-lib-more-reciters', 'আরও কিছু ক্বারির রুকইয়াহ'),
 ];
 
+/// The audio library as RuqyahBD lays it out (checked 2026-11-23): the
+/// main download page (topic, reciters, other) and its second page
+/// "আরও কিছু অডিও" (selected ayat, Hibshi, short versions, more reciters).
+class RuqyahAudioShelf {
+  const RuqyahAudioShelf(this.titleBn, this.topics);
+
+  final String titleBn;
+  final List<RuqyahBrowseTopic> topics;
+}
+
+final ruqyahAudioShelves = <RuqyahAudioShelf>[
+  RuqyahAudioShelf('রুকইয়াহ অডিও', ruqyahLibraryTopics.sublist(0, 3)),
+  RuqyahAudioShelf('আরও কিছু অডিও', ruqyahLibraryTopics.sublist(3)),
+];
+
 /// Published audio that is not yet placed in a library group.
 const ruqyahUngroupedAudioTopic = RuqyahBrowseTopic(
   'ruqyah-more-audio',

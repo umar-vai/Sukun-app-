@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/auth/auth_providers.dart';
 import 'package:go_router/go_router.dart';
@@ -579,7 +580,12 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
         ? '/resources/ruqyah/ruqyah-self-guide/chapter/$guideChapter'
         : guideChapter != null
         ? '/resources/ruqyah/ruqyah-self-guide'
+        : _isRuqyahAudioGroup(widget.topicSlug)
+        ? '/resources/ruqyah/ruqyah-audio'
         : '/resources/ruqyah';
+    // An audio group sits under "রুকইয়াহ অডিও", which is a sibling route,
+    // so back must go there rather than pop to the Ruqyah index.
+    final backGoesToParent = !isDua && _isRuqyahAudioGroup(widget.topicSlug);
     return Scaffold(
       appBar: AppBar(
         title: Text(pageTitle),
@@ -587,7 +593,7 @@ class _TaxonomyBrowserScreenState extends ConsumerState<TaxonomyBrowserScreen> {
             ? null
             : BackButton(
                 onPressed: () {
-                  if (context.canPop()) {
+                  if (!backGoesToParent && context.canPop()) {
                     context.pop();
                   } else {
                     context.go(parentPath);
@@ -757,3 +763,7 @@ IconData _resourceIcon(String type) => switch (type) {
   'pdf' || 'book' => Icons.library_books_outlined,
   _ => Icons.article_outlined,
 };
+
+bool _isRuqyahAudioGroup(String? topicSlug) =>
+    isRuqyahLibraryCategory(topicSlug) ||
+    topicSlug == ruqyahUngroupedAudioTopic.slug;

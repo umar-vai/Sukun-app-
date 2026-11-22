@@ -16,6 +16,9 @@ import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/media_library/presentation/audio_library_actions.dart';
 import 'package:sukun_life/features/resources/presentation/compact_audio_resource_card.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
+import 'package:sukun_life/features/resources/domain/resource_search.dart';
+import 'package:sukun_life/features/resources/domain/resource_search_documents.dart';
+import 'package:sukun_life/features/resources/presentation/live_search_suggestions.dart';
 import 'package:sukun_life/features/resources/presentation/youtube_player_screen.dart';
 import 'package:sukun_life/features/resources/presentation/book_audio_external_links_dialog.dart';
 import 'package:sukun_life/features/resources/domain/video_navigation.dart';
@@ -36,63 +39,128 @@ class ResourcesHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
+  /// Every published kind people search across. Qur'an ayat have their own
+  /// reader and are not loaded into the search catalog.
+  static const searchableTypes = {
+    'hadith',
+    'dua',
+    'amal',
+    'audio',
+    'guide',
+    'pdf',
+    'book',
+    'book_chapter',
+    'article',
+    'video',
+  };
+
   final _searchController = TextEditingController();
-  late Future<List<ContentResource>> _resources;
+  final _searchFocus = FocusNode();
+  Future<List<SearchDocument<ContentResource>>>? _catalog;
   Timer? _searchDebounce;
-  bool _searchPending = false;
+  String _query = '';
+  String _kind = 'all';
+  bool _showSuggestions = false;
 
   @override
   void initState() {
     super.initState();
-    _resources = _load();
+    _searchFocus.addListener(() {
+      if (!mounted) return;
+      setState(() => _showSuggestions = _searchFocus.hasFocus);
+    });
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<List<ContentResource>> _load() {
-    final backendUnavailable =
-        ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository;
-    if (backendUnavailable) {
-      return Future.value(const <ContentResource>[]);
-    }
-    final query = _searchController.text.trim();
-    // The hub is category navigation only; never load the entire catalog.
-    // Matching items appear only after the user actively searches.
-    if (query.isEmpty) return Future.value(const <ContentResource>[]);
-    return ref.read(resourcesRepositoryProvider).browseResources(query: query);
+  bool get _backendUnavailable =>
+      ref.read(resourcesRepositoryProvider) is UnavailableResourcesRepository;
+
+  /// The hub never loads the catalog until someone searches. The first
+  /// search loads every authorized published item once (cached by the
+  /// repository), and each keystroke after that filters it instantly.
+  Future<List<SearchDocument<ContentResource>>> _ensureCatalog() {
+    return _catalog ??= ref
+        .read(resourcesRepositoryProvider)
+        .browseResources(types: searchableTypes)
+        .then(
+          (items) => [for (final item in items) resourceSearchDocument(item)],
+        );
   }
 
   Future<void> _refresh() async {
     _searchDebounce?.cancel();
-    final future = _load();
     setState(() {
-      _searchPending = false;
-      _resources = future;
+      _catalog = null;
+      _query = _searchController.text.trim();
     });
+    if (_query.isEmpty || _backendUnavailable) return;
     try {
-      await future;
+      await _ensureCatalog();
     } catch (_) {
-      // FutureBuilder already presents the friendly retry state.
+      // The FutureBuilder presents the friendly retry state.
     }
   }
 
-  void _scheduleSearch(String _) {
+  void _onSearchChanged(String _) {
     _searchDebounce?.cancel();
-    if (_searchController.text.trim().isEmpty) {
-      _refresh();
+    final text = _searchController.text.trim();
+    if (text.isEmpty) {
+      setState(() {
+        _query = '';
+        _kind = 'all';
+      });
       return;
     }
-    // Do not show results from the previous query while the user is typing.
-    setState(() => _searchPending = true);
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+    if (!_backendUnavailable) _ensureCatalog();
+    // A very short pause keeps typing smooth on slower phones.
+    _searchDebounce = Timer(const Duration(milliseconds: 90), () {
       if (!mounted) return;
-      _refresh();
+      setState(() {
+        _query = text;
+        _showSuggestions = _searchFocus.hasFocus;
+      });
     });
+  }
+
+  void _setQuery(String value) {
+    _searchDebounce?.cancel();
+    _searchController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+    setState(() {
+      _query = value.trim();
+      _kind = 'all';
+    });
+    if (!_backendUnavailable && _query.isNotEmpty) _ensureCatalog();
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _setQuery('');
+  }
+
+  void _showAllResults() {
+    _searchFocus.unfocus();
+    setState(() => _showSuggestions = false);
+  }
+
+  void _onSuggestion(SearchSuggestion<ContentResource> suggestion) {
+    final item = suggestion.item;
+    if (item != null) {
+      _searchFocus.unfocus();
+      _openSearchResult(item);
+      return;
+    }
+    _setQuery(suggestion.label);
+    _showAllResults();
   }
 
   Future<void> _openBookAudioLinks() async {
@@ -142,8 +210,7 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     });
     final repository = ref.watch(resourcesRepositoryProvider);
     final backendUnavailable = repository is UnavailableResourcesRepository;
-    final hasSearch =
-        !backendUnavailable && _searchController.text.trim().isNotEmpty;
+    final hasSearch = !backendUnavailable && _query.isNotEmpty;
     final content = RefreshIndicator(
       onRefresh: _refresh,
       child: CustomScrollView(
@@ -202,126 +269,20 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
                 else
                   SukunSearchField(
                     controller: _searchController,
-                    hintText: 'নাম বা বিষয় লিখে খুঁজুন',
-                    onChanged: _scheduleSearch,
-                    onSubmitted: (_) => _refresh(),
-                    onClear: () {
-                      _searchController.clear();
-                      _refresh();
+                    focusNode: _searchFocus,
+                    hintText: 'দোয়া, অডিও, পিডিএফ বা বিষয় লিখুন',
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (_) {
+                      _setQuery(_searchController.text);
+                      _showAllResults();
                     },
+                    onClear: _clearSearch,
                   ),
-                const SizedBox(height: SukunSpace.lg),
-                const QuranContinueCard(),
-                const SizedBox(height: SukunSpace.md),
-                Row(
-                  key: const Key('resources-quick-links'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _QuickLink(
-                        icon: Icons.library_music_outlined,
-                        label: 'আমার প্লেলিস্ট ও অফলাইন ডাউনলোড',
-                        onTap: () => context.push('/my-media'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _QuickLink(
-                        icon: Icons.headphones_outlined,
-                        label: 'রুকইয়াহ অডিও',
-                        onTap: _openBookAudioLinks,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: SukunSpace.sectionLarge),
-                SukunSectionHeader(title: 'বিষয় অনুযায়ী দেখুন'),
-                const SizedBox(height: 10),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columns = constraints.maxWidth >= 720 ? 4 : 2;
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        mainAxisExtent: 84,
-                      ),
-                      itemCount: resourceSections.length,
-                      itemBuilder: (context, index) {
-                        final section = resourceSections[index];
-                        return _SectionCard(
-                          section: section,
-                          onTap: () => _selectSection(section),
-                        );
-                      },
-                    );
-                  },
-                ),
-                if (hasSearch) ...[
-                  const SizedBox(height: 24),
-                  const SukunSectionHeader(title: 'অনুসন্ধানের ফলাফল'),
-                  const SizedBox(height: 10),
-                ],
+                if (!hasSearch) ..._browseChildren(),
               ],
             ),
           ),
-          if (hasSearch && _searchPending)
-            const SliverToBoxAdapter(
-              child: SizedBox(
-                height: 160,
-                child: AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…'),
-              ),
-            )
-          else if (hasSearch)
-            FutureBuilder<List<ContentResource>>(
-              future: _resources,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 160,
-                      child: AppLoadingState(label: 'পাঠ আনা হচ্ছে…'),
-                    ),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppErrorState(
-                      message: 'পাঠ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
-                      onRetry: _refresh,
-                    ),
-                  );
-                }
-                final resources = snapshot.data!;
-                if (resources.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppEmptyState(
-                      title: 'কোনো পাঠ পাওয়া যায়নি',
-                      message: _searchController.text.trim().isNotEmpty
-                          ? 'অন্য শব্দ দিয়ে আবার খুঁজুন।'
-                          : 'এখনো কোনো পাঠ দেওয়া হয়নি।',
-                    ),
-                  );
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                  sliver: SliverList.separated(
-                    itemCount: resources.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 10),
-                    itemBuilder: (context, index) => ResourceCard(
-                      resource: resources[index],
-                      onTap: () => _openSearchResult(resources[index]),
-                    ),
-                  ),
-                );
-              },
-            ),
+          if (hasSearch) _searchResultsSliver(),
         ],
       ),
     );
@@ -329,6 +290,145 @@ class _ResourcesHomeScreenState extends ConsumerState<ResourcesHomeScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('ইসলামিক পাঠ ও অডিও')),
       body: content,
+    );
+  }
+
+  List<Widget> _browseChildren() => [
+    const SizedBox(height: SukunSpace.lg),
+    const QuranContinueCard(),
+    const SizedBox(height: SukunSpace.md),
+    Row(
+      key: const Key('resources-quick-links'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _QuickLink(
+            icon: Icons.library_music_outlined,
+            label: 'আমার প্লেলিস্ট ও অফলাইন ডাউনলোড',
+            onTap: () => context.push('/my-media'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickLink(
+            icon: Icons.headphones_outlined,
+            label: 'রুকইয়াহ অডিও',
+            onTap: _openBookAudioLinks,
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(height: SukunSpace.sectionLarge),
+    SukunSectionHeader(title: 'বিষয় অনুযায়ী দেখুন'),
+    const SizedBox(height: 10),
+    LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 720 ? 4 : 2;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            mainAxisExtent: 84,
+          ),
+          itemCount: resourceSections.length,
+          itemBuilder: (context, index) {
+            final section = resourceSections[index];
+            return _SectionCard(
+              section: section,
+              onTap: () => _selectSection(section),
+            );
+          },
+        );
+      },
+    ),
+  ];
+
+  Widget _searchResultsSliver() {
+    return FutureBuilder<List<SearchDocument<ContentResource>>>(
+      future: _ensureCatalog(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: SizedBox(
+              height: 160,
+              child: AppLoadingState(label: 'অনুসন্ধান করা হচ্ছে…'),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: AppErrorState(
+              message: 'পাঠ আনা যাচ্ছে না। আবার চেষ্টা করুন।',
+              onRetry: _refresh,
+            ),
+          );
+        }
+        final matches = rankSearch(snapshot.data!, _query);
+        final counts = searchKindCounts(matches.map((item) => item.type));
+        final kind = (counts[_kind] ?? 0) > 0 ? _kind : 'all';
+        final visible = [
+          for (final item in matches)
+            if (searchKindAccepts(kind, item.type)) item,
+        ];
+        final suggestions = buildSearchSuggestions<ContentResource>(
+          query: _query,
+          rankedMatches: matches,
+          titleOf: resourceDisplayTitle,
+          kindOf: (item) => searchKindLabel(item.type),
+          categoryOf: resourceCategoryLabel,
+        );
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+          sliver: SliverList.list(
+            children: [
+              if (_showSuggestions) ...[
+                LiveSearchSuggestionList<ContentResource>(
+                  query: _query,
+                  suggestions: suggestions,
+                  totalMatches: matches.length,
+                  onSelect: _onSuggestion,
+                  onShowAll: _showAllResults,
+                  iconFor: (suggestion) => suggestion.item == null
+                      ? Icons.folder_open_rounded
+                      : resourceTypeIcon(suggestion.item!.type),
+                ),
+                const SizedBox(height: 18),
+              ],
+              SukunSectionHeader(
+                title: matches.isEmpty
+                    ? 'অনুসন্ধানের ফলাফল'
+                    : 'অনুসন্ধানের ফলাফল · ${matches.length}টি',
+              ),
+              const SizedBox(height: 10),
+              if (matches.isEmpty)
+                AppEmptyState(
+                  title: 'কোনো পাঠ পাওয়া যায়নি',
+                  message: 'অন্য শব্দ বা বানানে আবার খুঁজুন।',
+                )
+              else ...[
+                SearchKindChips(
+                  counts: counts,
+                  selected: kind,
+                  onSelected: (value) => setState(() => _kind = value),
+                ),
+                const SizedBox(height: 12),
+                for (final resource in visible) ...[
+                  ResourceCard(
+                    key: Key('search-result-${resource.id}'),
+                    resource: resource,
+                    onTap: () => _openSearchResult(resource),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -480,7 +580,7 @@ class ResourceCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SukunIconBadge(icon: _resourceIcon(resource.type)),
+              SukunIconBadge(icon: resourceTypeIcon(resource.type)),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -516,7 +616,7 @@ class ResourceCard extends StatelessWidget {
   }
 }
 
-IconData _resourceIcon(String type) => switch (type) {
+IconData resourceTypeIcon(String type) => switch (type) {
   'quran' => Icons.auto_stories_outlined,
   'hadith' => Icons.format_quote_outlined,
   'dua' || 'amal' => Icons.favorite_outline,

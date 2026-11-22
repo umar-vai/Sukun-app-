@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sukun_life/features/resources/domain/resource_search.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -249,15 +250,23 @@ class _AdminContentListScreenState
   ) {
     final kind = _selectedKind!;
     final categories = data?.categories ?? const <ContentCategory>[];
-    final query = _search.trim().toLowerCase();
+    final query = _search.trim();
     final items = (data?.items ?? const <AdminContentItem>[])
         .where((item) {
           if (!_matchesKind(_kindFor(item, categories), kind)) return false;
           final group = _statusGroup(item.status);
           if (_status != 'all' && group != _status) return false;
+          // Partial words and Bangla spelling variants match, as on the
+          // Resources tab ("তাস" finds "তাসবীহ").
           return query.isEmpty ||
-              item.title.toLowerCase().contains(query) ||
-              (item.titleBn?.toLowerCase().contains(query) ?? false);
+              searchMatches(
+                SearchDocument<Object?>(
+                  item: null,
+                  title: item.title,
+                  altTitle: item.titleBn,
+                ),
+                query,
+              );
         })
         .toList(growable: false);
 

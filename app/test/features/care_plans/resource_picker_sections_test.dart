@@ -53,6 +53,31 @@ const _ruqyahDua = ContentResourceOption(
   status: 'published',
 );
 
+ContentResourceOption _libraryDua(String id, String category, String label) =>
+    ContentResourceOption(
+      id: id,
+      title: id,
+      titleBn: id,
+      type: 'dua',
+      visibility: 'public',
+      status: 'published',
+      categoryId: 'cat-$category',
+      categorySlug: category,
+      categoryNameBn: label,
+    );
+
+ContentResourceOption _libraryAudio(String id, String category) =>
+    ContentResourceOption(
+      id: id,
+      title: id,
+      type: 'audio',
+      visibility: 'public',
+      status: 'published',
+      categoryId: 'cat-$category',
+      categorySlug: category,
+      categoryNameBn: category,
+    );
+
 void main() {
   test('Admin main sections use the public Resources taxonomy', () {
     expect(resourceSections.length, 10);
@@ -125,8 +150,11 @@ void main() {
       'dua',
     );
     await tester.pumpAndSettle();
-    expect(find.text('Dua resource'), findsOneWidget);
-    await tester.tap(find.text('Dua resource'));
+    // Live suggestions appear under the field while typing, and the
+    // matching item is also in the results grid.
+    expect(find.byKey(const Key('live-search-suggestions')), findsOneWidget);
+    expect(find.byKey(const Key('resource-item-dua-1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('resource-item-dua-1')));
     await tester.pumpAndSettle();
     expect(result, 'dua-1');
     expect(tester.takeException(), isNull);
@@ -281,6 +309,107 @@ void main() {
     );
     // Unpublished records remain unavailable rather than becoming selectable.
     expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Admin library mirrors the Resources tab group navigation', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final resources = [
+      _libraryDua('sleep-basic', 'dua-azkar-ma-07', 'ঘুমের আগে প্রাথমিক'),
+      _libraryDua('sleep-tasbih', 'dua-azkar-ma-09', 'ঘুমের আগে ফজিলত'),
+      _libraryDua('enemy', 'dua-azkar-ma-14', 'শত্রুর ক্ষতির আশংকা করলে'),
+      _libraryAudio('eye-audio', 'ruqyah-lib-topic'),
+      _libraryAudio('hibshi-audio', 'ruqyah-lib-hibshi'),
+    ];
+    String? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => result = await showResourcePickerSheet(
+                context: context,
+                resources: resources,
+                selectedId: '',
+              ),
+              child: const Text('Open picker'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open picker'));
+    await tester.pumpAndSettle();
+
+    // দোয়া ও যিকর → groups (only those with items) → categories → items.
+    await tester.tap(find.byKey(const Key('resource-section-dua-azkar')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-group-masnun-sleep')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-group-masnun-daily')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-group-masnun-morning-evening')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('resource-group-time-based')), findsNothing);
+    expect(find.byKey(const Key('resource-item-sleep-basic')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('resource-group-masnun-sleep')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-nav-category-dua-azkar-ma-07')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-nav-category-dua-azkar-ma-09')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('resource-item-sleep-tasbih')), findsOneWidget);
+    expect(find.byKey(const Key('resource-item-sleep-basic')), findsNothing);
+
+    // Back walks up one level at a time: category → group → section.
+    await tester.tap(find.byKey(const Key('resource-section-back')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-nav-category-dua-azkar-ma-07')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('resource-section-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resource-section-back')));
+    await tester.pumpAndSettle();
+
+    // রুকইয়াহ → রুকইয়াহ অডিও → the RuqyahBD audio groups.
+    await tester.tap(find.byKey(const Key('resource-section-ruqyah')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resource-group-ruqyah-audio')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-nav-category-ruqyah-lib-topic')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-nav-category-ruqyah-lib-hibshi')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-nav-category-ruqyah-lib-hibshi')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resource-item-hibshi-audio')));
+    await tester.pumpAndSettle();
+    expect(result, 'hibshi-audio');
     expect(tester.takeException(), isNull);
   });
 }

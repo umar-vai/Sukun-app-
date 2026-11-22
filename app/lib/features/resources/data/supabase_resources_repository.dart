@@ -2,6 +2,7 @@ import 'package:sukun_life/features/resources/data/resource_paging.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
+import 'package:sukun_life/features/resources/domain/resource_search.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final class SupabaseResourcesRepository implements ResourcesRepository {
@@ -220,21 +221,22 @@ final class SupabaseResourcesRepository implements ResourcesRepository {
   }
 }
 
-Set<String> _searchTerms(String query) => query
-    .toLowerCase()
-    .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ')
-    .split(RegExp(r'\s+'))
-    .where((term) => term.isNotEmpty)
-    .toSet();
+// Bangla vowel signs are combining marks; the shared normalizer keeps them
+// (stripping them split "তাসবিহ" into unrelated fragments) and folds common
+// spelling variants.
+List<String> _searchTerms(String query) => searchTerms(query);
 
-bool _matchesEveryTerm(ContentResource resource, Set<String> terms) {
-  final searchable = [
-    resource.title,
-    resource.titleBn,
-    resource.summary,
-    resource.referenceText,
-    resource.sourceReference,
-  ].whereType<String>().join(' ').toLowerCase();
+bool _matchesEveryTerm(ContentResource resource, List<String> terms) {
+  final searchable = normalizeSearchText(
+    [
+      resource.title,
+      resource.titleBn,
+      resource.summary,
+      resource.referenceText,
+      resource.sourceReference,
+      resource.categoryNameBn,
+    ].whereType<String>().join(' '),
+  );
   return terms.every(searchable.contains);
 }
 

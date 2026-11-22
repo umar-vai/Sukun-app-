@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
 import 'package:sukun_life/features/care_plans/domain/content_resource_option.dart';
-import 'package:sukun_life/features/care_plans/domain/resource_matcher.dart';
 import 'package:sukun_life/features/care_plans/domain/official_prescription_template_catalog.dart';
 import 'package:sukun_life/features/care_plans/domain/resource_picker_sections.dart';
+import 'package:sukun_life/features/resources/domain/resource_library_navigation.dart';
+import 'package:sukun_life/features/resources/domain/resource_search.dart';
 import 'package:sukun_life/features/resources/domain/resource_section.dart';
+import 'package:sukun_life/features/resources/presentation/live_search_suggestions.dart';
 
 /// A routine may supply the verified Quran picker without changing clinical
 /// CMS selection behavior. A canonical reference has the form quran:N or quran:N:A.
@@ -205,8 +207,26 @@ class _ResourcePickerSheet extends StatefulWidget {
 /// every section (or the opened one) in the same grid.
 class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
   _PickerSection? _openSection;
+
+  /// Navigation group inside the open section (e.g. "ঘুমের আগে ও পরে"),
+  /// mirroring the public Resources tab.
+  String? _openGroup;
   String? _openCategory;
+  bool _showSuggestions = false;
+  late final List<SearchDocument<ContentResourceOption>> _documents = [
+    for (final resource in widget.resources) _pickerSearchDocument(resource),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocus.addListener(() {
+      if (mounted) setState(() => _showSuggestions = _searchFocus.hasFocus);
+    });
+  }
+
   bool _choosingCanonical = false;
 
   /// Multi-select: ids ticked in this session, in tap order.
@@ -260,6 +280,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -285,7 +306,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final sections = _sections(widget.resources);
-    final query = _searchController.text.trim().toLowerCase();
+    final query = _searchController.text.trim();
     final open = _openSection;
     final browsing = open == null && query.isEmpty;
 
@@ -354,8 +375,10 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                   TextField(
                     key: const Key('resource-picker-search'),
                     controller: _searchController,
+                    focusNode: _searchFocus,
                     textInputAction: TextInputAction.search,
                     onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _hideSuggestions(),
                     decoration: InputDecoration(
                       hintText: open == null
                           ? 'নাম বা বিভাগ দিয়ে খুঁজুন'
@@ -373,6 +396,15 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                             ),
                     ),
                   ),
+                  if (_showSuggestions && query.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: SingleChildScrollView(
+                        child: _suggestionPanel(open, query),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -393,9 +425,17 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                         SliverToBoxAdapter(
                           child: _OpenSectionBar(
                             section: open,
+                            trail: [
+                              if (_openGroup != null)
+                                _groupTitle(open.slug, _openGroup!),
+                              if (_openCategory != null)
+                                _trailCategory(_openCategory!),
+                            ],
                             onBack: () => setState(() {
                               if (_openCategory != null) {
                                 _openCategory = null;
+                              } else if (_openGroup != null) {
+                                _openGroup = null;
                               } else {
                                 _openSection = null;
                               }
@@ -560,6 +600,7 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                 : 0,
             onTap: () => setState(() {
               _openSection = section;
+              _openGroup = null;
               _openCategory = null;
             }),
           );
@@ -573,8 +614,14 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
         .where(
           (entry) =>
               query.isEmpty ||
-              entry.title.toLowerCase().contains(query) ||
-              entry.instruction.toLowerCase().contains(query),
+              searchMatches(
+                SearchDocument<Object?>(
+                  item: null,
+                  title: entry.title,
+                  details: [entry.instruction],
+                ),
+                query,
+              ),
         )
         .toList(growable: false);
     return [
@@ -643,13 +690,16 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     String query,
     int columns,
   ) {
-    final visible = widget.resources
-        .where((resource) {
-          if (section != null && !section.matches(resource)) return false;
-          if (query.isEmpty) return true;
-          return resourceMatchesSearch(resource, query);
-        })
-        .toList(growable: false);
+    final visible = query.isEmpty
+        ? [
+            for (final resource in widget.resources)
+              if (section == null || section.matches(resource)) resource,
+          ]
+        : [
+            // Best matches first; the category headings follow that order.
+            for (final resource in rankSearch(_documents, query))
+              if (section == null || section.matches(resource)) resource,
+          ];
     var grouped = section?.isOther == true
         ? <String, List<ContentResourceOption>>{section!.label: visible}
         : _groupByCategory(visible);
@@ -666,6 +716,12 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     if (visible.isEmpty) {
       return const [SliverToBoxAdapter(child: _EmptyResources())];
     }
+    final navGroups = section?.section == null
+        ? const <LibraryNavGroup>[]
+        : libraryNavGroupsForSection(section!.slug);
+    if (query.isEmpty && navGroups.isNotEmpty) {
+      return _navGroupSlivers(section!, navGroups, visible, columns);
+    }
     final categoryOpen = _openCategory;
     if (section != null &&
         section.slug != 'all' &&
@@ -680,20 +736,11 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final entry = grouped.entries.elementAt(index);
-                final pickedHere = widget.multiSelect
-                    ? entry.value.where((r) => _picked.contains(r.id)).length
-                    : 0;
-                return _PickerCard(
+                return _folderCard(
                   key: Key('resource-category-$index'),
-                  selected: pickedHere > 0,
-                  enabled: true,
-                  onTap: () => setState(() => _openCategory = entry.key),
-                  icon: Icons.folder_open_rounded,
                   title: entry.key,
-                  subtitle: pickedHere > 0
-                      ? '${_bn(entry.value.length)}টি · ${_bn(pickedHere)}টি বাছাই'
-                      : '${_bn(entry.value.length)}টি',
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  items: entry.value,
+                  onTap: () => setState(() => _openCategory = entry.key),
                 );
               },
             ),
@@ -702,6 +749,228 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
       }
       grouped = {categoryOpen: grouped[categoryOpen]!};
     }
+    return _itemGridSlivers(grouped, columns);
+  }
+
+  /// Section → group → category → items, the same path as the public
+  /// Resources tab (e.g. দোয়া ও যিকর → ঘুমের আগে ও পরে → ঘুমের আগে: তিনকুল).
+  List<Widget> _navGroupSlivers(
+    _PickerSection section,
+    List<LibraryNavGroup> groups,
+    List<ContentResourceOption> visible,
+    int columns,
+  ) {
+    final byCategory = <String, List<ContentResourceOption>>{};
+    for (final resource in visible) {
+      byCategory
+          .putIfAbsent(_navCategory(section.slug, resource), () => [])
+          .add(resource);
+    }
+    final known = {for (final group in groups) ...group.categorySlugs};
+    final leftovers = [
+      for (final entry in byCategory.entries)
+        if (!known.contains(entry.key)) ...entry.value,
+    ];
+    List<ContentResourceOption> inGroup(LibraryNavGroup group) => [
+      for (final slug in group.categorySlugs) ...?byCategory[slug],
+    ];
+
+    final groupOpen = _openGroup;
+    if (groupOpen == null) {
+      final cards = <Widget>[
+        for (final group in groups)
+          if (inGroup(group).isNotEmpty)
+            _folderCard(
+              key: Key('resource-group-${group.slug}'),
+              title: group.titleBn,
+              items: inGroup(group),
+              onTap: () => setState(() {
+                _openGroup = group.slug;
+                _openCategory = null;
+              }),
+            ),
+        if (leftovers.isNotEmpty)
+          _folderCard(
+            key: const Key('resource-group-other'),
+            title: 'অন্যান্য',
+            items: leftovers,
+            onTap: () => setState(() {
+              _openGroup = _otherGroup;
+              _openCategory = null;
+            }),
+          ),
+      ];
+      return [_cardListSliver(cards)];
+    }
+    if (groupOpen == _otherGroup) {
+      return _itemGridSlivers(_groupByCategory(leftovers), columns);
+    }
+    final group = groups.where((entry) => entry.slug == groupOpen).firstOrNull;
+    if (group == null) {
+      return const [SliverToBoxAdapter(child: _EmptyResources())];
+    }
+    final categoryOpen = _openCategory;
+    if (categoryOpen != null && byCategory[categoryOpen] != null) {
+      return _itemGridSlivers({
+        _categoryTitle(categoryOpen, byCategory[categoryOpen]!):
+            byCategory[categoryOpen]!,
+      }, columns);
+    }
+    final shelvesWithItems = [
+      for (final shelf in group.shelves)
+        if (shelf.categorySlugs.any((slug) => byCategory[slug] != null)) shelf,
+    ];
+    // A group of one category opens straight onto its items.
+    final onlyCategory = [
+      for (final shelf in shelvesWithItems)
+        for (final slug in shelf.categorySlugs)
+          if (byCategory[slug] != null) slug,
+    ];
+    if (onlyCategory.length == 1) {
+      final slug = onlyCategory.single;
+      return _itemGridSlivers({
+        _categoryTitle(slug, byCategory[slug]!): byCategory[slug]!,
+      }, columns);
+    }
+    final cards = <Widget>[];
+    for (final shelf in shelvesWithItems) {
+      if (shelf.titleBn != null && shelvesWithItems.length > 1) {
+        cards.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: _CategoryHeader(
+              label: shelf.titleBn!,
+              count: [
+                for (final slug in shelf.categorySlugs) ...?byCategory[slug],
+              ].length,
+            ),
+          ),
+        );
+      }
+      for (final slug in shelf.categorySlugs) {
+        final items = byCategory[slug];
+        if (items == null) continue;
+        cards.add(
+          _folderCard(
+            key: Key('resource-nav-category-$slug'),
+            title: _categoryTitle(slug, items),
+            items: items,
+            onTap: () => setState(() => _openCategory = slug),
+          ),
+        );
+      }
+    }
+    return [_cardListSliver(cards)];
+  }
+
+  static const _otherGroup = '_other';
+
+  Widget _cardListSliver(List<Widget> cards) => SliverPadding(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+    sliver: SliverList.separated(
+      itemCount: cards.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) => cards[index],
+    ),
+  );
+
+  Widget _folderCard({
+    required Key key,
+    required String title,
+    required List<ContentResourceOption> items,
+    required VoidCallback onTap,
+  }) {
+    final pickedHere = widget.multiSelect
+        ? items.where((r) => _picked.contains(r.id)).length
+        : 0;
+    return _PickerCard(
+      key: key,
+      selected: pickedHere > 0,
+      enabled: true,
+      onTap: onTap,
+      icon: Icons.folder_open_rounded,
+      title: title,
+      subtitle: pickedHere > 0
+          ? '${_bn(items.length)}টি · ${_bn(pickedHere)}টি বাছাই'
+          : '${_bn(items.length)}টি',
+      trailing: const Icon(Icons.chevron_right_rounded),
+    );
+  }
+
+  String _navCategory(String sectionSlug, ContentResourceOption resource) {
+    if (sectionSlug == 'ruqyah') {
+      return ruqyahNavCategoryFor(
+        type: resource.type,
+        categorySlug: resource.categorySlug,
+        slug: resource.slug,
+      );
+    }
+    return resource.categorySlug ?? '';
+  }
+
+  String _categoryTitle(String slug, List<ContentResourceOption> items) =>
+      libraryNavCategoryTitle(slug) ?? items.first.categoryLabel;
+
+  String _groupTitle(String sectionSlug, String groupSlug) {
+    if (groupSlug == _otherGroup) return 'অন্যান্য';
+    for (final group in libraryNavGroupsForSection(sectionSlug)) {
+      if (group.slug == groupSlug) return group.titleBn;
+    }
+    return groupSlug;
+  }
+
+  String _trailCategory(String category) =>
+      libraryNavCategoryTitle(category) ?? category;
+
+  void _hideSuggestions() {
+    _searchFocus.unfocus();
+    setState(() => _showSuggestions = false);
+  }
+
+  Widget _suggestionPanel(_PickerSection? section, String query) {
+    final matches = [
+      for (final resource in rankSearch(_documents, query))
+        if (section == null || section.matches(resource)) resource,
+    ];
+    return LiveSearchSuggestionList<ContentResourceOption>(
+      query: query,
+      totalMatches: matches.length,
+      suggestions: buildSearchSuggestions<ContentResourceOption>(
+        query: query,
+        rankedMatches: matches,
+        titleOf: (item) => item.displayTitle,
+        kindOf: (item) => searchKindLabel(item.type),
+        categoryOf: (item) => item.categoryLabel,
+      ),
+      iconFor: (suggestion) => suggestion.item == null
+          ? Icons.folder_open_rounded
+          : _iconForType(suggestion.item!.type),
+      onShowAll: _hideSuggestions,
+      onSelect: (suggestion) {
+        final item = suggestion.item;
+        if (item == null) {
+          _searchController.text = suggestion.label;
+          _hideSuggestions();
+          return;
+        }
+        if (!item.isLinkable) {
+          _searchController.text = suggestion.label;
+          _hideSuggestions();
+          return;
+        }
+        if (!widget.multiSelect) {
+          Navigator.pop(context, item.id);
+          return;
+        }
+        _onResourceTap(item);
+      },
+    );
+  }
+
+  List<Widget> _itemGridSlivers(
+    Map<String, List<ContentResourceOption>> grouped,
+    int columns,
+  ) {
     return [
       for (final entry in grouped.entries) ...[
         SliverPadding(
@@ -822,6 +1091,22 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
     return sections;
   }
 }
+
+SearchDocument<ContentResourceOption> _pickerSearchDocument(
+  ContentResourceOption resource,
+) => SearchDocument<ContentResourceOption>(
+  item: resource,
+  title: resource.displayTitle,
+  altTitle: resource.displayTitle == resource.title ? null : resource.title,
+  details: [
+    resource.categoryLabel,
+    resource.categoryName,
+    libraryNavCategoryTitle(resource.categorySlug ?? ''),
+    searchTypeLabel(resource.type),
+    for (final group in libraryNavGroupsForSection('dua-azkar'))
+      if (group.categorySlugs.contains(resource.categorySlug)) group.titleBn,
+  ],
+);
 
 String _bn(int value) {
   const digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -953,10 +1238,17 @@ class _SectionTile extends StatelessWidget {
 }
 
 class _OpenSectionBar extends StatelessWidget {
-  const _OpenSectionBar({required this.section, required this.onBack});
+  const _OpenSectionBar({
+    required this.section,
+    required this.onBack,
+    this.trail = const [],
+  });
 
   final _PickerSection section;
   final VoidCallback onBack;
+
+  /// Group and category opened inside the section, shown as a path.
+  final List<String> trail;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -984,8 +1276,8 @@ class _OpenSectionBar extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            section.label,
-            maxLines: 1,
+            [section.label, ...trail].join(' › '),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: SukunColors.nightNavy,

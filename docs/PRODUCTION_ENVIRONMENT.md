@@ -13,6 +13,27 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-23: library links on care templates (NOT yet applied)
+
+- Owner request: add as many related library items as fit to every care
+  template, for the owner to review and trim later.
+- Migration: `supabase/migrations/20261123120000_care_template_library_links.sql`
+  (apply after `20261122090000` and `20261123090000`). It adds
+  `private.curate_care_template_refs` and
+  `private.link_care_templates_to_library` and runs the latter once for the
+  first Super Admin, only where the library is installed. Curated library
+  slugs come first, then each template's existing links; only published,
+  patient-linkable items are kept (superseded `assigned_only` dua/amal/audio
+  and `staff_only` items are dropped), at most 16, the same media URL once.
+  Instructions are not changed. Each change is audited
+  (`care_template.library_links_curated`, before/after).
+- Verified locally on PostgreSQL 16 with every repository migration applied:
+  `supabase/tests/care_template_library_links_test.sql` (14 checks) passes;
+  40 templates change and a second run changes nothing.
+- App-only changes in the same release (no backend dependency): RuqyahBD-style
+  Dua and Ruqyah audio navigation, live search on the Resources tab and in the
+  Admin library, see `docs/ISLAMIC_RESOURCES_ARCHITECTURE.md` section 21.
+
 ### 2026-11-23: retire resources superseded by the library (NOT yet applied)
 
 - Owner request: the new library replaces the older Ruqyah audio and Dua/Amal.
