@@ -450,4 +450,10 @@ Migration `20261122090000_structured_resource_library.sql` adds:
   rule/outcome JSON for a dimension test.
 - Media stays link-based. Source attribution is not shown in the app, per the
   owner's decision of 2026-11-22.
+- **Superseded content (2026-11-23).** Migration
+  `20261123090000_retire_superseded_resources.sql` takes the older Ruqyah audio
+  and Dua/Amal out of public lists: linked items become `assigned_only` (still
+  readable from the plan or routine that links them), unlinked items are
+  archived. The Dua & Azkar page hides a navigation group with no published
+  dua.
 
