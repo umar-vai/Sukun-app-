@@ -87,7 +87,19 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
     if (mounted) setState(() {});
   }
 
+  /// Last good page data per signed-in user, so reopening the tab shows the
+  /// previous routine instantly while fresh data loads in the background.
+  static final Map<String, _RoutinePageData> _lastData = {};
+
+  String get _uid => Supabase.instance.client.auth.currentUser?.id ?? '';
+
   Future<_RoutinePageData> _load() async {
+    final fresh = await _loadFresh();
+    _lastData[_uid] = fresh;
+    return fresh;
+  }
+
+  Future<_RoutinePageData> _loadFresh() async {
     final results = await Future.wait<Object>([
       _repository.listRoutines(),
       _repository.listActions(),
@@ -846,7 +858,8 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   Widget _myRoutinesTab() => FutureBuilder<_RoutinePageData>(
     future: _data,
     builder: (context, snap) {
-      if (!snap.hasData) {
+      final cached = snap.data ?? _lastData[_uid];
+      if (cached == null) {
         if (snap.hasError) {
           return AppErrorState(
             message: 'রুটিন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।',
@@ -855,7 +868,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
         }
         return const AppLoadingState(label: 'রুটিন আনা হচ্ছে…');
       }
-      final data = snap.data!;
+      final data = cached;
       final ordered = orderRoutinesForHub(data.routines, data.assignedIds);
       final isPatient = ref.watch(appSessionProvider).value?.isPatient == true;
       return ListView(

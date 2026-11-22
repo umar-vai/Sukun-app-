@@ -126,7 +126,7 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
     }
 
     final settings = await ref.read(utilityPreferencesStoreProvider).load();
-    return _HomeTasksData(
+    final result = _HomeTasksData(
       patientDay: day,
       planUnavailable: planUnavailable,
       personalUnavailable: personalUnavailable,
@@ -149,6 +149,9 @@ class _UnifiedHomeScreenState extends ConsumerState<UnifiedHomeScreen>
         calculator: ref.read(prayerCalculationServiceProvider),
       ),
     );
+    _lastHomeTasks = result;
+    _lastHomeTasksOwner = ownerAtStart;
+    return result;
   }
 
   Future<void> _refresh() async {
@@ -780,6 +783,11 @@ String _prayerLabel(String id) => switch (id) {
   _ => id,
 };
 
+/// Last good Home tasks, shown at once while fresh data loads. Tied to the
+/// signed-in user so another account never sees it.
+_HomeTasksData? _lastHomeTasks;
+String? _lastHomeTasksOwner;
+
 class _HomeTasksData {
   const _HomeTasksData({
     required this.actions,
@@ -987,10 +995,13 @@ class _UnifiedNextTasks extends StatelessWidget {
     child: FutureBuilder<_HomeTasksData>(
       future: future,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        final owner = Supabase.instance.client.auth.currentUser?.id;
+        final cached = _lastHomeTasksOwner == owner ? _lastHomeTasks : null;
+        final data = snapshot.data ?? cached;
+        if (data == null &&
+            snapshot.connectionState == ConnectionState.waiting) {
           return const _TodayLoading();
         }
-        final data = snapshot.data;
         final day = data?.patientDay;
         final plan = day?.activePlan;
         final next = data?.actions.firstOrNull;
