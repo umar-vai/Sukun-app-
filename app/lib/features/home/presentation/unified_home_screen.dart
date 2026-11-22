@@ -1015,7 +1015,7 @@ class _UnifiedNextTasks extends StatelessWidget {
                   )
                 else
                   const SukunIconBadge(
-                    icon: Icons.self_improvement_rounded,
+                    icon: Icons.volunteer_activism_rounded,
                     size: 56,
                   ),
                 const SizedBox(width: 16),

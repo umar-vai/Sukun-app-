@@ -25,9 +25,6 @@ import 'package:sukun_life/features/personal_routines/domain/prayer_relative_rem
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_reminder_planner.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_action_resource_selection.dart';
 import 'package:sukun_life/features/personal_routines/domain/personal_routine_resource_prefill.dart';
-import 'package:sukun_life/features/personal_routines/presentation/personal_surah_picker.dart';
-import 'package:sukun_life/features/personal_routines/presentation/routine_quran_reference_picker.dart';
-import 'package:sukun_life/features/resources/presentation/canonical_quran_ayah_picker.dart';
 import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -439,111 +436,44 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                       },
                     ),
                   OutlinedButton.icon(
+                    key: const Key('routine-library-picker-button'),
                     onPressed: selected.length >= 16
                         ? null
                         : () async {
-                            final id = await showResourcePickerSheet(
+                            final ids = await showResourceMultiPickerSheet(
                               context: ctx,
-                              resources: resources
-                                  .where(
-                                    (item) => !selected.any(
-                                      (selectedItem) =>
-                                          selectedItem.contentItemId == item.id,
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                              selectedId: '',
-                              onPickCanonicalQuran:
-                                  (pickerContext, wholeSurah) =>
-                                      pickRoutineQuranReference(
-                                        pickerContext,
-                                        wholeSurah,
-                                        selectedReferences: selected
-                                            .where(
-                                              (item) =>
-                                                  item.provider == 'quran',
-                                            )
-                                            .map((item) => item.key)
-                                            .toSet(),
-                                      ),
+                              resources: resources,
+                              alreadyLinked: selected
+                                  .map((item) => item.contentItemId)
+                                  .whereType<String>()
+                                  .toSet(),
+                              maxSelection: 16,
                             );
-                            if (id == null || id.isEmpty || !ctx.mounted) {
+                            if (ids == null || ids.isEmpty || !ctx.mounted) {
                               return;
                             }
-                            final selection = id.startsWith('quran:')
-                                ? PersonalActionResourceSelection.fromLinks([
-                                    {
-                                      'provider': 'quran',
-                                      'external_resource_ref': id,
-                                    },
-                                  ]).firstOrNull
-                                : PersonalActionResourceSelection.cms(id);
-                            if (selection != null &&
-                                !selected.any(
-                                  (item) => item.key == selection.key,
-                                )) {
-                              update(() => selected.add(selection));
-                            }
+                            update(() {
+                              for (final id in ids) {
+                                final selection = id.startsWith('quran:')
+                                    ? PersonalActionResourceSelection.fromLinks([
+                                        {
+                                          'provider': 'quran',
+                                          'external_resource_ref': id,
+                                        },
+                                      ]).firstOrNull
+                                    : PersonalActionResourceSelection.cms(id);
+                                if (selection != null &&
+                                    selected.length < 16 &&
+                                    !selected.any(
+                                      (item) => item.key == selection.key,
+                                    )) {
+                                  selected.add(selection);
+                                }
+                              }
+                            });
                           },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('লাইব্রেরি, সূরা বা আয়াত বাছুন'),
-                  ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: selected.length >= 16
-                        ? null
-                        : () async {
-                            final number = await showPersonalSurahPicker(
-                              context: ctx,
-                              exclude: selected
-                                  .where((item) => item.provider == 'quran')
-                                  .map((item) => item.surahNumber!)
-                                  .toSet(),
-                            );
-                            if (number != null &&
-                                !selected.any(
-                                  (item) => item.surahNumber == number,
-                                ) &&
-                                ctx.mounted) {
-                              update(
-                                () => selected.add(
-                                  PersonalActionResourceSelection.quran(number),
-                                ),
-                              );
-                            }
-                          },
-                    icon: const Icon(Icons.menu_book_outlined),
-                    label: const Text('কুরআন থেকে সম্পূর্ণ সূরা বাছুন'),
-                  ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: selected.length >= 16
-                        ? null
-                        : () async {
-                            final choice = await showCanonicalQuranAyahPicker(
-                              context: ctx,
-                              excludedReferences: selected
-                                  .where((item) => item.provider == 'quran')
-                                  .map((item) => item.key)
-                                  .toSet(),
-                            );
-                            if (choice != null &&
-                                ctx.mounted &&
-                                !selected.any(
-                                  (item) => item.key == choice.reference,
-                                )) {
-                              update(
-                                () => selected.add(
-                                  PersonalActionResourceSelection.quranAyah(
-                                    choice.surahNumber,
-                                    choice.ayahNumber,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                    icon: const Icon(Icons.format_list_numbered_rounded),
-                    label: const Text('কুরআনের নির্দিষ্ট আয়াত বাছুন'),
+                    label: const Text('লাইব্রেরি থেকে বাছুন'),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -876,8 +806,12 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                   ),
           );
         },
-        onOpen: (id) =>
-            context.push('/my-routines/action/${Uri.encodeComponent(id)}'),
+        onOpen: (id) async {
+          await context.push<Object?>(
+            '/my-routines/action/${Uri.encodeComponent(id)}',
+          );
+          if (mounted) _refresh();
+        },
         onOpenPatientToday:
             ref.watch(appSessionProvider).value?.isPatient == true
             ? () => context.push('/patient/today')

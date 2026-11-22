@@ -326,15 +326,6 @@ class _ResourcePickerSheetState extends State<_ResourcePickerSheet> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              widget.multiSelect
-                                  ? 'বিভাগ খুলে যতগুলো দরকার টিক দিন, '
-                                        'তারপর একসাথে যোগ করুন।'
-                                  : 'বিভাগ খুলে উপকরণ বাছুন। রোগীর মূল '
-                                        'নির্দেশনার সঙ্গে মিলিয়ে সহায়ক পাঠ '
-                                        'বা অডিও দিন।',
-                              style: const TextStyle(color: SukunColors.muted),
-                            ),
                           ],
                         ),
                       ),
