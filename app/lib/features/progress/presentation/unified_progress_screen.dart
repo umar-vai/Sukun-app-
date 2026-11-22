@@ -35,15 +35,20 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
   /// fresh data loads.
   static final Map<String, List<Map<String, dynamic>>> _last = {};
 
-  String get _cacheKey =>
-      '${Supabase.instance.client.auth.currentUser?.id ?? ''}|$_days';
+  String get _cacheKey {
+    try {
+      return '${Supabase.instance.client.auth.currentUser?.id ?? ''}|$_days';
+    } catch (_) {
+      return '|$_days';
+    }
+  }
 
   void _reload() {
     final key = _cacheKey;
     _history = PersonalRoutineRepository(Supabase.instance.client)
         .listProgress(days: _days)
         .then((rows) {
-          _last[key] = rows;
+          if (!key.startsWith('|')) _last[key] = rows;
           return rows;
         });
   }
@@ -62,7 +67,7 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
     final body = FutureBuilder<List<Map<String, dynamic>>>(
       future: _history,
       builder: (context, snapshot) {
-        final cached = _last[_cacheKey];
+        final cached = _cacheKey.startsWith('|') ? null : _last[_cacheKey];
         if (snapshot.connectionState != ConnectionState.done &&
             cached == null) {
           return const AppLoadingState(label: 'অগ্রগতি আনা হচ্ছে…');

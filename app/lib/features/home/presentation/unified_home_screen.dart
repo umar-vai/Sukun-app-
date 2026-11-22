@@ -788,6 +788,14 @@ String _prayerLabel(String id) => switch (id) {
 _HomeTasksData? _lastHomeTasks;
 String? _lastHomeTasksOwner;
 
+String? _currentHomeOwner() {
+  try {
+    return Supabase.instance.client.auth.currentUser?.id;
+  } catch (_) {
+    return null;
+  }
+}
+
 class _HomeTasksData {
   const _HomeTasksData({
     required this.actions,
@@ -995,8 +1003,10 @@ class _UnifiedNextTasks extends StatelessWidget {
     child: FutureBuilder<_HomeTasksData>(
       future: future,
       builder: (context, snapshot) {
-        final owner = Supabase.instance.client.auth.currentUser?.id;
-        final cached = _lastHomeTasksOwner == owner ? _lastHomeTasks : null;
+        final owner = _currentHomeOwner();
+        final cached = owner != null && _lastHomeTasksOwner == owner
+            ? _lastHomeTasks
+            : null;
         final data = snapshot.data ?? cached;
         if (data == null &&
             snapshot.connectionState == ConnectionState.waiting) {

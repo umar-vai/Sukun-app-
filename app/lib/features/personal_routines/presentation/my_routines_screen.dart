@@ -91,11 +91,17 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   /// previous routine instantly while fresh data loads in the background.
   static final Map<String, _RoutinePageData> _lastData = {};
 
-  String get _uid => Supabase.instance.client.auth.currentUser?.id ?? '';
+  String get _uid {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   Future<_RoutinePageData> _load() async {
     final fresh = await _loadFresh();
-    _lastData[_uid] = fresh;
+    if (_uid.isNotEmpty) _lastData[_uid] = fresh;
     return fresh;
   }
 
@@ -858,7 +864,7 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
   Widget _myRoutinesTab() => FutureBuilder<_RoutinePageData>(
     future: _data,
     builder: (context, snap) {
-      final cached = snap.data ?? _lastData[_uid];
+      final cached = snap.data ?? (_uid.isEmpty ? null : _lastData[_uid]);
       if (cached == null) {
         if (snap.hasError) {
           return AppErrorState(
