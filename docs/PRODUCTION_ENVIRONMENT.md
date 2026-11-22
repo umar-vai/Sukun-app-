@@ -13,6 +13,25 @@ Treat this project as the current production backend for the standalone Sukun Li
 
 ## Current deployed production state
 
+### 2026-11-23: retire resources superseded by the library (NOT yet applied)
+
+- Owner request: the new library replaces the older Ruqyah audio and Dua/Amal.
+  Self-Ruqyah Guide, Ruqyah Ayat, Qur'an, Hadith, books, PDFs and articles are
+  not touched. Nothing is deleted.
+- Migration: `supabase/migrations/20261123090000_retire_superseded_resources.sql`
+  (apply after `20261122090000`). Each published dua/amal that is not a
+  `dua-ma-*` item, and each Ruqyah-category audio outside the library groups, is
+  hidden (`visibility = 'assigned_only'`) when a care plan, personal routine or
+  care template links it, otherwise archived. Every change is audited with its
+  previous state. `private.can_read_content_item` now also lets a personal
+  routine's owner (and people who manage that routine's patient profile) read
+  an `assigned_only` resource the routine links.
+- A Super Admin still sees hidden items in browse lists, as before for every
+  resource; patients and guests do not.
+- Verified locally: `supabase/tests/retire_superseded_resources_test.sql`
+  (12 checks) passes, and a run in migration order on a database with a Super
+  Admin installs the library and then archives an unlinked old dua.
+
 ### 2026-11-22: structured resource library and Self-diagnosis (NOT yet applied)
 
 - Owner request: a structured Ruqyah audio library, 90 daily dua/dhikr in 18
@@ -33,7 +52,7 @@ Treat this project as the current production backend for the standalone Sukun Li
   `supabase/tests/structured_resource_library_test.sql` (16 checks) passes and
   a second install adds and moves nothing.
 - To apply: run the migration on Production, then confirm in a rolled-back
-  read that 182 library rows were added or moved and seven tests exist. The app release
+  read that about 181 library rows were added or moved (the same link listed twice is added once) and seven tests exist. The app release
   that shows the new sections must ship after this migration.
 
 ### 2026-11-20: family accounts and CRM/ERP integration core (Production)

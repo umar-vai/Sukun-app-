@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/dua_azkar_browse_section.dart';
+
+// Only groups holding a published dua are shown; give each one an item.
+final _items = [
+  for (final category in [
+    'dua-azkar-morning',
+    'dua-azkar-masnun',
+    'dua-azkar-protection',
+  ])
+    ContentResource(
+      id: category,
+      type: 'dua',
+      title: category,
+      categorySlug: category,
+      visibility: 'public',
+      status: 'published',
+    ),
+];
 
 void main() {
   testWidgets('Dua parent cards retain 16px gaps on a 420px phone', (
@@ -12,12 +30,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: DuaAzkarBrowseSection(resources: []),
+              child: DuaAzkarBrowseSection(resources: _items),
             ),
           ),
         ),

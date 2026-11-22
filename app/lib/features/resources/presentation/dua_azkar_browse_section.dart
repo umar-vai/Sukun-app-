@@ -102,7 +102,12 @@ class DuaAzkarBrowseSection extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 16),
-      for (final group in duaAzkarNavigationGroups) ...[
+      // A group whose categories hold no published dua is not shown.
+      for (final group in duaAzkarNavigationGroups.where(
+        (group) => resources.any(
+          (item) => group.categorySlugs.contains(item.categorySlug),
+        ),
+      )) ...[
         _categoryCard(
           context,
           key: Key('dua-group-card-${group.slug}'),
