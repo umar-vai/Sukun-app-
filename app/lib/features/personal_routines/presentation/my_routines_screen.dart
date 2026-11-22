@@ -455,12 +455,14 @@ class _MyRoutinesScreenState extends ConsumerState<MyRoutinesScreen> {
                             update(() {
                               for (final id in ids) {
                                 final selection = id.startsWith('quran:')
-                                    ? PersonalActionResourceSelection.fromLinks([
-                                        {
-                                          'provider': 'quran',
-                                          'external_resource_ref': id,
-                                        },
-                                      ]).firstOrNull
+                                    ? PersonalActionResourceSelection.fromLinks(
+                                        [
+                                          {
+                                            'provider': 'quran',
+                                            'external_resource_ref': id,
+                                          },
+                                        ],
+                                      ).firstOrNull
                                     : PersonalActionResourceSelection.cms(id);
                                 if (selection != null &&
                                     selected.length < 16 &&
