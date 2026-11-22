@@ -40,12 +40,12 @@ class _UnifiedProgressScreenState extends ConsumerState<UnifiedProgressScreen> {
 
   void _reload() {
     final key = _cacheKey;
-    _history = PersonalRoutineRepository(
-      Supabase.instance.client,
-    ).listProgress(days: _days).then((rows) {
-      _last[key] = rows;
-      return rows;
-    });
+    _history = PersonalRoutineRepository(Supabase.instance.client)
+        .listProgress(days: _days)
+        .then((rows) {
+          _last[key] = rows;
+          return rows;
+        });
   }
 
   void _changeDays(int days) {
