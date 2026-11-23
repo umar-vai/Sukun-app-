@@ -384,9 +384,20 @@ class SukunIconBadge extends StatelessWidget {
     this.color,
     this.backgroundColor,
     this.size = 48,
-  });
+  }) : glyph = null;
 
-  final IconData icon;
+  /// A badge around a custom-drawn glyph instead of a font icon. The glyph
+  /// receives the badge colour through [IconTheme].
+  const SukunIconBadge.custom({
+    super.key,
+    required Widget this.glyph,
+    this.color,
+    this.backgroundColor,
+    this.size = 48,
+  }) : icon = null;
+
+  final IconData? icon;
+  final Widget? glyph;
   final Color? color;
   final Color? backgroundColor;
   final double size;
@@ -400,11 +411,19 @@ class SukunIconBadge extends StatelessWidget {
       borderRadius: BorderRadius.circular(size * 0.34),
     ),
     alignment: Alignment.center,
-    child: Icon(
-      icon,
-      color: color ?? Theme.of(context).colorScheme.onPrimaryContainer,
-      size: size * 0.48,
-    ),
+    child: glyph != null
+        ? IconTheme(
+            data: IconThemeData(
+              color: color ?? Theme.of(context).colorScheme.onPrimaryContainer,
+              size: size * 0.62,
+            ),
+            child: glyph!,
+          )
+        : Icon(
+            icon,
+            color: color ?? Theme.of(context).colorScheme.onPrimaryContainer,
+            size: size * 0.48,
+          ),
   );
 }
 
