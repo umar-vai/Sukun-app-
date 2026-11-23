@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sukun_life/core/widgets/dua_hands_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sukun_life/app/theme/sukun_colors.dart';
@@ -1035,8 +1036,9 @@ class _UnifiedNextTasks extends StatelessWidget {
                         '${banglaDigits((day.completionRatio * 100).round())}%',
                   )
                 else
-                  const SukunIconBadge(
-                    icon: Icons.volunteer_activism_rounded,
+                  const SukunIconBadge.custom(
+                    key: Key('home-today-dua-hands'),
+                    glyph: DuaHandsIcon(size: 38),
                     size: 56,
                   ),
                 const SizedBox(width: 16),
