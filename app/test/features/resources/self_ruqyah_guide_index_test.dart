@@ -123,9 +123,7 @@ void main() {
       ProviderScope(
         overrides: [
           resourcesRepositoryProvider.overrideWithValue(
-            _BodyRepository({
-              for (final r in resources) r.id: r,
-            }),
+            _BodyRepository({for (final r in resources) r.id: r}),
           ),
         ],
         child: MaterialApp.router(routerConfig: router),
