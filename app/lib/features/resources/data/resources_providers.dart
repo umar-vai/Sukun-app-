@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sukun_life/core/config/app_environment.dart';
 import 'package:sukun_life/features/resources/data/cached_resources_repository.dart';
+import 'package:sukun_life/features/resources/data/resource_disk_cache.dart';
 import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/data/supabase_resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
@@ -16,6 +17,9 @@ final resourcesRepositoryProvider = Provider<ResourcesRepository>((ref) {
     SupabaseResourcesRepository(client),
     () => client.auth.currentUser?.id,
     ttl: const Duration(minutes: 15),
+    // Saved on the phone so reopening the app needs no loaders. Cleared on
+    // sign-out and whenever the signed-in identity changes.
+    disk: SharedPreferencesResourceDiskCache(),
   );
 });
 

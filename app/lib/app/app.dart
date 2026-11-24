@@ -209,6 +209,16 @@ class _SukunLifeAppState extends ConsumerState<SukunLifeApp>
       if (newId != null && next.value?.requiresCredentialChange != true) {
         unawaited(service.refresh().catchError((Object _) => 0));
       }
+      // Saved resources belong to whoever was signed in. Drop them, then
+      // quietly save the new identity's own, so nothing leaks across
+      // accounts and the next screens still open without a loader.
+      // Only for a real change between two known sessions, never for the
+      // first session load at startup, or the saved cache would be wiped on
+      // every launch.
+      final resources = ref.read(resourcesRepositoryProvider);
+      if (previous?.value != null && resources is CachedResourcesRepository) {
+        unawaited(resources.clear().then((_) => resources.warmUp()));
+      }
     });
     final sessionState = ref.watch(appSessionProvider);
     final session = sessionState.value;
