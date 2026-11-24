@@ -3,11 +3,11 @@
   "platform": "android",
   "package_name": "com.sukunlife.app",
   "enabled": true,
-  "version_code": 28,
-  "version_name": "2.0.2",
+  "version_code": 29,
+  "version_name": "2.0.3",
   "min_supported_version_code": 0,
-  "apk_url": "https://downloads.sukunlife.com/android/2.0.2/SukunLife.apk",
-  "sha256": "230dbb7400118d99a4fc939527aad00932620921733e0216d8cb5aca543d8bfd",
-  "size_bytes": 66493067,
+  "apk_url": "https://downloads.sukunlife.com/android/2.0.3/SukunLife.apk",
+  "sha256": "463bf7c7451df284e845eab2508c9b7b1e5e6fcd791ebdba0c00c107e87c4133",
+  "size_bytes": 66542223,
   "notes_bn": "যাচাইকৃত নতুন সংস্করণ।"
 }
