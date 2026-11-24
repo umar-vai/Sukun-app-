@@ -110,7 +110,9 @@ void main() {
   });
 
   testWidgets('sections open as a grid and items show inside', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+    // Tall enough that every section tile is on screen regardless of the
+    // section order (Ruqyah-first pushes Hadith below an 844px fold).
+    tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/core/auth/auth_providers.dart';
+import 'package:sukun_life/core/media/resource_media.dart';
+import 'package:sukun_life/features/resources/data/resources_providers.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
+import 'package:sukun_life/features/resources/presentation/blog_article_body.dart';
+import 'package:sukun_life/features/resources/presentation/public_resource_copy.dart';
 
 /// Source-table-of-contents navigation over existing published CMS records.
 /// No book text or private data is embedded in the Flutter source.
@@ -216,25 +222,122 @@ class SelfRuqyahGuideIndex extends StatelessWidget {
         const SizedBox(height: 5),
         Text(group.title, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
+        // One continuous page: each topic is a plain headline followed by
+        // its full text, so there is no extra topic list to tap through.
         for (final item in items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 9),
-            child: Card(
-              margin: EdgeInsets.zero,
-              clipBehavior: Clip.antiAlias,
-              child: ListTile(
-                key: Key('self-guide-topic-${item.slug}'),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 5,
-                ),
-                title: Text(item.titleBn ?? item.title),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => onOpenResource(item),
-              ),
-            ),
+          SelfRuqyahTopicSection(
+            key: Key('self-guide-topic-${item.slug}'),
+            resource: item,
+            onOpenResource: onOpenResource,
           ),
       ],
+    );
+  }
+}
+
+/// One topic inside the group page: headline, full text, then media and
+/// routine actions. The body is fetched here because list queries leave it out.
+class SelfRuqyahTopicSection extends ConsumerStatefulWidget {
+  const SelfRuqyahTopicSection({
+    super.key,
+    required this.resource,
+    required this.onOpenResource,
+  });
+
+  final ContentResource resource;
+  final ValueChanged<ContentResource> onOpenResource;
+
+  @override
+  ConsumerState<SelfRuqyahTopicSection> createState() =>
+      _SelfRuqyahTopicSectionState();
+}
+
+class _SelfRuqyahTopicSectionState
+    extends ConsumerState<SelfRuqyahTopicSection> {
+  late Future<ContentResource?> _full;
+
+  @override
+  void initState() {
+    super.initState();
+    _full = _load();
+  }
+
+  Future<ContentResource?> _load() =>
+      ref.read(resourcesRepositoryProvider).getResource(widget.resource.id);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = widget.resource.titleBn?.isNotEmpty == true
+        ? widget.resource.titleBn!
+        : widget.resource.title;
+    final signedIn = ref.watch(appSessionProvider).value?.isAuthenticated;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: FutureBuilder<ContentResource?>(
+        future: _full,
+        builder: (context, snapshot) {
+          final full = snapshot.data;
+          final body = publicResourceInstructions(full?.body);
+          final hasMedia =
+              full != null && resolveResourceMedia(full.linkedResource) != null;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 18),
+                  child: LinearProgressIndicator(),
+                )
+              else if (snapshot.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text('পাঠ আনা যাচ্ছে না। আবার চেষ্টা করুন।'),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _full = _load()),
+                        child: const Text('আবার'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (body != null)
+                BlogArticleBody(content: body),
+              if (hasMedia)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: OutlinedButton.icon(
+                    onPressed: () => widget.onOpenResource(widget.resource),
+                    icon: const Icon(Icons.play_circle_outline_rounded),
+                    label: const Text('মিডিয়া খুলুন'),
+                  ),
+                ),
+              if (signedIn == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(
+                      '/my-routines?resourceId=${Uri.encodeQueryComponent(widget.resource.id)}',
+                    ),
+                    icon: const Icon(Icons.playlist_add_rounded),
+                    label: const Text('আমার রুটিনে যুক্ত করুন'),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              const Divider(),
+            ],
+          );
+        },
+      ),
     );
   }
 }

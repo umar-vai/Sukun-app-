@@ -86,6 +86,51 @@ class ContentResource {
     );
   }
 
+  /// Mirror of [ContentResource.fromJson], used by the on-device cache.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'slug': slug,
+    'type': type,
+    'title': title,
+    'title_bn': titleBn,
+    'summary': summary,
+    'body': body,
+    'arabic_text': arabicText,
+    'bangla_text': banglaText,
+    'transliteration': transliteration,
+    'translation': translation,
+    'reference_text': referenceText,
+    'source_reference': sourceReference,
+    'media_source_type': mediaSourceType,
+    'media_url': mediaUrl,
+    'youtube_video_id': youtubeVideoId,
+    'thumbnail_url': thumbnailUrl,
+    'verification_status': verificationStatus,
+    'created_at': createdAt?.toIso8601String(),
+    'category_id': categoryId,
+    if (categorySlug != null || categoryName != null || categoryNameBn != null)
+      'content_categories': <String, dynamic>{
+        'slug': categorySlug,
+        'name': categoryName,
+        'name_bn': categoryNameBn,
+      },
+    'surah_number': surahNumber,
+    'surah_name': surahName,
+    'surah_name_bn': surahNameBn,
+    'ayah_number': ayahNumber,
+    'ayah_end_number': ayahEndNumber,
+    'collection_name': collectionName,
+    'book_name': bookName,
+    'hadith_number': hadithNumber,
+    'narrator': narrator,
+    'grade': grade,
+    'source_url': sourceUrl,
+    'rights_note': rightsNote,
+    'sort_order': sortOrder,
+    'visibility': visibility,
+    'status': status,
+  };
+
   final String id;
   final String? slug;
   final String type;

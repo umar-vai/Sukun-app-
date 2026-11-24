@@ -8,6 +8,21 @@ class QuranSurahSummary {
     this.nameBn,
   });
 
+  factory QuranSurahSummary.fromJson(Map<String, dynamic> json) =>
+      QuranSurahSummary(
+        surahNumber: json['surah_number'] as int,
+        name: json['name'] as String,
+        nameBn: json['name_bn'] as String?,
+        ayahCount: json['ayah_count'] as int,
+      );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'surah_number': surahNumber,
+    'name': name,
+    'name_bn': nameBn,
+    'ayah_count': ayahCount,
+  };
+
   final int surahNumber;
   final String name;
   final String? nameBn;
@@ -22,6 +37,22 @@ class ResourceTopic {
     required this.resourceCount,
     this.nameBn,
   });
+
+  factory ResourceTopic.fromJson(Map<String, dynamic> json) => ResourceTopic(
+    id: json['id'] as String,
+    slug: json['slug'] as String,
+    name: json['name'] as String,
+    nameBn: json['name_bn'] as String?,
+    resourceCount: json['resource_count'] as int,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'slug': slug,
+    'name': name,
+    'name_bn': nameBn,
+    'resource_count': resourceCount,
+  };
 
   final String id;
   final String slug;
@@ -54,6 +85,17 @@ class ContentCollection {
         status: json['status'] as String,
       );
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'type': type,
+    'title': title,
+    'title_bn': titleBn,
+    'slug': slug,
+    'summary': summary,
+    'visibility': visibility,
+    'status': status,
+  };
+
   final String id;
   final String type;
   final String title;
@@ -69,6 +111,22 @@ class ContentCollectionDetails {
     required this.collection,
     required this.items,
   });
+
+  factory ContentCollectionDetails.fromJson(Map<String, dynamic> json) =>
+      ContentCollectionDetails(
+        collection: ContentCollection.fromJson(
+          json['collection'] as Map<String, dynamic>,
+        ),
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            ContentResource.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'collection': collection.toJson(),
+    'items': [for (final item in items) item.toJson()],
+  };
 
   final ContentCollection collection;
   final List<ContentResource> items;
