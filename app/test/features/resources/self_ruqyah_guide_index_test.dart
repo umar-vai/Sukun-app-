@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sukun_life/features/resources/data/resources_providers.dart';
+import 'package:sukun_life/features/resources/data/resources_repository.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/presentation/self_ruqyah_guide_index.dart';
 
@@ -116,7 +119,18 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          resourcesRepositoryProvider.overrideWithValue(
+            _BodyRepository({
+              for (final r in resources) r.id: r,
+            }),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('self-guide-chapter-2')));
@@ -124,12 +138,42 @@ void main() {
     expect(find.byKey(const Key('self-guide-group-evil-eye')), findsOneWidget);
     expect(find.text('বদনজর ও প্রাথমিক আলোচনা'), findsNothing);
 
+    // Opening a group goes straight to one page with each topic's headline
+    // and full text. There is no intermediate topic list to tap.
     await tester.tap(find.byKey(const Key('self-guide-group-evil-eye')));
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('self-guide-topic-srg2024-c02-t001')),
+      findsOneWidget,
+    );
     expect(find.text('বদনজর ও প্রাথমিক আলোচনা'), findsOneWidget);
+    expect(find.text('বদনজর ও প্রাথমিক আলোচনা পূর্ণ লেখা'), findsOneWidget);
     expect(find.text('জাদু ও প্রাথমিক আলোচনা'), findsNothing);
-
-    await tester.tap(find.text('বদনজর ও প্রাথমিক আলোচনা'));
-    expect(selected, 'srg2024-c02-t001');
+    expect(selected, isNull);
   });
+}
+
+class _BodyRepository implements ResourcesRepository {
+  _BodyRepository(this._byId);
+
+  final Map<String, ContentResource> _byId;
+
+  @override
+  Future<ContentResource?> getResource(String resourceId) async {
+    final base = _byId[resourceId];
+    if (base == null) return null;
+    return ContentResource(
+      id: base.id,
+      slug: base.slug,
+      type: base.type,
+      title: base.title,
+      titleBn: base.titleBn,
+      visibility: base.visibility,
+      status: base.status,
+      body: '${base.titleBn} পূর্ণ লেখা',
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
