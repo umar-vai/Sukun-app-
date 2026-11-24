@@ -19,28 +19,8 @@ class ResourceSection {
 }
 
 const resourceSections = <ResourceSection>[
-  ResourceSection(
-    slug: 'quran',
-    title: "Qur'an",
-    titleBn: 'কুরআন',
-    icon: Icons.auto_stories_outlined,
-    types: {'quran'},
-  ),
-  ResourceSection(
-    slug: 'hadith',
-    title: 'Hadith',
-    titleBn: 'হাদিস',
-    icon: Icons.format_quote_outlined,
-    types: {'hadith'},
-  ),
-  ResourceSection(
-    slug: 'dua-azkar',
-    title: 'Dua & Azkar',
-    titleBn: 'দোয়া ও যিকর',
-    icon: Icons.favorite_outline,
-    types: {'dua', 'amal'},
-    categoryPrefixes: {'dua', 'azkar'},
-  ),
+  // Ruqyah-first: the app's core purpose leads the home grid, then the
+  // remaining sections in their original order.
   ResourceSection(
     slug: 'ruqyah',
     title: 'Ruqyah',
@@ -56,6 +36,35 @@ const resourceSections = <ResourceSection>[
     icon: Icons.fact_check_outlined,
     types: {'guide'},
     categoryPrefixes: {'self-diagnosis'},
+  ),
+  ResourceSection(
+    slug: 'dua-azkar',
+    title: 'Dua & Azkar',
+    titleBn: 'দোয়া ও যিকর',
+    icon: Icons.favorite_outline,
+    types: {'dua', 'amal'},
+    categoryPrefixes: {'dua', 'azkar'},
+  ),
+  ResourceSection(
+    slug: 'audio',
+    title: 'Audio',
+    titleBn: 'অডিও',
+    icon: Icons.headphones_outlined,
+    types: {'audio'},
+  ),
+  ResourceSection(
+    slug: 'quran',
+    title: "Qur'an",
+    titleBn: 'কুরআন',
+    icon: Icons.auto_stories_outlined,
+    types: {'quran'},
+  ),
+  ResourceSection(
+    slug: 'hadith',
+    title: 'Hadith',
+    titleBn: 'হাদিস',
+    icon: Icons.format_quote_outlined,
+    types: {'hadith'},
   ),
   ResourceSection(
     slug: 'pdf',
@@ -77,13 +86,6 @@ const resourceSections = <ResourceSection>[
     titleBn: 'ব্লগ',
     icon: Icons.edit_note_outlined,
     types: {'article'},
-  ),
-  ResourceSection(
-    slug: 'audio',
-    title: 'Audio',
-    titleBn: 'অডিও',
-    icon: Icons.headphones_outlined,
-    types: {'audio'},
   ),
   ResourceSection(
     slug: 'video',
