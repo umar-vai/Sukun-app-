@@ -4,6 +4,7 @@ import 'package:sukun_life/app/theme/sukun_typography.dart';
 import 'package:sukun_life/features/resources/domain/content_resource.dart';
 import 'package:sukun_life/features/resources/domain/resource_browsing.dart';
 import 'package:sukun_life/features/resources/domain/ruqyah_audio_topics.dart';
+import 'package:sukun_life/features/resources/presentation/dua_inline_entry.dart';
 
 /// Distinct route pages: group index → group categories → published content.
 /// Every page displays only records provided by the authorized repository.
@@ -85,10 +86,28 @@ class DuaAzkarBrowseSection extends StatelessWidget {
     if (category == null || !group.categorySlugs.contains(category.slug)) {
       return _empty(context);
     }
-    return _items(
+    // The last step: every dua of the category on one page, with its text and
+    // audio, rather than a list that needs another tap for each dua.
+    return _inlineItems(
       context,
       resources.where((item) => item.categorySlug == category.slug).toList()
         ..sort(compareResourcesByOrder),
+    );
+  }
+
+  Widget _inlineItems(BuildContext context, List<ContentResource> items) {
+    if (items.isEmpty) return _empty(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final item in items) ...[
+          DuaInlineEntry(
+            key: ValueKey('dua-inline-${item.id}'),
+            resource: item,
+          ),
+          const SizedBox(height: 14),
+        ],
+      ],
     );
   }
 
